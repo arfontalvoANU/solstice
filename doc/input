@@ -1,0 +1,187 @@
+--------------------------------------------------------------------------------
+1/ Exemple
+--------------------------------------------------------------------------------
+node: &heliostat0
+  transform: { rotation: [0, 0, 0], position: [0, 0, 0] }
+  entities:
+    - object:
+        cylinder: { height: 10, radius: 1 }
+        transform: { position: [0, 5, 0], rotation: [90, 0, 0] }
+        material: { matte: { reflectivity: 1 } }
+  children:
+    - node:
+        transform: { rotation: [0, 0, 0], position: [0, 0, 0] }
+        entities:
+          - pivot: { point: [0, 0, 0], normal[0, 1, 0] }
+        children:
+          - node:
+              entities:
+                - object:
+                    cylinder: { height: 5, radius: 0.5 }
+                    material: { matte: { reflectivity: 1 } }
+                    transform: { position: [2.5, 12, 0], rotation: [90, 0, 0] }
+                - object:
+                    cylinder: { height: 5, radius: 0.5 }
+                    material: { matte: { reflectivity: 1 } }
+                    transform: { position: [2.5, 11, 0], rotation: [90, 0, 0] }
+              children:
+                - node:
+                    transform: { position: [2.5, 11, 0], rotation: [90, 0, 0] }
+                    entities:
+                      - object:
+                          parabol:
+                            clip:
+                              - operation: SUB
+                                vertices: [ [1, 2, 3], [3, 4, 5], [6, 7, 8] ]
+
+spawn:
+  transform: { position: [0, 0, 0] }
+  << : *heliostat0
+
+spawn:
+  transform: { position: [0, 0, 10] }
+  << : *heliostat0
+
+spawn:
+  transform: { position: [0, 0, 20] }
+  << : *heliostat0
+
+spawn:
+  transform: { position: [0, 0, 30] }
+  << : *heliostat0
+
+--------------------------------------------------------------------------------
+2/ Grammar
+--------------------------------------------------------------------------------
+
+spawn:
+  <node>
+[ <transform> ]
+
+----------------------------------------
+<node> ::=
+  node:
+    <entities>
+[   <transform> ]
+[   <children>  ]
+
+<entities> ::=
+  entities:
+    - <entity>
+[   - <entity> ... ]
+
+<children> ::=
+  children:
+    - <node>
+[   - <node> ... ]
+
+----------------------------------------
+<entity> ::=
+  <object> | <pivot>
+
+<object> ::=
+  object:
+    <shape>
+    <material>
+[   <transform> ]
+
+<pivot> ::=
+  pivot:
+    point: <float3>
+    normal: <float3>
+[   <transform> ]
+
+----------------------------------------
+<shape> ::=
+    <cube>
+  | <cylinder>
+  | <obj>
+  | <parabol>
+  | <parabolic-cylinder>
+  | <plane>
+  | <sphere>
+  | <stl>
+
+<cube> ::=
+  cube:
+    size: REAL
+
+<cylinder> ::=
+  cylinder:
+    radius: REAL
+    height: REAL
+[   slices: INTEGER ] # Default 16
+
+<obj> ::=
+  obj:
+    path: PATH
+
+<parabol> ::=
+  parabol: # x^2 + y^2 - 4*focal*z = 0
+    focal: REAL
+    clip: <polyclip-list>
+
+<parabolic-cylinder> ::=
+  parabolic-cylinder: # y^2 - 4*focal*z = 0
+    focal: REAL
+    clip: <polyclip-list>
+
+<plane> ::=
+  plane:
+    clip: <polyclip-list>
+
+<sphere> ::=
+  sphere:
+    radius: REAL
+[   slices: INTEGER ] # Default 16
+
+<stl> ::=
+  stl:
+    path: PATH
+
+----------------------------------------
+<polyclip-list> ::=
+  - <polyclip>
+[ - <polyclip> ... ]
+
+<polyclip> ::=
+  operation: <ADD|SUB>
+  vertices: <vertices-list>
+
+<vertices-list> ::=
+  - <float3>
+  - <float3>
+  - <float3>
+[ - <float3> ... ]
+
+----------------------------------------
+<material> ::=
+  <material-descriptor> | <double-sided-material>
+
+<double-sided-material> ::=
+  front: <material-descriptor>
+  back: <material-descriptor>
+
+<material-descriptor> ::=
+  <mirror> | <matte>
+
+<mirror> ::=
+  mirror:
+    reflectivity: REAL
+    roughness: REAL
+
+<matte> ::=
+  matte:
+    reflectivity: REAL
+
+----------------------------------------
+<transform> ::=
+  transform:
+    position: <float3>
+    rotation: <float3>
+
+<float3> ::=
+  - REAL
+  - REAL
+  - REAL
+
