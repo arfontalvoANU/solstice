@@ -1,79 +1,90 @@
 --------------------------------------------------------------------------------
 1/ Exemple
 --------------------------------------------------------------------------------
-node: &heliostat0
-  transform: { rotation: [0, 0, 0], position: [0, 0, 0] }
-  entities:
-    - object:
-        cylinder: { height: 10, radius: 1 }
-        transform: { position: [0, 5, 0], rotation: [90, 0, 0] }
-        material: { matte: { reflectivity: 1 } }
-  children:
-    - node:
-        transform: { rotation: [0, 0, 0], position: [0, 0, 0] }
-        entities:
-          - pivot: { point: [0, 0, 0], normal[0, 1, 0] }
-        children:
-          - node:
-              entities:
-                - object:
-                    cylinder: { height: 5, radius: 0.5 }
-                    material: { matte: { reflectivity: 1 } }
-                    transform: { position: [2.5, 12, 0], rotation: [90, 0, 0] }
-                - object:
-                    cylinder: { height: 5, radius: 0.5 }
-                    material: { matte: { reflectivity: 1 } }
-                    transform: { position: [2.5, 11, 0], rotation: [90, 0, 0] }
-              children:
-                - node:
-                    transform: { position: [2.5, 11, 0], rotation: [90, 0, 0] }
-                    entities:
-                      - object:
-                          parabol:
-                            clip:
-                              - operation: SUB
-                                vertices: [ [1, 2, 3], [3, 4, 5], [6, 7, 8] ]
+# Declare materials
+- material: &lambertian
+    matte: { reflectivtivity: 1 }
+- material: &mirror
+    mirror: { reflectivtivity: 1, roughness: 0 }
 
-spawn:
-  transform: { position: [0, 0, 0] }
-  << : *heliostat0
+# Declare entities
+- object: &house
+    stl: { path: "house.stl" }
+    material:  *lambertian
+- object: &cylinder
+    cylinder: { height: 5, radius: 0.5 }
+    material: *lambertian
+- object: &parabol
+    material: *mirror
+    parabol:
+      focal: 1
+      clip:
+        - operation: SUB
+          vertices: [ [1, 2, 3], [3, 4, 5], [6, 7, 8] ]
+- pivot: &my_pivot
+    point: [0, 0, 0]
+    normal: [0, 1, 0]
 
-spawn:
-  transform: { position: [0, 0, 10] }
-  << : *heliostat0
+# Declare a composition
+- node: &heliostat0
+    transform: { rotation: [0, 0, 0], position: [0, 0, 0] }
+    entities:
+      - object:
+          <<: *cylinder
+          transform: { position: [0, 5, 0], rotation: [90, 0, 0] }
+    children:
+      - node:
+          transform: { rotation: [0, 0, 0], position: [0, 0, 0] }
+          entities:
+            - pivot: *my_pivot
+          children:
+            - node:
+                entities:
+                  - object:
+                      << : *cylinder
+                      transform: { position: [2.5, 12, 0], rotation: [90, 0, 0] }
+                  - object:
+                      << : *cylinder
+                      transform: { position: [2.5, 11, 0], rotation: [90, 0, 0] }
+                children:
+                  - node:
+                      transform: { position: [2.5, 11, 0], rotation: [90, 0, 0] }
+                      entities:
+                        - object:
+                            << : *parabol
 
-spawn:
-  transform: { position: [0, 0, 20] }
-  << : *heliostat0
-
-spawn:
-  transform: { position: [0, 0, 30] }
-  << : *heliostat0
+# Create the solar factory
+- spawn:
+    transform: { position: [0, 0, 0] }
+    << : *heliostat0
+- spawn:
+    transform: { position: [0, 0, 10] }
+    << : *heliostat0
+- spawn:
+    transform: { position: [0, 0, 20] }
+    << : *heliostat0
+- spawn:
+    transform: { position: [0, 0, 30] }
+    << : *heliostat0
+- spawn:
+    transform: { position: [0, 0, -10] }
+    << : *house
 
 --------------------------------------------------------------------------------
 2/ Grammar
 --------------------------------------------------------------------------------
+<solar-factory> ::=
+  <items>
 
-spawn:
-  <node>
-[ <transform> ]
+<items> ::=
+  - <item>
+[ - <item> ... ]
 
-----------------------------------------
-<node> ::=
-  node:
-    <entities>
-[   <transform> ]
-[   <children>  ]
-
-<entities> ::=
-  entities:
-    - <entity>
-[   - <entity> ... ]
-
-<children> ::=
-  children:
-    - <node>
-[   - <node> ... ]
+<items> ::=
+    <entity>
+  | <material>
+  | <node>
+  | <spawn>
 
 ----------------------------------------
 <entity> ::=
@@ -173,6 +184,28 @@ spawn:
 <matte> ::=
   matte:
     reflectivity: REAL
+
+----------------------------------------
+<node> ::=
+  node:
+    <entities>
+[   <transform> ]
+[   <children>  ]
+
+<entities> ::=
+  entities:
+    - <entity>
+[   - <entity> ... ]
+
+<children> ::=
+  children:
+    - <node>
+[   - <node> ... ]
+
+----------------------------------------
+spawn:
+  <node> | <object>
+[ <transform> ]
 
 ----------------------------------------
 <transform> ::=
