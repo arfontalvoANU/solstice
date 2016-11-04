@@ -14,6 +14,10 @@
 - object: &cylinder
     cylinder: { height: 5, radius: 0.5 }
     material: *lambertian
+- object: &cylinder2
+    cylinder: { height: 5, radius: 0.5 }
+    material: *lambertian
+    transform: { position: [2.5, 11, 0], rotation: [90, 0, 0] }
 - object: &parabol
     material: *mirror
     parabol:
@@ -29,9 +33,7 @@
 - node: &heliostat0
     transform: { rotation: [0, 0, 0], position: [0, 0, 0] }
     entities:
-      - object:
-          <<: *cylinder
-          transform: { position: [0, 5, 0], rotation: [90, 0, 0] }
+      - object: *cylinder
     children:
       - node:
           transform: { rotation: [0, 0, 0], position: [0, 0, 0] }
@@ -40,35 +42,30 @@
           children:
             - node:
                 entities:
-                  - object:
-                      << : *cylinder
-                      transform: { position: [2.5, 12, 0], rotation: [90, 0, 0] }
-                  - object:
-                      << : *cylinder
-                      transform: { position: [2.5, 11, 0], rotation: [90, 0, 0] }
+                  - object: *cylinder
+                  - object: *cylinder2
                 children:
                   - node:
                       transform: { position: [2.5, 11, 0], rotation: [90, 0, 0] }
                       entities:
-                        - object:
-                            << : *parabol
+                        - object: *parabol
 
 # Create the solar factory
 - spawn:
     transform: { position: [0, 0, 0] }
-    << : *heliostat0
+    node : *heliostat0
 - spawn:
     transform: { position: [0, 0, 10] }
-    << : *heliostat0
+    node : *heliostat0
 - spawn:
     transform: { position: [0, 0, 20] }
-    << : *heliostat0
+    node : *heliostat0
 - spawn:
     transform: { position: [0, 0, 30] }
-    << : *heliostat0
+    node : *heliostat0
 - spawn:
     transform: { position: [0, 0, -10] }
-    << : *house
+    object : *house
 
 --------------------------------------------------------------------------------
 2/ Grammar
@@ -85,6 +82,7 @@
   | <material>
   | <node>
   | <spawn>
+  | <sun>
 
 ----------------------------------------
 <entity> ::=
@@ -98,9 +96,16 @@
 
 <pivot> ::=
   pivot:
-    point: <float3>
-    normal: <float3>
+    point: <real3>
+    normal: <real3>
+    <target>
 [   <transform> ]
+
+<target> ::=
+  target:
+    position: <real3>
+  | direction: <real3>
+  | <sun>
 
 ----------------------------------------
 <shape> ::=
@@ -160,10 +165,10 @@
   vertices: <vertices-list>
 
 <vertices-list> ::=
-  - <float3>
-  - <float3>
-  - <float3>
-[ - <float3> ... ]
+  - <real3>
+  - <real3>
+  - <real3>
+[ - <real3> ... ]
 
 ----------------------------------------
 <material> ::=
@@ -203,6 +208,32 @@
 [   - <node> ... ]
 
 ----------------------------------------
+<sun> ::=
+    <directional>
+  | <pillbox>
+  | <buie>
+
+<directional> ::=
+  directional:
+    direction: <real3>
+    dni: REAL
+    <spectrum>
+
+<pillbox> ::=
+  pillbox:
+    direction: <real3>
+    dni: REAL
+    aperture: REAL
+    <spectrum>
+
+<buie> ::=
+  buie:
+    direction: <real3>
+    dni: REAL
+    param: REAL
+    <spectrum>
+
+----------------------------------------
 spawn:
   <node> | <object>
 [ <transform> ]
@@ -210,11 +241,20 @@ spawn:
 ----------------------------------------
 <transform> ::=
   transform:
-    position: <float3>
-    rotation: <float3>
+    position: <real3>
+    rotation: <real3>
 
-<float3> ::=
+<real3> ::=
   - REAL
   - REAL
   - REAL
+
+<spectrum> ::=
+  spectrum:
+    - <spectrum-data>
+[   - <spectrum-data> ... ]
+
+<spectrum-data> ::=
+  - REAL # wavelength
+  - REAL # itensity
 
