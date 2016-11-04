@@ -31,7 +31,7 @@ log_err
    ...)
 {
   va_list vargs_list;
-  ASSERT(node && fmt);
+  ASSERT(filename && node && fmt);
 
   fprintf(stderr, "%s:%lu:%lu: ",
     filename,
@@ -53,7 +53,13 @@ parse_material_matte
   yaml_node_t* val;
   intptr_t n;
   res_T res = RES_OK;
-  ASSERT(matte->type == YAML_MAPPING_NODE);
+  ASSERT(doc && matte);
+
+  if(matte->type != YAML_MAPPING_NODE) {
+    log_err(filename, matte, "expect a mapping of matte material attributes.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
 
   n = matte->data.mapping.pairs.top - matte->data.mapping.pairs.start;
   if(n != 1) {
@@ -94,7 +100,14 @@ parse_material_mirror
   int mask = 0; /* Register the parsed attributes */
   intptr_t i, n;
   res_T res = RES_OK;
-  ASSERT(mirror->type == YAML_MAPPING_NODE);
+  ASSERT(doc && mirror);
+
+  if(mirror->type != YAML_MAPPING_NODE) {
+    log_err(filename, mirror,
+      "expect a mapping of mirror material attributes .\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
 
   n = mirror->data.mapping.pairs.top - mirror->data.mapping.pairs.start;
   FOR_EACH(i, 0, n) {
@@ -104,7 +117,7 @@ parse_material_mirror
     key = yaml_document_get_node(doc, mirror->data.mapping.pairs.start[i].key);
     val = yaml_document_get_node(doc, mirror->data.mapping.pairs.start[i].value);
     if(key->type != YAML_SCALAR_NODE) {
-      log_err(filename, key,"expect mirror material attributes.\n");
+      log_err(filename, key, "expect a mirror material attribute.\n");
       res = RES_BAD_ARG;
       goto error;
     }
@@ -146,7 +159,13 @@ parse_material_descriptor
   yaml_node_t* val;
   intptr_t n;
   res_T res = RES_OK;
-  ASSERT(desc && desc->type == YAML_MAPPING_NODE);
+  ASSERT(doc && desc);
+
+  if(desc->type != YAML_MAPPING_NODE) {
+    log_err(filename, desc, "expect a material descriptor.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
 
   n = desc->data.mapping.pairs.top - desc->data.mapping.pairs.start;
   if(n != 1) {
@@ -168,7 +187,8 @@ parse_material_descriptor
   } else if(!strcmp((char*)key->data.scalar.value, "mirror")) {
     res = parse_material_mirror(filename, doc, val);
   } else {
-    log_err(filename, key, "unknown material `%s'.\n", key->data.scalar.value);
+    log_err(filename, key, "unknown material descriptor `%s'.\n",
+      key->data.scalar.value);
     res = RES_BAD_ARG;
     goto error;
   }
@@ -188,7 +208,13 @@ parse_material
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
-  ASSERT(mtl && mtl->type == YAML_MAPPING_NODE);
+  ASSERT(doc && mtl);
+
+  if(mtl->type != YAML_MAPPING_NODE) {
+    log_err(filename, mtl, "expect a material definition.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
 
   n = mtl->data.mapping.pairs.top - mtl->data.mapping.pairs.start;
   FOR_EACH(i, 0, n) {
@@ -199,14 +225,15 @@ parse_material
     val = yaml_document_get_node(doc, mtl->data.mapping.pairs.start[i].value);
     if(key->type != YAML_SCALAR_NODE) {
       log_err(filename, key,
-        "expect a material or a double sided material definition.\n");
+        "expect a material descriptor or a double sided material.\n");
       res = RES_BAD_ARG;
       goto error;
     }
 
     #define SETUP_MASK(Flag, Name) {                                           \
       if(mask & BIT(Flag)) {                                                   \
-        log_err(filename, key, "the "Name" material is already defined.\n");   \
+        log_err(filename, key,                                                 \
+          "the "Name" material descriptor is already defined.\n");             \
         res = RES_BAD_ARG;                                                     \
         goto error;                                                            \
       }                                                                        \
@@ -244,7 +271,13 @@ parse_object
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
-  ASSERT(object && object->type == YAML_MAPPING_NODE);
+  ASSERT(doc && object);
+
+  if(object->type != YAML_MAPPING_NODE) {
+    log_err(filename, object, "expect an object definition.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
 
   n = object->data.mapping.pairs.top - object->data.mapping.pairs.start;
   FOR_EACH(i, 0, n) {
@@ -315,7 +348,7 @@ parse_item
   yaml_node_t* val;
   intptr_t n;
   res_T res = RES_OK;
-  ASSERT(item && item->type == YAML_MAPPING_NODE);
+  ASSERT(doc && item && item->type == YAML_MAPPING_NODE);
 
   n = item->data.mapping.pairs.top - item->data.mapping.pairs.start;
   if(n != 1) {
@@ -365,7 +398,7 @@ solstice_facility_load(const char* filename)
   yaml_document_t doc;
   yaml_node_t* root;
   FILE* file = NULL;
-  size_t i, n;
+  intptr_t i, n;
   int doc_is_init;
   res_T res = RES_OK;
 
@@ -406,7 +439,7 @@ solstice_facility_load(const char* filename)
     goto error;
   }
 
-  n = (size_t)(root->data.sequence.items.top - root->data.sequence.items.start);
+  n = root->data.sequence.items.top - root->data.sequence.items.start;
   FOR_EACH(i, 0, n) {
     yaml_node_t* item;
 
