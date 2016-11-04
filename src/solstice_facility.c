@@ -486,38 +486,57 @@ error:
  * Node
  ******************************************************************************/
 static res_T
-parse_entity
-  (const char* filename, yaml_document_t* doc, const yaml_node_t* entity)
+parse_node
+  (const char* filename,
+   yaml_document_t* doc,
+   const yaml_node_t* children);
+
+static res_T
+parse_children
+  (const char* filename, yaml_document_t* doc, const yaml_node_t* children)
 {
-  yaml_node_t* key;
-  yaml_node_t* val;
-  intptr_t n;
+  intptr_t i, n;
   res_T res = RES_OK;
-  ASSERT(doc && entity && entity->type == YAML_MAPPING_NODE);
+  ASSERT(doc && children);
 
-  n = entity->data.mapping.pairs.top - entity->data.mapping.pairs.start;
-  if(n != 1) {
-    log_err(filename, entity, "expect only one entity.\n");
+  if(children->type != YAML_SEQUENCE_NODE) {
+    log_err(filename, children, "expect a list of nodes.\n");
     res = RES_BAD_ARG;
     goto error;
   }
 
-  key = yaml_document_get_node(doc, entity->data.mapping.pairs.start[0].key);
-  val = yaml_document_get_node(doc, entity->data.mapping.pairs.start[0].value);
-  if(key->type != YAML_SCALAR_NODE) {
-    log_err(filename, key, "expecting an entity name.\n");
-    res = RES_BAD_ARG;
-    goto error;
-  }
+  n = children->data.sequence.items.top - children->data.sequence.items.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* child;
+    yaml_node_t* key;
+    yaml_node_t* val;
+    intptr_t nb;
 
-  if(!strcmp((char*)key->data.scalar.value, "object")) {
-    res = parse_object(filename, doc, val);
-  } else if(!strcmp((char*)key->data.scalar.value, "pivot")) { /* TODO */
-  } else {
-    log_err(filename, key, "unknown entity `%s'.\n", key->data.scalar.value);
-    res = RES_BAD_ARG;
+    child = yaml_document_get_node(doc, children->data.sequence.items.start[i]);
+    if(child->type != YAML_MAPPING_NODE) {
+      log_err(filename, child, "expect a node definition.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    nb = child->data.mapping.pairs.top - child->data.mapping.pairs.start;
+    if(nb != 1) {
+      log_err(filename, child,
+        "expect only one \"key:value\" pair while %li are provided.\n", nb);
+      res = RES_BAD_ARG;
+      goto error;
+    }
+
+    key = yaml_document_get_node(doc, child->data.mapping.pairs.start[0].key);
+    val = yaml_document_get_node(doc, child->data.mapping.pairs.start[0].value);
+    if(!strcmp((char*)key->data.scalar.value, "node")) {
+      res = parse_node(filename, doc, val);
+    } else {
+      log_err(filename, key, "unexpected directive `%s'. Expect a node.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+    }
+    if(res != RES_OK) goto error;
   }
-  if(res != RES_OK) goto error;
 
 exit:
   return res;
@@ -542,6 +561,10 @@ parse_entities
   n = entities->data.sequence.items.top - entities->data.sequence.items.start;
   FOR_EACH(i, 0, n) {
     yaml_node_t* entity;
+    yaml_node_t* key;
+    yaml_node_t* val;
+    intptr_t nb;
+
     entity = yaml_document_get_node(doc, entities->data.sequence.items.start[i]);
 
     if(entity->type != YAML_MAPPING_NODE) {
@@ -550,7 +573,29 @@ parse_entities
       goto error;
     }
 
-    res = parse_entity(filename, doc, entity);
+    nb = entity->data.mapping.pairs.top - entity->data.mapping.pairs.start;
+    if(nb != 1) {
+      log_err(filename, entity,
+        "expect only one \"key:value\" pair while %li are provided.\n", nb);
+      res = RES_BAD_ARG;
+      goto error;
+    }
+
+    key = yaml_document_get_node(doc, entity->data.mapping.pairs.start[0].key);
+    val = yaml_document_get_node(doc, entity->data.mapping.pairs.start[0].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(filename, key, "expect an entity name.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+
+    if(!strcmp((char*)key->data.scalar.value, "object")) {
+      res = parse_object(filename, doc, val);
+    } else if(!strcmp((char*)key->data.scalar.value, "pivot")) { /* TODO */
+    } else {
+      log_err(filename, key, "unknown entity `%s'.\n", key->data.scalar.value);
+      res = RES_BAD_ARG;
+    }
     if(res != RES_OK) goto error;
   }
 
@@ -560,7 +605,7 @@ error:
   goto exit;
 }
 
-static res_T
+res_T
 parse_node(const char* filename, yaml_document_t* doc, const yaml_node_t* node)
 {
   enum { CHILDREN, ENTITIES, TRANSFORM };
@@ -600,7 +645,8 @@ parse_node(const char* filename, yaml_document_t* doc, const yaml_node_t* node)
       mask |= BIT(Flag);                                                       \
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "children")) {
-      SETUP_MASK(CHILDREN, "children"); /* TODO parse the children */
+      SETUP_MASK(CHILDREN, "children");
+      res = parse_children(filename, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "entities")) {
       SETUP_MASK(ENTITIES, "entities");
       res = parse_entities(filename, doc, val);
@@ -634,11 +680,18 @@ parse_item
   yaml_node_t* val;
   intptr_t n;
   res_T res = RES_OK;
-  ASSERT(doc && item && item->type == YAML_MAPPING_NODE);
+  ASSERT(doc && item);
+
+  if(item->type != YAML_MAPPING_NODE) {
+    log_err(filename, item, "expect an item definition.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
 
   n = item->data.mapping.pairs.top - item->data.mapping.pairs.start;
   if(n != 1) {
-    log_err(filename, item, "expect only one item.\n");
+    log_err(filename, item,
+      "expect only one \"key:value\" pair while %li are provided.\n", n);
     res = RES_BAD_ARG;
     goto error;
   }
@@ -728,12 +781,6 @@ solstice_facility_load(const char* filename)
     yaml_node_t* item;
 
     item = yaml_document_get_node(&doc, root->data.sequence.items.start[i]);
-    if(item->type != YAML_MAPPING_NODE) {
-      log_err(filename, item, "expect an item definition.\n");
-      res = RES_BAD_ARG;
-      goto error;
-    }
-
     res = parse_item(filename, &doc, item);
     if(res != RES_OK) goto error;
   }
