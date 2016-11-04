@@ -42,6 +42,213 @@ log_err
   va_end(vargs_list);
 }
 
+/*******************************************************************************
+ * Material
+ ******************************************************************************/
+static res_T
+parse_material_matte
+  (const char* filename,
+   yaml_document_t* doc,
+   const yaml_node_t* matte)
+{
+  yaml_node_t* key;
+  yaml_node_t* val;
+  intptr_t n;
+  res_T res = RES_OK;
+  ASSERT(matte->type == YAML_MAPPING_NODE);
+
+  n = matte->data.mapping.pairs.top - matte->data.mapping.pairs.start;
+  if(n != 1) {
+    log_err(filename, matte,
+      "expect only one matte material attribute while %lu are submitted.\n",
+      (unsigned long)n);
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  key = yaml_document_get_node(doc, matte->data.mapping.pairs.start[0].key);
+  val = yaml_document_get_node(doc, matte->data.mapping.pairs.start[0].value);
+  if(key->type != YAML_SCALAR_NODE) {
+    log_err(filename, key, "expect a matte material attribute.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  if(strcmp((char*)key->data.scalar.value, "reflectivity")) {
+    log_err(filename, key, "unknown matte attribute `%s'.\n",
+      key->data.scalar.value);
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  (void)val; /* TODO parse it */
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+static res_T
+parse_material_mirror
+  (const char* filename,
+   yaml_document_t* doc,
+   const yaml_node_t* mirror)
+{
+  enum { REFLECTIVITY, ROUGHNESS };
+  int mask = 0; /* Register the parsed attributes */
+  intptr_t i, n;
+  res_T res = RES_OK;
+  ASSERT(mirror->type == YAML_MAPPING_NODE);
+
+  n = mirror->data.mapping.pairs.top - mirror->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, mirror->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, mirror->data.mapping.pairs.start[i].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(filename, key,"expect mirror material attributes.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    (void)val; /* TODO parse it */
+
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(filename, key,                                                 \
+          "the "Name" of the mirror material is already defined.\n");          \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if(!strcmp((char*)key->data.scalar.value, "reflectivity")) {
+      SETUP_MASK(REFLECTIVITY, "reflectivity");
+      /* TODO parse val */
+    } else if(!strcmp((char*)key->data.scalar.value, "roughness")) {
+      SETUP_MASK(ROUGHNESS, "roughness");
+      /* TODO parse val */
+    } else {
+      log_err(filename, key, "unknown mirror attribute `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    #undef SETUP_MASK
+    if(res != RES_OK) goto error;
+  }
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+static res_T
+parse_material_descriptor
+  (const char* filename,
+   yaml_document_t* doc,
+   const yaml_node_t* desc)
+{
+  yaml_node_t* key;
+  yaml_node_t* val;
+  intptr_t n;
+  res_T res = RES_OK;
+  ASSERT(desc && desc->type == YAML_MAPPING_NODE);
+
+  n = desc->data.mapping.pairs.top - desc->data.mapping.pairs.start;
+  if(n != 1) {
+    log_err(filename, desc,
+      "expect only one `key : value' pair while %lu are submitted.\n",
+      (unsigned long)n);
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  key = yaml_document_get_node(doc, desc->data.mapping.pairs.start[0].key);
+  val = yaml_document_get_node(doc, desc->data.mapping.pairs.start[0].value);
+  if(key->type != YAML_SCALAR_NODE) {
+    log_err(filename, key, "expect a material name.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  if(!strcmp((char*)key->data.scalar.value, "matte")) {
+    res = parse_material_matte(filename, doc, val);
+  } else if(!strcmp((char*)key->data.scalar.value, "mirror")) {
+    res = parse_material_mirror(filename, doc, val);
+  } else {
+    log_err(filename, key, "unknown material `%s'.\n", key->data.scalar.value);
+    res = RES_BAD_ARG;
+    goto error;
+  }
+  if(res != RES_OK) goto error;
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+static res_T
+parse_material
+  (const char* filename,
+   yaml_document_t* doc,
+   const yaml_node_t* mtl)
+{
+  enum { FRONT, BACK };
+  int mask = 0; /* Register the parsed attributes */
+  intptr_t i, n;
+  res_T res = RES_OK;
+  ASSERT(mtl && mtl->type == YAML_MAPPING_NODE);
+
+  n = mtl->data.mapping.pairs.top - mtl->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, mtl->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, mtl->data.mapping.pairs.start[i].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(filename, key,
+        "expect a material or a double sided material definition.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(filename, key, "the "Name" material is already defined.\n");   \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if(!strcmp((char*)key->data.scalar.value, "front")) {
+      SETUP_MASK(FRONT, "front");
+      res = parse_material_descriptor(filename, doc, val);
+    } else if(!strcmp((char*)key->data.scalar.value, "back")) {
+      SETUP_MASK(BACK, "back");
+      res = parse_material_descriptor(filename, doc, val);
+    } else {
+      SETUP_MASK(FRONT, "front");
+      SETUP_MASK(BACK, "back");
+      res = parse_material_descriptor(filename, doc, mtl);
+    }
+    #undef SETUP_MASK
+    if(res != RES_OK) goto error;
+  }
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+/*******************************************************************************
+ * Miscellaneous parsing
+ ******************************************************************************/
 static res_T
 parse_item
   (const char* filename,
@@ -57,7 +264,7 @@ parse_item
   nattrs = item->data.mapping.pairs.top - item->data.mapping.pairs.start;
   if(nattrs != 1) {
     log_err(filename, item,
-      "expecting only one `key : value' pair while %lu are submitted.\n",
+      "expect only one `key : value' pair while %lu are submitted.\n",
       (unsigned long)nattrs);
     res = RES_BAD_ARG;
     goto error;
@@ -66,13 +273,13 @@ parse_item
   key = yaml_document_get_node(doc, item->data.mapping.pairs.start[0].key);
   val = yaml_document_get_node(doc, item->data.mapping.pairs.start[0].value);
   if(key->type != YAML_SCALAR_NODE) {
-    log_err(filename, key, "expecting a scalar YAML value.\n");
+    log_err(filename, key, "expecting an item name.\n");
     res = RES_BAD_ARG;
     goto error;
   }
-  (void)val;
 
-  if(!strcmp((char*)key->data.scalar.value, "material")) { /* TODO */
+  if(!strcmp((char*)key->data.scalar.value, "material")) {
+    res = parse_material(filename, doc, val);
   } else if(!strcmp((char*)key->data.scalar.value, "node")) { /* TODO */
   } else if(!strcmp((char*)key->data.scalar.value, "object")) { /* TODO */
   } else if(!strcmp((char*)key->data.scalar.value, "pivot")) { /* TODO */
@@ -82,6 +289,9 @@ parse_item
     res = RES_BAD_ARG;
     goto error;
   }
+
+  if(res != RES_OK)
+    goto error;
 
 exit:
   return res;
@@ -129,8 +339,13 @@ solstice_facility_load(const char* filename)
   doc_is_init = 1;
 
   root = yaml_document_get_root_node(&doc);
+  if(!root) {
+    fprintf(stderr, "The file `%s' seems empty.\n", filename);
+    res = RES_BAD_ARG;
+    goto error;
+  }
   if(root->type != YAML_SEQUENCE_NODE) {
-    log_err(filename, root, "expecting a YAML sequence.\n");
+    log_err(filename, root, "expect a list of items.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -141,7 +356,7 @@ solstice_facility_load(const char* filename)
 
     item = yaml_document_get_node(&doc, root->data.sequence.items.start[i]);
     if(item->type != YAML_MAPPING_NODE) {
-      log_err(filename, item, "expecting a YAML mapping.\n");
+      log_err(filename, item, "expect an item definition.\n");
       res = RES_BAD_ARG;
       goto error;
     }
