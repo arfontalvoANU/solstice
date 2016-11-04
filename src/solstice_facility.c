@@ -15,6 +15,8 @@
 
 #include "solstice_facility.h"
 
+#include <rsys/cstr.h>
+
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -40,6 +42,147 @@ log_err
   va_start(vargs_list, fmt);
   vfprintf(stderr, fmt, vargs_list);
   va_end(vargs_list);
+}
+
+/*******************************************************************************
+ * Miscellaneous parsing functions
+ ******************************************************************************/
+static res_T
+parse_real
+  (const char* filename,
+   yaml_document_t* doc,
+   const yaml_node_t* real,
+   const double lower_bound,
+   const double upper_bound,
+   double* dst)
+{
+  res_T res = RES_OK;
+  ASSERT(doc && real && dst);
+  ASSERT(lower_bound < upper_bound);
+
+  if(real->type != YAML_SCALAR_NODE) {
+    log_err(filename, real, "expect a floating point number.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  res = cstr_to_double((char*)real->data.scalar.value, dst);
+  if(res != RES_OK) {
+    log_err(filename, real, "invalid floatin point number `%s'.\n",
+      real->data.scalar.value);
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  if(*dst < lower_bound || *dst > upper_bound) {
+    log_err(filename, real, "%g must be in [%g, %g].\n",
+      *dst, lower_bound, upper_bound);
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+static res_T
+parse_real3
+  (const char* filename,
+   yaml_document_t* doc,
+   const yaml_node_t* real3,
+   double dst[3])
+{
+  intptr_t i, n;
+  res_T res = RES_OK;
+  ASSERT(doc && real3 && dst);
+
+  if(real3->type != YAML_SEQUENCE_NODE) {
+    log_err(filename, real3, "expect a sequence of 3 reals.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  n = real3->data.sequence.items.top - real3->data.sequence.items.start;
+  if(n != 3) {
+    log_err(filename, real3, "expect 3 reals while `%li' %s submitted.\n",
+      n, n > 1 ? "are" : "is");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* real;
+    real = yaml_document_get_node(doc, real3->data.sequence.items.start[i]);
+    res = parse_real(filename, doc, real,-DBL_MAX, DBL_MAX, dst + i);
+    if(res != RES_OK) goto error;
+  }
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+static res_T
+parse_transform
+  (const char* filename,
+   yaml_document_t* doc,
+   const yaml_node_t* transform,
+   double position[3],
+   double rotation[3])
+{
+  enum { POSITION, ROTATION };
+  intptr_t i, n;
+  int mask = 0;
+  res_T res = RES_OK;
+  ASSERT(doc && position && rotation && transform);
+
+  if(transform->type != YAML_MAPPING_NODE) {
+    log_err(filename, transform, "expect a mapping of transform attributes.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  n = transform->data.mapping.pairs.top - transform->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, transform->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, transform->data.mapping.pairs.start[i].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(filename, key, "expect transform parameters.\n");
+      res = RES_BAD_ARG; goto error;
+    }
+
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(filename, key, "the transform `"Name"' is already defined.\n");\
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if(!strcmp((char*)key->data.scalar.value, "position")) {
+      SETUP_MASK(POSITION, "position");
+      res = parse_real3(filename, doc, val, position);
+    } else if(!strcmp((char*)key->data.scalar.value, "rotation")) {
+      SETUP_MASK(ROTATION, "rotation");
+      res = parse_real3(filename, doc, val, rotation);
+    } else {
+      log_err(filename, key, "unknown transform parameter `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+    }
+    if(res != RES_OK) goto error;
+    #undef SETUP_MASK
+  }
+exit:
+  return res;
+error:
+  goto exit;
 }
 
 /*******************************************************************************
@@ -268,6 +411,8 @@ parse_object
   (const char* filename, yaml_document_t* doc, const yaml_node_t* object)
 {
   enum { MATERIAL, SHAPE, TRANSFORM };
+  double position[3] = {0, 0, 0};
+  double rotation[3] = {0, 0, 0};
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
@@ -321,7 +466,8 @@ parse_object
     } else if(!strcmp((char*)key->data.scalar.value, "stl")) {
       SETUP_MASK(SHAPE, "shape"); /* TODO parse the shape */
     } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
-      SETUP_MASK(TRANSFORM, "transform"); /* TODO parse the transform */
+      SETUP_MASK(TRANSFORM, "transform");
+      res = parse_transform(filename, doc, val, position, rotation);
     } else {
       log_err(filename, key, "unknown object attribute `%s'.\n",
         key->data.scalar.value);
