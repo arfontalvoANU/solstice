@@ -47,9 +47,7 @@ log_err
  ******************************************************************************/
 static res_T
 parse_material_matte
-  (const char* filename,
-   yaml_document_t* doc,
-   const yaml_node_t* matte)
+  (const char* filename, yaml_document_t* doc, const yaml_node_t* matte)
 {
   yaml_node_t* key;
   yaml_node_t* val;
@@ -60,8 +58,7 @@ parse_material_matte
   n = matte->data.mapping.pairs.top - matte->data.mapping.pairs.start;
   if(n != 1) {
     log_err(filename, matte,
-      "expect only one matte material attribute while %lu are submitted.\n",
-      (unsigned long)n);
+      "expect only one matte material attribute while %li are submitted.\n", n);
     res = RES_BAD_ARG;
     goto error;
   }
@@ -91,9 +88,7 @@ error:
 
 static res_T
 parse_material_mirror
-  (const char* filename,
-   yaml_document_t* doc,
-   const yaml_node_t* mirror)
+  (const char* filename, yaml_document_t* doc, const yaml_node_t* mirror)
 {
   enum { REFLECTIVITY, ROUGHNESS };
   int mask = 0; /* Register the parsed attributes */
@@ -125,19 +120,16 @@ parse_material_mirror
       mask |= BIT(Flag);                                                       \
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "reflectivity")) {
-      SETUP_MASK(REFLECTIVITY, "reflectivity");
-      /* TODO parse val */
+      SETUP_MASK(REFLECTIVITY, "reflectivity"); /* TODO parse the reflectivity  */
     } else if(!strcmp((char*)key->data.scalar.value, "roughness")) {
-      SETUP_MASK(ROUGHNESS, "roughness");
-      /* TODO parse val */
+      SETUP_MASK(ROUGHNESS, "roughness"); /* TODO parse the roughness */
     } else {
       log_err(filename, key, "unknown mirror attribute `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
-      goto error;
     }
-    #undef SETUP_MASK
     if(res != RES_OK) goto error;
+    #undef SETUP_MASK
   }
 
 exit:
@@ -148,9 +140,7 @@ error:
 
 static res_T
 parse_material_descriptor
-  (const char* filename,
-   yaml_document_t* doc,
-   const yaml_node_t* desc)
+  (const char* filename, yaml_document_t* doc, const yaml_node_t* desc)
 {
   yaml_node_t* key;
   yaml_node_t* val;
@@ -160,9 +150,7 @@ parse_material_descriptor
 
   n = desc->data.mapping.pairs.top - desc->data.mapping.pairs.start;
   if(n != 1) {
-    log_err(filename, desc,
-      "expect only one `key : value' pair while %lu are submitted.\n",
-      (unsigned long)n);
+    log_err(filename, desc, "expect only one material descriptor.\n", n);
     res = RES_BAD_ARG;
     goto error;
   }
@@ -194,13 +182,11 @@ error:
 
 static res_T
 parse_material
-  (const char* filename,
-   yaml_document_t* doc,
-   const yaml_node_t* mtl)
+  (const char* filename, yaml_document_t* doc, const yaml_node_t* mtl)
 {
   enum { FRONT, BACK };
-  int mask = 0; /* Register the parsed attributes */
   intptr_t i, n;
+  int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
   ASSERT(mtl && mtl->type == YAML_MAPPING_NODE);
 
@@ -246,26 +232,95 @@ exit:
 error:
   goto exit;
 }
+
 /*******************************************************************************
- * Miscellaneous parsing
+ * Object
+ ******************************************************************************/
+static res_T
+parse_object
+  (const char* filename, yaml_document_t* doc, const yaml_node_t* object)
+{
+  enum { MATERIAL, SHAPE, TRANSFORM };
+  intptr_t i, n;
+  int mask = 0; /* Register the parsed attributes */
+  res_T res = RES_OK;
+  ASSERT(object && object->type == YAML_MAPPING_NODE);
+
+  n = object->data.mapping.pairs.top - object->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, object->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, object->data.mapping.pairs.start[i].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(filename, key, "expect a object parameter.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(filename, key,                                                 \
+          "the object attribute `"Name"' is already defined.\n");              \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if(!strcmp((char*)key->data.scalar.value, "material")) {
+      SETUP_MASK(MATERIAL, "material");
+      res = parse_material(filename, doc, val);
+    } else if(!strcmp((char*)key->data.scalar.value, "cube")) {
+      SETUP_MASK(SHAPE, "shape"); /* TODO parse the shape */
+    } else if(!strcmp((char*)key->data.scalar.value, "cylinder")) {
+      SETUP_MASK(SHAPE, "shape"); /* TODO parse the shape */
+    } else if(!strcmp((char*)key->data.scalar.value, "obj")) {
+      SETUP_MASK(SHAPE, "shape"); /* TODO parse the shape */
+    } else if(!strcmp((char*)key->data.scalar.value, "parabol")) {
+      SETUP_MASK(SHAPE, "shape"); /* TODO parse the shape */
+    } else if(!strcmp((char*)key->data.scalar.value, "parabolic-cylinder")) {
+      SETUP_MASK(SHAPE, "shape"); /* TODO parse the shape */
+    } else if(!strcmp((char*)key->data.scalar.value, "plane")) {
+      SETUP_MASK(SHAPE, "shape"); /* TODO parse the shape */
+    } else if(!strcmp((char*)key->data.scalar.value, "sphere")) {
+      SETUP_MASK(SHAPE, "shape"); /* TODO parse the shape */
+    } else if(!strcmp((char*)key->data.scalar.value, "stl")) {
+      SETUP_MASK(SHAPE, "shape"); /* TODO parse the shape */
+    } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
+      SETUP_MASK(TRANSFORM, "transform"); /* TODO parse the transform */
+    } else {
+      log_err(filename, key, "unknown object attribute `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+    }
+    if(res != RES_OK) goto error;
+    #undef SETUP_MASK
+  }
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+/*******************************************************************************
+ * Item
  ******************************************************************************/
 static res_T
 parse_item
-  (const char* filename,
-   yaml_document_t* doc,
-   const yaml_node_t* item)
+  (const char* filename, yaml_document_t* doc, const yaml_node_t* item)
 {
   yaml_node_t* key;
   yaml_node_t* val;
-  intptr_t nattrs;
+  intptr_t n;
   res_T res = RES_OK;
   ASSERT(item && item->type == YAML_MAPPING_NODE);
 
-  nattrs = item->data.mapping.pairs.top - item->data.mapping.pairs.start;
-  if(nattrs != 1) {
+  n = item->data.mapping.pairs.top - item->data.mapping.pairs.start;
+  if(n != 1) {
     log_err(filename, item,
-      "expect only one `key : value' pair while %lu are submitted.\n",
-      (unsigned long)nattrs);
+      "expect only one `key : value' pair while %li are submitted.\n", n);
     res = RES_BAD_ARG;
     goto error;
   }
@@ -281,7 +336,8 @@ parse_item
   if(!strcmp((char*)key->data.scalar.value, "material")) {
     res = parse_material(filename, doc, val);
   } else if(!strcmp((char*)key->data.scalar.value, "node")) { /* TODO */
-  } else if(!strcmp((char*)key->data.scalar.value, "object")) { /* TODO */
+  } else if(!strcmp((char*)key->data.scalar.value, "object")) {
+    res = parse_object(filename, doc, val);
   } else if(!strcmp((char*)key->data.scalar.value, "pivot")) { /* TODO */
   } else if(!strcmp((char*)key->data.scalar.value, "spawn")) { /* TODO */
   } else {
