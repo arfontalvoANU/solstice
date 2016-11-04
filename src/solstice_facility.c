@@ -50,14 +50,13 @@ log_err
 static res_T
 parse_real
   (const char* filename,
-   yaml_document_t* doc,
    const yaml_node_t* real,
    const double lower_bound,
    const double upper_bound,
    double* dst)
 {
   res_T res = RES_OK;
-  ASSERT(doc && real && dst);
+  ASSERT(real && dst);
   ASSERT(lower_bound < upper_bound);
 
   if(real->type != YAML_SCALAR_NODE) {
@@ -115,7 +114,7 @@ parse_real3
   FOR_EACH(i, 0, n) {
     yaml_node_t* real;
     real = yaml_document_get_node(doc, real3->data.sequence.items.start[i]);
-    res = parse_real(filename, doc, real,-DBL_MAX, DBL_MAX, dst + i);
+    res = parse_real(filename, real,-DBL_MAX, DBL_MAX, dst + i);
     if(res != RES_OK) goto error;
   }
 
@@ -393,8 +392,8 @@ parse_material
       SETUP_MASK(BACK, "back");
       res = parse_material_descriptor(filename, doc, mtl);
     }
-    #undef SETUP_MASK
     if(res != RES_OK) goto error;
+    #undef SETUP_MASK
   }
 
 exit:
@@ -484,6 +483,71 @@ error:
 }
 
 /*******************************************************************************
+ * Node
+ ******************************************************************************/
+static res_T
+parse_node(const char* filename, yaml_document_t* doc, const yaml_node_t* node)
+{
+  enum { CHILDREN, ENTITIES, TRANSFORM };
+  double position[3] = {0, 0, 0};
+  double rotation[3] = {0, 0, 0};
+  intptr_t i, n;
+  int mask = 0;
+  res_T res = RES_OK;
+  ASSERT(doc && node);
+
+  if(node->type != YAML_MAPPING_NODE) {
+    log_err(filename, node, "expect a node definition.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  n = node->data.mapping.pairs.top - node->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, node->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, node->data.mapping.pairs.start[i].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(filename, key, "expect a node attribute.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(filename, key,                                                 \
+          "the node attribute `"Name"' is already defined.\n");                \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if(!strcmp((char*)key->data.scalar.value, "children")) {
+      SETUP_MASK(CHILDREN, "children"); /* TODO parse the children */
+    } else if(!strcmp((char*)key->data.scalar.value, "entities")) {
+      SETUP_MASK(ENTITIES, "entities"); /* TODO parse the entities */
+    } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
+      SETUP_MASK(TRANSFORM, "transform");
+      res = parse_transform(filename, doc, val, position, rotation);
+    } else {
+      log_err(filename, key, "unknown node attribute `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    if(res != RES_OK) goto error;
+    #undef SETUP_MASK
+  }
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+/*******************************************************************************
  * Item
  ******************************************************************************/
 static res_T
@@ -514,11 +578,13 @@ parse_item
 
   if(!strcmp((char*)key->data.scalar.value, "material")) {
     res = parse_material(filename, doc, val);
-  } else if(!strcmp((char*)key->data.scalar.value, "node")) { /* TODO */
+  } else if(!strcmp((char*)key->data.scalar.value, "node")) {
+    res = parse_node(filename, doc, val);
   } else if(!strcmp((char*)key->data.scalar.value, "object")) {
     res = parse_object(filename, doc, val);
   } else if(!strcmp((char*)key->data.scalar.value, "pivot")) { /* TODO */
   } else if(!strcmp((char*)key->data.scalar.value, "spawn")) { /* TODO */
+  } else if(!strcmp((char*)key->data.scalar.value, "sun")) { /* TODO */
   } else {
     log_err(filename, key, "unknown item `%s'.\n", key->data.scalar.value);
     res = RES_BAD_ARG;
