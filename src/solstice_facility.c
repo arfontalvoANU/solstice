@@ -260,7 +260,7 @@ parse_material_mirror
     key = yaml_document_get_node(doc, mirror->data.mapping.pairs.start[i].key);
     val = yaml_document_get_node(doc, mirror->data.mapping.pairs.start[i].value);
     if(key->type != YAML_SCALAR_NODE) {
-      log_err(filename, key, "expect a mirror material attribute.\n");
+      log_err(filename, key, "expect a mirror material parameter.\n");
       res = RES_BAD_ARG;
       goto error;
     }
@@ -276,7 +276,7 @@ parse_material_mirror
       mask |= BIT(Flag);                                                       \
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "reflectivity")) {
-      SETUP_MASK(REFLECTIVITY, "reflectivity"); /* TODO parse the reflectivity  */
+      SETUP_MASK(REFLECTIVITY, "reflectivity"); /* TODO parse the reflectivity */
     } else if(!strcmp((char*)key->data.scalar.value, "roughness")) {
       SETUP_MASK(ROUGHNESS, "roughness"); /* TODO parse the roughness */
     } else {
@@ -287,7 +287,17 @@ parse_material_mirror
     if(res != RES_OK) goto error;
     #undef SETUP_MASK
   }
-  
+
+  #define CHECK_PARAM(Flag, Name)                                              \
+    if(!(mask & BIT(Flag))) {                                                  \
+      log_err(filename, mirror, "the mirror "Name" is missing.\n");            \
+      res = RES_BAD_ARG;                                                       \
+      goto error;                                                              \
+    } (void)0
+  CHECK_PARAM(REFLECTIVITY, "reflectivity");
+  CHECK_PARAM(ROUGHNESS, "roughness");
+  #undef CHECK_PARAM
+
 exit:
   return res;
 error:
@@ -397,6 +407,16 @@ parse_material
     #undef SETUP_MASK
   }
 
+  #define CHECK_PARAM(Flag, Name)                                             \
+    if(!(mask & BIT(Flag))) {                                                 \
+      log_err(filename, mtl, "the "Name" material descriptor is missing.\n"); \
+      res = RES_BAD_ARG;                                                      \
+      goto error;                                                             \
+    } (void)0
+  CHECK_PARAM(FRONT, "front");
+  CHECK_PARAM(BACK, "back");
+  #undef CHECK_PARAM
+
 exit:
   return res;
 error:
@@ -476,6 +496,16 @@ parse_object
     if(res != RES_OK) goto error;
     #undef SETUP_MASK
   }
+
+  #define CHECK_PARAM(Flag, Name)                                              \
+    if(!(mask & BIT(Flag))) {                                                  \
+      log_err(filename, object, "the object attribute `"Name"' is missing.\n");\
+      res = RES_BAD_ARG;                                                       \
+      goto error;                                                              \
+    } (void)0
+  CHECK_PARAM(MATERIAL, "material");
+  CHECK_PARAM(SHAPE, "shape");
+  #undef CHECK_PARAM
 
 exit:
   return res;
@@ -664,6 +694,15 @@ parse_node(const char* filename, yaml_document_t* doc, const yaml_node_t* node)
     #undef SETUP_MASK
   }
 
+  #define CHECK_PARAM(Flag, Name)                                              \
+    if(!(mask & BIT(Flag))) {                                                  \
+      log_err(filename, node, "the node attribute `"Name"' is missing.\n");    \
+      res = RES_BAD_ARG;                                                       \
+      goto error;                                                              \
+    } (void)0
+  CHECK_PARAM(ENTITIES, "entities");
+  #undef CHECK_PARAM
+
 exit:
   return res;
 error:
@@ -734,7 +773,7 @@ parse_pivot
 
   #define CHECK_PARAM(Flag, Name)                                              \
     if(!(mask & BIT(Flag))) {                                                  \
-      log_err(filename, pivot, "missing the pivot parameter `"Name"'.\n");     \
+      log_err(filename, pivot, "the pivot parameter `"Name"' is missing.\n");  \
       res = RES_BAD_ARG;                                                       \
       goto error;                                                              \
     } (void)0
