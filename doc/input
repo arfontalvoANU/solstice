@@ -51,19 +51,19 @@
                         - object: *parabol
 
 # Create the solar factory
-- spawn:
+- instance:
     transform: { position: [0, 0, 0] }
     node : *heliostat0
-- spawn:
+- instance:
     transform: { position: [0, 0, 10] }
     node : *heliostat0
-- spawn:
+- instance:
     transform: { position: [0, 0, 20] }
     node : *heliostat0
-- spawn:
+- instante:
     transform: { position: [0, 0, 30] }
     node : *heliostat0
-- spawn:
+- instance:
     transform: { position: [0, 0, -10] }
     object : *house
 
@@ -81,7 +81,7 @@
     <entity>
   | <material>
   | <node>
-  | <spawn>
+  | <instance>
   | <sun>
 
 ----------------------------------------
@@ -226,7 +226,7 @@
     aperture: REAL
 
 ----------------------------------------
-spawn:
+instance:
   <node> | <object>
 [ <transform> ]
 
