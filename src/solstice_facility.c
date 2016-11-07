@@ -22,6 +22,18 @@
 #include <string.h>
 #include <yaml.h>
 
+static res_T
+parse_node
+  (const char* filename,
+   yaml_document_t* doc,
+   const yaml_node_t* children);
+
+static res_T
+parse_object
+  (const char* filename,
+   yaml_document_t* doc,
+   const yaml_node_t* object);
+
 /*******************************************************************************
  * Helper functions
  ******************************************************************************/
@@ -179,6 +191,80 @@ parse_transform
     if(res != RES_OK) goto error;
     #undef SETUP_MASK
   }
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+/*******************************************************************************
+ * Instance
+ ******************************************************************************/
+static res_T
+parse_instance
+  (const char* filename, yaml_document_t* doc, const yaml_node_t* inst)
+{
+  enum { GEOMETRY, TRANSFORM };
+  double position[3] = {0, 0, 0};
+  double rotation[3] = {0, 0, 0};
+  intptr_t i, n;
+  int mask = 0;
+  res_T res = RES_OK;
+  ASSERT(doc && inst);
+
+  if(inst->type != YAML_MAPPING_NODE) {
+    log_err(filename, inst, "expect an instance definition.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  n = inst->data.mapping.pairs.top - inst->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, inst->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, inst->data.mapping.pairs.start[i].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(filename, key, "expect instance parameters.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(filename, key, "the instance "Name" is already defined.\n");   \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if(!strcmp((char*)key->data.scalar.value, "node")) {
+      SETUP_MASK(GEOMETRY, "geometry");
+      res = parse_node(filename, doc, val);
+    } else if(!strcmp((char*)key->data.scalar.value, "object")) {
+      SETUP_MASK(GEOMETRY, "geometry");
+      res = parse_object(filename, doc, val);
+    } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
+      SETUP_MASK(TRANSFORM, "transform");
+      res = parse_transform(filename, doc, val, position, rotation);
+    } else {
+      log_err(filename, key, "unknown instance parameter `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+    }
+    if(res != RES_OK) goto error;
+    #undef SETUP_MASK
+  }
+
+  #define CHECK_PARAM(Flag, Name)                                              \
+    if(!(mask & BIT(Flag))) {                                                  \
+      log_err(filename, inst, "the instance "Name" is missing.\n");            \
+      res = RES_BAD_ARG;                                                       \
+      goto error;                                                              \
+    } (void)0
+  CHECK_PARAM(GEOMETRY, "geometry");
+  #undef CHECK_PARAM
+
 exit:
   return res;
 error:
@@ -426,7 +512,7 @@ error:
 /*******************************************************************************
  * Object
  ******************************************************************************/
-static res_T
+res_T
 parse_object
   (const char* filename, yaml_document_t* doc, const yaml_node_t* object)
 {
@@ -516,12 +602,6 @@ error:
 /*******************************************************************************
  * Node
  ******************************************************************************/
-static res_T
-parse_node
-  (const char* filename,
-   yaml_document_t* doc,
-   const yaml_node_t* children);
-
 static res_T
 parse_children
   (const char* filename, yaml_document_t* doc, const yaml_node_t* children)
@@ -894,7 +974,9 @@ parse_item
     goto error;
   }
 
-  if(!strcmp((char*)key->data.scalar.value, "material")) {
+  if(!strcmp((char*)key->data.scalar.value, "instance")) {
+    res = parse_instance(filename, doc, val);
+  } else if(!strcmp((char*)key->data.scalar.value, "material")) {
     res = parse_material(filename, doc, val);
   } else if(!strcmp((char*)key->data.scalar.value, "node")) {
     res = parse_node(filename, doc, val);
@@ -902,7 +984,6 @@ parse_item
     res = parse_object(filename, doc, val);
   } else if(!strcmp((char*)key->data.scalar.value, "pivot")) {
     res = parse_pivot(filename, doc, val);
-  } else if(!strcmp((char*)key->data.scalar.value, "spawn")) { /* TODO */
   } else if(!strcmp((char*)key->data.scalar.value, "sun")) {
     res = parse_sun(filename, doc, val);
   } else {
