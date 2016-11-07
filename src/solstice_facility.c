@@ -788,6 +788,78 @@ error:
 }
 
 /*******************************************************************************
+ * Sun
+ ******************************************************************************/
+static res_T
+parse_sun(const char* filename, yaml_document_t* doc, const yaml_node_t* sun)
+{
+  enum { DNI, RADIAL_ANGULAR_DISTRIB, SPECTRUM };
+  int mask = 0; /* Register the parsed attributes */
+  intptr_t i, n;
+  res_T res = RES_OK;
+  ASSERT(doc && sun);
+
+  if(sun->type != YAML_MAPPING_NODE) {
+    log_err(filename, sun, "expect a sun definition.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  n = sun->data.mapping.pairs.top - sun->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, sun->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, sun->data.mapping.pairs.start[i].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(filename, key, "expect sun parameters.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    (void)val; /* TODO remove this line when val will be parsed */
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(filename, key, "the sun "Name" is already defined.\n");        \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if(!strcmp((char*)key->data.scalar.value, "dni")) {
+      SETUP_MASK(DNI, "dni"); /* TODO parse */
+    } else if(!strcmp((char*)key->data.scalar.value, "buie")) {
+      SETUP_MASK(RADIAL_ANGULAR_DISTRIB, "radial angular distribution"); /* TODO parse */
+    } else if(!strcmp((char*)key->data.scalar.value, "pillbox")) {
+      SETUP_MASK(RADIAL_ANGULAR_DISTRIB, "radial angular distribution"); /* TODO parse */
+    } else if(!strcmp((char*)key->data.scalar.value, "spectrum")) {
+      SETUP_MASK(SPECTRUM, "spectrum"); /* TODO parse */
+    } else {
+      log_err(filename, key, "unknown sun parameter `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+    }
+    if(res != RES_OK) goto error;
+    #undef SETUP_MASK
+  }
+
+  #define CHECK_PARAM(Flag, Name)                                              \
+    if(!(mask & BIT(Flag))) {                                                  \
+      log_err(filename, sun, "the sun "Name" is missing.\n");                  \
+      res = RES_BAD_ARG;                                                       \
+      goto error;                                                              \
+    } (void)0
+  CHECK_PARAM(DNI, "dni");
+  CHECK_PARAM(SPECTRUM, "spectrum");
+  #undef CHECK_PARAM
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+/*******************************************************************************
  * Item
  ******************************************************************************/
 static res_T
@@ -831,7 +903,8 @@ parse_item
   } else if(!strcmp((char*)key->data.scalar.value, "pivot")) {
     res = parse_pivot(filename, doc, val);
   } else if(!strcmp((char*)key->data.scalar.value, "spawn")) { /* TODO */
-  } else if(!strcmp((char*)key->data.scalar.value, "sun")) { /* TODO */
+  } else if(!strcmp((char*)key->data.scalar.value, "sun")) {
+    res = parse_sun(filename, doc, val);
   } else {
     log_err(filename, key, "unknown item `%s'.\n", key->data.scalar.value);
     res = RES_BAD_ARG;
