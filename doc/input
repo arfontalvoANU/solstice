@@ -209,29 +209,21 @@
 
 ----------------------------------------
 <sun> ::=
-    <directional>
-  | <pillbox>
-  | <buie>
-
-<directional> ::=
-  directional:
-    direction: <real3>
-    dni: REAL
+  sun:
+    dni: REAL # Direct Normal Irradiance */
     <spectrum>
+[   <radial-angular-distribution> ]
 
-<pillbox> ::=
-  pillbox:
-    direction: <real3>
-    dni: REAL
-    aperture: REAL
-    <spectrum>
+<radia-angular-distribution> ::=
+    <pillbox> | <buie>
 
 <buie> ::=
   buie:
-    direction: <real3>
-    dni: REAL
-    param: REAL
-    <spectrum>
+    csr: REAL
+
+<pillbox> ::=
+  pillbox:
+    aperture: REAL
 
 ----------------------------------------
 spawn:
