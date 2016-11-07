@@ -153,7 +153,8 @@ parse_transform
     val = yaml_document_get_node(doc, transform->data.mapping.pairs.start[i].value);
     if(key->type != YAML_SCALAR_NODE) {
       log_err(filename, key, "expect transform parameters.\n");
-      res = RES_BAD_ARG; goto error;
+      res = RES_BAD_ARG;
+      goto error;
     }
 
     #define SETUP_MASK(Flag, Name) {                                           \
@@ -286,7 +287,7 @@ parse_material_mirror
     if(res != RES_OK) goto error;
     #undef SETUP_MASK
   }
-
+  
 exit:
   return res;
 error:
@@ -670,6 +671,84 @@ error:
 }
 
 /*******************************************************************************
+ * Pivot
+ ******************************************************************************/
+static res_T
+parse_pivot
+  (const char* filename,
+   yaml_document_t* doc,
+   const yaml_node_t* pivot)
+{
+  enum { NORMAL, POINT, TARGET, TRANSFORM };
+  double position[3] = {0, 0, 0};
+  double rotation[3] = {0, 0, 0};
+  int mask = 0; /* Register the parsed attributes */
+  intptr_t i, n;
+  res_T res = RES_OK;
+  ASSERT(doc && pivot);
+
+  if(pivot->type != YAML_MAPPING_NODE) {
+    log_err(filename, pivot, "expect a pivot definition.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  n = pivot->data.mapping.pairs.top - pivot->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, pivot->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, pivot->data.mapping.pairs.start[i].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(filename, key, "expect pivot parameters.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(filename, key,                                                 \
+          "the pivot parameter `"Name"' is already defined.\n");               \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if(!strcmp((char*)key->data.scalar.value, "point")) {
+      SETUP_MASK(POINT, "point"); /* TODO parse the point */
+    } else if(!strcmp((char*)key->data.scalar.value, "normal")) {
+      SETUP_MASK(NORMAL, "normal"); /* TODO parse the normal */
+    } else if(!strcmp((char*)key->data.scalar.value, "target")) {
+      SETUP_MASK(TARGET, "target"); /* TODO parse the target */
+    } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
+      SETUP_MASK(TRANSFORM, "transform");
+      res = parse_transform(filename, doc, val, position, rotation);
+    } else {
+      log_err(filename, key, "unknown pivot parameter `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+    }
+    if(res != RES_OK) goto error;
+    #undef SETUP_MASK
+  }
+
+  #define CHECK_PARAM(Flag, Name)                                              \
+    if(!(mask & BIT(Flag))) {                                                  \
+      log_err(filename, pivot, "missing the pivot parameter `"Name"'.\n");     \
+      res = RES_BAD_ARG;                                                       \
+      goto error;                                                              \
+    } (void)0
+  CHECK_PARAM(POINT, "point");
+  CHECK_PARAM(NORMAL, "normal");
+  #undef CHECK_PARAM
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+/*******************************************************************************
  * Item
  ******************************************************************************/
 static res_T
@@ -710,7 +789,8 @@ parse_item
     res = parse_node(filename, doc, val);
   } else if(!strcmp((char*)key->data.scalar.value, "object")) {
     res = parse_object(filename, doc, val);
-  } else if(!strcmp((char*)key->data.scalar.value, "pivot")) { /* TODO */
+  } else if(!strcmp((char*)key->data.scalar.value, "pivot")) {
+    res = parse_pivot(filename, doc, val);
   } else if(!strcmp((char*)key->data.scalar.value, "spawn")) { /* TODO */
   } else if(!strcmp((char*)key->data.scalar.value, "sun")) { /* TODO */
   } else {
