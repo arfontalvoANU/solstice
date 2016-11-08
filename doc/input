@@ -183,12 +183,12 @@
 
 <mirror> ::=
   mirror:
-    reflectivity: REAL
-    roughness: REAL
+    reflectivity: REAL # in [0, 1]
+    roughness: REAL # in [0, 1]
 
 <matte> ::=
   matte:
-    reflectivity: REAL
+    reflectivity: REAL # in [0, 1]
 
 ----------------------------------------
 <node> ::=

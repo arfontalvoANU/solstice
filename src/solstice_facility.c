@@ -34,6 +34,12 @@ parse_object
    yaml_document_t* doc,
    const yaml_node_t* object);
 
+static res_T
+parse_pivot
+  (const char* filename,
+   yaml_document_t* doc,
+   const yaml_node_t* pivot);
+
 /*******************************************************************************
  * Helper functions
  ******************************************************************************/
@@ -265,6 +271,8 @@ parse_instance
   CHECK_PARAM(GEOMETRY, "geometry");
   #undef CHECK_PARAM
 
+  /* TODO register the instance */
+
 exit:
   return res;
 error:
@@ -280,6 +288,7 @@ parse_material_matte
 {
   yaml_node_t* key;
   yaml_node_t* val;
+  double reflectivity;
   intptr_t n;
   res_T res = RES_OK;
   ASSERT(doc && matte);
@@ -313,7 +322,10 @@ parse_material_matte
     goto error;
   }
 
-  (void)val; /* TODO parse it */
+  res = parse_real(filename, val, 0, 1, &reflectivity);
+  if(res != RES_OK) goto error;
+
+  /* TODO create the Solstice material */
 
 exit:
   return res;
@@ -326,6 +338,8 @@ parse_material_mirror
   (const char* filename, yaml_document_t* doc, const yaml_node_t* mirror)
 {
   enum { REFLECTIVITY, ROUGHNESS };
+  double reflectivity;
+  double roughness;
   int mask = 0; /* Register the parsed attributes */
   intptr_t i, n;
   res_T res = RES_OK;
@@ -337,7 +351,6 @@ parse_material_mirror
     res = RES_BAD_ARG;
     goto error;
   }
-
   n = mirror->data.mapping.pairs.top - mirror->data.mapping.pairs.start;
   FOR_EACH(i, 0, n) {
     yaml_node_t* key;
@@ -350,7 +363,6 @@ parse_material_mirror
       res = RES_BAD_ARG;
       goto error;
     }
-    (void)val; /* TODO parse it */
 
     #define SETUP_MASK(Flag, Name) {                                           \
       if(mask & BIT(Flag)) {                                                   \
@@ -362,9 +374,11 @@ parse_material_mirror
       mask |= BIT(Flag);                                                       \
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "reflectivity")) {
-      SETUP_MASK(REFLECTIVITY, "reflectivity"); /* TODO parse the reflectivity */
+      SETUP_MASK(REFLECTIVITY, "reflectivity");
+      res = parse_real(filename, val, 0, 1, &reflectivity);
     } else if(!strcmp((char*)key->data.scalar.value, "roughness")) {
-      SETUP_MASK(ROUGHNESS, "roughness"); /* TODO parse the roughness */
+      SETUP_MASK(ROUGHNESS, "roughness");
+      res = parse_real(filename, val, 0, 1, &roughness);
     } else {
       log_err(filename, key, "unknown mirror attribute `%s'.\n",
         key->data.scalar.value);
@@ -384,6 +398,8 @@ parse_material_mirror
   CHECK_PARAM(ROUGHNESS, "roughness");
   #undef CHECK_PARAM
 
+  /* TODO create the mirror material */
+
 exit:
   return res;
 error:
@@ -399,6 +415,9 @@ parse_material_descriptor
   intptr_t n;
   res_T res = RES_OK;
   ASSERT(doc && desc);
+
+  /* TODO If the descriptor is an alias of an already created material skip the
+   * parsing and return the aliased material descriptor */
 
   if(desc->type != YAML_MAPPING_NODE) {
     log_err(filename, desc, "expect a material descriptor.\n");
@@ -702,7 +721,8 @@ parse_entities
 
     if(!strcmp((char*)key->data.scalar.value, "object")) {
       res = parse_object(filename, doc, val);
-    } else if(!strcmp((char*)key->data.scalar.value, "pivot")) { /* TODO */
+    } else if(!strcmp((char*)key->data.scalar.value, "pivot")) {
+      res = parse_pivot(filename, doc, val);
     } else {
       log_err(filename, key, "unknown entity `%s'.\n", key->data.scalar.value);
       res = RES_BAD_ARG;
@@ -799,6 +819,8 @@ parse_pivot
    const yaml_node_t* pivot)
 {
   enum { NORMAL, POINT, TARGET, TRANSFORM };
+  double point[3];
+  double normal[3];
   double position[3] = {0, 0, 0};
   double rotation[3] = {0, 0, 0};
   int mask = 0; /* Register the parsed attributes */
@@ -834,9 +856,11 @@ parse_pivot
       mask |= BIT(Flag);                                                       \
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "point")) {
-      SETUP_MASK(POINT, "point"); /* TODO parse the point */
+      SETUP_MASK(POINT, "point");
+      res = parse_real3(filename, doc, val, point);
     } else if(!strcmp((char*)key->data.scalar.value, "normal")) {
-      SETUP_MASK(NORMAL, "normal"); /* TODO parse the normal */
+      SETUP_MASK(NORMAL, "normal");
+      res = parse_real3(filename, doc, val, normal);
     } else if(!strcmp((char*)key->data.scalar.value, "target")) {
       SETUP_MASK(TARGET, "target"); /* TODO parse the target */
     } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
