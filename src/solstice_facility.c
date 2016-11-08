@@ -205,6 +205,115 @@ error:
   goto exit;
 }
 
+static res_T
+parse_spectrum_data
+  (const char* filename, yaml_document_t* doc,
+   const double lower_bound,
+   const double upper_bound,
+   const yaml_node_t* sdata)
+{
+  enum { DATA, WAVELENGTH };
+  double wavelength;
+  double data;
+  intptr_t i, n;
+  int mask = 0; /* Register the parsed attributes */
+  res_T res = RES_OK;
+  ASSERT(doc && data && lower_bound < upper_bound);
+
+  if(sdata->type != YAML_MAPPING_NODE) {
+    log_err(filename, sdata, "expect a the definition of a spectrum data.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  n = sdata->data.mapping.pairs.top - sdata->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, sdata->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, sdata->data.mapping.pairs.start[i].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(filename, key, "expect a spectrum data parameter.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(filename, key,                                                 \
+          "the `"Name"' of the spectrum data is already defined.\n");          \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if(!strcmp((char*)key->data.scalar.value, "data")) {
+      SETUP_MASK(DATA, "data");
+      res = parse_real(filename, val, lower_bound, upper_bound, &data);
+    } else if(!strcmp((char*)key->data.scalar.value, "wavelength")) {
+      SETUP_MASK(WAVELENGTH, "wavelength");
+      res = parse_real(filename, val, 0, DBL_MAX, &wavelength);
+    } else {
+      log_err(filename, key, "unknown spectrum data parameter `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+    }
+    if(res != RES_OK) goto error;
+    #undef SETUP_MASK
+  }
+
+  #define CHECK_PARAM(Flag, Name)                                              \
+    if(!(mask & BIT(Flag))) {                                                  \
+      log_err(filename, sdata,"the "Name" of the spectrum data is missing.\n");\
+      res = RES_BAD_ARG;                                                       \
+      goto error;                                                              \
+    } (void)0
+  CHECK_PARAM(DATA, "data");
+  CHECK_PARAM(WAVELENGTH, "wavelength");
+  #undef CHECK_PARAM
+
+exit:
+  return res;
+error:
+    goto exit;
+}
+
+static res_T
+parse_spectrum
+  (const char* filename,
+   yaml_document_t* doc,
+   const double lower_bound,
+   const double upper_bound,
+   const yaml_node_t* spectrum)
+{
+  intptr_t i, n;
+  res_T res = RES_OK;
+  ASSERT(doc && spectrum && lower_bound < upper_bound);
+
+  if(spectrum->type != YAML_SEQUENCE_NODE) {
+    log_err(filename, spectrum, "expect a list of spectrum data.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  n = spectrum->data.sequence.items.top - spectrum->data.sequence.items.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* sdata;
+
+    sdata = yaml_document_get_node(doc, spectrum->data.sequence.items.start[i]);
+    res = parse_spectrum_data(filename, doc, lower_bound, upper_bound, sdata);
+    if(res != RES_OK) goto error;
+
+    /* TODO register the spectrum data */
+  }
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
 /*******************************************************************************
  * Instance
  ******************************************************************************/
@@ -1083,7 +1192,8 @@ parse_sun(const char* filename, yaml_document_t* doc, const yaml_node_t* sun)
       SETUP_MASK(RADIAL_ANGULAR_DISTRIB, "radial angular distribution");
       res = parse_pillbox(filename, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "spectrum")) {
-      SETUP_MASK(SPECTRUM, "spectrum"); /* TODO parse */
+      SETUP_MASK(SPECTRUM, "spectrum");
+      res = parse_spectrum(filename, doc, 0, DBL_MAX, val);
     } else {
       log_err(filename, key, "unknown sun parameter `%s'.\n",
         key->data.scalar.value);

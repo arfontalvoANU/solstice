@@ -247,6 +247,6 @@ instance:
 [   - <spectrum-data> ... ]
 
 <spectrum-data> ::=
-  - REAL # wavelength
-  - REAL # itensity
+  wavelength: REAL
+  data: REAL 
 
