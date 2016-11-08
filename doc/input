@@ -124,9 +124,9 @@
 
 <cylinder> ::=
   cylinder:
-    radius: REAL
     height: REAL
-[   slices: INTEGER ] # Default 16
+    radius: REAL
+[   slices: INTEGER ] # in [4, 4096]. Default 16
 
 <obj> ::=
   obj:

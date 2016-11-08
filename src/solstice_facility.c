@@ -82,8 +82,7 @@ parse_real
    double* dst)
 {
   res_T res = RES_OK;
-  ASSERT(real && dst);
-  ASSERT(lower_bound < upper_bound);
+  ASSERT(real && dst && lower_bound < upper_bound);
 
   if(real->type != YAML_SCALAR_NODE) {
     log_err(filename, real, "expect a floating point number.\n");
@@ -93,7 +92,7 @@ parse_real
 
   res = cstr_to_double((char*)real->data.scalar.value, dst);
   if(res != RES_OK) {
-    log_err(filename, real, "invalid floatin point number `%s'.\n",
+    log_err(filename, real, "invalid floating point number `%s'.\n",
       real->data.scalar.value);
     res = RES_BAD_ARG;
     goto error;
@@ -146,6 +145,43 @@ parse_real3
     if(res != RES_OK) goto error;
   }
 
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+static res_T
+parse_integer
+  (const char* filename,
+   yaml_node_t* integer,
+   const long lower_bound,
+   const long upper_bound,
+   long* dst)
+{
+  res_T res = RES_OK;
+  ASSERT(integer && dst && lower_bound < upper_bound);
+
+  if(integer->type != YAML_SCALAR_NODE) {
+    log_err(filename, integer, "expect an integer.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  res = cstr_to_long((char*)integer->data.scalar.value, dst);
+  if(res != RES_OK) {
+    log_err(filename, integer, "invalid integer `%s'.\n",
+      integer->data.scalar.value);
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  if(*dst < lower_bound || *dst > upper_bound) {
+    log_err(filename, integer, "%li must be in [%li, %li].\n",
+      *dst, lower_bound, upper_bound);
+    res = RES_BAD_ARG;
+    goto error;
+  }
 exit:
   return res;
 error:
@@ -733,6 +769,83 @@ error:
   goto exit;
 }
 
+static res_T
+parse_cylinder
+  (const char* filename, yaml_document_t* doc, const yaml_node_t* cylinder)
+{
+  enum { HEIGHT, RADIUS, SLICES };
+  double radius;
+  double height;
+  long nslices = 16;
+  intptr_t i, n;
+  int mask = 0; /* Register the parsed attributes */
+  res_T res = RES_OK;
+  ASSERT(doc && cylinder);
+
+  if(cylinder->type != YAML_MAPPING_NODE) {
+    log_err(filename, cylinder, "expect a mapping of cylinder parameters.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  n = cylinder->data.mapping.pairs.top - cylinder->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, cylinder->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, cylinder->data.mapping.pairs.start[i].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(filename, key, "expect cylinder parameters.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(filename, key,                                                 \
+          "the cylinder `"Name"' parameter is already defined.\n");            \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if(!strcmp((char*)key->data.scalar.value, "height")) {
+      SETUP_MASK(HEIGHT, "height");
+      res = parse_real(filename, val, 0, DBL_MAX, &height);
+    } else if(!strcmp((char*)key->data.scalar.value, "radius")) {
+      SETUP_MASK(RADIUS, "radius");
+      res = parse_real(filename, val, 0, DBL_MAX, &radius);
+    } else if(!strcmp((char*)key->data.scalar.value, "slices")) {
+      SETUP_MASK(SLICES, "slices");
+      res = parse_integer(filename, val, 4, 4096, &nslices);
+    } else {
+      log_err(filename, key, "unknown cylinder parameter `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+    }
+    if(res != RES_OK) goto error;
+    #undef SETUP_MASK
+  }
+
+  #define CHECK_PARAM(Flag, Name)                                              \
+    if(!(mask & BIT(Flag))) {                                                  \
+      log_err(filename, cylinder,                                              \
+        "the cylinder parameter `"Name"' is missing.\n");                      \
+      res = RES_BAD_ARG;                                                       \
+      goto error;                                                              \
+    } (void)0
+  CHECK_PARAM(HEIGHT, "height");
+  CHECK_PARAM(RADIUS, "radius");
+  #undef CHECK_PARAM
+
+  /* TODO register the cylinder */
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
 /*******************************************************************************
  * Object
  ******************************************************************************/
@@ -786,7 +899,8 @@ parse_object
       SETUP_MASK(SHAPE, "shape");
       res = parse_cuboid(filename, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "cylinder")) {
-      SETUP_MASK(SHAPE, "shape"); /* TODO parse the shape */
+      SETUP_MASK(SHAPE, "shape");
+      res = parse_cylinder(filename, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "obj")) {
       SETUP_MASK(SHAPE, "shape"); /* TODO parse the shape */
     } else if(!strcmp((char*)key->data.scalar.value, "parabol")) {
@@ -803,7 +917,7 @@ parse_object
       SETUP_MASK(TRANSFORM, "transform");
       res = parse_transform(filename, doc, val, position, rotation);
     } else {
-      log_err(filename, key, "unknown object attribute `%s'.\n",
+      log_err(filename, key, "unknown object parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
     }
