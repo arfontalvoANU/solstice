@@ -117,6 +117,8 @@ parse_real3
   (const char* filename,
    yaml_document_t* doc,
    const yaml_node_t* real3,
+   const double lower_bound,
+   const double upper_bound,
    double dst[3])
 {
   intptr_t i, n;
@@ -140,7 +142,7 @@ parse_real3
   FOR_EACH(i, 0, n) {
     yaml_node_t* real;
     real = yaml_document_get_node(doc, real3->data.sequence.items.start[i]);
-    res = parse_real(filename, real,-DBL_MAX, DBL_MAX, dst + i);
+    res = parse_real(filename, real, lower_bound, upper_bound, dst + i);
     if(res != RES_OK) goto error;
   }
 
@@ -160,12 +162,12 @@ parse_transform
 {
   enum { POSITION, ROTATION };
   intptr_t i, n;
-  int mask = 0;
+  int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
   ASSERT(doc && position && rotation && transform);
 
   if(transform->type != YAML_MAPPING_NODE) {
-    log_err(filename, transform, "expect a mapping of transform attributes.\n");
+    log_err(filename, transform, "expect a mapping of transform parameters.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -193,10 +195,10 @@ parse_transform
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "position")) {
       SETUP_MASK(POSITION, "position");
-      res = parse_real3(filename, doc, val, position);
+      res = parse_real3(filename, doc, val, -DBL_MAX, DBL_MAX, position);
     } else if(!strcmp((char*)key->data.scalar.value, "rotation")) {
       SETUP_MASK(ROTATION, "rotation");
-      res = parse_real3(filename, doc, val, rotation);
+      res = parse_real3(filename, doc, val, -DBL_MAX, DBL_MAX, rotation);
     } else {
       log_err(filename, key, "unknown transform parameter `%s'.\n",
         key->data.scalar.value);
@@ -331,7 +333,7 @@ parse_instance
   double position[3] = {0, 0, 0};
   double rotation[3] = {0, 0, 0};
   intptr_t i, n;
-  int mask = 0;
+  int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
   ASSERT(doc && inst);
 
@@ -671,6 +673,67 @@ error:
 }
 
 /*******************************************************************************
+ * Shapes
+ ******************************************************************************/
+static res_T
+parse_cuboid
+  (const char* filename, yaml_document_t* doc, const yaml_node_t* cuboid)
+{
+  enum { SIZE };
+  double size[3];
+  intptr_t i, n;
+  int mask = 0; /* Register the parsed attributes */
+  res_T res = RES_OK;
+  ASSERT(doc && cuboid);
+
+  if(cuboid->type != YAML_MAPPING_NODE) {
+    log_err(filename, cuboid, "expect a mapping of cuboid parameters.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  n = cuboid->data.mapping.pairs.top - cuboid->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, cuboid->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, cuboid->data.mapping.pairs.start[i].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(filename, key, "expect cuboid parameters.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    if(!strcmp((char*)key->data.scalar.value, "size")) {
+      if(mask & BIT(SIZE)) {
+        log_err(filename, key, "the cuboid size is already defined.\n");
+        res = RES_BAD_ARG;
+        goto error;
+      }
+      res = parse_real3(filename, doc, val, 0, DBL_MAX, size);
+    } else {
+      log_err(filename, key, "unknown cuboid parameter `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+    }
+    if(res != RES_OK) goto error;
+  }
+
+  if(!(mask & BIT(SIZE))) {
+    log_err(filename, cuboid, "the size of the cuboid is missing.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  /* TODO register the cuboid */
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+/*******************************************************************************
  * Object
  ******************************************************************************/
 res_T
@@ -719,8 +782,9 @@ parse_object
     if(!strcmp((char*)key->data.scalar.value, "material")) {
       SETUP_MASK(MATERIAL, "material");
       res = parse_material(filename, doc, val);
-    } else if(!strcmp((char*)key->data.scalar.value, "cube")) {
-      SETUP_MASK(SHAPE, "shape"); /* TODO parse the shape */
+    } else if(!strcmp((char*)key->data.scalar.value, "cuboid")) {
+      SETUP_MASK(SHAPE, "shape");
+      res = parse_cuboid(filename, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "cylinder")) {
       SETUP_MASK(SHAPE, "shape"); /* TODO parse the shape */
     } else if(!strcmp((char*)key->data.scalar.value, "obj")) {
@@ -892,7 +956,7 @@ parse_node(const char* filename, yaml_document_t* doc, const yaml_node_t* node)
   double position[3] = {0, 0, 0};
   double rotation[3] = {0, 0, 0};
   intptr_t i, n;
-  int mask = 0;
+  int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
   ASSERT(doc && node);
 
@@ -1002,10 +1066,10 @@ parse_target
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "direction")) {
       SETUP_MASK(POLICY, "policy");
-      res = parse_real3(filename, doc, val, direction);
+      res = parse_real3(filename, doc, val, -DBL_MAX, DBL_MAX, direction);
     } else if(!strcmp((char*)key->data.scalar.value, "position")) {
       SETUP_MASK(POLICY, "policy");
-      res = parse_real3(filename, doc, val, position);
+      res = parse_real3(filename, doc, val, -DBL_MAX, DBL_MAX, position);
     } else if(!strcmp((char*)key->data.scalar.value, "sun")) {
       SETUP_MASK(POLICY, "policy");
       res = parse_sun(filename, doc, val);
@@ -1074,10 +1138,10 @@ parse_pivot
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "point")) {
       SETUP_MASK(POINT, "point");
-      res = parse_real3(filename, doc, val, point);
+      res = parse_real3(filename, doc, val, -DBL_MAX, DBL_MAX, point);
     } else if(!strcmp((char*)key->data.scalar.value, "normal")) {
       SETUP_MASK(NORMAL, "normal");
-      res = parse_real3(filename, doc, val, normal);
+      res = parse_real3(filename, doc, val, -DBL_MAX, DBL_MAX, normal);
     } else if(!strcmp((char*)key->data.scalar.value, "target")) {
       SETUP_MASK(TARGET, "target");
       res = parse_target(filename, doc, val);

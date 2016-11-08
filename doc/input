@@ -109,7 +109,7 @@
 
 ----------------------------------------
 <shape> ::=
-    <cube>
+    <cuboid>
   | <cylinder>
   | <obj>
   | <parabol>
@@ -118,9 +118,9 @@
   | <sphere>
   | <stl>
 
-<cube> ::=
-  cube:
-    size: REAL
+<cuboid> ::=
+  cuboid:
+    size: <real3>
 
 <cylinder> ::=
   cylinder:
