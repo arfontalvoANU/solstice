@@ -219,7 +219,7 @@
 
 <buie> ::=
   buie:
-    csr: REAL
+    csr: REAL # in ]0, 1[
 
 <pillbox> ::=
   pillbox:

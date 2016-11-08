@@ -60,8 +60,12 @@ rcmake_prepend_path(SOLSTICE_FILES_SRC ${SOLSTICE_SOURCE_DIR})
 rcmake_prepend_path(SOLSTICE_FILES_INC ${SOLSTICE_SOURCE_DIR})
 rcmake_prepend_path(SOLSTICE_FILES_DOC ${PROJECT_SOURCE_DIR}/../)
 
+if(CMAKE_COMPILER_IS_GNUCC)
+  set(MATH_LIB m)
+endif()
+
 add_executable(solstice ${SOLSTICE_FILES_SRC} ${SOLSTICE_FILES_INC})
-target_link_libraries(solstice LibYAML RSys StarSP)
+target_link_libraries(solstice LibYAML RSys StarSP ${MATH_LIB})
 set_target_properties(solstice PROPERTIES
   VERSION ${VERSION}
   SOVERSION ${VERSION_MAJOR})

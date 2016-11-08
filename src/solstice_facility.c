@@ -13,6 +13,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>. */
 
+#define _POSIX_C_SOURCE 200112L
+
 #include "solstice_facility.h"
 
 #include <rsys/cstr.h>
@@ -895,11 +897,70 @@ error:
  * Sun
  ******************************************************************************/
 static res_T
+parse_buie(const char* filename, yaml_document_t* doc, const yaml_node_t* buie)
+{
+  enum { CSR };
+  intptr_t i, n;
+  double csr;
+  int mask = 0; /* Register the parsed attributes */
+  res_T res = RES_OK;
+  ASSERT(doc && buie);
+
+  if(buie->type != YAML_MAPPING_NODE) {
+    log_err(filename, buie,
+      "expect a `buie' definition of the sun radial angular distribution.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  n = buie->data.mapping.pairs.top - buie->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, buie->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, buie->data.mapping.pairs.start[i].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(filename, key, "expect a buie parameter.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+
+    if(!strcmp((char*)key->data.scalar.value, "csr")) {
+      if(mask & BIT(CSR)) {
+        log_err(filename, key, "the buie `csr' is already defined.\n");
+        res = RES_BAD_ARG;
+        goto error;
+      }
+      mask |= BIT(CSR);
+      res = parse_real(filename, val, nextafter(0, 1), nextafter(1, 0), &csr);
+    } else {
+      log_err(filename, key, "unknown buie parameter `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+    }
+    if(res != RES_OK) goto error;
+  }
+
+  if(!(mask & BIT(CSR))) {
+    log_err(filename, buie, "the buie csr parameter is missing.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+static res_T
 parse_sun(const char* filename, yaml_document_t* doc, const yaml_node_t* sun)
 {
   enum { DNI, RADIAL_ANGULAR_DISTRIB, SPECTRUM };
-  int mask = 0; /* Register the parsed attributes */
+  double dni;
   intptr_t i, n;
+  int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
   ASSERT(doc && sun);
 
@@ -921,7 +982,6 @@ parse_sun(const char* filename, yaml_document_t* doc, const yaml_node_t* sun)
       res = RES_BAD_ARG;
       goto error;
     }
-    (void)val; /* TODO remove this line when val will be parsed */
     #define SETUP_MASK(Flag, Name) {                                           \
       if(mask & BIT(Flag)) {                                                   \
         log_err(filename, key, "the sun "Name" is already defined.\n");        \
@@ -931,9 +991,11 @@ parse_sun(const char* filename, yaml_document_t* doc, const yaml_node_t* sun)
       mask |= BIT(Flag);                                                       \
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "dni")) {
-      SETUP_MASK(DNI, "dni"); /* TODO parse */
+      SETUP_MASK(DNI, "dni");
+      res = parse_real(filename, val, nextafter(0, 1), DBL_MAX, &dni);
     } else if(!strcmp((char*)key->data.scalar.value, "buie")) {
-      SETUP_MASK(RADIAL_ANGULAR_DISTRIB, "radial angular distribution"); /* TODO parse */
+      SETUP_MASK(RADIAL_ANGULAR_DISTRIB, "radial angular distribution");
+      res = parse_buie(filename, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "pillbox")) {
       SETUP_MASK(RADIAL_ANGULAR_DISTRIB, "radial angular distribution"); /* TODO parse */
     } else if(!strcmp((char*)key->data.scalar.value, "spectrum")) {
