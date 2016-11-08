@@ -288,10 +288,10 @@ static res_T
 parse_material_matte
   (const char* filename, yaml_document_t* doc, const yaml_node_t* matte)
 {
-  yaml_node_t* key;
-  yaml_node_t* val;
+  enum { REFLECTIVITY };
   double reflectivity;
-  intptr_t n;
+  intptr_t i, n;
+  int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
   ASSERT(doc && matte);
 
@@ -302,30 +302,39 @@ parse_material_matte
   }
 
   n = matte->data.mapping.pairs.top - matte->data.mapping.pairs.start;
-  if(n != 1) {
-    log_err(filename, matte,
-      "expect only one matte material attribute while %li are submitted.\n", n);
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, matte->data.mapping.pairs.start[0].key);
+    val = yaml_document_get_node(doc, matte->data.mapping.pairs.start[0].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(filename, key, "expect a matte material attribute.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+
+    if(!strcmp((char*)key->data.scalar.value, "reflectivity")) {
+      if(mask & BIT(REFLECTIVITY)) {
+        log_err(filename, key, "the matte reflectivity is already defined.\n");
+        res = RES_BAD_ARG;
+        goto error;
+      }
+      mask |= BIT(REFLECTIVITY);
+      res = parse_real(filename, val, 0, 1, &reflectivity);
+    } else {
+      log_err(filename, key, "unknown matte attribute `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+    }
+    if(res != RES_OK) goto error;
+  }
+
+  if(!(mask & BIT(REFLECTIVITY))) {
+    log_err(filename, matte, "the matte reflectivity is missing.\n");
     res = RES_BAD_ARG;
     goto error;
   }
-
-  key = yaml_document_get_node(doc, matte->data.mapping.pairs.start[0].key);
-  val = yaml_document_get_node(doc, matte->data.mapping.pairs.start[0].value);
-  if(key->type != YAML_SCALAR_NODE) {
-    log_err(filename, key, "expect a matte material attribute.\n");
-    res = RES_BAD_ARG;
-    goto error;
-  }
-
-  if(strcmp((char*)key->data.scalar.value, "reflectivity")) {
-    log_err(filename, key, "unknown matte attribute `%s'.\n",
-      key->data.scalar.value);
-    res = RES_BAD_ARG;
-    goto error;
-  }
-
-  res = parse_real(filename, val, 0, 1, &reflectivity);
-  if(res != RES_OK) goto error;
 
   /* TODO create the Solstice material */
 
@@ -412,9 +421,9 @@ static res_T
 parse_material_descriptor
   (const char* filename, yaml_document_t* doc, const yaml_node_t* desc)
 {
-  yaml_node_t* key;
-  yaml_node_t* val;
-  intptr_t n;
+  enum { DESCRIPTOR };
+  intptr_t i, n;
+  int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
   ASSERT(doc && desc);
 
@@ -428,31 +437,47 @@ parse_material_descriptor
   }
 
   n = desc->data.mapping.pairs.top - desc->data.mapping.pairs.start;
-  if(n != 1) {
-    log_err(filename, desc, "expect only one material descriptor.\n", n);
-    res = RES_BAD_ARG;
-    goto error;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, desc->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, desc->data.mapping.pairs.start[i].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(filename, key, "expect a material name.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(filename, key, "the material "Name" is already defined.\n");   \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if(!strcmp((char*)key->data.scalar.value, "matte")) {
+      SETUP_MASK(DESCRIPTOR, "descriptor");
+      res = parse_material_matte(filename, doc, val);
+    } else if(!strcmp((char*)key->data.scalar.value, "mirror")) {
+      SETUP_MASK(DESCRIPTOR, "descriptor");
+      res = parse_material_mirror(filename, doc, val);
+    } else {
+      log_err(filename, key, "unknown material descriptor `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    if(res != RES_OK) goto error;
+    #undef SETUP_MASK
   }
 
-  key = yaml_document_get_node(doc, desc->data.mapping.pairs.start[0].key);
-  val = yaml_document_get_node(doc, desc->data.mapping.pairs.start[0].value);
-  if(key->type != YAML_SCALAR_NODE) {
-    log_err(filename, key, "expect a material name.\n");
+  if(!(mask & BIT(DESCRIPTOR))) {
+    log_err(filename, desc, "the material descriptor is missing.\n");
     res = RES_BAD_ARG;
     goto error;
   }
-
-  if(!strcmp((char*)key->data.scalar.value, "matte")) {
-    res = parse_material_matte(filename, doc, val);
-  } else if(!strcmp((char*)key->data.scalar.value, "mirror")) {
-    res = parse_material_mirror(filename, doc, val);
-  } else {
-    log_err(filename, key, "unknown material descriptor `%s'.\n",
-      key->data.scalar.value);
-    res = RES_BAD_ARG;
-    goto error;
-  }
-  if(res != RES_OK) goto error;
 
 exit:
   return res;
