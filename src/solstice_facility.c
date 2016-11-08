@@ -919,7 +919,7 @@ parse_paraboloid
   #define CHECK_PARAM(Flag, Name)                                              \
     if(!(mask & BIT(Flag))) {                                                  \
       log_err(filename, paraboloid,                                            \
-        "the %S parameter `"Name"' is missing.\n", name);                      \
+        "the %s parameter `"Name"' is missing.\n", name);                      \
       res = RES_BAD_ARG;                                                       \
       goto error;                                                              \
     } (void)0
@@ -928,6 +928,64 @@ parse_paraboloid
   #undef CHECK_PARAM
 
   /* TODO register the paraboloid */
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+static res_T
+parse_plane
+  (const char* filename, yaml_document_t* doc, const yaml_node_t* plane)
+{
+  enum { CLIP };
+  intptr_t i, n;
+  int mask = 0; /* Register the parsed attributes */
+  res_T res = RES_OK;
+  ASSERT(doc && plane);
+
+  if(plane->type != YAML_MAPPING_NODE) {
+    log_err(filename, plane, "expect a mapping of plane parameters.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  n = plane->data.mapping.pairs.top - plane->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, plane->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, plane->data.mapping.pairs.start[i].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(filename, key, "expect plane parameters.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    (void)val; /* TODO parse it */
+    if(!strcmp((char*)key->data.scalar.value, "clip")) {
+      if(mask & BIT(CLIP)) {
+        log_err(filename, key, "the plane clipping is already defined.\n");
+        res = RES_BAD_ARG;
+        goto error;
+      }
+      mask |= BIT(CLIP);
+      /* TODO parse */
+    } else {
+      log_err(filename, key, "unknown plane parameter `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+    }
+    if(res != RES_OK) goto error;
+  }
+  if(!(mask & BIT(CLIP))) {
+    log_err(filename, plane, "the plane parameter `clip' is missing.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  /* TODO register the plane */
 
 exit:
   return res;
@@ -999,7 +1057,8 @@ parse_object
       SETUP_MASK(SHAPE, "shape");
       res = parse_paraboloid(filename, doc, val, PARABOLIC_CYLINDER);
     } else if(!strcmp((char*)key->data.scalar.value, "plane")) {
-      SETUP_MASK(SHAPE, "shape"); /* TODO */
+      SETUP_MASK(SHAPE, "shape");
+      res = parse_plane(filename, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "sphere")) {
       SETUP_MASK(SHAPE, "shape"); /* TODO parse the shape */
     } else if(!strcmp((char*)key->data.scalar.value, "stl")) {
