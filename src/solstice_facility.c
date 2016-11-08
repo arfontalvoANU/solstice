@@ -42,6 +42,12 @@ parse_pivot
    yaml_document_t* doc,
    const yaml_node_t* pivot);
 
+static res_T
+parse_sun
+  (const char* filename,
+   yaml_document_t* doc,
+   const yaml_node_t* sun);
+
 /*******************************************************************************
  * Helper functions
  ******************************************************************************/
@@ -445,7 +451,7 @@ parse_material_matte
     goto error;
   }
 
-  /* TODO create the Solstice material */
+  /* TODO create the matte material */
 
 exit:
   return res;
@@ -679,6 +685,9 @@ parse_object
   res_T res = RES_OK;
   ASSERT(doc && object);
 
+  /* TODO If the object is an alias of an already created object skip the
+   * parsing and return the aliased object */
+
   if(object->type != YAML_MAPPING_NODE) {
     log_err(filename, object, "expect an object definition.\n");
     res = RES_BAD_ARG;
@@ -802,6 +811,8 @@ parse_children
       res = RES_BAD_ARG;
     }
     if(res != RES_OK) goto error;
+
+    /* TODO register the child node */
   }
 
 exit:
@@ -864,6 +875,8 @@ parse_entities
       res = RES_BAD_ARG;
     }
     if(res != RES_OK) goto error;
+
+    /* TODO register the entity */
   }
 
 exit:
@@ -921,7 +934,7 @@ parse_node(const char* filename, yaml_document_t* doc, const yaml_node_t* node)
       SETUP_MASK(TRANSFORM, "transform");
       res = parse_transform(filename, doc, val, position, rotation);
     } else {
-      log_err(filename, key, "unknown node attribute `%s'.\n",
+      log_err(filename, key, "unknown node parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
       goto error;
@@ -932,7 +945,7 @@ parse_node(const char* filename, yaml_document_t* doc, const yaml_node_t* node)
 
   #define CHECK_PARAM(Flag, Name)                                              \
     if(!(mask & BIT(Flag))) {                                                  \
-      log_err(filename, node, "the node attribute `"Name"' is missing.\n");    \
+      log_err(filename, node, "the node `"Name"' parameter is missing.\n");    \
       res = RES_BAD_ARG;                                                       \
       goto error;                                                              \
     } (void)0
@@ -949,10 +962,78 @@ error:
  * Pivot
  ******************************************************************************/
 static res_T
+parse_target
+  (const char* filename, yaml_document_t* doc, const yaml_node_t* target)
+{
+  enum { POLICY };
+  double direction[3];
+  double position[3];
+  intptr_t i, n;
+  int mask = 0; /* Register the parsed attributes */
+  res_T res = RES_OK;
+  ASSERT(doc && target);
+
+  if(target->type != YAML_MAPPING_NODE) {
+    log_err(filename, target, "expect a target definition.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  n = target->data.mapping.pairs.top - target->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, target->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, target->data.mapping.pairs.start[i].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(filename, key, "expect a target parameter.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(filename, key, "the target "Name" is already defined.\n");     \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if(!strcmp((char*)key->data.scalar.value, "direction")) {
+      SETUP_MASK(POLICY, "policy");
+      res = parse_real3(filename, doc, val, direction);
+    } else if(!strcmp((char*)key->data.scalar.value, "position")) {
+      SETUP_MASK(POLICY, "policy");
+      res = parse_real3(filename, doc, val, position);
+    } else if(!strcmp((char*)key->data.scalar.value, "sun")) {
+      SETUP_MASK(POLICY, "policy");
+      res = parse_sun(filename, doc, val);
+    } else {
+      log_err(filename, key, "unknown target parameter `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    if(res != RES_OK) goto error;
+    #undef SETUP_MASK
+  }
+
+  if(!(mask & BIT(POLICY))) {
+    log_err(filename, target, "the target policy is missing.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+static res_T
 parse_pivot
-  (const char* filename,
-   yaml_document_t* doc,
-   const yaml_node_t* pivot)
+  (const char* filename, yaml_document_t* doc, const yaml_node_t* pivot)
 {
   enum { NORMAL, POINT, TARGET, TRANSFORM };
   double point[3];
@@ -998,7 +1079,8 @@ parse_pivot
       SETUP_MASK(NORMAL, "normal");
       res = parse_real3(filename, doc, val, normal);
     } else if(!strcmp((char*)key->data.scalar.value, "target")) {
-      SETUP_MASK(TARGET, "target"); /* TODO parse the target */
+      SETUP_MASK(TARGET, "target");
+      res = parse_target(filename, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
       SETUP_MASK(TRANSFORM, "transform");
       res = parse_transform(filename, doc, val, position, rotation);
@@ -1146,7 +1228,7 @@ error:
   goto exit;
 }
 
-static res_T
+res_T
 parse_sun(const char* filename, yaml_document_t* doc, const yaml_node_t* sun)
 {
   enum { DNI, RADIAL_ANGULAR_DISTRIB, SPECTRUM };
