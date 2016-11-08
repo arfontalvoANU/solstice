@@ -24,6 +24,11 @@
 #include <string.h>
 #include <yaml.h>
 
+enum paraboloid_type {
+  PARABOL,
+  PARABOLIC_CYLINDER
+};
+
 static res_T
 parse_node
   (const char* filename,
@@ -68,6 +73,16 @@ log_err
   va_start(vargs_list, fmt);
   vfprintf(stderr, fmt, vargs_list);
   va_end(vargs_list);
+}
+
+static INLINE const char*
+paraboloid_type_name(const enum paraboloid_type type)
+{
+  switch(type) {
+    case PARABOL: return "parabol"; break;
+    case PARABOLIC_CYLINDER: return "parabolic cylinder"; break;
+    default: FATAL("Unreachable.\n"); break;
+  }
 }
 
 /*******************************************************************************
@@ -803,7 +818,7 @@ parse_cylinder
     #define SETUP_MASK(Flag, Name) {                                           \
       if(mask & BIT(Flag)) {                                                   \
         log_err(filename, key,                                                 \
-          "the cylinder `"Name"' parameter is already defined.\n");            \
+          "the cylinder parameter `"Name"' is already defined.\n");            \
         res = RES_BAD_ARG;                                                     \
         goto error;                                                            \
       }                                                                        \
@@ -839,6 +854,80 @@ parse_cylinder
   #undef CHECK_PARAM
 
   /* TODO register the cylinder */
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+static res_T
+parse_paraboloid
+  (const char* filename,
+   yaml_document_t* doc,
+   const yaml_node_t* paraboloid,
+   const enum paraboloid_type type)
+{
+  enum { CLIP, FOCAL };
+  double focal;
+  intptr_t i, n;
+  int mask = 0; /* Register the parsed attributes */
+  const char* name = paraboloid_type_name(type);
+  res_T res = RES_OK;
+  ASSERT(doc && paraboloid);
+
+  if(paraboloid->type != YAML_MAPPING_NODE) {
+    log_err(filename, paraboloid, "expect a mapping of %s parameters.\n", name);
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  n = paraboloid->data.mapping.pairs.top - paraboloid->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, paraboloid->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, paraboloid->data.mapping.pairs.start[i].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(filename, key, "expect %s parameters.\n", name);
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(filename, key,                                                 \
+          "the %s parameter `"Name"' is already defined.\n", name);            \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if(!strcmp((char*)key->data.scalar.value, "clip")) {
+      SETUP_MASK(CLIP, "clip"); /* TODO parse */
+    } else if(!strcmp((char*)key->data.scalar.value, "focal")) {
+      SETUP_MASK(FOCAL, "focal");
+      res = parse_real(filename, val, nextafter(0, 1), DBL_MAX, &focal);
+    } else {
+      log_err(filename, key, "unknown %s parameter `%s'.\n",
+        name, key->data.scalar.value);
+      res = RES_BAD_ARG;
+    }
+    if(res != RES_OK) goto error;
+    #undef SETUP_MASK
+  }
+  #define CHECK_PARAM(Flag, Name)                                              \
+    if(!(mask & BIT(Flag))) {                                                  \
+      log_err(filename, paraboloid,                                            \
+        "the %S parameter `"Name"' is missing.\n", name);                      \
+      res = RES_BAD_ARG;                                                       \
+      goto error;                                                              \
+    } (void)0
+  CHECK_PARAM(CLIP, "clip");
+  CHECK_PARAM(FOCAL, "focal");
+  #undef CHECK_PARAM
+
+  /* TODO register the paraboloid */
 
 exit:
   return res;
@@ -904,11 +993,13 @@ parse_object
     } else if(!strcmp((char*)key->data.scalar.value, "obj")) {
       SETUP_MASK(SHAPE, "shape"); /* TODO parse the shape */
     } else if(!strcmp((char*)key->data.scalar.value, "parabol")) {
-      SETUP_MASK(SHAPE, "shape"); /* TODO parse the shape */
+      SETUP_MASK(SHAPE, "shape");
+      res = parse_paraboloid(filename, doc, val, PARABOL);
     } else if(!strcmp((char*)key->data.scalar.value, "parabolic-cylinder")) {
-      SETUP_MASK(SHAPE, "shape"); /* TODO parse the shape */
+      SETUP_MASK(SHAPE, "shape");
+      res = parse_paraboloid(filename, doc, val, PARABOLIC_CYLINDER);
     } else if(!strcmp((char*)key->data.scalar.value, "plane")) {
-      SETUP_MASK(SHAPE, "shape"); /* TODO parse the shape */
+      SETUP_MASK(SHAPE, "shape"); /* TODO */
     } else if(!strcmp((char*)key->data.scalar.value, "sphere")) {
       SETUP_MASK(SHAPE, "shape"); /* TODO parse the shape */
     } else if(!strcmp((char*)key->data.scalar.value, "stl")) {
