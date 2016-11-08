@@ -908,7 +908,7 @@ parse_buie(const char* filename, yaml_document_t* doc, const yaml_node_t* buie)
 
   if(buie->type != YAML_MAPPING_NODE) {
     log_err(filename, buie,
-      "expect a `buie' definition of the sun radial angular distribution.\n");
+      "expect a buie definition of the sun radial angular distribution.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -944,6 +944,64 @@ parse_buie(const char* filename, yaml_document_t* doc, const yaml_node_t* buie)
 
   if(!(mask & BIT(CSR))) {
     log_err(filename, buie, "the buie csr parameter is missing.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+static res_T
+parse_pillbox
+  (const char* filename, yaml_document_t* doc, const yaml_node_t* pillbox)
+{
+  enum { APERTURE };
+  intptr_t i, n;
+  double aperture;
+  int mask = 0; /* Register the parsed attributes */
+  res_T res = RES_OK;
+  ASSERT(doc && pillbox);
+
+  if(pillbox->type != YAML_MAPPING_NODE) {
+    log_err(filename, pillbox,
+      "expect a pillbox definition of the sun radial angular distribution.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  n = pillbox->data.mapping.pairs.top - pillbox->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key = key;
+    yaml_node_t* val = val;
+
+    key = yaml_document_get_node(doc, pillbox->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, pillbox->data.mapping.pairs.start[i].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(filename, key, "expect a pillbox parameter.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    if(!strcmp((char*)key->data.scalar.value, "aperture")) {
+      if(mask & BIT(APERTURE)) {
+        log_err(filename, key, "the pillbox `aperture' is already defined.\n");
+        res = RES_BAD_ARG;
+        goto error;
+      }
+      mask |= BIT(APERTURE);
+      res = parse_real(filename, val, nextafter(0, 1), PI/2.0, &aperture);
+    } else {
+      log_err(filename, pillbox, "unknown pillbox parameter `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+    }
+    if(res != RES_OK) goto error;
+  }
+
+  if(!(mask & BIT(APERTURE))) {
+    log_err(filename, pillbox, "the pillbox aperture parameter is missing.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -997,7 +1055,8 @@ parse_sun(const char* filename, yaml_document_t* doc, const yaml_node_t* sun)
       SETUP_MASK(RADIAL_ANGULAR_DISTRIB, "radial angular distribution");
       res = parse_buie(filename, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "pillbox")) {
-      SETUP_MASK(RADIAL_ANGULAR_DISTRIB, "radial angular distribution"); /* TODO parse */
+      SETUP_MASK(RADIAL_ANGULAR_DISTRIB, "radial angular distribution");
+      res = parse_pillbox(filename, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "spectrum")) {
       SETUP_MASK(SPECTRUM, "spectrum"); /* TODO parse */
     } else {

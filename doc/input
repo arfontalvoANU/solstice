@@ -223,7 +223,7 @@
 
 <pillbox> ::=
   pillbox:
-    aperture: REAL
+    aperture: REAL # in ]0, PI/2]
 
 ----------------------------------------
 instance:
