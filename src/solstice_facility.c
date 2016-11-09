@@ -2039,6 +2039,7 @@ solstice_facility_load(const char* filename)
   FILE* file = NULL;
   intptr_t i, n;
   int doc_is_init = 0;
+  int is_empty = 1;
   res_T res = RES_OK;
 
   if(!yaml_parser_initialize(&parser)) {
@@ -2055,36 +2056,47 @@ solstice_facility_load(const char* filename)
 
   yaml_parser_set_input_file(&parser, file);
 
-  if(!yaml_parser_load(&parser, &doc)) {
-    fprintf(stderr, "%s:%lu:%lu: %s.\n",
-      filename,
-      (unsigned long)parser.problem_mark.line+1,
-      (unsigned long)parser.problem_mark.column+1,
-      parser.problem);
-    res = RES_IO_ERR;
-    goto error;
-  }
-  doc_is_init = 1;
+  for(;;) {
+    if(!yaml_parser_load(&parser, &doc)) {
+      fprintf(stderr, "%s:%lu:%lu: %s.\n",
+        filename,
+        (unsigned long)parser.problem_mark.line+1,
+        (unsigned long)parser.problem_mark.column+1,
+        parser.problem);
+      res = RES_IO_ERR;
+      goto error;
+    }
+    doc_is_init = 1;
 
-  root = yaml_document_get_root_node(&doc);
-  if(!root) {
-    fprintf(stderr, "The file `%s' seems empty.\n", filename);
-    res = RES_BAD_ARG;
-    goto error;
-  }
-  if(root->type != YAML_SEQUENCE_NODE) {
-    log_err(filename, root, "expect a list of items.\n");
-    res = RES_BAD_ARG;
-    goto error;
-  }
+    root = yaml_document_get_root_node(&doc);
+    if(!root) {
+      if(!is_empty) {
+        break;
+      } else {
+        fprintf(stderr, "The file `%s' seems empty.\n", filename);
+        res = RES_BAD_ARG;
+        goto error;
+      }
+    }
 
-  n = root->data.sequence.items.top - root->data.sequence.items.start;
-  FOR_EACH(i, 0, n) {
-    yaml_node_t* item;
+    is_empty = 0;
+    if(root->type != YAML_SEQUENCE_NODE) {
+      log_err(filename, root, "expect a list of items.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
 
-    item = yaml_document_get_node(&doc, root->data.sequence.items.start[i]);
-    res = parse_item(filename, &doc, item);
-    if(res != RES_OK) goto error;
+    n = root->data.sequence.items.top - root->data.sequence.items.start;
+    FOR_EACH(i, 0, n) {
+      yaml_node_t* item;
+
+      item = yaml_document_get_node(&doc, root->data.sequence.items.start[i]);
+      res = parse_item(filename, &doc, item);
+      if(res != RES_OK) goto error;
+    }
+
+    yaml_document_delete(&doc);
+    doc_is_init = 0;
   }
 
 exit:
