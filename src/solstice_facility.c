@@ -18,6 +18,7 @@
 #include "solstice_facility.h"
 
 #include <rsys/cstr.h>
+#include <rsys/double3.h>
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -129,7 +130,7 @@ parse_real
   }
 
   if(*dst < lower_bound || *dst > upper_bound) {
-    log_err(filename, real, "%g must be in [%g, %g].\n",
+    log_err(filename, real, "%g is not in [%g, %g].\n",
       *dst, lower_bound, upper_bound);
     res = RES_BAD_ARG;
     goto error;
@@ -207,7 +208,7 @@ parse_integer
   }
 
   if(*dst < lower_bound || *dst > upper_bound) {
-    log_err(filename, integer, "%li must be in [%li, %li].\n",
+    log_err(filename, integer, "%li is not in [%li, %li].\n",
       *dst, lower_bound, upper_bound);
     res = RES_BAD_ARG;
     goto error;
@@ -241,14 +242,17 @@ parse_transform
   (const char* filename,
    yaml_document_t* doc,
    const yaml_node_t* transform,
-   double position[3],
+   double translation[3],
    double rotation[3])
 {
-  enum { POSITION, ROTATION };
+  enum { ROTATION, TRANSLATION };
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
-  ASSERT(doc && position && rotation && transform);
+  ASSERT(doc && translation && rotation && transform);
+
+  d3_splat(translation, 0);
+  d3_splat(rotation, 0);
 
   if(transform->type != YAML_MAPPING_NODE) {
     log_err(filename, transform, "expect a mapping of transform parameters.\n");
@@ -277,9 +281,9 @@ parse_transform
       }                                                                        \
       mask |= BIT(Flag);                                                       \
     } (void)0
-    if(!strcmp((char*)key->data.scalar.value, "position")) {
-      SETUP_MASK(POSITION, "position");
-      res = parse_real3(filename, doc, val, -DBL_MAX, DBL_MAX, position);
+    if(!strcmp((char*)key->data.scalar.value, "translation")) {
+      SETUP_MASK(TRANSLATION, "translation");
+      res = parse_real3(filename, doc, val, -DBL_MAX, DBL_MAX, translation);
     } else if(!strcmp((char*)key->data.scalar.value, "rotation")) {
       SETUP_MASK(ROTATION, "rotation");
       res = parse_real3(filename, doc, val, -DBL_MAX, DBL_MAX, rotation);
@@ -414,7 +418,7 @@ parse_instance
   (const char* filename, yaml_document_t* doc, const yaml_node_t* inst)
 {
   enum { GEOMETRY, TRANSFORM };
-  double position[3] = {0, 0, 0};
+  double translation[3] = {0, 0, 0};
   double rotation[3] = {0, 0, 0};
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
@@ -455,7 +459,7 @@ parse_instance
       res = parse_object(filename, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
       SETUP_MASK(TRANSFORM, "transform");
-      res = parse_transform(filename, doc, val, position, rotation);
+      res = parse_transform(filename, doc, val, translation, rotation);
     } else {
       log_err(filename, key, "unknown instance parameter `%s'.\n",
         key->data.scalar.value);
@@ -497,7 +501,7 @@ parse_material_matte
   ASSERT(doc && matte);
 
   if(matte->type != YAML_MAPPING_NODE) {
-    log_err(filename, matte, "expect a mapping of matte material attributes.\n");
+    log_err(filename, matte, "expect a mapping of matte material parameters.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -510,7 +514,7 @@ parse_material_matte
     key = yaml_document_get_node(doc, matte->data.mapping.pairs.start[0].key);
     val = yaml_document_get_node(doc, matte->data.mapping.pairs.start[0].value);
     if(key->type != YAML_SCALAR_NODE) {
-      log_err(filename, key, "expect a matte material attribute.\n");
+      log_err(filename, key, "expect a matte material parameter.\n");
       res = RES_BAD_ARG;
       goto error;
     }
@@ -524,7 +528,7 @@ parse_material_matte
       mask |= BIT(REFLECTIVITY);
       res = parse_real(filename, val, 0, 1, &reflectivity);
     } else {
-      log_err(filename, key, "unknown matte attribute `%s'.\n",
+      log_err(filename, key, "unknown matte parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
     }
@@ -1333,7 +1337,7 @@ parse_object
   (const char* filename, yaml_document_t* doc, const yaml_node_t* object)
 {
   enum { MATERIAL, SHAPE, TRANSFORM };
-  double position[3] = {0, 0, 0};
+  double translation[3] = {0, 0, 0};
   double rotation[3] = {0, 0, 0};
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
@@ -1365,7 +1369,7 @@ parse_object
     #define SETUP_MASK(Flag, Name) {                                           \
       if(mask & BIT(Flag)) {                                                   \
         log_err(filename, key,                                                 \
-          "the object parameter `"Name"' is already defined.\n");              \
+          "the object "Name" is already defined.\n");                          \
         res = RES_BAD_ARG;                                                     \
         goto error;                                                            \
       }                                                                        \
@@ -1400,7 +1404,7 @@ parse_object
       res = parse_imported_geometry(filename, doc, val, GEOMETRY_STL);
     } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
       SETUP_MASK(TRANSFORM, "transform");
-      res = parse_transform(filename, doc, val, position, rotation);
+      res = parse_transform(filename, doc, val, translation, rotation);
     } else {
       log_err(filename, key, "unknown object parameter `%s'.\n",
         key->data.scalar.value);
@@ -1412,7 +1416,7 @@ parse_object
 
   #define CHECK_PARAM(Flag, Name)                                              \
     if(!(mask & BIT(Flag))) {                                                  \
-      log_err(filename, object, "the object attribute `"Name"' is missing.\n");\
+      log_err(filename, object, "the object "Name" is missing.\n");            \
       res = RES_BAD_ARG;                                                       \
       goto error;                                                              \
     } (void)0
@@ -1552,7 +1556,7 @@ res_T
 parse_node(const char* filename, yaml_document_t* doc, const yaml_node_t* node)
 {
   enum { CHILDREN, ENTITIES, TRANSFORM };
-  double position[3] = {0, 0, 0};
+  double translation[3] = {0, 0, 0};
   double rotation[3] = {0, 0, 0};
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
@@ -1595,7 +1599,7 @@ parse_node(const char* filename, yaml_document_t* doc, const yaml_node_t* node)
       res = parse_entities(filename, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
       SETUP_MASK(TRANSFORM, "transform");
-      res = parse_transform(filename, doc, val, position, rotation);
+      res = parse_transform(filename, doc, val, translation, rotation);
     } else {
       log_err(filename, key, "unknown node parameter `%s'.\n",
         key->data.scalar.value);
@@ -1701,7 +1705,7 @@ parse_pivot
   enum { NORMAL, POINT, TARGET, TRANSFORM };
   double point[3];
   double normal[3];
-  double position[3] = {0, 0, 0};
+  double translation[3] = {0, 0, 0};
   double rotation[3] = {0, 0, 0};
   int mask = 0; /* Register the parsed attributes */
   intptr_t i, n;
@@ -1746,7 +1750,7 @@ parse_pivot
       res = parse_target(filename, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
       SETUP_MASK(TRANSFORM, "transform");
-      res = parse_transform(filename, doc, val, position, rotation);
+      res = parse_transform(filename, doc, val, translation, rotation);
     } else {
       log_err(filename, key, "unknown pivot parameter `%s'.\n",
         key->data.scalar.value);
