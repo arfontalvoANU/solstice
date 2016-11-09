@@ -963,6 +963,7 @@ parse_cuboid
         res = RES_BAD_ARG;
         goto error;
       }
+      mask |= BIT(SIZE);
       res = parse_real3(filename, doc, val, 0, DBL_MAX, size);
     } else {
       log_err(filename, key, "unknown cuboid parameter `%s'.\n",
