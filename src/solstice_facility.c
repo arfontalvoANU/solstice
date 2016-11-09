@@ -2033,7 +2033,7 @@ solstice_facility_load(const char* filename)
   yaml_node_t* root;
   FILE* file = NULL;
   intptr_t i, n;
-  int doc_is_init;
+  int doc_is_init = 0;
   res_T res = RES_OK;
 
   if(!yaml_parser_initialize(&parser)) {
