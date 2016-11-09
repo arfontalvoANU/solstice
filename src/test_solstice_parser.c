@@ -39,7 +39,7 @@ main(int argc, char** argv)
 "option to check that the FILEs are invalid.\n\n");
       printf("OPTIONS:\n");
       printf("  -h print this help and exit.\n");
-      printf("  -e check that the submitted FILEs has errors.\n");
+      printf("  -e check that the submitted FILEs have errors.\n");
       return 0;
     }
   }

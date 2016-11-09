@@ -50,7 +50,6 @@ set(VERSION_PATCH 0)
 set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
 set(SOLSTICE_FILES_SRC
-  solstice.c
   solstice_parser.c)
 set(SOLSTICE_FILES_INC solstice_parser.h)
 set(SOLSTICE_FILES_DOC COPYING README.md)
@@ -64,8 +63,9 @@ if(CMAKE_COMPILER_IS_GNUCC)
   set(MATH_LIB m)
 endif()
 
-add_executable(solstice ${SOLSTICE_FILES_SRC} ${SOLSTICE_FILES_INC})
-target_link_libraries(solstice LibYAML RSys StarSP ${MATH_LIB})
+add_library(solstitium STATIC ${SOLSTICE_FILES_SRC} ${SOLSTICE_FILES_INC})
+add_executable(solstice ${SOLSTICE_SOURCE_DIR}/solstice.c)
+target_link_libraries(solstice LibYAML RSys StarSP ${MATH_LIB} solstitium)
 set_target_properties(solstice PROPERTIES
   VERSION ${VERSION}
   SOVERSION ${VERSION_MAJOR})
@@ -75,15 +75,14 @@ rcmake_copy_runtime_libraries(solstice)
 # Tests
 ################################################################################
 if(NOT NO_TEST)
-  set(_test_files
-    solstice_parser.h
-    solstice_parser.c
-    test_solstice_parser.c
-    test_solstice_utils.h)
-  rcmake_prepend_path(_test_files ${SOLSTICE_SOURCE_DIR})
-  add_executable(test_solstice_parser ${_test_files})
-  target_link_libraries(test_solstice_parser LibYAML ${MATH_LIB} RSys)
+  function(build_test _name)
+    add_executable(${_name}
+      ${SOLSTICE_SOURCE_DIR}/${_name}.c
+      ${SOLSTICE_SOURCE_DIR}/test_solstice_utils.h)
+    target_link_libraries(${_name} LibYAML ${MATH_LIB} RSys solstitium)
+  endfunction()
 
+  build_test(test_solstice_parser)
   add_test(test_solstice_parser_ok_0 test_solstice_parser
     ${SOLSTICE_SOURCE_DIR}/yaml/test_ok_0.yaml)
   add_test(test_solstice_parser_ko_0 test_solstice_parser -e
