@@ -13,17 +13,28 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>. */
 
-#define _POSIX_C_SOURCE 200112L
+#define _POSIX_C_SOURCE 200112L /* nextafter support */
 
-#include "solstice_facility.h"
+#include "solstice_parser.h"
 
 #include <rsys/cstr.h>
 #include <rsys/double3.h>
+#include <rsys/ref_count.h>
+#include <rsys/str.h>
 
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 #include <yaml.h>
+
+struct solstice_parser {
+  yaml_parser_t parser;
+  struct str stream_name;
+  int parser_is_init;
+
+  ref_T ref;
+  struct mem_allocator* allocator;
+};
 
 enum paraboloid_type {
   PARABOL,
@@ -99,6 +110,18 @@ geometry_fileformat_name(const enum geometry_fileformat fileformat)
     case GEOMETRY_STL: return "stl"; break;
     default: FATAL("Unreachable code.\n"); break;
   }
+}
+
+static void
+parser_release(ref_T* ref)
+{
+  struct solstice_parser* parser;
+  ASSERT(ref);
+
+  parser = CONTAINER_OF(ref, struct solstice_parser, ref);
+  if(parser->parser_is_init) yaml_parser_delete(&parser->parser);
+  str_release(&parser->stream_name);
+  MEM_RM(parser->allocator, parser);
 }
 
 /*******************************************************************************
@@ -2031,78 +2054,141 @@ error:
  * Local functions
  ******************************************************************************/
 res_T
-solstice_facility_load(const char* filename)
+solstice_parser_create
+  (struct mem_allocator* allocator, struct solstice_parser** out_parser)
 {
-  yaml_parser_t parser;
+  struct solstice_parser* parser = NULL;
+  struct mem_allocator* mem_allocator;
+  res_T res = RES_OK;
+  ASSERT(out_parser);
+
+  mem_allocator = allocator ? allocator : &mem_default_allocator;
+  parser = MEM_CALLOC(mem_allocator, 1, sizeof(struct solstice_parser));
+  if(!parser) {
+    fprintf(stderr, "Could not allocat the Solstice parser.\n");
+    res = RES_MEM_ERR;
+    goto error;
+  }
+  parser->allocator = mem_allocator;
+  ref_init(&parser->ref);
+  str_init(mem_allocator, &parser->stream_name);
+
+exit:
+  *out_parser = parser;
+  return res;
+error:
+  if(parser) {
+    solstice_parser_ref_put(parser);
+    parser = NULL;
+  }
+  goto exit;
+}
+
+void
+solstice_parser_ref_get(struct solstice_parser* parser)
+{
+  ASSERT(parser);
+  ref_get(&parser->ref);
+}
+
+void
+solstice_parser_ref_put(struct solstice_parser* parser)
+{
+  ASSERT(parser);
+  ref_put(&parser->ref, parser_release);
+}
+
+res_T
+solstice_parser_setup
+  (struct solstice_parser* parser,
+   const char* stream_name,
+   FILE* stream)
+{
+  res_T res = RES_OK;
+  ASSERT(parser && stream );
+
+  if(parser->parser_is_init) {
+    yaml_parser_delete(&parser->parser);
+    parser->parser_is_init = 0;
+  }
+  res = str_set(&parser->stream_name, stream_name ? stream_name : "<stream>");
+  if(res != RES_OK) {
+    fprintf(stderr, "Could not register the filename.\n");
+    goto error;
+  }
+  if(!yaml_parser_initialize(&parser->parser)) {
+    fprintf(stderr, "Could not initialise the YAML parser.\n");
+    res = RES_UNKNOWN_ERR;
+    goto error;
+  }
+  parser->parser_is_init = 1;
+  yaml_parser_set_input_file(&parser->parser, stream);
+
+exit:
+  return res;
+error:
+  str_clear(&parser->stream_name);
+  if(parser->parser_is_init) {
+    yaml_parser_delete(&parser->parser);
+    parser->parser_is_init = 0;
+  }
+  goto exit;
+}
+
+res_T
+solstice_parser_load(struct solstice_parser* parser)
+{
   yaml_document_t doc;
   yaml_node_t* root;
-  FILE* file = NULL;
+  const char* filename;
   intptr_t i, n;
   int doc_is_init = 0;
-  int is_empty = 1;
   res_T res = RES_OK;
+  ASSERT(parser);
 
-  if(!yaml_parser_initialize(&parser)) {
-    fprintf(stderr, "Could not initialise the YAML parser.\n");
-    return RES_UNKNOWN_ERR;
-  }
+  filename = str_cget(&parser->stream_name);
 
-  file = fopen(filename, "rb");
-  if(!file) {
-    fprintf(stderr, "Could not open the YAML file `%s'.\n", filename);
-    res = RES_IO_ERR;
+  if(!parser->parser_is_init) {
+    res = RES_BAD_OP;
     goto error;
   }
 
-  yaml_parser_set_input_file(&parser, file);
+  if(!yaml_parser_load(&parser->parser, &doc)) {
+    fprintf(stderr, "%s:%lu:%lu: %s.\n",
+      filename,
+      (unsigned long)parser->parser.problem_mark.line+1,
+      (unsigned long)parser->parser.problem_mark.column+1,
+      parser->parser.problem);
+    res = RES_IO_ERR;
+    goto error;
+  }
+  doc_is_init = 1;
 
-  for(;;) {
-    if(!yaml_parser_load(&parser, &doc)) {
-      fprintf(stderr, "%s:%lu:%lu: %s.\n",
-        filename,
-        (unsigned long)parser.problem_mark.line+1,
-        (unsigned long)parser.problem_mark.column+1,
-        parser.problem);
-      res = RES_IO_ERR;
-      goto error;
-    }
-    doc_is_init = 1;
+  root = yaml_document_get_root_node(&doc);
+  if(!root) {
+    yaml_parser_delete(&parser->parser);
+    parser->parser_is_init = 0;
+    res = RES_BAD_OP;
+    goto error;
+  }
 
-    root = yaml_document_get_root_node(&doc);
-    if(!root) {
-      if(!is_empty) {
-        break;
-      } else {
-        fprintf(stderr, "The file `%s' seems empty.\n", filename);
-        res = RES_BAD_ARG;
-        goto error;
-      }
-    }
+  if(root->type != YAML_SEQUENCE_NODE) {
+    log_err(filename, root, "expect a list of items.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
 
-    is_empty = 0;
-    if(root->type != YAML_SEQUENCE_NODE) {
-      log_err(filename, root, "expect a list of items.\n");
-      res = RES_BAD_ARG;
-      goto error;
-    }
+  n = root->data.sequence.items.top - root->data.sequence.items.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* item;
 
-    n = root->data.sequence.items.top - root->data.sequence.items.start;
-    FOR_EACH(i, 0, n) {
-      yaml_node_t* item;
-
-      item = yaml_document_get_node(&doc, root->data.sequence.items.start[i]);
-      res = parse_item(filename, &doc, item);
-      if(res != RES_OK) goto error;
-    }
-
-    yaml_document_delete(&doc);
-    doc_is_init = 0;
+    item = yaml_document_get_node(&doc, root->data.sequence.items.start[i]);
+    res = parse_item(filename, &doc, item);
+    if(res != RES_OK) goto error;
   }
 
 exit:
-  yaml_parser_delete(&parser);
   if(doc_is_init) yaml_document_delete(&doc);
-  if(file) fclose(file);
   return res;
 error:
   goto exit;

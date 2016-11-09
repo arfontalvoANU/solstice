@@ -51,8 +51,8 @@ set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
 set(SOLSTICE_FILES_SRC
   solstice.c
-  solstice_facility.c)
-set(SOLSTICE_FILES_INC solstice_facility.h)
+  solstice_parser.c)
+set(SOLSTICE_FILES_INC solstice_parser.h)
 set(SOLSTICE_FILES_DOC COPYING README.md)
 
 # Prepend each file in the `SOLSTICE_FILES_<SRC|INC>' list by `SOLSTICE_SOURCE_DIR'
@@ -74,6 +74,15 @@ rcmake_copy_runtime_libraries(solstice)
 ################################################################################
 # Tests
 ################################################################################
+if(NOT NO_TEST)
+  function(new_test _name)
+    set(_files "")
+    foreach(_file ${ARGN})
+      list(APPEND _files ${SOLSTICE_SOURCE_DIR}/${_file})
+    endforeach()
+    add_executable(${_name} ${SOLSTICE_SOURCE_DIR}/${_name}.c ${_files})
+  endfunction()
+endif()
 
 ################################################################################
 # Define output & install directories

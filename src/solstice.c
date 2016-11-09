@@ -13,12 +13,14 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "solstice_facility.h"
+#include "solstice_parser.h"
 #include <rsys/rsys.h>
 
 int
 main(int argc, char** argv)
 {
+  FILE* file = NULL;
+  struct solstice_parser* parser = NULL;
   res_T res;
   int err;
   int i;
@@ -29,16 +31,38 @@ main(int argc, char** argv)
     goto error;
   }
 
+  res = solstice_parser_create(NULL, &parser);
+  if(res != RES_OK) goto error;
+
   FOR_EACH(i, 1, argc) {
-    res = solstice_facility_load(argv[i]);
-    if(res != RES_OK) {
-      err = 1;
+    int is_empty = 1;
+
+    file = fopen(argv[i], "rb");
+    if(!file) {
+      fprintf(stderr, "Could not open the file `%s'.\n", argv[i]);
       goto error;
     }
+
+    res = solstice_parser_setup(parser, argv[i], file);
+    if(res != RES_OK) break;
+
+    do {
+      res = solstice_parser_load(parser);
+      if(res != RES_BAD_OP) is_empty = 0;
+    } while(res != RES_BAD_OP);
+
+    if(is_empty) {
+      fprintf(stderr, "The `%s' file seems empty.\n", argv[i]);
+    }
+    fclose(file);
+    file = NULL;
   }
 
 exit:
+  if(parser) solstice_parser_ref_put(parser);
+  if(file) fclose(file);
   return err;
 error:
+  err = -1;
   goto exit;
 }
