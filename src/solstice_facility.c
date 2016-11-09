@@ -313,7 +313,7 @@ parse_spectrum_data
   ASSERT(doc && data && lower_bound < upper_bound);
 
   if(sdata->type != YAML_MAPPING_NODE) {
-    log_err(filename, sdata, "expect a the definition of a spectrum data.\n");
+    log_err(filename, sdata, "expect the definition of a spectrum data.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -757,6 +757,175 @@ error:
 }
 
 /*******************************************************************************
+ * Clipping polygon
+ ******************************************************************************/
+static res_T
+parse_clip_op(const char* filename, const yaml_node_t* op)
+{
+  res_T res = RES_OK;
+  ASSERT(op);
+
+  if(op->type != YAML_SCALAR_NODE) {
+    log_err(filename, op, "expect a clipping operation.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  if(!strcmp((char*)op->data.scalar.value, "AND")) { /* TODO setup op */
+  } else if(!strcmp((char*)op->data.scalar.value, "SUB")) { /* TODO setup op */
+  } else {
+    log_err(filename, op, "unknown clipping operation `%s'.\n",
+      op->data.scalar.value);
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+static res_T
+parse_vertices
+  (const char* filename, yaml_document_t* doc, const yaml_node_t* vertices)
+{
+  intptr_t i, n;
+  res_T res = RES_OK;
+  ASSERT(doc && vertices);
+
+  if(vertices->type != YAML_SEQUENCE_NODE) {
+    log_err(filename, vertices, "expect a list of vertices.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  n = vertices->data.sequence.items.top - vertices->data.sequence.items.start;
+  if(n < 3) {
+    log_err(filename, vertices, "expect at least 3 vertices.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* vertex;
+    double coords[3];
+
+    vertex = yaml_document_get_node(doc, vertices->data.sequence.items.start[i]);
+    res = parse_real3(filename, doc, vertex, -DBL_MAX, DBL_MAX, coords);
+    if(res != RES_OK) goto error;
+
+    /* TODO register the vertex */
+  }
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+static res_T
+parse_polyclip
+  (const char* filename, yaml_document_t* doc, const yaml_node_t* polyclip)
+{
+  enum { OPERATION, VERTICES };
+  intptr_t i, n;
+  int mask = 0; /* Register the parsed attributes */
+  res_T res = RES_OK;
+  ASSERT(doc && polyclip);
+
+  if(polyclip->type != YAML_MAPPING_NODE) {
+    log_err(filename, polyclip,
+      "expect a mapping of clipping polygon parameters.\n");
+    res = RES_OK;
+    goto error;
+  }
+
+  n = polyclip->data.mapping.pairs.top - polyclip->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, polyclip->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, polyclip->data.mapping.pairs.start[i].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(filename, key, "expect a clipping polygon parameter.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(filename, key,                                                 \
+          "the clipping polygon parameter `"Name"' is already defined.\n");    \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if(!strcmp((char*)key->data.scalar.value, "operation")) {
+      SETUP_MASK(OPERATION, "operation");
+      res = parse_clip_op(filename, val);
+    } else if(!strcmp((char*)key->data.scalar.value, "vertices")) {
+      SETUP_MASK(VERTICES, "vertices");
+      res = parse_vertices(filename, doc, val);
+    } else {
+      log_err(filename, key, "unknown clipping polygon parameter `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+    }
+    if(res != RES_OK) goto error;
+    #undef SETUP_MASK
+  }
+
+  #define CHECK_PARAM(Flag, Name)                                              \
+    if(!(mask & BIT(Flag))) {                                                  \
+      log_err(filename, polyclip,                                              \
+        "the clipping polygon parameter `"Name"' is missing");                 \
+      res = RES_BAD_ARG;                                                       \
+      goto error;                                                              \
+    } (void)0
+  CHECK_PARAM(OPERATION, "operation");
+  CHECK_PARAM(VERTICES, "vertices");
+  #undef CHECK_PARAM
+
+  /* TODO register the polyclip */
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+static res_T
+parse_clip(const char* filename, yaml_document_t* doc, const yaml_node_t* clip)
+{
+  intptr_t i, n;
+  res_T res = RES_OK;
+  ASSERT(doc && clip);
+
+  if(clip->type != YAML_SEQUENCE_NODE) {
+    log_err(filename, clip, "expect a list of clipping polygons.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  n = clip->data.sequence.items.top - clip->data.sequence.items.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* polyclip;
+
+    polyclip = yaml_document_get_node(doc, clip->data.sequence.items.start[i]);
+    res = parse_polyclip(filename, doc, polyclip);
+    if(res != RES_OK) goto error;
+  }
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+/*******************************************************************************
  * Shapes
  ******************************************************************************/
 static res_T
@@ -999,7 +1168,8 @@ parse_paraboloid
       mask |= BIT(Flag);                                                       \
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "clip")) {
-      SETUP_MASK(CLIP, "clip"); /* TODO parse */
+      SETUP_MASK(CLIP, "clip");
+      res = parse_clip(filename, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "focal")) {
       SETUP_MASK(FOCAL, "focal");
       res = parse_real(filename, val, nextafter(0, 1), DBL_MAX, &focal);
@@ -1058,7 +1228,6 @@ parse_plane
       res = RES_BAD_ARG;
       goto error;
     }
-    (void)val; /* TODO parse it */
     if(!strcmp((char*)key->data.scalar.value, "clip")) {
       if(mask & BIT(CLIP)) {
         log_err(filename, key, "the plane clipping is already defined.\n");
@@ -1066,7 +1235,7 @@ parse_plane
         goto error;
       }
       mask |= BIT(CLIP);
-      /* TODO parse */
+      res = parse_clip(filename, doc, val);
     } else {
       log_err(filename, key, "unknown plane parameter `%s'.\n",
         key->data.scalar.value);
@@ -1187,7 +1356,7 @@ parse_object
     key = yaml_document_get_node(doc, object->data.mapping.pairs.start[i].key);
     val = yaml_document_get_node(doc, object->data.mapping.pairs.start[i].value);
     if(key->type != YAML_SCALAR_NODE) {
-      log_err(filename, key, "expect a object parameter.\n");
+      log_err(filename, key, "expect an object parameter.\n");
       res = RES_BAD_ARG;
       goto error;
     }
@@ -1195,7 +1364,7 @@ parse_object
     #define SETUP_MASK(Flag, Name) {                                           \
       if(mask & BIT(Flag)) {                                                   \
         log_err(filename, key,                                                 \
-          "the object attribute `"Name"' is already defined.\n");              \
+          "the object parameter `"Name"' is already defined.\n");              \
         res = RES_BAD_ARG;                                                     \
         goto error;                                                            \
       }                                                                        \

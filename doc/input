@@ -161,7 +161,7 @@
 [ - <polyclip> ... ]
 
 <polyclip> ::=
-  operation: <ADD|SUB>
+  operation: <AND|SUB>
   vertices: <vertices-list>
 
 <vertices-list> ::=
