@@ -75,13 +75,19 @@ rcmake_copy_runtime_libraries(solstice)
 # Tests
 ################################################################################
 if(NOT NO_TEST)
-  function(new_test _name)
-    set(_files "")
-    foreach(_file ${ARGN})
-      list(APPEND _files ${SOLSTICE_SOURCE_DIR}/${_file})
-    endforeach()
-    add_executable(${_name} ${SOLSTICE_SOURCE_DIR}/${_name}.c ${_files})
-  endfunction()
+  set(_test_files
+    solstice_parser.h
+    solstice_parser.c
+    test_solstice_parser.c
+    test_solstice_utils.h)
+  rcmake_prepend_path(_test_files ${SOLSTICE_SOURCE_DIR})
+  add_executable(test_solstice_parser ${_test_files})
+  target_link_libraries(test_solstice_parser LibYAML ${MATH_LIB} RSys)
+
+  add_test(test_solstice_parser_ok_0 test_solstice_parser
+    ${SOLSTICE_SOURCE_DIR}/yaml/test_ok_0.yaml)
+  add_test(test_solstice_parser_ko_0 test_solstice_parser -e
+    ${SOLSTICE_SOURCE_DIR}/yaml/test_ko_0.yaml)
 endif()
 
 ################################################################################

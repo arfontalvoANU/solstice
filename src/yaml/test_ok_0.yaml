@@ -1,0 +1,31 @@
+- instance:
+    object:
+      transform:
+        rotation: [ 0, 1, 2 ]
+        translation: [ -4, 5.2, -6.5 ]
+      material: { matte: { reflectivity: 1 } }
+      cuboid: { size: [1, 2, 3] }
+
+---
+- instance:
+    transform: { translation: [ 1, 2, 0 ] }
+    object:
+      transform:
+        rotation: [ 0, 1, 2 ]
+      material: { matte: { reflectivity: 1 } }
+      cuboid: { size: [1, 2, 3] }
+
+---
+- instance:
+    object:
+      material: { matte: { reflectivity: 1 } }
+      cuboid: { size: [1, 2, 3] }
+
+---
+- material: &lambertian
+    matte: { reflectivity: 1 }
+
+- instance:
+    object:
+      material: *lambertian
+      cuboid: { size: [1, 2, 3] }
