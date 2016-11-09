@@ -17,7 +17,7 @@
 - object: &cylinder2
     cylinder: { height: 5, radius: 0.5 }
     material: *lambertian
-    transform: { position: [2.5, 11, 0], rotation: [90, 0, 0] }
+    transform: { translation: [2.5, 11, 0], rotation: [90, 0, 0] }
 - object: &parabol
     material: *mirror
     parabol:
@@ -31,12 +31,12 @@
 
 # Declare a composition
 - node: &heliostat0
-    transform: { rotation: [0, 0, 0], position: [0, 0, 0] }
+    transform: { rotation: [0, 0, 0], translation: [0, 0, 0] }
     entities:
       - object: *cylinder
     children:
       - node:
-          transform: { rotation: [0, 0, 0], position: [0, 0, 0] }
+          transform: { rotation: [0, 0, 0], translation: [0, 0, 0] }
           entities:
             - pivot: *my_pivot
           children:
@@ -46,25 +46,25 @@
                   - object: *cylinder2
                 children:
                   - node:
-                      transform: { position: [2.5, 11, 0], rotation: [90, 0, 0] }
+                      transform: { translation: [2.5, 11, 0], rotation: [90, 0, 0] }
                       entities:
                         - object: *parabol
 
 # Create the solar factory
 - instance:
-    transform: { position: [0, 0, 0] }
+    transform: { translation: [0, 0, 0] }
     node : *heliostat0
 - instance:
-    transform: { position: [0, 0, 10] }
+    transform: { translation: [0, 0, 10] }
     node : *heliostat0
 - instance:
-    transform: { position: [0, 0, 20] }
+    transform: { translation: [0, 0, 20] }
     node : *heliostat0
 - instante:
-    transform: { position: [0, 0, 30] }
+    transform: { translation: [0, 0, 30] }
     node : *heliostat0
 - instance:
-    transform: { position: [0, 0, -10] }
+    transform: { translation: [0, 0, -10] }
     object : *house
 
 --------------------------------------------------------------------------------
@@ -233,7 +233,7 @@ instance:
 ----------------------------------------
 <transform> ::=
   transform:
-    position: <real3>
+    translation: <real3>
     rotation: <real3>
 
 <real3> ::=
