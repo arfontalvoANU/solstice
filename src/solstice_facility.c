@@ -993,6 +993,73 @@ error:
   goto exit;
 }
 
+static res_T
+parse_sphere
+  (const char* filename, yaml_document_t* doc, const yaml_node_t* sphere)
+{
+  enum { RADIUS, SLICES };
+  double radius;
+  long nslices;
+  intptr_t i, n;
+  int mask = 0; /* Register the parsed attributes */
+  res_T res = RES_OK;
+  ASSERT(doc && sphere);
+
+  if(sphere->type != YAML_MAPPING_NODE) {
+    log_err(filename, sphere, "expect a mapping of sphere parameters.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  n = sphere->data.mapping.pairs.top - sphere->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, sphere->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, sphere->data.mapping.pairs.start[i].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(filename, key, "expect sphere parameters.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(filename, key,                                                 \
+          "the sphere parameter `"Name"' is already defined.\n");              \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if(!strcmp((char*)key->data.scalar.value, "radius")) {
+      SETUP_MASK(RADIUS, "radius");
+      res = parse_real(filename, val, 0, DBL_MAX, &radius);
+    } else if(!strcmp((char*)key->data.scalar.value, "slices")) {
+      SETUP_MASK(SLICES, "slices");
+      res = parse_integer(filename, val, 4, 4096, &nslices);
+    } else {
+      log_err(filename, key, "unknown sphere parameter `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+    }
+    if(res != RES_OK) goto error;
+    #undef SETUP_MASK
+  }
+
+  if(!(mask & BIT(RADIUS))) {
+    log_err(filename, sphere, "the sphere radius is missing.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+  /* TODO register the sphere */
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
 /*******************************************************************************
  * Object
  ******************************************************************************/
@@ -1060,7 +1127,8 @@ parse_object
       SETUP_MASK(SHAPE, "shape");
       res = parse_plane(filename, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "sphere")) {
-      SETUP_MASK(SHAPE, "shape"); /* TODO parse the shape */
+      SETUP_MASK(SHAPE, "shape");
+      res = parse_sphere(filename, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "stl")) {
       SETUP_MASK(SHAPE, "shape"); /* TODO parse the shape */
     } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
