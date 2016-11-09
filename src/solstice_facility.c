@@ -29,6 +29,11 @@ enum paraboloid_type {
   PARABOLIC_CYLINDER
 };
 
+enum geometry_fileformat {
+  GEOMETRY_OBJ,
+  GEOMETRY_STL
+};
+
 static res_T
 parse_node
   (const char* filename,
@@ -81,7 +86,17 @@ paraboloid_type_name(const enum paraboloid_type type)
   switch(type) {
     case PARABOL: return "parabol"; break;
     case PARABOLIC_CYLINDER: return "parabolic cylinder"; break;
-    default: FATAL("Unreachable.\n"); break;
+    default: FATAL("Unreachable code.\n"); break;
+  }
+}
+
+static INLINE const char*
+geometry_fileformat_name(const enum geometry_fileformat fileformat)
+{
+  switch(fileformat) {
+    case GEOMETRY_OBJ: return "obj"; break;
+    case GEOMETRY_STL: return "stl"; break;
+    default: FATAL("Unreachable code.\n"); break;
   }
 }
 
@@ -197,6 +212,24 @@ parse_integer
     res = RES_BAD_ARG;
     goto error;
   }
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+static res_T
+parse_string(const char* filename, yaml_node_t* string)
+{
+  res_T res = RES_OK;
+  ASSERT(string);
+
+  if(string->type != YAML_SCALAR_NODE) {
+    log_err(filename, string, "expect a character string.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+  /* TODO create a string from the value of the YAML scalar node */
 exit:
   return res;
 error:
@@ -862,6 +895,68 @@ error:
 }
 
 static res_T
+parse_imported_geometry
+  (const char* filename,
+   yaml_document_t* doc,
+   const yaml_node_t* geom,
+   const enum geometry_fileformat fileformat)
+{
+  enum { PATH };
+  intptr_t i, n;
+  int mask = 0; /* Register the parsed attributes */
+  const char* name = geometry_fileformat_name(fileformat);
+  res_T res = RES_OK;
+  ASSERT(doc && geom);
+
+  if(geom->type != YAML_MAPPING_NODE) {
+    log_err(filename, geom, "expect a mapping of %s parameters.\n", name);
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  n = geom->data.mapping.pairs.top - geom->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, geom->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, geom->data.mapping.pairs.start[i].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(filename, key, "expect %s parameters.\n", name);
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    if(!strcmp((char*)key->data.scalar.value, "path")) {
+      if(mask & BIT(PATH)) {
+        log_err(filename, key, "the %s path is already defined.\n", name);
+        res = RES_BAD_ARG;
+        goto error;
+      }
+      mask |= BIT(PATH);
+      res = parse_string(filename, val);
+    } else {
+      log_err(filename, key, "unknown %s parameter `%s'.\n",
+        name, key->data.scalar.value);
+      res = RES_BAD_ARG;
+    }
+    if(res != RES_OK) goto error;
+  }
+
+  if(!(mask & BIT(PATH))) {
+    log_err(filename, geom, "the path of the %s geometry is missing.\n", name);
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  /* TODO Register the imported geometry */
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+static res_T
 parse_paraboloid
   (const char* filename,
    yaml_document_t* doc,
@@ -1116,7 +1211,8 @@ parse_object
       SETUP_MASK(SHAPE, "shape");
       res = parse_cylinder(filename, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "obj")) {
-      SETUP_MASK(SHAPE, "shape"); /* TODO parse the shape */
+      SETUP_MASK(SHAPE, "shape");
+      res = parse_imported_geometry(filename, doc, val, GEOMETRY_OBJ);
     } else if(!strcmp((char*)key->data.scalar.value, "parabol")) {
       SETUP_MASK(SHAPE, "shape");
       res = parse_paraboloid(filename, doc, val, PARABOL);
@@ -1130,7 +1226,8 @@ parse_object
       SETUP_MASK(SHAPE, "shape");
       res = parse_sphere(filename, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "stl")) {
-      SETUP_MASK(SHAPE, "shape"); /* TODO parse the shape */
+      SETUP_MASK(SHAPE, "shape");
+      res = parse_imported_geometry(filename, doc, val, GEOMETRY_STL);
     } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
       SETUP_MASK(TRANSFORM, "transform");
       res = parse_transform(filename, doc, val, position, rotation);
