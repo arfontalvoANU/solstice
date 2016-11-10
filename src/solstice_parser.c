@@ -16,9 +16,12 @@
 #define _POSIX_C_SOURCE 200112L /* nextafter support */
 
 #include "solstice_parser.h"
+#include "solstice_material.h"
 
 #include <rsys/cstr.h>
 #include <rsys/double3.h>
+#include <rsys/dynamic_array.h>
+#include <rsys/hash_table.h>
 #include <rsys/ref_count.h>
 #include <rsys/str.h>
 
@@ -27,10 +30,32 @@
 #include <string.h>
 #include <yaml.h>
 
+/* Declare the array of materials  */
+#define DARRAY_NAME material
+#define DARRAY_DATA struct solstice_material
+#include <rsys/dynamic_array.h>
+
+/* Declare the array of the double sided materials */
+#define DARRAY_NAME material2
+#define DARRAY_DATA struct solstice_material_double_sided
+#include <rsys/dynamic_array.h>
+
+/* Declare the hash table that maps the address of a YAML node to the id of its
+ * in memory representation. */
+#define HTABLE_NAME yaml2sols
+#define HTABLE_KEY yaml_node_t*
+#define HTABLE_DATA size_t
+#include <rsys/hash_table.h>
+
 struct solstice_parser {
   yaml_parser_t parser;
   struct str stream_name;
   int parser_is_init;
+
+  struct htable_yaml2sols yaml2mtls; /* Cache of materials */
+
+  struct darray_material mtls; /* Loaded materials */
+  struct darray_material2 mtls2; /* Loaded double sided materials */
 
   ref_T ref;
   struct mem_allocator* allocator;
@@ -121,6 +146,9 @@ parser_release(ref_T* ref)
   parser = CONTAINER_OF(ref, struct solstice_parser, ref);
   if(parser->parser_is_init) yaml_parser_delete(&parser->parser);
   str_release(&parser->stream_name);
+  htable_yaml2sols_release(&parser->yaml2mtls);
+  darray_material_release(&parser->mtls);
+  darray_material2_release(&parser->mtls2);
   MEM_RM(parser->allocator, parser);
 }
 
@@ -522,14 +550,14 @@ static res_T
 parse_material_matte
   (struct solstice_parser* parser,
    yaml_document_t* doc,
-   const yaml_node_t* matte)
+   const yaml_node_t* matte,
+   struct solstice_material* mtl)
 {
   enum { REFLECTIVITY };
-  double reflectivity;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
-  ASSERT(doc && matte);
+  ASSERT(doc && matte && mtl);
 
   if(matte->type != YAML_MAPPING_NODE) {
     log_err(parser, matte, "expect a mapping of matte material parameters.\n");
@@ -537,6 +565,7 @@ parse_material_matte
     goto error;
   }
 
+  mtl->type = SOLSTICE_MATERIAL_MATTE;
   n = matte->data.mapping.pairs.top - matte->data.mapping.pairs.start;
   FOR_EACH(i, 0, n) {
     yaml_node_t* key;
@@ -557,7 +586,7 @@ parse_material_matte
         goto error;
       }
       mask |= BIT(REFLECTIVITY);
-      res = parse_real(parser, val, 0, 1, &reflectivity);
+      res = parse_real(parser, val, 0, 1, &mtl->data.matte.reflectivity);
     } else {
       log_err(parser, key, "unknown matte parameter `%s'.\n",
         key->data.scalar.value);
@@ -572,8 +601,6 @@ parse_material_matte
     goto error;
   }
 
-  /* TODO create the matte material */
-
 exit:
   return res;
 error:
@@ -584,15 +611,14 @@ static res_T
 parse_material_mirror
   (struct solstice_parser* parser,
    yaml_document_t* doc,
-   const yaml_node_t* mirror)
+   const yaml_node_t* mirror,
+   struct solstice_material* mtl)
 {
   enum { REFLECTIVITY, ROUGHNESS };
-  double reflectivity;
-  double roughness;
   int mask = 0; /* Register the parsed attributes */
   intptr_t i, n;
   res_T res = RES_OK;
-  ASSERT(doc && mirror);
+  ASSERT(doc && mirror && mtl);
 
   if(mirror->type != YAML_MAPPING_NODE) {
     log_err(parser, mirror,
@@ -600,6 +626,8 @@ parse_material_mirror
     res = RES_BAD_ARG;
     goto error;
   }
+
+  mtl->type = SOLSTICE_MATERIAL_MIRROR;
   n = mirror->data.mapping.pairs.top - mirror->data.mapping.pairs.start;
   FOR_EACH(i, 0, n) {
     yaml_node_t* key;
@@ -624,10 +652,10 @@ parse_material_mirror
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "reflectivity")) {
       SETUP_MASK(REFLECTIVITY, "reflectivity");
-      res = parse_real(parser, val, 0, 1, &reflectivity);
+      res = parse_real(parser, val, 0, 1, &mtl->data.mirror.reflectivity);
     } else if(!strcmp((char*)key->data.scalar.value, "roughness")) {
       SETUP_MASK(ROUGHNESS, "roughness");
-      res = parse_real(parser, val, 0, 1, &roughness);
+      res = parse_real(parser, val, 0, 1, &mtl->data.mirror.roughness);
     } else {
       log_err(parser, key, "unknown mirror attribute `%s'.\n",
         key->data.scalar.value);
@@ -647,8 +675,6 @@ parse_material_mirror
   CHECK_PARAM(ROUGHNESS, "roughness");
   #undef CHECK_PARAM
 
-  /* TODO create the mirror material */
-
 exit:
   return res;
 error:
@@ -659,16 +685,34 @@ static res_T
 parse_material_descriptor
   (struct solstice_parser* parser,
    yaml_document_t* doc,
-   const yaml_node_t* desc)
+   yaml_node_t* desc,
+   struct solstice_material** out_mtl)
 {
   enum { DESCRIPTOR };
+  struct solstice_material* mtl = NULL;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
+  size_t* pimtl;
+  size_t imtl;
   res_T res = RES_OK;
-  ASSERT(doc && desc);
+  ASSERT(doc && desc && out_mtl);
 
-  /* TODO If the descriptor is an alias of an already created material skip the
-   * parsing and return the aliased material descriptor */
+  /* Check whether or not the YAML descriptor alias an already created Solstice
+   * material */
+  pimtl = htable_yaml2sols_find(&parser->yaml2mtls, &desc);
+  if(pimtl) {
+    mtl = darray_material_data_get(&parser->mtls) + *pimtl;
+    goto exit;
+  }
+
+  /* Allocate the solstice material */
+  imtl = darray_material_size_get(&parser->mtls);
+  res = darray_material_resize(&parser->mtls, imtl + 1);
+  if(res != RES_OK) {
+    log_err(parser, desc, "could not allocate the material descriptor.\n");
+    goto error;
+  }
+  mtl = darray_material_data_get(&parser->mtls) + imtl;
 
   if(desc->type != YAML_MAPPING_NODE) {
     log_err(parser, desc, "expect a material descriptor.\n");
@@ -699,10 +743,10 @@ parse_material_descriptor
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "matte")) {
       SETUP_MASK(DESCRIPTOR, "descriptor");
-      res = parse_material_matte(parser, doc, val);
+      res = parse_material_matte(parser, doc, val, mtl);
     } else if(!strcmp((char*)key->data.scalar.value, "mirror")) {
       SETUP_MASK(DESCRIPTOR, "descriptor");
-      res = parse_material_mirror(parser, doc, val);
+      res = parse_material_mirror(parser, doc, val, mtl);
     } else {
       log_err(parser, key, "unknown material descriptor `%s'.\n",
         key->data.scalar.value);
@@ -719,9 +763,20 @@ parse_material_descriptor
     goto error;
   }
 
+  res = htable_yaml2sols_set(&parser->yaml2mtls, &desc, &imtl);
+  if(res != RES_OK) {
+    log_err(parser, desc, "could not register the material.\n");
+    goto error;
+  }
+
 exit:
+  *out_mtl = mtl;
   return res;
 error:
+  if(mtl) {
+    darray_material_pop_back(&parser->mtls);
+    mtl = NULL;
+  }
   goto exit;
 }
 
@@ -729,9 +784,12 @@ static res_T
 parse_material
   (struct solstice_parser* parser,
    yaml_document_t* doc,
-   const yaml_node_t* mtl)
+   yaml_node_t* mtl,
+   struct solstice_material_double_sided** out_mtl2)
 {
   enum { FRONT, BACK };
+  struct solstice_material_double_sided* mtl2;
+  size_t imtl2;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
@@ -742,6 +800,15 @@ parse_material
     res = RES_BAD_ARG;
     goto error;
   }
+
+  /* Allocate the double sided material */
+  imtl2 = darray_material2_size_get(&parser->mtls2);
+  res = darray_material2_resize(&parser->mtls2, imtl2 + 1);
+  if(res != RES_OK) {
+    log_err(parser, mtl, "could not allocate the material.\n");
+    goto error;
+  }
+  mtl2 = darray_material2_data_get(&parser->mtls2) + imtl2;
 
   n = mtl->data.mapping.pairs.top - mtl->data.mapping.pairs.start;
   FOR_EACH(i, 0, n) {
@@ -768,14 +835,15 @@ parse_material
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "front")) {
       SETUP_MASK(FRONT, "front");
-      res = parse_material_descriptor(parser, doc, val);
+      res = parse_material_descriptor(parser, doc, val, &mtl2->front);
     } else if(!strcmp((char*)key->data.scalar.value, "back")) {
       SETUP_MASK(BACK, "back");
-      res = parse_material_descriptor(parser, doc, val);
+      res = parse_material_descriptor(parser, doc, val, &mtl2->back);
     } else {
       SETUP_MASK(FRONT, "front");
       SETUP_MASK(BACK, "back");
-      res = parse_material_descriptor(parser, doc, mtl);
+      res = parse_material_descriptor(parser, doc, mtl, &mtl2->front);
+      mtl2->back = mtl2->front;
     }
     if(res != RES_OK) goto error;
     #undef SETUP_MASK
@@ -792,8 +860,13 @@ parse_material
   #undef CHECK_PARAM
 
 exit:
+  *out_mtl2 = mtl2;
   return res;
 error:
+  if(mtl2) {
+    darray_material2_pop_back(&parser->mtls2);
+    mtl2 = NULL;
+  }
   goto exit;
 }
 
@@ -1387,6 +1460,7 @@ parse_object
    const yaml_node_t* object)
 {
   enum { MATERIAL, SHAPE, TRANSFORM };
+  struct solstice_material_double_sided* mtl2;
   double translation[3] = {0, 0, 0};
   double rotation[3] = {0, 0, 0};
   intptr_t i, n;
@@ -1427,7 +1501,7 @@ parse_object
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "material")) {
       SETUP_MASK(MATERIAL, "material");
-      res = parse_material(parser, doc, val);
+      res = parse_material(parser, doc, val, &mtl2);
     } else if(!strcmp((char*)key->data.scalar.value, "cuboid")) {
       SETUP_MASK(SHAPE, "shape");
       res = parse_cuboid(parser, doc, val);
@@ -2046,6 +2120,7 @@ parse_item
 {
   yaml_node_t* key;
   yaml_node_t* val;
+  struct solstice_material_double_sided* mtl2;
   intptr_t n;
   res_T res = RES_OK;
   ASSERT(doc && item);
@@ -2075,7 +2150,7 @@ parse_item
   if(!strcmp((char*)key->data.scalar.value, "instance")) {
     res = parse_instance(parser, doc, val);
   } else if(!strcmp((char*)key->data.scalar.value, "material")) {
-    res = parse_material(parser, doc, val);
+    res = parse_material(parser, doc, val, &mtl2);
   } else if(!strcmp((char*)key->data.scalar.value, "node")) {
     res = parse_node(parser, doc, val);
   } else if(!strcmp((char*)key->data.scalar.value, "object")) {
@@ -2118,6 +2193,11 @@ solstice_parser_create
   parser->allocator = mem_allocator;
   ref_init(&parser->ref);
   str_init(mem_allocator, &parser->stream_name);
+
+  htable_yaml2sols_init(mem_allocator, &parser->yaml2mtls);
+
+  darray_material_init(mem_allocator, &parser->mtls);
+  darray_material2_init(mem_allocator, &parser->mtls2);
 
 exit:
   *out_parser = parser;
@@ -2193,6 +2273,11 @@ solstice_parser_load(struct solstice_parser* parser)
   ASSERT(parser);
 
   filename = str_cget(&parser->stream_name);
+
+  /* Clean up previously loaded data */
+  htable_yaml2sols_clear(&parser->yaml2mtls);
+  darray_material_clear(&parser->mtls);
+  darray_material2_clear(&parser->mtls2);
 
   if(!parser->parser_is_init) {
     res = RES_BAD_OP;
