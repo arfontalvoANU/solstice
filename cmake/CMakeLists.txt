@@ -87,10 +87,14 @@ if(NOT NO_TEST)
     ${SOLSTICE_SOURCE_DIR}/yaml/test_ok_0.yaml)
   add_test(test_solstice_parser_ok_1 test_solstice_parser
     ${SOLSTICE_SOURCE_DIR}/yaml/test_ok_1.yaml)
+  add_test(test_solstice_parser_ok_2 test_solstice_parser
+    ${SOLSTICE_SOURCE_DIR}/yaml/test_ok_2.yaml)
   add_test(test_solstice_parser_ko_0 test_solstice_parser -e
     ${SOLSTICE_SOURCE_DIR}/yaml/test_ko_0.yaml)
   add_test(test_solstice_parser_ko_1 test_solstice_parser -e
     ${SOLSTICE_SOURCE_DIR}/yaml/test_ko_1.yaml)
+  add_test(test_solstice_parser_ko_2 test_solstice_parser -e
+    ${SOLSTICE_SOURCE_DIR}/yaml/test_ko_2.yaml)
 endif()
 
 ################################################################################

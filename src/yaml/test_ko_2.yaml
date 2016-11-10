@@ -1,26 +1,30 @@
 - instance:
     object:
       material: { matte: { reflectivity: 1 } }
-      stl: { path: path toward }
+      obj: { path: }
 ---
 - instance:
     object:
       material: { matte: { reflectivity: 1 } }
-      obj: { path: "my_path" }
+      obj: { path: "my_path", dummy: 1 }
 ---
 - instance:
     object:
       material: { matte: { reflectivity: 1 } }
-      obj: { path: "path/path/path" }
-      transform:  { translation: [1, 2, 3] }
+      obj:
 ---
 - instance:
     object:
       material: { matte: { reflectivity: 1 } }
-      obj: { path: "path/path/path" }
-      transform:  { rotation: [0, 0, 0] }
+      stl: { path: }
 ---
 - instance:
     object:
       material: { matte: { reflectivity: 1 } }
-      stl: { path: "path/path/path" }
+      stl: { path: "my_path", dummy: 1 }
+---
+- instance:
+    object:
+      material: { matte: { reflectivity: 1 } }
+      stl:
+

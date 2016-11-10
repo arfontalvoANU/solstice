@@ -94,7 +94,7 @@ instance:
 ---
 - instance:
     object:
-      material: 
+      material:
         matte: { reflectivity: 1 }
         dummy: 123
       cuboid: { size: [1, 2, 3] }
@@ -117,47 +117,47 @@ instance:
     dummy: 1
 ---
 - material: &front { matte: { reflectivity: 1 } }
-- material: &back  { matte: { reflectivity: 0.5 } } 
+- material: &back  { matte: { reflectivity: 0.5 } }
 - object: &cuboid
     cuboid: { size: [1, 2, 3] }
-    material: 
+    material:
       front: *front
       back: *back
       front: *front
 - instance: { object: *cuboid }
 ---
 - material: &front { matte: { reflectivity: 1 } }
-- material: &back  { matte: { reflectivity: 0.5 } } 
+- material: &back  { matte: { reflectivity: 0.5 } }
 - object: &cuboid
     cuboid: { size: [1, 2, 3] }
-    material: 
+    material:
       front: *front
 - instance: { object: *cuboid }
 ---
 - material: &front { matte: { reflectivity: 1 } }
-- material: &back  { matte: { reflectivity: 0.5 } } 
+- material: &back  { matte: { reflectivity: 0.5 } }
 - object: &cuboid
     cuboid: { size: [1, 2, 3] }
-    material: 
+    material:
       back: *back
 - instance: { object: *cuboid }
 ---
 - object: &cuboid
     cuboid: { size: [1, 2, 3] }
-    material: 
-      front: 
+    material:
+      front:
         matte: { reflectivity: 1 }
         dummy: 1
-      back: 
+      back:
         material: { matte: { reflectivity: 0.1 } }
 - instance: { object: *cuboid }
 ---
 - object: &cuboid
     cuboid: { size: [1, 2, 3] }
-    material: 
-      front: 
+    material:
+      front:
         matte: { reflectivity: 1 }
-      back: 
+      back:
         matte: { reflectivity: 0.1 }
         dummy: 1234
 - instance: { object: *cuboid }
