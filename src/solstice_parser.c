@@ -138,7 +138,8 @@ parse_real
   res_T res = RES_OK;
   ASSERT(real && dst && lower_bound < upper_bound);
 
-  if(real->type != YAML_SCALAR_NODE) {
+  if(real->type != YAML_SCALAR_NODE
+  || !strlen((char*)real->data.scalar.value)) {
     log_err(filename, real, "expect a floating point number.\n");
     res = RES_BAD_ARG;
     goto error;
@@ -216,7 +217,8 @@ parse_integer
   res_T res = RES_OK;
   ASSERT(integer && dst && lower_bound < upper_bound);
 
-  if(integer->type != YAML_SCALAR_NODE) {
+  if(integer->type != YAML_SCALAR_NODE
+  || !strlen((char*)integer->data.scalar.value)) {
     log_err(filename, integer, "expect an integer.\n");
     res = RES_BAD_ARG;
     goto error;
