@@ -81,3 +81,84 @@ instance:
 ---
 - instance:
     transform: { translation: [ 3, 4, 4 ] }
+---
+- instance:
+    object:
+      material: { matte: { reflectivity: } }
+      cuboid: { size: [ 0, 1, 3 ] }
+---
+- instance:
+    object:
+      material: { matte: { reflectivity: 1, dummy: "none" } }
+      cuboid: { size: [1, 2, 3] }
+---
+- instance:
+    object:
+      material: 
+        matte: { reflectivity: 1 }
+        dummy: 123
+      cuboid: { size: [1, 2, 3] }
+---
+- instance:
+    object:
+      material: { matte: { reflectivity: 1 } }
+      cuboid: { size: [1, 2, 3], dummy: 3.14 }
+---
+- instance:
+    object:
+      material: { matte: { reflectivity: 1 } }
+      cuboid: { size: [1, 2, 3] }
+      dummy: 1
+---
+- instance:
+    object:
+      material: { matte: { reflectivity: 1 } }
+      cuboid: { size: [1, 2, 3] }
+    dummy: 1
+---
+- material: &front { matte: { reflectivity: 1 } }
+- material: &back  { matte: { reflectivity: 0.5 } } 
+- object: &cuboid
+    cuboid: { size: [1, 2, 3] }
+    material: 
+      front: *front
+      back: *back
+      front: *front
+- instance: { object: *cuboid }
+---
+- material: &front { matte: { reflectivity: 1 } }
+- material: &back  { matte: { reflectivity: 0.5 } } 
+- object: &cuboid
+    cuboid: { size: [1, 2, 3] }
+    material: 
+      front: *front
+- instance: { object: *cuboid }
+---
+- material: &front { matte: { reflectivity: 1 } }
+- material: &back  { matte: { reflectivity: 0.5 } } 
+- object: &cuboid
+    cuboid: { size: [1, 2, 3] }
+    material: 
+      back: *back
+- instance: { object: *cuboid }
+---
+- object: &cuboid
+    cuboid: { size: [1, 2, 3] }
+    material: 
+      front: 
+        matte: { reflectivity: 1 }
+        dummy: 1
+      back: 
+        material: { matte: { reflectivity: 0.1 } }
+- instance: { object: *cuboid }
+---
+- object: &cuboid
+    cuboid: { size: [1, 2, 3] }
+    material: 
+      front: 
+        matte: { reflectivity: 1 }
+      back: 
+        matte: { reflectivity: 0.1 }
+        dummy: 1234
+- instance: { object: *cuboid }
+

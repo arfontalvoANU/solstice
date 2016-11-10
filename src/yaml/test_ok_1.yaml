@@ -1,0 +1,47 @@
+- material: &mirror
+    mirror:
+      reflectivity: 1
+      roughness: 0
+
+- object: &cylinder
+    material: *mirror
+    cylinder:
+      height: 1
+      radius: 1
+      slices: 32
+
+- instance:
+    object: *cylinder
+    transform:
+      translation: [0, 1, 2]
+      rotation: [0, 0, 0]
+---
+- material: &mirror
+    mirror:
+      reflectivity: 1
+      roughness: 0
+
+- object: &cylinder
+    material: *mirror
+    cylinder:
+      height: 1
+      radius: 1
+
+- instance:
+    object: *cylinder
+---
+- instance:
+    object:
+      material: { mirror: { reflectivity: 0.314, roughness: 0.5 } }
+      cylinder: { height: 10.12, radius: 0.32 }
+---
+- instance:
+    object:
+      material: { mirror: { reflectivity: 0, roughness: 0.5 } }
+      cylinder: { height: 1, radius: 1 }
+---
+- instance:
+    object:
+      material: { mirror: { reflectivity: 0, roughness: 0.5 } }
+      cylinder: { height: 0, radius: 0 }
+

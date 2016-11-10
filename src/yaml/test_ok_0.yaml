@@ -29,3 +29,21 @@
     object:
       material: *lambertian
       cuboid: { size: [1, 2, 3] }
+
+---
+- material: &front { matte: { reflectivity: 1 } }
+- material: &back  { matte: { reflectivity: 0.5 } } 
+- object: &cuboid
+    cuboid: { size: [1, 2, 3] }
+    material: { front: *front, back: *back }
+- instance: { object: *cuboid }
+---
+- material: &lambertian { matte: { reflectivity: 1 } }
+- instance:
+    object: &cuboid
+      cuboid: { size: [1, 2, 3] }
+      material: 
+        front: *lambertian
+        back: *lambertian
+
+
