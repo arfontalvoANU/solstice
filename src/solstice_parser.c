@@ -2161,7 +2161,9 @@ solstice_parser_load(struct solstice_parser* parser)
       (unsigned long)parser->parser.problem_mark.line+1,
       (unsigned long)parser->parser.problem_mark.column+1,
       parser->parser.problem);
-    res = RES_IO_ERR;
+    yaml_parser_delete(&parser->parser);
+    parser->parser_is_init = 0;
+    res = RES_BAD_OP;
     goto error;
   }
   doc_is_init = 1;
