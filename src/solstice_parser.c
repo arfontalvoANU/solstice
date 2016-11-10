@@ -536,8 +536,8 @@ parse_material_matte
     yaml_node_t* key;
     yaml_node_t* val;
 
-    key = yaml_document_get_node(doc, matte->data.mapping.pairs.start[0].key);
-    val = yaml_document_get_node(doc, matte->data.mapping.pairs.start[0].value);
+    key = yaml_document_get_node(doc, matte->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, matte->data.mapping.pairs.start[i].value);
     if(key->type != YAML_SCALAR_NODE) {
       log_err(filename, key, "expect a matte material parameter.\n");
       res = RES_BAD_ARG;
