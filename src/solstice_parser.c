@@ -250,7 +250,8 @@ parse_string(const char* filename, yaml_node_t* string)
   res_T res = RES_OK;
   ASSERT(string);
 
-  if(string->type != YAML_SCALAR_NODE) {
+  if(string->type != YAML_SCALAR_NODE
+  || !strlen((char*)string->data.scalar.value)) {
     log_err(filename, string, "expect a character string.\n");
     res = RES_BAD_ARG;
     goto error;
