@@ -48,25 +48,25 @@ enum geometry_fileformat {
 
 static res_T
 parse_node
-  (const char* filename,
+  (struct solstice_parser* parser,
    yaml_document_t* doc,
    const yaml_node_t* children);
 
 static res_T
 parse_object
-  (const char* filename,
+  (struct solstice_parser* parser,
    yaml_document_t* doc,
    const yaml_node_t* object);
 
 static res_T
 parse_pivot
-  (const char* filename,
+  (struct solstice_parser* parser,
    yaml_document_t* doc,
    const yaml_node_t* pivot);
 
 static res_T
 parse_sun
-  (const char* filename,
+  (struct solstice_parser* parser,
    yaml_document_t* doc,
    const yaml_node_t* sun);
 
@@ -75,16 +75,16 @@ parse_sun
  ******************************************************************************/
 static INLINE void
 log_err
-  (const char* filename,
+  (const struct solstice_parser* parser,
    const yaml_node_t* node,
    const char* fmt,
    ...)
 {
   va_list vargs_list;
-  ASSERT(filename && node && fmt);
+  ASSERT(parser && node && fmt);
 
   fprintf(stderr, "%s:%lu:%lu: ",
-    filename,
+    str_cget(&parser->stream_name),
     (unsigned long)node->start_mark.line+1,
     (unsigned long)node->start_mark.column+1);
   va_start(vargs_list, fmt);
@@ -129,7 +129,7 @@ parser_release(ref_T* ref)
  ******************************************************************************/
 static res_T
 parse_real
-  (const char* filename,
+  (struct solstice_parser* parser,
    const yaml_node_t* real,
    const double lower_bound,
    const double upper_bound,
@@ -140,21 +140,21 @@ parse_real
 
   if(real->type != YAML_SCALAR_NODE
   || !strlen((char*)real->data.scalar.value)) {
-    log_err(filename, real, "expect a floating point number.\n");
+    log_err(parser, real, "expect a floating point number.\n");
     res = RES_BAD_ARG;
     goto error;
   }
 
   res = cstr_to_double((char*)real->data.scalar.value, dst);
   if(res != RES_OK) {
-    log_err(filename, real, "invalid floating point number `%s'.\n",
+    log_err(parser, real, "invalid floating point number `%s'.\n",
       real->data.scalar.value);
     res = RES_BAD_ARG;
     goto error;
   }
 
   if(*dst < lower_bound || *dst > upper_bound) {
-    log_err(filename, real, "%g is not in [%g, %g].\n",
+    log_err(parser, real, "%g is not in [%g, %g].\n",
       *dst, lower_bound, upper_bound);
     res = RES_BAD_ARG;
     goto error;
@@ -168,7 +168,7 @@ error:
 
 static res_T
 parse_real3
-  (const char* filename,
+  (struct solstice_parser* parser,
    yaml_document_t* doc,
    const yaml_node_t* real3,
    const double lower_bound,
@@ -180,14 +180,14 @@ parse_real3
   ASSERT(doc && real3 && dst);
 
   if(real3->type != YAML_SEQUENCE_NODE) {
-    log_err(filename, real3, "expect a sequence of 3 reals.\n");
+    log_err(parser, real3, "expect a sequence of 3 reals.\n");
     res = RES_BAD_ARG;
     goto error;
   }
 
   n = real3->data.sequence.items.top - real3->data.sequence.items.start;
   if(n != 3) {
-    log_err(filename, real3, "expect 3 reals while `%li' %s submitted.\n",
+    log_err(parser, real3, "expect 3 reals while `%li' %s submitted.\n",
       n, n > 1 ? "are" : "is");
     res = RES_BAD_ARG;
     goto error;
@@ -196,7 +196,7 @@ parse_real3
   FOR_EACH(i, 0, n) {
     yaml_node_t* real;
     real = yaml_document_get_node(doc, real3->data.sequence.items.start[i]);
-    res = parse_real(filename, real, lower_bound, upper_bound, dst + i);
+    res = parse_real(parser, real, lower_bound, upper_bound, dst + i);
     if(res != RES_OK) goto error;
   }
 
@@ -208,7 +208,7 @@ error:
 
 static res_T
 parse_integer
-  (const char* filename,
+  (struct solstice_parser* parser,
    yaml_node_t* integer,
    const long lower_bound,
    const long upper_bound,
@@ -219,21 +219,21 @@ parse_integer
 
   if(integer->type != YAML_SCALAR_NODE
   || !strlen((char*)integer->data.scalar.value)) {
-    log_err(filename, integer, "expect an integer.\n");
+    log_err(parser, integer, "expect an integer.\n");
     res = RES_BAD_ARG;
     goto error;
   }
 
   res = cstr_to_long((char*)integer->data.scalar.value, dst);
   if(res != RES_OK) {
-    log_err(filename, integer, "invalid integer `%s'.\n",
+    log_err(parser, integer, "invalid integer `%s'.\n",
       integer->data.scalar.value);
     res = RES_BAD_ARG;
     goto error;
   }
 
   if(*dst < lower_bound || *dst > upper_bound) {
-    log_err(filename, integer, "%li is not in [%li, %li].\n",
+    log_err(parser, integer, "%li is not in [%li, %li].\n",
       *dst, lower_bound, upper_bound);
     res = RES_BAD_ARG;
     goto error;
@@ -245,14 +245,14 @@ error:
 }
 
 static res_T
-parse_string(const char* filename, yaml_node_t* string)
+parse_string(struct solstice_parser* parser, yaml_node_t* string)
 {
   res_T res = RES_OK;
   ASSERT(string);
 
   if(string->type != YAML_SCALAR_NODE
   || !strlen((char*)string->data.scalar.value)) {
-    log_err(filename, string, "expect a character string.\n");
+    log_err(parser, string, "expect a character string.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -265,7 +265,7 @@ error:
 
 static res_T
 parse_transform
-  (const char* filename,
+  (struct solstice_parser* parser,
    yaml_document_t* doc,
    const yaml_node_t* transform,
    double translation[3],
@@ -281,7 +281,7 @@ parse_transform
   d3_splat(rotation, 0);
 
   if(transform->type != YAML_MAPPING_NODE) {
-    log_err(filename, transform, "expect a mapping of transform parameters.\n");
+    log_err(parser, transform, "expect a mapping of transform parameters.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -294,14 +294,14 @@ parse_transform
     key = yaml_document_get_node(doc, transform->data.mapping.pairs.start[i].key);
     val = yaml_document_get_node(doc, transform->data.mapping.pairs.start[i].value);
     if(key->type != YAML_SCALAR_NODE) {
-      log_err(filename, key, "expect transform parameters.\n");
+      log_err(parser, key, "expect transform parameters.\n");
       res = RES_BAD_ARG;
       goto error;
     }
 
     #define SETUP_MASK(Flag, Name) {                                           \
       if(mask & BIT(Flag)) {                                                   \
-        log_err(filename, key, "the transform `"Name"' is already defined.\n");\
+        log_err(parser, key, "the transform `"Name"' is already defined.\n");  \
         res = RES_BAD_ARG;                                                     \
         goto error;                                                            \
       }                                                                        \
@@ -309,12 +309,12 @@ parse_transform
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "translation")) {
       SETUP_MASK(TRANSLATION, "translation");
-      res = parse_real3(filename, doc, val, -DBL_MAX, DBL_MAX, translation);
+      res = parse_real3(parser, doc, val, -DBL_MAX, DBL_MAX, translation);
     } else if(!strcmp((char*)key->data.scalar.value, "rotation")) {
       SETUP_MASK(ROTATION, "rotation");
-      res = parse_real3(filename, doc, val, -DBL_MAX, DBL_MAX, rotation);
+      res = parse_real3(parser, doc, val, -DBL_MAX, DBL_MAX, rotation);
     } else {
-      log_err(filename, key, "unknown transform parameter `%s'.\n",
+      log_err(parser, key, "unknown transform parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
     }
@@ -329,7 +329,8 @@ error:
 
 static res_T
 parse_spectrum_data
-  (const char* filename, yaml_document_t* doc,
+  (struct solstice_parser* parser,
+   yaml_document_t* doc,
    const double lower_bound,
    const double upper_bound,
    const yaml_node_t* sdata)
@@ -343,7 +344,7 @@ parse_spectrum_data
   ASSERT(doc && data && lower_bound < upper_bound);
 
   if(sdata->type != YAML_MAPPING_NODE) {
-    log_err(filename, sdata, "expect the definition of a spectrum data.\n");
+    log_err(parser, sdata, "expect the definition of a spectrum data.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -356,14 +357,14 @@ parse_spectrum_data
     key = yaml_document_get_node(doc, sdata->data.mapping.pairs.start[i].key);
     val = yaml_document_get_node(doc, sdata->data.mapping.pairs.start[i].value);
     if(key->type != YAML_SCALAR_NODE) {
-      log_err(filename, key, "expect a spectrum data parameter.\n");
+      log_err(parser, key, "expect a spectrum data parameter.\n");
       res = RES_BAD_ARG;
       goto error;
     }
 
     #define SETUP_MASK(Flag, Name) {                                           \
       if(mask & BIT(Flag)) {                                                   \
-        log_err(filename, key,                                                 \
+        log_err(parser, key,                                                   \
           "the `"Name"' of the spectrum data is already defined.\n");          \
         res = RES_BAD_ARG;                                                     \
         goto error;                                                            \
@@ -372,12 +373,12 @@ parse_spectrum_data
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "data")) {
       SETUP_MASK(DATA, "data");
-      res = parse_real(filename, val, lower_bound, upper_bound, &data);
+      res = parse_real(parser, val, lower_bound, upper_bound, &data);
     } else if(!strcmp((char*)key->data.scalar.value, "wavelength")) {
       SETUP_MASK(WAVELENGTH, "wavelength");
-      res = parse_real(filename, val, 0, DBL_MAX, &wavelength);
+      res = parse_real(parser, val, 0, DBL_MAX, &wavelength);
     } else {
-      log_err(filename, key, "unknown spectrum data parameter `%s'.\n",
+      log_err(parser, key, "unknown spectrum data parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
     }
@@ -387,7 +388,7 @@ parse_spectrum_data
 
   #define CHECK_PARAM(Flag, Name)                                              \
     if(!(mask & BIT(Flag))) {                                                  \
-      log_err(filename, sdata,"the "Name" of the spectrum data is missing.\n");\
+      log_err(parser, sdata,"the "Name" of the spectrum data is missing.\n");  \
       res = RES_BAD_ARG;                                                       \
       goto error;                                                              \
     } (void)0
@@ -403,7 +404,7 @@ error:
 
 static res_T
 parse_spectrum
-  (const char* filename,
+  (struct solstice_parser* parser,
    yaml_document_t* doc,
    const double lower_bound,
    const double upper_bound,
@@ -414,7 +415,7 @@ parse_spectrum
   ASSERT(doc && spectrum && lower_bound < upper_bound);
 
   if(spectrum->type != YAML_SEQUENCE_NODE) {
-    log_err(filename, spectrum, "expect a list of spectrum data.\n");
+    log_err(parser, spectrum, "expect a list of spectrum data.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -424,7 +425,7 @@ parse_spectrum
     yaml_node_t* sdata;
 
     sdata = yaml_document_get_node(doc, spectrum->data.sequence.items.start[i]);
-    res = parse_spectrum_data(filename, doc, lower_bound, upper_bound, sdata);
+    res = parse_spectrum_data(parser, doc, lower_bound, upper_bound, sdata);
     if(res != RES_OK) goto error;
 
     /* TODO register the spectrum data */
@@ -441,7 +442,9 @@ error:
  ******************************************************************************/
 static res_T
 parse_instance
-  (const char* filename, yaml_document_t* doc, const yaml_node_t* inst)
+  (struct solstice_parser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* inst)
 {
   enum { GEOMETRY, TRANSFORM };
   double translation[3] = {0, 0, 0};
@@ -452,7 +455,7 @@ parse_instance
   ASSERT(doc && inst);
 
   if(inst->type != YAML_MAPPING_NODE) {
-    log_err(filename, inst, "expect an instance definition.\n");
+    log_err(parser, inst, "expect an instance definition.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -465,13 +468,13 @@ parse_instance
     key = yaml_document_get_node(doc, inst->data.mapping.pairs.start[i].key);
     val = yaml_document_get_node(doc, inst->data.mapping.pairs.start[i].value);
     if(key->type != YAML_SCALAR_NODE) {
-      log_err(filename, key, "expect instance parameters.\n");
+      log_err(parser, key, "expect instance parameters.\n");
       res = RES_BAD_ARG;
       goto error;
     }
     #define SETUP_MASK(Flag, Name) {                                           \
       if(mask & BIT(Flag)) {                                                   \
-        log_err(filename, key, "the instance "Name" is already defined.\n");   \
+        log_err(parser, key, "the instance "Name" is already defined.\n");     \
         res = RES_BAD_ARG;                                                     \
         goto error;                                                            \
       }                                                                        \
@@ -479,15 +482,15 @@ parse_instance
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "node")) {
       SETUP_MASK(GEOMETRY, "geometry");
-      res = parse_node(filename, doc, val);
+      res = parse_node(parser, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "object")) {
       SETUP_MASK(GEOMETRY, "geometry");
-      res = parse_object(filename, doc, val);
+      res = parse_object(parser, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
       SETUP_MASK(TRANSFORM, "transform");
-      res = parse_transform(filename, doc, val, translation, rotation);
+      res = parse_transform(parser, doc, val, translation, rotation);
     } else {
-      log_err(filename, key, "unknown instance parameter `%s'.\n",
+      log_err(parser, key, "unknown instance parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
     }
@@ -497,7 +500,7 @@ parse_instance
 
   #define CHECK_PARAM(Flag, Name)                                              \
     if(!(mask & BIT(Flag))) {                                                  \
-      log_err(filename, inst, "the instance "Name" is missing.\n");            \
+      log_err(parser, inst, "the instance "Name" is missing.\n");              \
       res = RES_BAD_ARG;                                                       \
       goto error;                                                              \
     } (void)0
@@ -517,7 +520,9 @@ error:
  ******************************************************************************/
 static res_T
 parse_material_matte
-  (const char* filename, yaml_document_t* doc, const yaml_node_t* matte)
+  (struct solstice_parser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* matte)
 {
   enum { REFLECTIVITY };
   double reflectivity;
@@ -527,7 +532,7 @@ parse_material_matte
   ASSERT(doc && matte);
 
   if(matte->type != YAML_MAPPING_NODE) {
-    log_err(filename, matte, "expect a mapping of matte material parameters.\n");
+    log_err(parser, matte, "expect a mapping of matte material parameters.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -540,21 +545,21 @@ parse_material_matte
     key = yaml_document_get_node(doc, matte->data.mapping.pairs.start[i].key);
     val = yaml_document_get_node(doc, matte->data.mapping.pairs.start[i].value);
     if(key->type != YAML_SCALAR_NODE) {
-      log_err(filename, key, "expect a matte material parameter.\n");
+      log_err(parser, key, "expect a matte material parameter.\n");
       res = RES_BAD_ARG;
       goto error;
     }
 
     if(!strcmp((char*)key->data.scalar.value, "reflectivity")) {
       if(mask & BIT(REFLECTIVITY)) {
-        log_err(filename, key, "the matte reflectivity is already defined.\n");
+        log_err(parser, key, "the matte reflectivity is already defined.\n");
         res = RES_BAD_ARG;
         goto error;
       }
       mask |= BIT(REFLECTIVITY);
-      res = parse_real(filename, val, 0, 1, &reflectivity);
+      res = parse_real(parser, val, 0, 1, &reflectivity);
     } else {
-      log_err(filename, key, "unknown matte parameter `%s'.\n",
+      log_err(parser, key, "unknown matte parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
     }
@@ -562,7 +567,7 @@ parse_material_matte
   }
 
   if(!(mask & BIT(REFLECTIVITY))) {
-    log_err(filename, matte, "the matte reflectivity is missing.\n");
+    log_err(parser, matte, "the matte reflectivity is missing.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -577,7 +582,9 @@ error:
 
 static res_T
 parse_material_mirror
-  (const char* filename, yaml_document_t* doc, const yaml_node_t* mirror)
+  (struct solstice_parser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* mirror)
 {
   enum { REFLECTIVITY, ROUGHNESS };
   double reflectivity;
@@ -588,7 +595,7 @@ parse_material_mirror
   ASSERT(doc && mirror);
 
   if(mirror->type != YAML_MAPPING_NODE) {
-    log_err(filename, mirror,
+    log_err(parser, mirror,
       "expect a mapping of mirror material attributes .\n");
     res = RES_BAD_ARG;
     goto error;
@@ -601,14 +608,14 @@ parse_material_mirror
     key = yaml_document_get_node(doc, mirror->data.mapping.pairs.start[i].key);
     val = yaml_document_get_node(doc, mirror->data.mapping.pairs.start[i].value);
     if(key->type != YAML_SCALAR_NODE) {
-      log_err(filename, key, "expect a mirror material parameter.\n");
+      log_err(parser, key, "expect a mirror material parameter.\n");
       res = RES_BAD_ARG;
       goto error;
     }
 
     #define SETUP_MASK(Flag, Name) {                                           \
       if(mask & BIT(Flag)) {                                                   \
-        log_err(filename, key,                                                 \
+        log_err(parser, key,                                                   \
           "the "Name" of the mirror material is already defined.\n");          \
         res = RES_BAD_ARG;                                                     \
         goto error;                                                            \
@@ -617,12 +624,12 @@ parse_material_mirror
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "reflectivity")) {
       SETUP_MASK(REFLECTIVITY, "reflectivity");
-      res = parse_real(filename, val, 0, 1, &reflectivity);
+      res = parse_real(parser, val, 0, 1, &reflectivity);
     } else if(!strcmp((char*)key->data.scalar.value, "roughness")) {
       SETUP_MASK(ROUGHNESS, "roughness");
-      res = parse_real(filename, val, 0, 1, &roughness);
+      res = parse_real(parser, val, 0, 1, &roughness);
     } else {
-      log_err(filename, key, "unknown mirror attribute `%s'.\n",
+      log_err(parser, key, "unknown mirror attribute `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
     }
@@ -632,7 +639,7 @@ parse_material_mirror
 
   #define CHECK_PARAM(Flag, Name)                                              \
     if(!(mask & BIT(Flag))) {                                                  \
-      log_err(filename, mirror, "the mirror "Name" is missing.\n");            \
+      log_err(parser, mirror, "the mirror "Name" is missing.\n");              \
       res = RES_BAD_ARG;                                                       \
       goto error;                                                              \
     } (void)0
@@ -650,7 +657,9 @@ error:
 
 static res_T
 parse_material_descriptor
-  (const char* filename, yaml_document_t* doc, const yaml_node_t* desc)
+  (struct solstice_parser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* desc)
 {
   enum { DESCRIPTOR };
   intptr_t i, n;
@@ -662,7 +671,7 @@ parse_material_descriptor
    * parsing and return the aliased material descriptor */
 
   if(desc->type != YAML_MAPPING_NODE) {
-    log_err(filename, desc, "expect a material descriptor.\n");
+    log_err(parser, desc, "expect a material descriptor.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -675,14 +684,14 @@ parse_material_descriptor
     key = yaml_document_get_node(doc, desc->data.mapping.pairs.start[i].key);
     val = yaml_document_get_node(doc, desc->data.mapping.pairs.start[i].value);
     if(key->type != YAML_SCALAR_NODE) {
-      log_err(filename, key, "expect a material name.\n");
+      log_err(parser, key, "expect a material name.\n");
       res = RES_BAD_ARG;
       goto error;
     }
 
     #define SETUP_MASK(Flag, Name) {                                           \
       if(mask & BIT(Flag)) {                                                   \
-        log_err(filename, key, "the material "Name" is already defined.\n");   \
+        log_err(parser, key, "the material "Name" is already defined.\n");     \
         res = RES_BAD_ARG;                                                     \
         goto error;                                                            \
       }                                                                        \
@@ -690,12 +699,12 @@ parse_material_descriptor
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "matte")) {
       SETUP_MASK(DESCRIPTOR, "descriptor");
-      res = parse_material_matte(filename, doc, val);
+      res = parse_material_matte(parser, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "mirror")) {
       SETUP_MASK(DESCRIPTOR, "descriptor");
-      res = parse_material_mirror(filename, doc, val);
+      res = parse_material_mirror(parser, doc, val);
     } else {
-      log_err(filename, key, "unknown material descriptor `%s'.\n",
+      log_err(parser, key, "unknown material descriptor `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
       goto error;
@@ -705,7 +714,7 @@ parse_material_descriptor
   }
 
   if(!(mask & BIT(DESCRIPTOR))) {
-    log_err(filename, desc, "the material descriptor is missing.\n");
+    log_err(parser, desc, "the material descriptor is missing.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -718,7 +727,9 @@ error:
 
 static res_T
 parse_material
-  (const char* filename, yaml_document_t* doc, const yaml_node_t* mtl)
+  (struct solstice_parser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* mtl)
 {
   enum { FRONT, BACK };
   intptr_t i, n;
@@ -727,7 +738,7 @@ parse_material
   ASSERT(doc && mtl);
 
   if(mtl->type != YAML_MAPPING_NODE) {
-    log_err(filename, mtl, "expect a material definition.\n");
+    log_err(parser, mtl, "expect a material definition.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -740,7 +751,7 @@ parse_material
     key = yaml_document_get_node(doc, mtl->data.mapping.pairs.start[i].key);
     val = yaml_document_get_node(doc, mtl->data.mapping.pairs.start[i].value);
     if(key->type != YAML_SCALAR_NODE) {
-      log_err(filename, key,
+      log_err(parser, key,
         "expect a material descriptor or a double sided material.\n");
       res = RES_BAD_ARG;
       goto error;
@@ -748,7 +759,7 @@ parse_material
 
     #define SETUP_MASK(Flag, Name) {                                           \
       if(mask & BIT(Flag)) {                                                   \
-        log_err(filename, key,                                                 \
+        log_err(parser, key,                                                   \
           "the "Name" material descriptor is already defined.\n");             \
         res = RES_BAD_ARG;                                                     \
         goto error;                                                            \
@@ -757,14 +768,14 @@ parse_material
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "front")) {
       SETUP_MASK(FRONT, "front");
-      res = parse_material_descriptor(filename, doc, val);
+      res = parse_material_descriptor(parser, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "back")) {
       SETUP_MASK(BACK, "back");
-      res = parse_material_descriptor(filename, doc, val);
+      res = parse_material_descriptor(parser, doc, val);
     } else {
       SETUP_MASK(FRONT, "front");
       SETUP_MASK(BACK, "back");
-      res = parse_material_descriptor(filename, doc, mtl);
+      res = parse_material_descriptor(parser, doc, mtl);
     }
     if(res != RES_OK) goto error;
     #undef SETUP_MASK
@@ -772,7 +783,7 @@ parse_material
 
   #define CHECK_PARAM(Flag, Name)                                             \
     if(!(mask & BIT(Flag))) {                                                 \
-      log_err(filename, mtl, "the "Name" material descriptor is missing.\n"); \
+      log_err(parser, mtl, "the "Name" material descriptor is missing.\n");   \
       res = RES_BAD_ARG;                                                      \
       goto error;                                                             \
     } (void)0
@@ -790,13 +801,13 @@ error:
  * Clipping polygon
  ******************************************************************************/
 static res_T
-parse_clip_op(const char* filename, const yaml_node_t* op)
+parse_clip_op(struct solstice_parser* parser, const yaml_node_t* op)
 {
   res_T res = RES_OK;
   ASSERT(op);
 
   if(op->type != YAML_SCALAR_NODE) {
-    log_err(filename, op, "expect a clipping operation.\n");
+    log_err(parser, op, "expect a clipping operation.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -804,7 +815,7 @@ parse_clip_op(const char* filename, const yaml_node_t* op)
   if(!strcmp((char*)op->data.scalar.value, "AND")) { /* TODO setup op */
   } else if(!strcmp((char*)op->data.scalar.value, "SUB")) { /* TODO setup op */
   } else {
-    log_err(filename, op, "unknown clipping operation `%s'.\n",
+    log_err(parser, op, "unknown clipping operation `%s'.\n",
       op->data.scalar.value);
     res = RES_BAD_ARG;
     goto error;
@@ -818,21 +829,21 @@ error:
 
 static res_T
 parse_vertices
-  (const char* filename, yaml_document_t* doc, const yaml_node_t* vertices)
+  (struct solstice_parser* parser, yaml_document_t* doc, const yaml_node_t* vertices)
 {
   intptr_t i, n;
   res_T res = RES_OK;
   ASSERT(doc && vertices);
 
   if(vertices->type != YAML_SEQUENCE_NODE) {
-    log_err(filename, vertices, "expect a list of vertices.\n");
+    log_err(parser, vertices, "expect a list of vertices.\n");
     res = RES_BAD_ARG;
     goto error;
   }
 
   n = vertices->data.sequence.items.top - vertices->data.sequence.items.start;
   if(n < 3) {
-    log_err(filename, vertices, "expect at least 3 vertices.\n");
+    log_err(parser, vertices, "expect at least 3 vertices.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -842,7 +853,7 @@ parse_vertices
     double coords[3];
 
     vertex = yaml_document_get_node(doc, vertices->data.sequence.items.start[i]);
-    res = parse_real3(filename, doc, vertex, -DBL_MAX, DBL_MAX, coords);
+    res = parse_real3(parser, doc, vertex, -DBL_MAX, DBL_MAX, coords);
     if(res != RES_OK) goto error;
 
     /* TODO register the vertex */
@@ -856,7 +867,7 @@ error:
 
 static res_T
 parse_polyclip
-  (const char* filename, yaml_document_t* doc, const yaml_node_t* polyclip)
+  (struct solstice_parser* parser, yaml_document_t* doc, const yaml_node_t* polyclip)
 {
   enum { OPERATION, VERTICES };
   intptr_t i, n;
@@ -865,7 +876,7 @@ parse_polyclip
   ASSERT(doc && polyclip);
 
   if(polyclip->type != YAML_MAPPING_NODE) {
-    log_err(filename, polyclip,
+    log_err(parser, polyclip,
       "expect a mapping of clipping polygon parameters.\n");
     res = RES_OK;
     goto error;
@@ -879,14 +890,14 @@ parse_polyclip
     key = yaml_document_get_node(doc, polyclip->data.mapping.pairs.start[i].key);
     val = yaml_document_get_node(doc, polyclip->data.mapping.pairs.start[i].value);
     if(key->type != YAML_SCALAR_NODE) {
-      log_err(filename, key, "expect a clipping polygon parameter.\n");
+      log_err(parser, key, "expect a clipping polygon parameter.\n");
       res = RES_BAD_ARG;
       goto error;
     }
 
     #define SETUP_MASK(Flag, Name) {                                           \
       if(mask & BIT(Flag)) {                                                   \
-        log_err(filename, key,                                                 \
+        log_err(parser, key,                                                   \
           "the clipping polygon parameter `"Name"' is already defined.\n");    \
         res = RES_BAD_ARG;                                                     \
         goto error;                                                            \
@@ -895,12 +906,12 @@ parse_polyclip
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "operation")) {
       SETUP_MASK(OPERATION, "operation");
-      res = parse_clip_op(filename, val);
+      res = parse_clip_op(parser, val);
     } else if(!strcmp((char*)key->data.scalar.value, "vertices")) {
       SETUP_MASK(VERTICES, "vertices");
-      res = parse_vertices(filename, doc, val);
+      res = parse_vertices(parser, doc, val);
     } else {
-      log_err(filename, key, "unknown clipping polygon parameter `%s'.\n",
+      log_err(parser, key, "unknown clipping polygon parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
     }
@@ -910,7 +921,7 @@ parse_polyclip
 
   #define CHECK_PARAM(Flag, Name)                                              \
     if(!(mask & BIT(Flag))) {                                                  \
-      log_err(filename, polyclip,                                              \
+      log_err(parser, polyclip,                                                \
         "the clipping polygon parameter `"Name"' is missing");                 \
       res = RES_BAD_ARG;                                                       \
       goto error;                                                              \
@@ -928,14 +939,17 @@ error:
 }
 
 static res_T
-parse_clip(const char* filename, yaml_document_t* doc, const yaml_node_t* clip)
+parse_clip
+  (struct solstice_parser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* clip)
 {
   intptr_t i, n;
   res_T res = RES_OK;
   ASSERT(doc && clip);
 
   if(clip->type != YAML_SEQUENCE_NODE) {
-    log_err(filename, clip, "expect a list of clipping polygons.\n");
+    log_err(parser, clip, "expect a list of clipping polygons.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -945,7 +959,7 @@ parse_clip(const char* filename, yaml_document_t* doc, const yaml_node_t* clip)
     yaml_node_t* polyclip;
 
     polyclip = yaml_document_get_node(doc, clip->data.sequence.items.start[i]);
-    res = parse_polyclip(filename, doc, polyclip);
+    res = parse_polyclip(parser, doc, polyclip);
     if(res != RES_OK) goto error;
   }
 
@@ -960,7 +974,9 @@ error:
  ******************************************************************************/
 static res_T
 parse_cuboid
-  (const char* filename, yaml_document_t* doc, const yaml_node_t* cuboid)
+  (struct solstice_parser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* cuboid)
 {
   enum { SIZE };
   double size[3];
@@ -970,7 +986,7 @@ parse_cuboid
   ASSERT(doc && cuboid);
 
   if(cuboid->type != YAML_MAPPING_NODE) {
-    log_err(filename, cuboid, "expect a mapping of cuboid parameters.\n");
+    log_err(parser, cuboid, "expect a mapping of cuboid parameters.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -983,20 +999,20 @@ parse_cuboid
     key = yaml_document_get_node(doc, cuboid->data.mapping.pairs.start[i].key);
     val = yaml_document_get_node(doc, cuboid->data.mapping.pairs.start[i].value);
     if(key->type != YAML_SCALAR_NODE) {
-      log_err(filename, key, "expect cuboid parameters.\n");
+      log_err(parser, key, "expect cuboid parameters.\n");
       res = RES_BAD_ARG;
       goto error;
     }
     if(!strcmp((char*)key->data.scalar.value, "size")) {
       if(mask & BIT(SIZE)) {
-        log_err(filename, key, "the cuboid size is already defined.\n");
+        log_err(parser, key, "the cuboid size is already defined.\n");
         res = RES_BAD_ARG;
         goto error;
       }
       mask |= BIT(SIZE);
-      res = parse_real3(filename, doc, val, 0, DBL_MAX, size);
+      res = parse_real3(parser, doc, val, 0, DBL_MAX, size);
     } else {
-      log_err(filename, key, "unknown cuboid parameter `%s'.\n",
+      log_err(parser, key, "unknown cuboid parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
     }
@@ -1004,7 +1020,7 @@ parse_cuboid
   }
 
   if(!(mask & BIT(SIZE))) {
-    log_err(filename, cuboid, "the size of the cuboid is missing.\n");
+    log_err(parser, cuboid, "the size of the cuboid is missing.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -1019,7 +1035,9 @@ error:
 
 static res_T
 parse_cylinder
-  (const char* filename, yaml_document_t* doc, const yaml_node_t* cylinder)
+  (struct solstice_parser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* cylinder)
 {
   enum { HEIGHT, RADIUS, SLICES };
   double radius;
@@ -1031,7 +1049,7 @@ parse_cylinder
   ASSERT(doc && cylinder);
 
   if(cylinder->type != YAML_MAPPING_NODE) {
-    log_err(filename, cylinder, "expect a mapping of cylinder parameters.\n");
+    log_err(parser, cylinder, "expect a mapping of cylinder parameters.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -1044,13 +1062,13 @@ parse_cylinder
     key = yaml_document_get_node(doc, cylinder->data.mapping.pairs.start[i].key);
     val = yaml_document_get_node(doc, cylinder->data.mapping.pairs.start[i].value);
     if(key->type != YAML_SCALAR_NODE) {
-      log_err(filename, key, "expect cylinder parameters.\n");
+      log_err(parser, key, "expect cylinder parameters.\n");
       res = RES_BAD_ARG;
       goto error;
     }
     #define SETUP_MASK(Flag, Name) {                                           \
       if(mask & BIT(Flag)) {                                                   \
-        log_err(filename, key,                                                 \
+        log_err(parser, key,                                                   \
           "the cylinder parameter `"Name"' is already defined.\n");            \
         res = RES_BAD_ARG;                                                     \
         goto error;                                                            \
@@ -1059,15 +1077,15 @@ parse_cylinder
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "height")) {
       SETUP_MASK(HEIGHT, "height");
-      res = parse_real(filename, val, 0, DBL_MAX, &height);
+      res = parse_real(parser, val, 0, DBL_MAX, &height);
     } else if(!strcmp((char*)key->data.scalar.value, "radius")) {
       SETUP_MASK(RADIUS, "radius");
-      res = parse_real(filename, val, 0, DBL_MAX, &radius);
+      res = parse_real(parser, val, 0, DBL_MAX, &radius);
     } else if(!strcmp((char*)key->data.scalar.value, "slices")) {
       SETUP_MASK(SLICES, "slices");
-      res = parse_integer(filename, val, 4, 4096, &nslices);
+      res = parse_integer(parser, val, 4, 4096, &nslices);
     } else {
-      log_err(filename, key, "unknown cylinder parameter `%s'.\n",
+      log_err(parser, key, "unknown cylinder parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
     }
@@ -1077,7 +1095,7 @@ parse_cylinder
 
   #define CHECK_PARAM(Flag, Name)                                              \
     if(!(mask & BIT(Flag))) {                                                  \
-      log_err(filename, cylinder,                                              \
+      log_err(parser, cylinder,                                                \
         "the cylinder parameter `"Name"' is missing.\n");                      \
       res = RES_BAD_ARG;                                                       \
       goto error;                                                              \
@@ -1096,7 +1114,7 @@ error:
 
 static res_T
 parse_imported_geometry
-  (const char* filename,
+  (struct solstice_parser* parser,
    yaml_document_t* doc,
    const yaml_node_t* geom,
    const enum geometry_fileformat fileformat)
@@ -1109,7 +1127,7 @@ parse_imported_geometry
   ASSERT(doc && geom);
 
   if(geom->type != YAML_MAPPING_NODE) {
-    log_err(filename, geom, "expect a mapping of %s parameters.\n", name);
+    log_err(parser, geom, "expect a mapping of %s parameters.\n", name);
     res = RES_BAD_ARG;
     goto error;
   }
@@ -1122,20 +1140,20 @@ parse_imported_geometry
     key = yaml_document_get_node(doc, geom->data.mapping.pairs.start[i].key);
     val = yaml_document_get_node(doc, geom->data.mapping.pairs.start[i].value);
     if(key->type != YAML_SCALAR_NODE) {
-      log_err(filename, key, "expect %s parameters.\n", name);
+      log_err(parser, key, "expect %s parameters.\n", name);
       res = RES_BAD_ARG;
       goto error;
     }
     if(!strcmp((char*)key->data.scalar.value, "path")) {
       if(mask & BIT(PATH)) {
-        log_err(filename, key, "the %s path is already defined.\n", name);
+        log_err(parser, key, "the %s path is already defined.\n", name);
         res = RES_BAD_ARG;
         goto error;
       }
       mask |= BIT(PATH);
-      res = parse_string(filename, val);
+      res = parse_string(parser, val);
     } else {
-      log_err(filename, key, "unknown %s parameter `%s'.\n",
+      log_err(parser, key, "unknown %s parameter `%s'.\n",
         name, key->data.scalar.value);
       res = RES_BAD_ARG;
     }
@@ -1143,7 +1161,7 @@ parse_imported_geometry
   }
 
   if(!(mask & BIT(PATH))) {
-    log_err(filename, geom, "the path of the %s geometry is missing.\n", name);
+    log_err(parser, geom, "the path of the %s geometry is missing.\n", name);
     res = RES_BAD_ARG;
     goto error;
   }
@@ -1158,7 +1176,7 @@ error:
 
 static res_T
 parse_paraboloid
-  (const char* filename,
+  (struct solstice_parser* parser,
    yaml_document_t* doc,
    const yaml_node_t* paraboloid,
    const enum paraboloid_type type)
@@ -1172,7 +1190,7 @@ parse_paraboloid
   ASSERT(doc && paraboloid);
 
   if(paraboloid->type != YAML_MAPPING_NODE) {
-    log_err(filename, paraboloid, "expect a mapping of %s parameters.\n", name);
+    log_err(parser, paraboloid, "expect a mapping of %s parameters.\n", name);
     res = RES_BAD_ARG;
     goto error;
   }
@@ -1185,13 +1203,13 @@ parse_paraboloid
     key = yaml_document_get_node(doc, paraboloid->data.mapping.pairs.start[i].key);
     val = yaml_document_get_node(doc, paraboloid->data.mapping.pairs.start[i].value);
     if(key->type != YAML_SCALAR_NODE) {
-      log_err(filename, key, "expect %s parameters.\n", name);
+      log_err(parser, key, "expect %s parameters.\n", name);
       res = RES_BAD_ARG;
       goto error;
     }
     #define SETUP_MASK(Flag, Name) {                                           \
       if(mask & BIT(Flag)) {                                                   \
-        log_err(filename, key,                                                 \
+        log_err(parser, key,                                                   \
           "the %s parameter `"Name"' is already defined.\n", name);            \
         res = RES_BAD_ARG;                                                     \
         goto error;                                                            \
@@ -1200,12 +1218,12 @@ parse_paraboloid
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "clip")) {
       SETUP_MASK(CLIP, "clip");
-      res = parse_clip(filename, doc, val);
+      res = parse_clip(parser, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "focal")) {
       SETUP_MASK(FOCAL, "focal");
-      res = parse_real(filename, val, nextafter(0, 1), DBL_MAX, &focal);
+      res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &focal);
     } else {
-      log_err(filename, key, "unknown %s parameter `%s'.\n",
+      log_err(parser, key, "unknown %s parameter `%s'.\n",
         name, key->data.scalar.value);
       res = RES_BAD_ARG;
     }
@@ -1214,7 +1232,7 @@ parse_paraboloid
   }
   #define CHECK_PARAM(Flag, Name)                                              \
     if(!(mask & BIT(Flag))) {                                                  \
-      log_err(filename, paraboloid,                                            \
+      log_err(parser, paraboloid,                                              \
         "the %s parameter `"Name"' is missing.\n", name);                      \
       res = RES_BAD_ARG;                                                       \
       goto error;                                                              \
@@ -1233,7 +1251,9 @@ error:
 
 static res_T
 parse_plane
-  (const char* filename, yaml_document_t* doc, const yaml_node_t* plane)
+  (struct solstice_parser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* plane)
 {
   enum { CLIP };
   intptr_t i, n;
@@ -1242,7 +1262,7 @@ parse_plane
   ASSERT(doc && plane);
 
   if(plane->type != YAML_MAPPING_NODE) {
-    log_err(filename, plane, "expect a mapping of plane parameters.\n");
+    log_err(parser, plane, "expect a mapping of plane parameters.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -1255,27 +1275,27 @@ parse_plane
     key = yaml_document_get_node(doc, plane->data.mapping.pairs.start[i].key);
     val = yaml_document_get_node(doc, plane->data.mapping.pairs.start[i].value);
     if(key->type != YAML_SCALAR_NODE) {
-      log_err(filename, key, "expect plane parameters.\n");
+      log_err(parser, key, "expect plane parameters.\n");
       res = RES_BAD_ARG;
       goto error;
     }
     if(!strcmp((char*)key->data.scalar.value, "clip")) {
       if(mask & BIT(CLIP)) {
-        log_err(filename, key, "the plane clipping is already defined.\n");
+        log_err(parser, key, "the plane clipping is already defined.\n");
         res = RES_BAD_ARG;
         goto error;
       }
       mask |= BIT(CLIP);
-      res = parse_clip(filename, doc, val);
+      res = parse_clip(parser, doc, val);
     } else {
-      log_err(filename, key, "unknown plane parameter `%s'.\n",
+      log_err(parser, key, "unknown plane parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
     }
     if(res != RES_OK) goto error;
   }
   if(!(mask & BIT(CLIP))) {
-    log_err(filename, plane, "the plane parameter `clip' is missing.\n");
+    log_err(parser, plane, "the plane parameter `clip' is missing.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -1290,7 +1310,9 @@ error:
 
 static res_T
 parse_sphere
-  (const char* filename, yaml_document_t* doc, const yaml_node_t* sphere)
+  (struct solstice_parser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* sphere)
 {
   enum { RADIUS, SLICES };
   double radius;
@@ -1301,7 +1323,7 @@ parse_sphere
   ASSERT(doc && sphere);
 
   if(sphere->type != YAML_MAPPING_NODE) {
-    log_err(filename, sphere, "expect a mapping of sphere parameters.\n");
+    log_err(parser, sphere, "expect a mapping of sphere parameters.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -1314,13 +1336,13 @@ parse_sphere
     key = yaml_document_get_node(doc, sphere->data.mapping.pairs.start[i].key);
     val = yaml_document_get_node(doc, sphere->data.mapping.pairs.start[i].value);
     if(key->type != YAML_SCALAR_NODE) {
-      log_err(filename, key, "expect sphere parameters.\n");
+      log_err(parser, key, "expect sphere parameters.\n");
       res = RES_BAD_ARG;
       goto error;
     }
     #define SETUP_MASK(Flag, Name) {                                           \
       if(mask & BIT(Flag)) {                                                   \
-        log_err(filename, key,                                                 \
+        log_err(parser, key,                                                   \
           "the sphere parameter `"Name"' is already defined.\n");              \
         res = RES_BAD_ARG;                                                     \
         goto error;                                                            \
@@ -1329,12 +1351,12 @@ parse_sphere
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "radius")) {
       SETUP_MASK(RADIUS, "radius");
-      res = parse_real(filename, val, 0, DBL_MAX, &radius);
+      res = parse_real(parser, val, 0, DBL_MAX, &radius);
     } else if(!strcmp((char*)key->data.scalar.value, "slices")) {
       SETUP_MASK(SLICES, "slices");
-      res = parse_integer(filename, val, 4, 4096, &nslices);
+      res = parse_integer(parser, val, 4, 4096, &nslices);
     } else {
-      log_err(filename, key, "unknown sphere parameter `%s'.\n",
+      log_err(parser, key, "unknown sphere parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
     }
@@ -1343,7 +1365,7 @@ parse_sphere
   }
 
   if(!(mask & BIT(RADIUS))) {
-    log_err(filename, sphere, "the sphere radius is missing.\n");
+    log_err(parser, sphere, "the sphere radius is missing.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -1360,7 +1382,9 @@ error:
  ******************************************************************************/
 res_T
 parse_object
-  (const char* filename, yaml_document_t* doc, const yaml_node_t* object)
+  (struct solstice_parser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* object)
 {
   enum { MATERIAL, SHAPE, TRANSFORM };
   double translation[3] = {0, 0, 0};
@@ -1374,7 +1398,7 @@ parse_object
    * parsing and return the aliased object */
 
   if(object->type != YAML_MAPPING_NODE) {
-    log_err(filename, object, "expect an object definition.\n");
+    log_err(parser, object, "expect an object definition.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -1387,14 +1411,14 @@ parse_object
     key = yaml_document_get_node(doc, object->data.mapping.pairs.start[i].key);
     val = yaml_document_get_node(doc, object->data.mapping.pairs.start[i].value);
     if(key->type != YAML_SCALAR_NODE) {
-      log_err(filename, key, "expect an object parameter.\n");
+      log_err(parser, key, "expect an object parameter.\n");
       res = RES_BAD_ARG;
       goto error;
     }
 
     #define SETUP_MASK(Flag, Name) {                                           \
       if(mask & BIT(Flag)) {                                                   \
-        log_err(filename, key,                                                 \
+        log_err(parser, key,                                                   \
           "the object "Name" is already defined.\n");                          \
         res = RES_BAD_ARG;                                                     \
         goto error;                                                            \
@@ -1403,36 +1427,36 @@ parse_object
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "material")) {
       SETUP_MASK(MATERIAL, "material");
-      res = parse_material(filename, doc, val);
+      res = parse_material(parser, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "cuboid")) {
       SETUP_MASK(SHAPE, "shape");
-      res = parse_cuboid(filename, doc, val);
+      res = parse_cuboid(parser, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "cylinder")) {
       SETUP_MASK(SHAPE, "shape");
-      res = parse_cylinder(filename, doc, val);
+      res = parse_cylinder(parser, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "obj")) {
       SETUP_MASK(SHAPE, "shape");
-      res = parse_imported_geometry(filename, doc, val, GEOMETRY_OBJ);
+      res = parse_imported_geometry(parser, doc, val, GEOMETRY_OBJ);
     } else if(!strcmp((char*)key->data.scalar.value, "parabol")) {
       SETUP_MASK(SHAPE, "shape");
-      res = parse_paraboloid(filename, doc, val, PARABOL);
+      res = parse_paraboloid(parser, doc, val, PARABOL);
     } else if(!strcmp((char*)key->data.scalar.value, "parabolic-cylinder")) {
       SETUP_MASK(SHAPE, "shape");
-      res = parse_paraboloid(filename, doc, val, PARABOLIC_CYLINDER);
+      res = parse_paraboloid(parser, doc, val, PARABOLIC_CYLINDER);
     } else if(!strcmp((char*)key->data.scalar.value, "plane")) {
       SETUP_MASK(SHAPE, "shape");
-      res = parse_plane(filename, doc, val);
+      res = parse_plane(parser, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "sphere")) {
       SETUP_MASK(SHAPE, "shape");
-      res = parse_sphere(filename, doc, val);
+      res = parse_sphere(parser, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "stl")) {
       SETUP_MASK(SHAPE, "shape");
-      res = parse_imported_geometry(filename, doc, val, GEOMETRY_STL);
+      res = parse_imported_geometry(parser, doc, val, GEOMETRY_STL);
     } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
       SETUP_MASK(TRANSFORM, "transform");
-      res = parse_transform(filename, doc, val, translation, rotation);
+      res = parse_transform(parser, doc, val, translation, rotation);
     } else {
-      log_err(filename, key, "unknown object parameter `%s'.\n",
+      log_err(parser, key, "unknown object parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
     }
@@ -1442,7 +1466,7 @@ parse_object
 
   #define CHECK_PARAM(Flag, Name)                                              \
     if(!(mask & BIT(Flag))) {                                                  \
-      log_err(filename, object, "the object "Name" is missing.\n");            \
+      log_err(parser, object, "the object "Name" is missing.\n");              \
       res = RES_BAD_ARG;                                                       \
       goto error;                                                              \
     } (void)0
@@ -1461,14 +1485,16 @@ error:
  ******************************************************************************/
 static res_T
 parse_children
-  (const char* filename, yaml_document_t* doc, const yaml_node_t* children)
+  (struct solstice_parser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* children)
 {
   intptr_t i, n;
   res_T res = RES_OK;
   ASSERT(doc && children);
 
   if(children->type != YAML_SEQUENCE_NODE) {
-    log_err(filename, children, "expect a list of nodes.\n");
+    log_err(parser, children, "expect a list of nodes.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -1482,13 +1508,13 @@ parse_children
 
     child = yaml_document_get_node(doc, children->data.sequence.items.start[i]);
     if(child->type != YAML_MAPPING_NODE) {
-      log_err(filename, child, "expect a node definition.\n");
+      log_err(parser, child, "expect a node definition.\n");
       res = RES_BAD_ARG;
       goto error;
     }
     nb = child->data.mapping.pairs.top - child->data.mapping.pairs.start;
     if(nb != 1) {
-      log_err(filename, child,
+      log_err(parser, child,
         "expect only one \"key:value\" pair while %li are provided.\n", nb);
       res = RES_BAD_ARG;
       goto error;
@@ -1497,9 +1523,9 @@ parse_children
     key = yaml_document_get_node(doc, child->data.mapping.pairs.start[0].key);
     val = yaml_document_get_node(doc, child->data.mapping.pairs.start[0].value);
     if(!strcmp((char*)key->data.scalar.value, "node")) {
-      res = parse_node(filename, doc, val);
+      res = parse_node(parser, doc, val);
     } else {
-      log_err(filename, key, "unexpected directive `%s'. Expect a node.\n",
+      log_err(parser, key, "unexpected directive `%s'. Expect a node.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
     }
@@ -1516,14 +1542,16 @@ error:
 
 static res_T
 parse_entities
-  (const char* filename, yaml_document_t* doc, const yaml_node_t* entities)
+  (struct solstice_parser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* entities)
 {
   intptr_t i, n;
   res_T res = RES_OK;
   ASSERT(doc && entities);
 
   if(entities->type != YAML_SEQUENCE_NODE) {
-    log_err(filename, entities, "expect a list of entities.\n");
+    log_err(parser, entities, "expect a list of entities.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -1538,14 +1566,14 @@ parse_entities
     entity = yaml_document_get_node(doc, entities->data.sequence.items.start[i]);
 
     if(entity->type != YAML_MAPPING_NODE) {
-      log_err(filename, entity, "expect an entity definition.\n");
+      log_err(parser, entity, "expect an entity definition.\n");
       res = RES_BAD_ARG;
       goto error;
     }
 
     nb = entity->data.mapping.pairs.top - entity->data.mapping.pairs.start;
     if(nb != 1) {
-      log_err(filename, entity,
+      log_err(parser, entity,
         "expect only one \"key:value\" pair while %li are provided.\n", nb);
       res = RES_BAD_ARG;
       goto error;
@@ -1554,17 +1582,17 @@ parse_entities
     key = yaml_document_get_node(doc, entity->data.mapping.pairs.start[0].key);
     val = yaml_document_get_node(doc, entity->data.mapping.pairs.start[0].value);
     if(key->type != YAML_SCALAR_NODE) {
-      log_err(filename, key, "expect an entity name.\n");
+      log_err(parser, key, "expect an entity name.\n");
       res = RES_BAD_ARG;
       goto error;
     }
 
     if(!strcmp((char*)key->data.scalar.value, "object")) {
-      res = parse_object(filename, doc, val);
+      res = parse_object(parser, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "pivot")) {
-      res = parse_pivot(filename, doc, val);
+      res = parse_pivot(parser, doc, val);
     } else {
-      log_err(filename, key, "unknown entity `%s'.\n", key->data.scalar.value);
+      log_err(parser, key, "unknown entity `%s'.\n", key->data.scalar.value);
       res = RES_BAD_ARG;
     }
     if(res != RES_OK) goto error;
@@ -1579,7 +1607,10 @@ error:
 }
 
 res_T
-parse_node(const char* filename, yaml_document_t* doc, const yaml_node_t* node)
+parse_node
+  (struct solstice_parser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* node)
 {
   enum { CHILDREN, ENTITIES, TRANSFORM };
   double translation[3] = {0, 0, 0};
@@ -1590,7 +1621,7 @@ parse_node(const char* filename, yaml_document_t* doc, const yaml_node_t* node)
   ASSERT(doc && node);
 
   if(node->type != YAML_MAPPING_NODE) {
-    log_err(filename, node, "expect a node definition.\n");
+    log_err(parser, node, "expect a node definition.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -1603,14 +1634,14 @@ parse_node(const char* filename, yaml_document_t* doc, const yaml_node_t* node)
     key = yaml_document_get_node(doc, node->data.mapping.pairs.start[i].key);
     val = yaml_document_get_node(doc, node->data.mapping.pairs.start[i].value);
     if(key->type != YAML_SCALAR_NODE) {
-      log_err(filename, key, "expect a node attribute.\n");
+      log_err(parser, key, "expect a node attribute.\n");
       res = RES_BAD_ARG;
       goto error;
     }
 
     #define SETUP_MASK(Flag, Name) {                                           \
       if(mask & BIT(Flag)) {                                                   \
-        log_err(filename, key,                                                 \
+        log_err(parser, key,                                                   \
           "the node attribute `"Name"' is already defined.\n");                \
         res = RES_BAD_ARG;                                                     \
         goto error;                                                            \
@@ -1619,15 +1650,15 @@ parse_node(const char* filename, yaml_document_t* doc, const yaml_node_t* node)
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "children")) {
       SETUP_MASK(CHILDREN, "children");
-      res = parse_children(filename, doc, val);
+      res = parse_children(parser, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "entities")) {
       SETUP_MASK(ENTITIES, "entities");
-      res = parse_entities(filename, doc, val);
+      res = parse_entities(parser, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
       SETUP_MASK(TRANSFORM, "transform");
-      res = parse_transform(filename, doc, val, translation, rotation);
+      res = parse_transform(parser, doc, val, translation, rotation);
     } else {
-      log_err(filename, key, "unknown node parameter `%s'.\n",
+      log_err(parser, key, "unknown node parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
       goto error;
@@ -1638,7 +1669,7 @@ parse_node(const char* filename, yaml_document_t* doc, const yaml_node_t* node)
 
   #define CHECK_PARAM(Flag, Name)                                              \
     if(!(mask & BIT(Flag))) {                                                  \
-      log_err(filename, node, "the node `"Name"' parameter is missing.\n");    \
+      log_err(parser, node, "the node `"Name"' parameter is missing.\n");      \
       res = RES_BAD_ARG;                                                       \
       goto error;                                                              \
     } (void)0
@@ -1656,7 +1687,9 @@ error:
  ******************************************************************************/
 static res_T
 parse_target
-  (const char* filename, yaml_document_t* doc, const yaml_node_t* target)
+  (struct solstice_parser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* target)
 {
   enum { POLICY };
   double direction[3];
@@ -1667,7 +1700,7 @@ parse_target
   ASSERT(doc && target);
 
   if(target->type != YAML_MAPPING_NODE) {
-    log_err(filename, target, "expect a target definition.\n");
+    log_err(parser, target, "expect a target definition.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -1680,14 +1713,14 @@ parse_target
     key = yaml_document_get_node(doc, target->data.mapping.pairs.start[i].key);
     val = yaml_document_get_node(doc, target->data.mapping.pairs.start[i].value);
     if(key->type != YAML_SCALAR_NODE) {
-      log_err(filename, key, "expect a target parameter.\n");
+      log_err(parser, key, "expect a target parameter.\n");
       res = RES_BAD_ARG;
       goto error;
     }
 
     #define SETUP_MASK(Flag, Name) {                                           \
       if(mask & BIT(Flag)) {                                                   \
-        log_err(filename, key, "the target "Name" is already defined.\n");     \
+        log_err(parser, key, "the target "Name" is already defined.\n");       \
         res = RES_BAD_ARG;                                                     \
         goto error;                                                            \
       }                                                                        \
@@ -1695,15 +1728,15 @@ parse_target
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "direction")) {
       SETUP_MASK(POLICY, "policy");
-      res = parse_real3(filename, doc, val, -DBL_MAX, DBL_MAX, direction);
+      res = parse_real3(parser, doc, val, -DBL_MAX, DBL_MAX, direction);
     } else if(!strcmp((char*)key->data.scalar.value, "position")) {
       SETUP_MASK(POLICY, "policy");
-      res = parse_real3(filename, doc, val, -DBL_MAX, DBL_MAX, position);
+      res = parse_real3(parser, doc, val, -DBL_MAX, DBL_MAX, position);
     } else if(!strcmp((char*)key->data.scalar.value, "sun")) {
       SETUP_MASK(POLICY, "policy");
-      res = parse_sun(filename, doc, val);
+      res = parse_sun(parser, doc, val);
     } else {
-      log_err(filename, key, "unknown target parameter `%s'.\n",
+      log_err(parser, key, "unknown target parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
       goto error;
@@ -1713,7 +1746,7 @@ parse_target
   }
 
   if(!(mask & BIT(POLICY))) {
-    log_err(filename, target, "the target policy is missing.\n");
+    log_err(parser, target, "the target policy is missing.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -1726,7 +1759,9 @@ error:
 
 static res_T
 parse_pivot
-  (const char* filename, yaml_document_t* doc, const yaml_node_t* pivot)
+  (struct solstice_parser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* pivot)
 {
   enum { NORMAL, POINT, TARGET, TRANSFORM };
   double point[3];
@@ -1739,7 +1774,7 @@ parse_pivot
   ASSERT(doc && pivot);
 
   if(pivot->type != YAML_MAPPING_NODE) {
-    log_err(filename, pivot, "expect a pivot definition.\n");
+    log_err(parser, pivot, "expect a pivot definition.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -1752,13 +1787,13 @@ parse_pivot
     key = yaml_document_get_node(doc, pivot->data.mapping.pairs.start[i].key);
     val = yaml_document_get_node(doc, pivot->data.mapping.pairs.start[i].value);
     if(key->type != YAML_SCALAR_NODE) {
-      log_err(filename, key, "expect pivot parameters.\n");
+      log_err(parser, key, "expect pivot parameters.\n");
       res = RES_BAD_ARG;
       goto error;
     }
     #define SETUP_MASK(Flag, Name) {                                           \
       if(mask & BIT(Flag)) {                                                   \
-        log_err(filename, key,                                                 \
+        log_err(parser, key,                                                   \
           "the pivot parameter `"Name"' is already defined.\n");               \
         res = RES_BAD_ARG;                                                     \
         goto error;                                                            \
@@ -1767,18 +1802,18 @@ parse_pivot
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "point")) {
       SETUP_MASK(POINT, "point");
-      res = parse_real3(filename, doc, val, -DBL_MAX, DBL_MAX, point);
+      res = parse_real3(parser, doc, val, -DBL_MAX, DBL_MAX, point);
     } else if(!strcmp((char*)key->data.scalar.value, "normal")) {
       SETUP_MASK(NORMAL, "normal");
-      res = parse_real3(filename, doc, val, -DBL_MAX, DBL_MAX, normal);
+      res = parse_real3(parser, doc, val, -DBL_MAX, DBL_MAX, normal);
     } else if(!strcmp((char*)key->data.scalar.value, "target")) {
       SETUP_MASK(TARGET, "target");
-      res = parse_target(filename, doc, val);
+      res = parse_target(parser, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
       SETUP_MASK(TRANSFORM, "transform");
-      res = parse_transform(filename, doc, val, translation, rotation);
+      res = parse_transform(parser, doc, val, translation, rotation);
     } else {
-      log_err(filename, key, "unknown pivot parameter `%s'.\n",
+      log_err(parser, key, "unknown pivot parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
     }
@@ -1788,7 +1823,7 @@ parse_pivot
 
   #define CHECK_PARAM(Flag, Name)                                              \
     if(!(mask & BIT(Flag))) {                                                  \
-      log_err(filename, pivot, "the pivot parameter `"Name"' is missing.\n");  \
+      log_err(parser, pivot, "the pivot parameter `"Name"' is missing.\n");    \
       res = RES_BAD_ARG;                                                       \
       goto error;                                                              \
     } (void)0
@@ -1806,7 +1841,10 @@ error:
  * Sun
  ******************************************************************************/
 static res_T
-parse_buie(const char* filename, yaml_document_t* doc, const yaml_node_t* buie)
+parse_buie
+  (struct solstice_parser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* buie)
 {
   enum { CSR };
   intptr_t i, n;
@@ -1816,7 +1854,7 @@ parse_buie(const char* filename, yaml_document_t* doc, const yaml_node_t* buie)
   ASSERT(doc && buie);
 
   if(buie->type != YAML_MAPPING_NODE) {
-    log_err(filename, buie,
+    log_err(parser, buie,
       "expect a buie definition of the sun radial angular distribution.\n");
     res = RES_BAD_ARG;
     goto error;
@@ -1830,21 +1868,21 @@ parse_buie(const char* filename, yaml_document_t* doc, const yaml_node_t* buie)
     key = yaml_document_get_node(doc, buie->data.mapping.pairs.start[i].key);
     val = yaml_document_get_node(doc, buie->data.mapping.pairs.start[i].value);
     if(key->type != YAML_SCALAR_NODE) {
-      log_err(filename, key, "expect a buie parameter.\n");
+      log_err(parser, key, "expect a buie parameter.\n");
       res = RES_BAD_ARG;
       goto error;
     }
 
     if(!strcmp((char*)key->data.scalar.value, "csr")) {
       if(mask & BIT(CSR)) {
-        log_err(filename, key, "the buie `csr' is already defined.\n");
+        log_err(parser, key, "the buie `csr' is already defined.\n");
         res = RES_BAD_ARG;
         goto error;
       }
       mask |= BIT(CSR);
-      res = parse_real(filename, val, nextafter(0, 1), nextafter(1, 0), &csr);
+      res = parse_real(parser, val, nextafter(0, 1), nextafter(1, 0), &csr);
     } else {
-      log_err(filename, key, "unknown buie parameter `%s'.\n",
+      log_err(parser, key, "unknown buie parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
     }
@@ -1852,7 +1890,7 @@ parse_buie(const char* filename, yaml_document_t* doc, const yaml_node_t* buie)
   }
 
   if(!(mask & BIT(CSR))) {
-    log_err(filename, buie, "the buie csr parameter is missing.\n");
+    log_err(parser, buie, "the buie csr parameter is missing.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -1865,7 +1903,9 @@ error:
 
 static res_T
 parse_pillbox
-  (const char* filename, yaml_document_t* doc, const yaml_node_t* pillbox)
+  (struct solstice_parser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* pillbox)
 {
   enum { APERTURE };
   intptr_t i, n;
@@ -1875,7 +1915,7 @@ parse_pillbox
   ASSERT(doc && pillbox);
 
   if(pillbox->type != YAML_MAPPING_NODE) {
-    log_err(filename, pillbox,
+    log_err(parser, pillbox,
       "expect a pillbox definition of the sun radial angular distribution.\n");
     res = RES_BAD_ARG;
     goto error;
@@ -1889,20 +1929,20 @@ parse_pillbox
     key = yaml_document_get_node(doc, pillbox->data.mapping.pairs.start[i].key);
     val = yaml_document_get_node(doc, pillbox->data.mapping.pairs.start[i].value);
     if(key->type != YAML_SCALAR_NODE) {
-      log_err(filename, key, "expect a pillbox parameter.\n");
+      log_err(parser, key, "expect a pillbox parameter.\n");
       res = RES_BAD_ARG;
       goto error;
     }
     if(!strcmp((char*)key->data.scalar.value, "aperture")) {
       if(mask & BIT(APERTURE)) {
-        log_err(filename, key, "the pillbox `aperture' is already defined.\n");
+        log_err(parser, key, "the pillbox `aperture' is already defined.\n");
         res = RES_BAD_ARG;
         goto error;
       }
       mask |= BIT(APERTURE);
-      res = parse_real(filename, val, nextafter(0, 1), PI/2.0, &aperture);
+      res = parse_real(parser, val, nextafter(0, 1), PI/2.0, &aperture);
     } else {
-      log_err(filename, pillbox, "unknown pillbox parameter `%s'.\n",
+      log_err(parser, pillbox, "unknown pillbox parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
     }
@@ -1910,7 +1950,7 @@ parse_pillbox
   }
 
   if(!(mask & BIT(APERTURE))) {
-    log_err(filename, pillbox, "the pillbox aperture parameter is missing.\n");
+    log_err(parser, pillbox, "the pillbox aperture parameter is missing.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -1922,7 +1962,8 @@ error:
 }
 
 res_T
-parse_sun(const char* filename, yaml_document_t* doc, const yaml_node_t* sun)
+parse_sun
+  (struct solstice_parser* parser, yaml_document_t* doc, const yaml_node_t* sun)
 {
   enum { DNI, RADIAL_ANGULAR_DISTRIB, SPECTRUM };
   double dni;
@@ -1932,7 +1973,7 @@ parse_sun(const char* filename, yaml_document_t* doc, const yaml_node_t* sun)
   ASSERT(doc && sun);
 
   if(sun->type != YAML_MAPPING_NODE) {
-    log_err(filename, sun, "expect a sun definition.\n");
+    log_err(parser, sun, "expect a sun definition.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -1945,13 +1986,13 @@ parse_sun(const char* filename, yaml_document_t* doc, const yaml_node_t* sun)
     key = yaml_document_get_node(doc, sun->data.mapping.pairs.start[i].key);
     val = yaml_document_get_node(doc, sun->data.mapping.pairs.start[i].value);
     if(key->type != YAML_SCALAR_NODE) {
-      log_err(filename, key, "expect sun parameters.\n");
+      log_err(parser, key, "expect sun parameters.\n");
       res = RES_BAD_ARG;
       goto error;
     }
     #define SETUP_MASK(Flag, Name) {                                           \
       if(mask & BIT(Flag)) {                                                   \
-        log_err(filename, key, "the sun "Name" is already defined.\n");        \
+        log_err(parser, key, "the sun "Name" is already defined.\n");          \
         res = RES_BAD_ARG;                                                     \
         goto error;                                                            \
       }                                                                        \
@@ -1959,18 +2000,18 @@ parse_sun(const char* filename, yaml_document_t* doc, const yaml_node_t* sun)
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "dni")) {
       SETUP_MASK(DNI, "dni");
-      res = parse_real(filename, val, nextafter(0, 1), DBL_MAX, &dni);
+      res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &dni);
     } else if(!strcmp((char*)key->data.scalar.value, "buie")) {
       SETUP_MASK(RADIAL_ANGULAR_DISTRIB, "radial angular distribution");
-      res = parse_buie(filename, doc, val);
+      res = parse_buie(parser, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "pillbox")) {
       SETUP_MASK(RADIAL_ANGULAR_DISTRIB, "radial angular distribution");
-      res = parse_pillbox(filename, doc, val);
+      res = parse_pillbox(parser, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "spectrum")) {
       SETUP_MASK(SPECTRUM, "spectrum");
-      res = parse_spectrum(filename, doc, 0, DBL_MAX, val);
+      res = parse_spectrum(parser, doc, 0, DBL_MAX, val);
     } else {
-      log_err(filename, key, "unknown sun parameter `%s'.\n",
+      log_err(parser, key, "unknown sun parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
     }
@@ -1980,7 +2021,7 @@ parse_sun(const char* filename, yaml_document_t* doc, const yaml_node_t* sun)
 
   #define CHECK_PARAM(Flag, Name)                                              \
     if(!(mask & BIT(Flag))) {                                                  \
-      log_err(filename, sun, "the sun "Name" is missing.\n");                  \
+      log_err(parser, sun, "the sun "Name" is missing.\n");                    \
       res = RES_BAD_ARG;                                                       \
       goto error;                                                              \
     } (void)0
@@ -1999,7 +2040,9 @@ error:
  ******************************************************************************/
 static res_T
 parse_item
-  (const char* filename, yaml_document_t* doc, const yaml_node_t* item)
+  (struct solstice_parser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* item)
 {
   yaml_node_t* key;
   yaml_node_t* val;
@@ -2008,14 +2051,14 @@ parse_item
   ASSERT(doc && item);
 
   if(item->type != YAML_MAPPING_NODE) {
-    log_err(filename, item, "expect an item definition.\n");
+    log_err(parser, item, "expect an item definition.\n");
     res = RES_BAD_ARG;
     goto error;
   }
 
   n = item->data.mapping.pairs.top - item->data.mapping.pairs.start;
   if(n != 1) {
-    log_err(filename, item,
+    log_err(parser, item,
       "expect only one \"key:value\" pair while %li are provided.\n", n);
     res = RES_BAD_ARG;
     goto error;
@@ -2024,25 +2067,25 @@ parse_item
   key = yaml_document_get_node(doc, item->data.mapping.pairs.start[0].key);
   val = yaml_document_get_node(doc, item->data.mapping.pairs.start[0].value);
   if(key->type != YAML_SCALAR_NODE) {
-    log_err(filename, key, "expecting an item name.\n");
+    log_err(parser, key, "expecting an item name.\n");
     res = RES_BAD_ARG;
     goto error;
   }
 
   if(!strcmp((char*)key->data.scalar.value, "instance")) {
-    res = parse_instance(filename, doc, val);
+    res = parse_instance(parser, doc, val);
   } else if(!strcmp((char*)key->data.scalar.value, "material")) {
-    res = parse_material(filename, doc, val);
+    res = parse_material(parser, doc, val);
   } else if(!strcmp((char*)key->data.scalar.value, "node")) {
-    res = parse_node(filename, doc, val);
+    res = parse_node(parser, doc, val);
   } else if(!strcmp((char*)key->data.scalar.value, "object")) {
-    res = parse_object(filename, doc, val);
+    res = parse_object(parser, doc, val);
   } else if(!strcmp((char*)key->data.scalar.value, "pivot")) {
-    res = parse_pivot(filename, doc, val);
+    res = parse_pivot(parser, doc, val);
   } else if(!strcmp((char*)key->data.scalar.value, "sun")) {
-    res = parse_sun(filename, doc, val);
+    res = parse_sun(parser, doc, val);
   } else {
-    log_err(filename, key, "unknown item `%s'.\n", key->data.scalar.value);
+    log_err(parser, key, "unknown item `%s'.\n", key->data.scalar.value);
     res = RES_BAD_ARG;
   }
   if(res != RES_OK) goto error;
@@ -2178,7 +2221,7 @@ solstice_parser_load(struct solstice_parser* parser)
   }
 
   if(root->type != YAML_SEQUENCE_NODE) {
-    log_err(filename, root, "expect a list of items.\n");
+    log_err(parser, root, "expect a list of items.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -2188,7 +2231,7 @@ solstice_parser_load(struct solstice_parser* parser)
     yaml_node_t* item;
 
     item = yaml_document_get_node(&doc, root->data.sequence.items.start[i]);
-    res = parse_item(filename, &doc, item);
+    res = parse_item(parser, &doc, item);
     if(res != RES_OK) goto error;
   }
 
