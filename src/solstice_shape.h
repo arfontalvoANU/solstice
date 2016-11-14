@@ -245,5 +245,12 @@ struct solstice_shape {
   } data;
 };
 
+struct solstice_object {
+  struct solstice_material_double_sided* mtl;
+  struct solstice_shape* shape;
+  double translation[3];
+  double rotation[3];
+};
+
 #endif /* SOLSTICE_SHAPE_H */
 

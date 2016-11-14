@@ -100,6 +100,11 @@
 #define DARRAY_DATA struct solstice_shape_sphere
 #include <rsys/dynamic_array.h>
 
+/* Declare the array of objects */
+#define DARRAY_NAME object
+#define DARRAY_DATA struct solstice_object
+#include <rsys/dynamic_array.h>
+
 /* Declare the hash table that maps the address of a YAML node to the id of its
  * in memory representation. */
 #define HTABLE_NAME yaml2sols
@@ -130,6 +135,10 @@ struct solstice_parser {
   struct darray_sphere spheres;
   struct darray_impgeom stls;
 
+  /* Objects */
+  struct htable_yaml2sols yaml2objs; /* Cache of objects */
+  struct darray_object objects;
+
   ref_T ref;
   struct mem_allocator* allocator;
 };
@@ -144,7 +153,8 @@ static res_T
 parse_object
   (struct solstice_parser* parser,
    yaml_document_t* doc,
-   const yaml_node_t* object);
+   yaml_node_t* object,
+   struct solstice_object** obj);
 
 static res_T
 parse_pivot
@@ -203,6 +213,10 @@ parser_clear(struct solstice_parser* parser)
   darray_plane_clear(&parser->planes);
   darray_sphere_clear(&parser->spheres);
   darray_impgeom_clear(&parser->stls);
+
+  /* Objects */
+  htable_yaml2sols_clear(&parser->yaml2objs);
+  darray_object_clear(&parser->objects);
 }
 
 static void
@@ -232,6 +246,10 @@ parser_release(ref_T* ref)
   darray_plane_release(&parser->planes);
   darray_sphere_release(&parser->spheres);
   darray_impgeom_release(&parser->stls);
+
+  /* Objects */
+  htable_yaml2sols_release(&parser->yaml2objs);
+  darray_object_release(&parser->objects);
 
   MEM_RM(parser->allocator, parser);
 }
@@ -568,6 +586,7 @@ parse_instance
    const yaml_node_t* inst)
 {
   enum { GEOMETRY, TRANSFORM };
+  struct solstice_object* obj = NULL; /* TODO */
   double translation[3] = {0, 0, 0};
   double rotation[3] = {0, 0, 0};
   intptr_t i, n;
@@ -606,7 +625,7 @@ parse_instance
       res = parse_node(parser, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "object")) {
       SETUP_MASK(GEOMETRY, "geometry");
-      res = parse_object(parser, doc, val);
+      res = parse_object(parser, doc, val, &obj);
     } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
       SETUP_MASK(TRANSFORM, "transform");
       res = parse_transform(parser, doc, val, translation, rotation);
@@ -888,6 +907,7 @@ parse_material_descriptor
     goto error;
   }
 
+  /* Cache the material */
   res = htable_yaml2sols_set(&parser->yaml2mtls, &desc, &imtl);
   if(res != RES_OK) {
     log_err(parser, desc, "could not register the material.\n");
@@ -1710,27 +1730,40 @@ res_T
 parse_object
   (struct solstice_parser* parser,
    yaml_document_t* doc,
-   const yaml_node_t* object)
+   yaml_node_t* object,
+   struct solstice_object** out_obj)
 {
   enum { MATERIAL, SHAPE, TRANSFORM };
-  struct solstice_shape* shape = NULL;
-  size_t ishape;
-  struct solstice_material_double_sided* mtl2;
-  double translation[3] = {0, 0, 0};
-  double rotation[3] = {0, 0, 0};
+  struct solstice_object* obj = NULL;
+  size_t* piobj;
+  size_t iobj, ishape;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
-  ASSERT(doc && object);
+  ASSERT(doc && object && out_obj);
 
-  /* TODO If the object is an alias of an already created object skip the
-   * parsing and return the aliased object */
+  /* Check whether or not the YAML descriptor alias an already created Solstice
+   * object */
+  piobj = htable_yaml2sols_find(&parser->yaml2objs, &object);
+  if(piobj) {
+    obj = darray_object_data_get(&parser->objects) + *piobj;
+    goto exit;
+  }
 
   if(object->type != YAML_MAPPING_NODE) {
     log_err(parser, object, "expect an object definition.\n");
     res = RES_BAD_ARG;
     goto error;
   }
+
+  /* Allocate an object */
+  iobj = darray_object_size_get(&parser->objects);
+  res = darray_object_resize(&parser->objects, iobj + 1);
+  if(res != RES_OK) {
+    log_err(parser, object, "could not allocate the object.\n");
+    goto error;
+  }
+  obj = darray_object_data_get(&parser->objects) + iobj;
 
   /* Allocate a shape */
   ishape = darray_shape_size_get(&parser->shapes);
@@ -1739,7 +1772,11 @@ parse_object
     log_err(parser, object, "could not allocate the object shape.\n");
     goto error;
   }
-  shape = darray_shape_data_get(&parser->shapes) + ishape;
+  obj->shape = darray_shape_data_get(&parser->shapes) + ishape;
+
+  /* Setup default object transformation */
+  d3_splat(obj->translation, 0);
+  d3_splat(obj->rotation, 0);
 
   n = object->data.mapping.pairs.top - object->data.mapping.pairs.start;
   FOR_EACH(i, 0, n) {
@@ -1765,46 +1802,46 @@ parse_object
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "material")) {
       SETUP_MASK(MATERIAL, "material");
-      res = parse_material(parser, doc, val, &mtl2);
+      res = parse_material(parser, doc, val, &obj->mtl);
     } else if(!strcmp((char*)key->data.scalar.value, "cuboid")) {
       SETUP_MASK(SHAPE, "shape");
-      shape->type = SOLSTICE_SHAPE_CUBOID;
-      res = parse_cuboid(parser, doc, val, &shape->data.cuboid);
+      obj->shape->type = SOLSTICE_SHAPE_CUBOID;
+      res = parse_cuboid(parser, doc, val, &obj->shape->data.cuboid);
     } else if(!strcmp((char*)key->data.scalar.value, "cylinder")) {
       SETUP_MASK(SHAPE, "shape");
-      shape->type = SOLSTICE_SHAPE_CYLINDER;
-      res = parse_cylinder(parser, doc, val, &shape->data.cylinder);
+      obj->shape->type = SOLSTICE_SHAPE_CYLINDER;
+      res = parse_cylinder(parser, doc, val, &obj->shape->data.cylinder);
     } else if(!strcmp((char*)key->data.scalar.value, "obj")) {
       SETUP_MASK(SHAPE, "shape");
-      shape->type = SOLSTICE_SHAPE_OBJ;
+      obj->shape->type = SOLSTICE_SHAPE_OBJ;
       res = parse_imported_geometry
-        (parser, doc, val, shape->type, &shape->data.obj);
+        (parser, doc, val, obj->shape->type, &obj->shape->data.obj);
     } else if(!strcmp((char*)key->data.scalar.value, "parabol")) {
       SETUP_MASK(SHAPE, "shape");
-      shape->type = SOLSTICE_SHAPE_PARABOL;
+      obj->shape->type = SOLSTICE_SHAPE_PARABOL;
       res = parse_paraboloid
-        (parser, doc, val, shape->type, &shape->data.parabol);
+        (parser, doc, val, obj->shape->type, &obj->shape->data.parabol);
     } else if(!strcmp((char*)key->data.scalar.value, "parabolic-cylinder")) {
       SETUP_MASK(SHAPE, "shape");
-      shape->type = SOLSTICE_SHAPE_PARABOLIC_CYLINDER;
+      obj->shape->type = SOLSTICE_SHAPE_PARABOLIC_CYLINDER;
       res = parse_paraboloid
-        (parser, doc, val, shape->type, &shape->data.parabolic_cylinder);
+        (parser, doc, val, obj->shape->type, &obj->shape->data.parabolic_cylinder);
     } else if(!strcmp((char*)key->data.scalar.value, "plane")) {
       SETUP_MASK(SHAPE, "shape");
-      shape->type = SOLSTICE_SHAPE_PLANE;
-      res = parse_plane(parser, doc, val, &shape->data.plane);
+      obj->shape->type = SOLSTICE_SHAPE_PLANE;
+      res = parse_plane(parser, doc, val, &obj->shape->data.plane);
     } else if(!strcmp((char*)key->data.scalar.value, "sphere")) {
       SETUP_MASK(SHAPE, "shape");
-      shape->type = SOLSTICE_SHAPE_SPHERE;
-      res = parse_sphere(parser, doc, val, &shape->data.sphere);
+      obj->shape->type = SOLSTICE_SHAPE_SPHERE;
+      res = parse_sphere(parser, doc, val, &obj->shape->data.sphere);
     } else if(!strcmp((char*)key->data.scalar.value, "stl")) {
       SETUP_MASK(SHAPE, "shape");
-      shape->type = SOLSTICE_SHAPE_STL;
+      obj->shape->type = SOLSTICE_SHAPE_STL;
       res = parse_imported_geometry
-        (parser, doc, val, shape->type, &shape->data.stl);
+        (parser, doc, val, obj->shape->type, &obj->shape->data.stl);
     } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
       SETUP_MASK(TRANSFORM, "transform");
-      res = parse_transform(parser, doc, val, translation, rotation);
+      res = parse_transform(parser, doc, val, obj->translation, obj->rotation);
     } else {
       log_err(parser, key, "unknown object parameter `%s'.\n",
         key->data.scalar.value);
@@ -1824,12 +1861,21 @@ parse_object
   CHECK_PARAM(SHAPE, "shape");
   #undef CHECK_PARAM
 
+  /* Cache the object */
+  res = htable_yaml2sols_set(&parser->yaml2objs, &object, &iobj);
+  if(res != RES_OK) {
+    log_err(parser, object, "could not register the object.\n");
+    goto error;
+  }
+
 exit:
+  *out_obj = obj;
   return res;
 error:
-  if(shape) {
-    darray_shape_pop_back(&parser->shapes);
-    shape = NULL;
+  if(obj) {
+    if(obj->shape) darray_shape_pop_back(&parser->shapes);
+    darray_object_pop_back(&parser->objects);
+    obj = NULL;
   }
   goto exit;
 }
@@ -1900,6 +1946,7 @@ parse_entities
    yaml_document_t* doc,
    const yaml_node_t* entities)
 {
+  struct solstice_object* obj;
   intptr_t i, n;
   res_T res = RES_OK;
   ASSERT(doc && entities);
@@ -1942,7 +1989,7 @@ parse_entities
     }
 
     if(!strcmp((char*)key->data.scalar.value, "object")) {
-      res = parse_object(parser, doc, val);
+      res = parse_object(parser, doc, val, &obj);
     } else if(!strcmp((char*)key->data.scalar.value, "pivot")) {
       res = parse_pivot(parser, doc, val);
     } else {
@@ -2400,7 +2447,8 @@ parse_item
 {
   yaml_node_t* key;
   yaml_node_t* val;
-  struct solstice_material_double_sided* mtl2;
+  struct solstice_material_double_sided* mtl2; /* TODO */
+  struct solstice_object* obj; /* TODO */
   intptr_t n;
   res_T res = RES_OK;
   ASSERT(doc && item);
@@ -2434,7 +2482,7 @@ parse_item
   } else if(!strcmp((char*)key->data.scalar.value, "node")) {
     res = parse_node(parser, doc, val);
   } else if(!strcmp((char*)key->data.scalar.value, "object")) {
-    res = parse_object(parser, doc, val);
+    res = parse_object(parser, doc, val, &obj);
   } else if(!strcmp((char*)key->data.scalar.value, "pivot")) {
     res = parse_pivot(parser, doc, val);
   } else if(!strcmp((char*)key->data.scalar.value, "sun")) {
@@ -2491,6 +2539,10 @@ solstice_parser_create
   darray_plane_init(mem_allocator, &parser->planes);
   darray_sphere_init(mem_allocator, &parser->spheres);
   darray_impgeom_init(mem_allocator, &parser->stls);
+
+  /* Objects */
+  htable_yaml2sols_init(mem_allocator, &parser->yaml2objs);
+  darray_object_init(mem_allocator, &parser->objects);
 
 exit:
   *out_parser = parser;
