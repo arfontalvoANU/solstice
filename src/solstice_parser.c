@@ -41,9 +41,53 @@
 #define DARRAY_DATA struct solstice_material_double_sided
 #include <rsys/dynamic_array.h>
 
-/* Declare the array of shapes */
-#define DARRAY_NAME policy
+/* Declare the array of the shapes */
+#define DARRAY_NAME shape
 #define DARRAY_DATA struct solstice_shape
+#include <rsys/dynamic_array.h>
+
+/* Declare the array of cuboid */
+#define DARRAY_NAME cuboid
+#define DARRAY_DATA struct solstice_shape_cuboid
+#include <rsys/dynamic_array.h>
+
+/* Declare the array of cylinder */
+#define DARRAY_NAME cylinder
+#define DARRAY_DATA struct solstice_shape_cylinder
+#include <rsys/dynamic_array.h>
+
+/* Declare the array of imported geometries */
+#define DARRAY_NAME impgeom
+#define DARRAY_DATA struct solstice_shape_imported_geometry
+#define DARRAY_FUNCTOR_INIT solstice_shape_imported_geometry_init
+#define DARRAY_FUNCTOR_RELEASE solstice_shape_imported_geometry_release
+#define DARRAY_FUNCTOR_COPY solstice_shape_imported_geometry_copy
+#define DARRAY_FUNCTOR_COPY_AND_RELEASE \
+  solstice_shape_imported_geometry_copy_and_release
+#include <rsys/dynamic_array.h>
+
+/* Declare the array of paraboloids */
+#define DARRAY_NAME paraboloid
+#define DARRAY_DATA struct solstice_shape_paraboloid
+#define DARRAY_FUNCTOR_INIT solstice_shape_paraboloid_init
+#define DARRAY_FUNCTOR_RELEASE solstice_shape_paraboloid_release
+#define DARRAY_FUNCTOR_COPY solstice_shape_paraboloid_copy
+#define DARRAY_FUNCTOR_COPY_AND_RELEASE \
+  solstice_shape_paraboloid_copy_and_release
+#include <rsys/dynamic_array.h>
+
+/* Declare the array of planes */
+#define DARRAY_NAME plane
+#define DARRAY_DATA struct solstice_shape_plane
+#define DARRAY_FUNCTOR_INIT solstice_shape_plane_init
+#define DARRAY_FUNCTOR_RELEASE solstice_shape_plane_release
+#define DARRAY_FUNCTOR_COPY solstice_shape_plane_copy
+#define DARRAY_FUNCTOR_COPY_AND_RELEASE solstice_shape_plane_copy_and_release
+#include <rsys/dynamic_array.h>
+
+/* Declare the array of spheres */
+#define DARRAY_NAME sphere
+#define DARRAY_DATA struct solstice_shape_sphere
 #include <rsys/dynamic_array.h>
 
 /* Declare the hash table that maps the address of a YAML node to the id of its
@@ -58,24 +102,24 @@ struct solstice_parser {
   struct str stream_name;
   int parser_is_init;
 
+  /* Materia data */
   struct htable_yaml2sols yaml2mtls; /* Cache of materials */
-
   struct darray_material mtls; /* Loaded materials */
   struct darray_material2 mtls2; /* Loaded double sided materials */
-  struct darray_polyclip polyclips; /* Loaded clipping polygon */
+
+  /* Shape data */
+  struct darray_shape shapes; /* Generic loaded shapes */
+  struct darray_cuboid cuboids; /* Loaded cuboids */
+  struct darray_cylinder cylinders; /* Loaded cylinders */
+  struct darray_impgeom objs; /* Loaded obj filename */
+  struct darray_paraboloid parabols; /* Loaded parabol */
+  struct darray_paraboloid parabolic_cylinders; /* Loaded parabolic cylinders */
+  struct darray_plane planes; /* Loaded planes */
+  struct darray_sphere spheres; /* Loaded spheres */
+  struct darray_impgeom stls; /* Loaded STL filename */
 
   ref_T ref;
   struct mem_allocator* allocator;
-};
-
-enum paraboloid_type {
-  PARABOL,
-  PARABOLIC_CYLINDER
-};
-
-enum geometry_fileformat {
-  GEOMETRY_OBJ,
-  GEOMETRY_STL
 };
 
 static res_T
@@ -124,24 +168,27 @@ log_err
   va_end(vargs_list);
 }
 
-static INLINE const char*
-paraboloid_type_name(const enum paraboloid_type type)
+/* Clean up loaded data */
+static INLINE void
+parser_clear(struct solstice_parser* parser)
 {
-  switch(type) {
-    case PARABOL: return "parabol"; break;
-    case PARABOLIC_CYLINDER: return "parabolic cylinder"; break;
-    default: FATAL("Unreachable code.\n"); break;
-  }
-}
+  ASSERT(parser);
 
-static INLINE const char*
-geometry_fileformat_name(const enum geometry_fileformat fileformat)
-{
-  switch(fileformat) {
-    case GEOMETRY_OBJ: return "obj"; break;
-    case GEOMETRY_STL: return "stl"; break;
-    default: FATAL("Unreachable code.\n"); break;
-  }
+  /* Materials */
+  htable_yaml2sols_clear(&parser->yaml2mtls);
+  darray_material_clear(&parser->mtls);
+  darray_material2_clear(&parser->mtls2);
+
+  /* Shapes */
+  darray_shape_clear(&parser->shapes);
+  darray_cuboid_clear(&parser->cuboids);
+  darray_cylinder_clear(&parser->cylinders);
+  darray_impgeom_clear(&parser->objs);
+  darray_paraboloid_clear(&parser->parabols);
+  darray_paraboloid_clear(&parser->parabolic_cylinders);
+  darray_plane_clear(&parser->planes);
+  darray_sphere_clear(&parser->spheres);
+  darray_impgeom_clear(&parser->stls);
 }
 
 static void
@@ -156,7 +203,15 @@ parser_release(ref_T* ref)
   htable_yaml2sols_release(&parser->yaml2mtls);
   darray_material_release(&parser->mtls);
   darray_material2_release(&parser->mtls2);
-  darray_polyclip_release(&parser->polyclips);
+  darray_shape_release(&parser->shapes);
+  darray_cuboid_release(&parser->cuboids);
+  darray_cylinder_release(&parser->cylinders);
+  darray_impgeom_release(&parser->objs);
+  darray_paraboloid_release(&parser->parabols);
+  darray_paraboloid_release(&parser->parabolic_cylinders);
+  darray_plane_release(&parser->planes);
+  darray_sphere_release(&parser->spheres);
+  darray_impgeom_release(&parser->stls);
   MEM_RM(parser->allocator, parser);
 }
 
@@ -281,10 +336,13 @@ error:
 }
 
 static res_T
-parse_string(struct solstice_parser* parser, yaml_node_t* string)
+parse_string
+  (struct solstice_parser* parser,
+   yaml_node_t* string,
+   struct str* str)
 {
   res_T res = RES_OK;
-  ASSERT(string);
+  ASSERT(string && str);
 
   if(string->type != YAML_SCALAR_NODE
   || !strlen((char*)string->data.scalar.value)) {
@@ -292,7 +350,13 @@ parse_string(struct solstice_parser* parser, yaml_node_t* string)
     res = RES_BAD_ARG;
     goto error;
   }
-  /* TODO create a string from the value of the YAML scalar node */
+  res = str_set(str, (char*)string->data.scalar.value);
+  if(res !=  RES_OK) {
+    log_err(parser, string, "could not register the string `%s'.\n",
+      string->data.scalar.value);
+    goto error;
+  }
+
 exit:
   return res;
 error:
@@ -964,15 +1028,13 @@ parse_polyclip
   (struct solstice_parser* parser,
    yaml_document_t* doc,
    const yaml_node_t* polyclip,
-   struct solstice_polyclip** out_clip)
+   struct solstice_polyclip* clip)
 {
   enum { OPERATION, VERTICES };
-  struct solstice_polyclip* clip = NULL;
-  size_t iclip;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
-  ASSERT(doc && polyclip && out_clip);
+  ASSERT(doc && polyclip && clip);
 
   if(polyclip->type != YAML_MAPPING_NODE) {
     log_err(parser, polyclip,
@@ -980,15 +1042,6 @@ parse_polyclip
     res = RES_OK;
     goto error;
   }
-
-  /* Allocate a clipping polygon */
-  iclip = darray_polyclip_size_get(&parser->polyclips);
-  res = darray_polyclip_resize(&parser->polyclips, iclip + 1);
-  if(res != RES_OK) {
-    log_err(parser, polyclip, "could not allocate the clipping polygon.\n");
-    goto error;
-  }
-  clip = darray_polyclip_data_get(&parser->polyclips) + iclip;
 
   n = polyclip->data.mapping.pairs.top - polyclip->data.mapping.pairs.start;
   FOR_EACH(i, 0, n) {
@@ -1039,13 +1092,8 @@ parse_polyclip
   #undef CHECK_PARAM
 
 exit:
-  *out_clip = clip;
   return res;
 error:
-  if(clip) {
-    darray_polyclip_pop_back(&parser->polyclips);
-    clip = NULL;
-  }
   goto exit;
 }
 
@@ -1054,11 +1102,11 @@ parse_clip
   (struct solstice_parser* parser,
    yaml_document_t* doc,
    const yaml_node_t* clip,
-   struct solstice_polyclip** out_polyclip)
+   struct darray_polyclip* polyclips)
 {
   intptr_t i, n;
   res_T res = RES_OK;
-  ASSERT(doc && clip && out_polyclip);
+  ASSERT(doc && clip && polyclips);
 
   if(clip->type != YAML_SEQUENCE_NODE) {
     log_err(parser, clip, "expect a list of clipping polygons.\n");
@@ -1067,11 +1115,20 @@ parse_clip
   }
 
   n = clip->data.sequence.items.top - clip->data.sequence.items.start;
-  FOR_EACH(i, 0, n) {
-    yaml_node_t* polyclip;
 
-    polyclip = yaml_document_get_node(doc, clip->data.sequence.items.start[i]);
-    res = parse_polyclip(parser, doc, polyclip, out_polyclip);
+  /* Allocate the clipping polygons */
+  res = darray_polyclip_resize(polyclips, (size_t)n);
+  if(res != RES_OK) {
+    log_err(parser, clip, "could not allocate the list of clipping polygons.\n");
+    goto error;
+  }
+
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* node;
+    struct solstice_polyclip* polyclip = darray_polyclip_data_get(polyclips) + i;
+
+    node = yaml_document_get_node(doc, clip->data.sequence.items.start[i]);
+    res = parse_polyclip(parser, doc, node, polyclip);
     if(res != RES_OK) goto error;
   }
 
@@ -1088,20 +1145,31 @@ static res_T
 parse_cuboid
   (struct solstice_parser* parser,
    yaml_document_t* doc,
-   const yaml_node_t* cuboid)
+   const yaml_node_t* cuboid,
+   struct solstice_shape_cuboid** out_shape)
 {
   enum { SIZE };
-  double size[3];
+  struct solstice_shape_cuboid* shape = NULL;
+  size_t ishape;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
-  ASSERT(doc && cuboid);
+  ASSERT(doc && cuboid && out_shape);
 
   if(cuboid->type != YAML_MAPPING_NODE) {
     log_err(parser, cuboid, "expect a mapping of cuboid parameters.\n");
     res = RES_BAD_ARG;
     goto error;
   }
+
+  /* Allocate a cuboid */
+  ishape = darray_cuboid_size_get(&parser->cuboids);
+  res = darray_cuboid_resize(&parser->cuboids, ishape + 1);
+  if(res != RES_OK) {
+    log_err(parser, cuboid, "could not allocate the cuboid shape.\n");
+    goto exit;
+  }
+  shape = darray_cuboid_data_get(&parser->cuboids) + ishape;
 
   n = cuboid->data.mapping.pairs.top - cuboid->data.mapping.pairs.start;
   FOR_EACH(i, 0, n) {
@@ -1122,7 +1190,7 @@ parse_cuboid
         goto error;
       }
       mask |= BIT(SIZE);
-      res = parse_real3(parser, doc, val, 0, DBL_MAX, size);
+      res = parse_real3(parser, doc, val, 0, DBL_MAX, shape->size);
     } else {
       log_err(parser, key, "unknown cuboid parameter `%s'.\n",
         key->data.scalar.value);
@@ -1137,11 +1205,14 @@ parse_cuboid
     goto error;
   }
 
-  /* TODO register the cuboid */
-
 exit:
+  *out_shape = shape;
   return res;
 error:
+  if(shape) {
+    darray_cuboid_pop_back(&parser->cuboids);
+    shape = NULL;
+  }
   goto exit;
 }
 
@@ -1149,22 +1220,31 @@ static res_T
 parse_cylinder
   (struct solstice_parser* parser,
    yaml_document_t* doc,
-   const yaml_node_t* cylinder)
+   const yaml_node_t* cylinder,
+   struct solstice_shape_cylinder** out_shape)
 {
   enum { HEIGHT, RADIUS, SLICES };
-  double radius;
-  double height;
-  long nslices = 16;
+  struct solstice_shape_cylinder* shape = NULL;
+  size_t ishape;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
-  ASSERT(doc && cylinder);
+  ASSERT(doc && cylinder && out_shape);
 
   if(cylinder->type != YAML_MAPPING_NODE) {
     log_err(parser, cylinder, "expect a mapping of cylinder parameters.\n");
     res = RES_BAD_ARG;
     goto error;
   }
+
+  /* Allocate a cylinder */
+  ishape = darray_cylinder_size_get(&parser->cylinders);
+  res = darray_cylinder_resize(&parser->cylinders, ishape + 1);
+  if(res != RES_OK) {
+    log_err(parser, cylinder, "could not alocate the cylinder shape.\n");
+    goto exit;
+  }
+  shape = darray_cylinder_data_get(&parser->cylinders) + ishape;
 
   n = cylinder->data.mapping.pairs.top - cylinder->data.mapping.pairs.start;
   FOR_EACH(i, 0, n) {
@@ -1189,13 +1269,13 @@ parse_cylinder
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "height")) {
       SETUP_MASK(HEIGHT, "height");
-      res = parse_real(parser, val, 0, DBL_MAX, &height);
+      res = parse_real(parser, val, 0, DBL_MAX, &shape->height);
     } else if(!strcmp((char*)key->data.scalar.value, "radius")) {
       SETUP_MASK(RADIUS, "radius");
-      res = parse_real(parser, val, 0, DBL_MAX, &radius);
+      res = parse_real(parser, val, 0, DBL_MAX, &shape->radius);
     } else if(!strcmp((char*)key->data.scalar.value, "slices")) {
       SETUP_MASK(SLICES, "slices");
-      res = parse_integer(parser, val, 4, 4096, &nslices);
+      res = parse_integer(parser, val, 4, 4096, &shape->nslices);
     } else {
       log_err(parser, key, "unknown cylinder parameter `%s'.\n",
         key->data.scalar.value);
@@ -1216,11 +1296,14 @@ parse_cylinder
   CHECK_PARAM(RADIUS, "radius");
   #undef CHECK_PARAM
 
-  /* TODO register the cylinder */
-
 exit:
+  *out_shape = shape;
   return res;
 error:
+  if(shape) {
+    darray_cylinder_pop_back(&parser->cylinders);
+    shape = NULL;
+  }
   goto exit;
 }
 
@@ -1229,20 +1312,39 @@ parse_imported_geometry
   (struct solstice_parser* parser,
    yaml_document_t* doc,
    const yaml_node_t* geom,
-   const enum geometry_fileformat fileformat)
+   const enum solstice_shape_type type,
+   struct solstice_shape_imported_geometry** out_shape)
 {
   enum { PATH };
+  struct solstice_shape_imported_geometry* shape = NULL;
+  size_t ishape;
+  const char* name;
+  struct darray_impgeom* impgeoms;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
-  const char* name = geometry_fileformat_name(fileformat);
   res_T res = RES_OK;
-  ASSERT(doc && geom);
+  ASSERT(doc && geom && out_shape);
+
+  switch(type) {
+    case SOLSTICE_SHAPE_OBJ: name = "obj"; impgeoms = &parser->objs; break;
+    case SOLSTICE_SHAPE_STL: name = "stl"; impgeoms = &parser->stls; break;
+    default: FATAL("Unreachable code.\n"); break;
+  }
 
   if(geom->type != YAML_MAPPING_NODE) {
     log_err(parser, geom, "expect a mapping of %s parameters.\n", name);
     res = RES_BAD_ARG;
     goto error;
   }
+
+  /* Allocate an imported geometry */
+  ishape = darray_impgeom_size_get(impgeoms);
+  res = darray_impgeom_resize(impgeoms, ishape + 1);
+  if(res != RES_OK) {
+    log_err(parser, geom, "could not allocate the %s shape.\n", name);
+    goto error;
+  }
+  shape = darray_impgeom_data_get(impgeoms) + ishape;
 
   n = geom->data.mapping.pairs.top - geom->data.mapping.pairs.start;
   FOR_EACH(i, 0, n) {
@@ -1263,7 +1365,7 @@ parse_imported_geometry
         goto error;
       }
       mask |= BIT(PATH);
-      res = parse_string(parser, val);
+      res = parse_string(parser, val, &shape->filename);
     } else {
       log_err(parser, key, "unknown %s parameter `%s'.\n",
         name, key->data.scalar.value);
@@ -1278,11 +1380,14 @@ parse_imported_geometry
     goto error;
   }
 
-  /* TODO Register the imported geometry */
-
 exit:
+  *out_shape = shape;
   return res;
 error:
+  if(shape) {
+    darray_impgeom_pop_back(impgeoms);
+    shape = NULL;
+  }
   goto exit;
 }
 
@@ -1291,22 +1396,45 @@ parse_paraboloid
   (struct solstice_parser* parser,
    yaml_document_t* doc,
    const yaml_node_t* paraboloid,
-   const enum paraboloid_type type)
+   const enum solstice_shape_type type,
+   struct solstice_shape_paraboloid** out_shape)
 {
   enum { CLIP, FOCAL };
-  struct solstice_polyclip* polyclip = NULL; /* TODO */
-  double focal;
+  struct solstice_shape_paraboloid* shape = NULL;
+  struct darray_paraboloid* paraboloids;
+  const char* name;
+  size_t ishape;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
-  const char* name = paraboloid_type_name(type);
   res_T res = RES_OK;
-  ASSERT(doc && paraboloid);
+  ASSERT(doc && paraboloid && out_shape);
+
+  switch(type) {
+    case SOLSTICE_SHAPE_PARABOL:
+      name = "parabol";
+      paraboloids = &parser->parabols;
+      break;
+    case SOLSTICE_SHAPE_PARABOLIC_CYLINDER:
+      name = "parabolic cylinder";
+      paraboloids = &parser->parabolic_cylinders;
+      break;
+    default: FATAL("Unreachable code.\n"); break;
+  }
 
   if(paraboloid->type != YAML_MAPPING_NODE) {
     log_err(parser, paraboloid, "expect a mapping of %s parameters.\n", name);
     res = RES_BAD_ARG;
     goto error;
   }
+
+  /* Allocate a paraboloid shape */
+  ishape = darray_paraboloid_size_get(paraboloids);
+  res = darray_paraboloid_resize(paraboloids, ishape + 1);
+  if(res != RES_OK) {
+    log_err(parser, paraboloid, "could not allocate the %s shape.\n", name);
+    goto error;
+  }
+  shape = darray_paraboloid_data_get(paraboloids) + ishape;
 
   n = paraboloid->data.mapping.pairs.top - paraboloid->data.mapping.pairs.start;
   FOR_EACH(i, 0, n) {
@@ -1331,10 +1459,10 @@ parse_paraboloid
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "clip")) {
       SETUP_MASK(CLIP, "clip");
-      res = parse_clip(parser, doc, val, &polyclip);
+      res = parse_clip(parser, doc, val, &shape->polyclips);
     } else if(!strcmp((char*)key->data.scalar.value, "focal")) {
       SETUP_MASK(FOCAL, "focal");
-      res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &focal);
+      res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &shape->focal);
     } else {
       log_err(parser, key, "unknown %s parameter `%s'.\n",
         name, key->data.scalar.value);
@@ -1354,11 +1482,14 @@ parse_paraboloid
   CHECK_PARAM(FOCAL, "focal");
   #undef CHECK_PARAM
 
-  /* TODO register the paraboloid */
-
 exit:
+  *out_shape = shape;
   return res;
 error:
+  if(shape) {
+    darray_paraboloid_pop_back(paraboloids);
+    shape = NULL;
+  }
   goto exit;
 }
 
@@ -1366,20 +1497,31 @@ static res_T
 parse_plane
   (struct solstice_parser* parser,
    yaml_document_t* doc,
-   const yaml_node_t* plane)
+   const yaml_node_t* plane,
+   struct solstice_shape_plane** out_shape)
 {
   enum { CLIP };
-  struct solstice_polyclip* polyclip = NULL; /* TODO */
+  struct solstice_shape_plane* shape = NULL;
+  size_t ishape;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
-  ASSERT(doc && plane);
+  ASSERT(doc && plane && out_shape);
 
   if(plane->type != YAML_MAPPING_NODE) {
     log_err(parser, plane, "expect a mapping of plane parameters.\n");
     res = RES_BAD_ARG;
     goto error;
   }
+
+  /* Allocate a plane shape */
+  ishape = darray_plane_size_get(&parser->planes);
+  res = darray_plane_resize(&parser->planes, ishape + 1);
+  if(res != RES_OK) {
+    log_err(parser, plane, "could not allocate the plane shape.\n");
+    goto error;
+  }
+  shape = darray_plane_data_get(&parser->planes) + ishape;
 
   n = plane->data.mapping.pairs.top - plane->data.mapping.pairs.start;
   FOR_EACH(i, 0, n) {
@@ -1400,7 +1542,7 @@ parse_plane
         goto error;
       }
       mask |= BIT(CLIP);
-      res = parse_clip(parser, doc, val, &polyclip);
+      res = parse_clip(parser, doc, val, &shape->polyclips);
     } else {
       log_err(parser, key, "unknown plane parameter `%s'.\n",
         key->data.scalar.value);
@@ -1414,11 +1556,14 @@ parse_plane
     goto error;
   }
 
-  /* TODO register the plane */
-
 exit:
+  *out_shape = shape;
   return res;
 error:
+  if(shape) {
+    darray_plane_pop_back(&parser->planes);
+    shape = NULL;
+  }
   goto exit;
 }
 
@@ -1426,21 +1571,31 @@ static res_T
 parse_sphere
   (struct solstice_parser* parser,
    yaml_document_t* doc,
-   const yaml_node_t* sphere)
+   const yaml_node_t* sphere,
+   struct solstice_shape_sphere** out_shape)
 {
   enum { RADIUS, SLICES };
-  double radius;
-  long nslices;
+  struct solstice_shape_sphere* shape = NULL;
+  size_t ishape;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
-  ASSERT(doc && sphere);
+  ASSERT(doc && sphere && out_shape);
 
   if(sphere->type != YAML_MAPPING_NODE) {
     log_err(parser, sphere, "expect a mapping of sphere parameters.\n");
     res = RES_BAD_ARG;
     goto error;
   }
+
+  /* Allocate a shpere shape */
+  ishape = darray_sphere_size_get(&parser->spheres);
+  res = darray_sphere_resize(&parser->spheres, ishape + 1);
+  if(res != RES_OK) {
+    log_err(parser, sphere, "could not allocate the sphere shape.\n");
+    goto error;
+  }
+  shape = darray_sphere_data_get(&parser->spheres) + ishape;
 
   n = sphere->data.mapping.pairs.top - sphere->data.mapping.pairs.start;
   FOR_EACH(i, 0, n) {
@@ -1465,10 +1620,10 @@ parse_sphere
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "radius")) {
       SETUP_MASK(RADIUS, "radius");
-      res = parse_real(parser, val, 0, DBL_MAX, &radius);
+      res = parse_real(parser, val, 0, DBL_MAX, &shape->radius);
     } else if(!strcmp((char*)key->data.scalar.value, "slices")) {
       SETUP_MASK(SLICES, "slices");
-      res = parse_integer(parser, val, 4, 4096, &nslices);
+      res = parse_integer(parser, val, 4, 4096, &shape->nslices);
     } else {
       log_err(parser, key, "unknown sphere parameter `%s'.\n",
         key->data.scalar.value);
@@ -1483,11 +1638,15 @@ parse_sphere
     res = RES_BAD_ARG;
     goto error;
   }
-  /* TODO register the sphere */
 
 exit:
+  *out_shape = shape;
   return res;
 error:
+  if(shape) {
+    darray_sphere_pop_back(&parser->spheres);
+    shape = NULL;
+  }
   goto exit;
 }
 
@@ -1501,6 +1660,8 @@ parse_object
    const yaml_node_t* object)
 {
   enum { MATERIAL, SHAPE, TRANSFORM };
+  struct solstice_shape* shape = NULL;
+  size_t ishape;
   struct solstice_material_double_sided* mtl2;
   double translation[3] = {0, 0, 0};
   double rotation[3] = {0, 0, 0};
@@ -1517,6 +1678,15 @@ parse_object
     res = RES_BAD_ARG;
     goto error;
   }
+
+  /* Allocate a shape */
+  ishape = darray_shape_size_get(&parser->shapes);
+  res = darray_shape_resize(&parser->shapes, ishape + 1);
+  if(res != RES_OK) {
+    log_err(parser, object, "could not allocate the object shape.\n");
+    goto error;
+  }
+  shape = darray_shape_data_get(&parser->shapes) + ishape;
 
   n = object->data.mapping.pairs.top - object->data.mapping.pairs.start;
   FOR_EACH(i, 0, n) {
@@ -1545,28 +1715,40 @@ parse_object
       res = parse_material(parser, doc, val, &mtl2);
     } else if(!strcmp((char*)key->data.scalar.value, "cuboid")) {
       SETUP_MASK(SHAPE, "shape");
-      res = parse_cuboid(parser, doc, val);
+      shape->type = SOLSTICE_SHAPE_CUBOID;
+      res = parse_cuboid(parser, doc, val, &shape->data.cuboid);
     } else if(!strcmp((char*)key->data.scalar.value, "cylinder")) {
       SETUP_MASK(SHAPE, "shape");
-      res = parse_cylinder(parser, doc, val);
+      shape->type = SOLSTICE_SHAPE_CYLINDER;
+      res = parse_cylinder(parser, doc, val, &shape->data.cylinder);
     } else if(!strcmp((char*)key->data.scalar.value, "obj")) {
       SETUP_MASK(SHAPE, "shape");
-      res = parse_imported_geometry(parser, doc, val, GEOMETRY_OBJ);
+      shape->type = SOLSTICE_SHAPE_OBJ;
+      res = parse_imported_geometry
+        (parser, doc, val, shape->type, &shape->data.obj);
     } else if(!strcmp((char*)key->data.scalar.value, "parabol")) {
       SETUP_MASK(SHAPE, "shape");
-      res = parse_paraboloid(parser, doc, val, PARABOL);
+      shape->type = SOLSTICE_SHAPE_PARABOL;
+      res = parse_paraboloid
+        (parser, doc, val, shape->type, &shape->data.parabol);
     } else if(!strcmp((char*)key->data.scalar.value, "parabolic-cylinder")) {
       SETUP_MASK(SHAPE, "shape");
-      res = parse_paraboloid(parser, doc, val, PARABOLIC_CYLINDER);
+      shape->type = SOLSTICE_SHAPE_PARABOLIC_CYLINDER;
+      res = parse_paraboloid
+        (parser, doc, val, shape->type, &shape->data.parabolic_cylinder);
     } else if(!strcmp((char*)key->data.scalar.value, "plane")) {
       SETUP_MASK(SHAPE, "shape");
-      res = parse_plane(parser, doc, val);
+      shape->type = SOLSTICE_SHAPE_PLANE;
+      res = parse_plane(parser, doc, val, &shape->data.plane);
     } else if(!strcmp((char*)key->data.scalar.value, "sphere")) {
       SETUP_MASK(SHAPE, "shape");
-      res = parse_sphere(parser, doc, val);
+      shape->type = SOLSTICE_SHAPE_SPHERE;
+      res = parse_sphere(parser, doc, val, &shape->data.sphere);
     } else if(!strcmp((char*)key->data.scalar.value, "stl")) {
       SETUP_MASK(SHAPE, "shape");
-      res = parse_imported_geometry(parser, doc, val, GEOMETRY_STL);
+      shape->type = SOLSTICE_SHAPE_STL;
+      res = parse_imported_geometry
+        (parser, doc, val, shape->type, &shape->data.stl);
     } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
       SETUP_MASK(TRANSFORM, "transform");
       res = parse_transform(parser, doc, val, translation, rotation);
@@ -1592,6 +1774,10 @@ parse_object
 exit:
   return res;
 error:
+  if(shape) {
+    darray_shape_pop_back(&parser->shapes);
+    shape = NULL;
+  }
   goto exit;
 }
 
@@ -2238,7 +2424,15 @@ solstice_parser_create
   htable_yaml2sols_init(mem_allocator, &parser->yaml2mtls);
   darray_material_init(mem_allocator, &parser->mtls);
   darray_material2_init(mem_allocator, &parser->mtls2);
-  darray_polyclip_init(mem_allocator, &parser->polyclips);
+  darray_shape_init(mem_allocator, &parser->shapes);
+  darray_cuboid_init(mem_allocator, &parser->cuboids);
+  darray_cylinder_init(mem_allocator, &parser->cylinders);
+  darray_impgeom_init(mem_allocator, &parser->objs);
+  darray_paraboloid_init(mem_allocator, &parser->parabols);
+  darray_paraboloid_init(mem_allocator, &parser->parabolic_cylinders);
+  darray_plane_init(mem_allocator, &parser->planes);
+  darray_sphere_init(mem_allocator, &parser->spheres);
+  darray_impgeom_init(mem_allocator, &parser->stls);
 
 exit:
   *out_parser = parser;
@@ -2315,11 +2509,7 @@ solstice_parser_load(struct solstice_parser* parser)
 
   filename = str_cget(&parser->stream_name);
 
-  /* Clean up previously loaded data */
-  htable_yaml2sols_clear(&parser->yaml2mtls);
-  darray_material_clear(&parser->mtls);
-  darray_material2_clear(&parser->mtls2);
-  darray_polyclip_clear(&parser->polyclips);
+  parser_clear(parser); /* Clean up previously loaded data */
 
   if(!parser->parser_is_init) {
     res = RES_BAD_OP;
@@ -2366,6 +2556,7 @@ exit:
   if(doc_is_init) yaml_document_delete(&doc);
   return res;
 error:
+  parser_clear(parser);
   goto exit;
 }
 
