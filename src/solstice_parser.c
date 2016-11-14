@@ -31,6 +31,16 @@
 #include <string.h>
 #include <yaml.h>
 
+/* Declare the array of matte materials */
+#define DARRAY_NAME matte
+#define DARRAY_DATA struct solstice_material_matte
+#include <rsys/dynamic_array.h>
+
+/* Declare the array of mirror materials */
+#define DARRAY_NAME mirror
+#define DARRAY_DATA struct solstice_material_mirror
+#include <rsys/dynamic_array.h>
+
 /* Declare the array of materials  */
 #define DARRAY_NAME material
 #define DARRAY_DATA struct solstice_material
@@ -104,19 +114,21 @@ struct solstice_parser {
 
   /* Materia data */
   struct htable_yaml2sols yaml2mtls; /* Cache of materials */
-  struct darray_material mtls; /* Loaded materials */
-  struct darray_material2 mtls2; /* Loaded double sided materials */
+  struct darray_material mtls;
+  struct darray_material2 mtls2; /* Double sided materials */
+  struct darray_matte mattes;
+  struct darray_mirror mirrors;
 
   /* Shape data */
   struct darray_shape shapes; /* Generic loaded shapes */
-  struct darray_cuboid cuboids; /* Loaded cuboids */
-  struct darray_cylinder cylinders; /* Loaded cylinders */
-  struct darray_impgeom objs; /* Loaded obj filename */
-  struct darray_paraboloid parabols; /* Loaded parabol */
-  struct darray_paraboloid parabolic_cylinders; /* Loaded parabolic cylinders */
-  struct darray_plane planes; /* Loaded planes */
-  struct darray_sphere spheres; /* Loaded spheres */
-  struct darray_impgeom stls; /* Loaded STL filename */
+  struct darray_cuboid cuboids;
+  struct darray_cylinder cylinders;
+  struct darray_impgeom objs;
+  struct darray_paraboloid parabols;
+  struct darray_paraboloid parabolic_cylinders;
+  struct darray_plane planes;
+  struct darray_sphere spheres;
+  struct darray_impgeom stls;
 
   ref_T ref;
   struct mem_allocator* allocator;
@@ -178,6 +190,8 @@ parser_clear(struct solstice_parser* parser)
   htable_yaml2sols_clear(&parser->yaml2mtls);
   darray_material_clear(&parser->mtls);
   darray_material2_clear(&parser->mtls2);
+  darray_matte_clear(&parser->mattes);
+  darray_mirror_clear(&parser->mirrors);
 
   /* Shapes */
   darray_shape_clear(&parser->shapes);
@@ -200,9 +214,15 @@ parser_release(ref_T* ref)
   parser = CONTAINER_OF(ref, struct solstice_parser, ref);
   if(parser->parser_is_init) yaml_parser_delete(&parser->parser);
   str_release(&parser->stream_name);
+
+  /* Materials */
   htable_yaml2sols_release(&parser->yaml2mtls);
   darray_material_release(&parser->mtls);
   darray_material2_release(&parser->mtls2);
+  darray_matte_release(&parser->mattes);
+  darray_mirror_release(&parser->mirrors);
+
+  /* Shapes */
   darray_shape_release(&parser->shapes);
   darray_cuboid_release(&parser->cuboids);
   darray_cylinder_release(&parser->cylinders);
@@ -212,6 +232,7 @@ parser_release(ref_T* ref)
   darray_plane_release(&parser->planes);
   darray_sphere_release(&parser->spheres);
   darray_impgeom_release(&parser->stls);
+
   MEM_RM(parser->allocator, parser);
 }
 
@@ -623,13 +644,15 @@ parse_material_matte
   (struct solstice_parser* parser,
    yaml_document_t* doc,
    const yaml_node_t* matte,
-   struct solstice_material* mtl)
+   struct solstice_material_matte** out_mtl)
 {
   enum { REFLECTIVITY };
+  struct solstice_material_matte* mtl = NULL;
+  size_t imtl;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
-  ASSERT(doc && matte && mtl);
+  ASSERT(doc && matte && out_mtl);
 
   if(matte->type != YAML_MAPPING_NODE) {
     log_err(parser, matte, "expect a mapping of matte material parameters.\n");
@@ -637,7 +660,15 @@ parse_material_matte
     goto error;
   }
 
-  mtl->type = SOLSTICE_MATERIAL_MATTE;
+  /* Allocate the matte material */
+  imtl = darray_matte_size_get(&parser->mattes);
+  res = darray_matte_resize(&parser->mattes, imtl + 1);
+  if(res != RES_OK) {
+    log_err(parser, matte, "could not allocate the matte material.\n");
+    goto error;
+  }
+  mtl = darray_matte_data_get(&parser->mattes) + imtl;
+
   n = matte->data.mapping.pairs.top - matte->data.mapping.pairs.start;
   FOR_EACH(i, 0, n) {
     yaml_node_t* key;
@@ -658,7 +689,7 @@ parse_material_matte
         goto error;
       }
       mask |= BIT(REFLECTIVITY);
-      res = parse_real(parser, val, 0, 1, &mtl->data.matte.reflectivity);
+      res = parse_real(parser, val, 0, 1, &mtl->reflectivity);
     } else {
       log_err(parser, key, "unknown matte parameter `%s'.\n",
         key->data.scalar.value);
@@ -674,8 +705,13 @@ parse_material_matte
   }
 
 exit:
+  *out_mtl = mtl;
   return res;
 error:
+  if(mtl) {
+    darray_matte_pop_back(&parser->mattes);
+    mtl = NULL;
+  }
   goto exit;
 }
 
@@ -684,13 +720,15 @@ parse_material_mirror
   (struct solstice_parser* parser,
    yaml_document_t* doc,
    const yaml_node_t* mirror,
-   struct solstice_material* mtl)
+   struct solstice_material_mirror** out_mtl)
 {
   enum { REFLECTIVITY, ROUGHNESS };
+  struct solstice_material_mirror* mtl = NULL;
+  size_t imtl;
   int mask = 0; /* Register the parsed attributes */
   intptr_t i, n;
   res_T res = RES_OK;
-  ASSERT(doc && mirror && mtl);
+  ASSERT(doc && mirror && out_mtl);
 
   if(mirror->type != YAML_MAPPING_NODE) {
     log_err(parser, mirror,
@@ -699,7 +737,15 @@ parse_material_mirror
     goto error;
   }
 
-  mtl->type = SOLSTICE_MATERIAL_MIRROR;
+  /* Allocate the mirror material */
+  imtl = darray_mirror_size_get(&parser->mirrors);
+  res = darray_mirror_resize(&parser->mirrors, imtl + 1);
+  if(res != RES_OK) {
+    log_err(parser, mirror, "could not allocate the mirror material.\n");
+    goto error;
+  }
+  mtl = darray_mirror_data_get(&parser->mirrors) + imtl;
+
   n = mirror->data.mapping.pairs.top - mirror->data.mapping.pairs.start;
   FOR_EACH(i, 0, n) {
     yaml_node_t* key;
@@ -724,10 +770,10 @@ parse_material_mirror
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "reflectivity")) {
       SETUP_MASK(REFLECTIVITY, "reflectivity");
-      res = parse_real(parser, val, 0, 1, &mtl->data.mirror.reflectivity);
+      res = parse_real(parser, val, 0, 1, &mtl->reflectivity);
     } else if(!strcmp((char*)key->data.scalar.value, "roughness")) {
       SETUP_MASK(ROUGHNESS, "roughness");
-      res = parse_real(parser, val, 0, 1, &mtl->data.mirror.roughness);
+      res = parse_real(parser, val, 0, 1, &mtl->roughness);
     } else {
       log_err(parser, key, "unknown mirror attribute `%s'.\n",
         key->data.scalar.value);
@@ -748,8 +794,13 @@ parse_material_mirror
   #undef CHECK_PARAM
 
 exit:
+  *out_mtl = mtl;
   return res;
 error:
+  if(mtl) {
+    darray_mirror_pop_back(&parser->mirrors);
+    mtl = NULL;
+  }
   goto exit;
 }
 
@@ -815,10 +866,12 @@ parse_material_descriptor
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "matte")) {
       SETUP_MASK(DESCRIPTOR, "descriptor");
-      res = parse_material_matte(parser, doc, val, mtl);
+      mtl->type = SOLSTICE_MATERIAL_MATTE;
+      res = parse_material_matte(parser, doc, val, &mtl->data.matte);
     } else if(!strcmp((char*)key->data.scalar.value, "mirror")) {
       SETUP_MASK(DESCRIPTOR, "descriptor");
-      res = parse_material_mirror(parser, doc, val, mtl);
+      mtl->type = SOLSTICE_MATERIAL_MIRROR;
+      res = parse_material_mirror(parser, doc, val, &mtl->data.mirror);
     } else {
       log_err(parser, key, "unknown material descriptor `%s'.\n",
         key->data.scalar.value);
@@ -2421,9 +2474,14 @@ solstice_parser_create
   ref_init(&parser->ref);
   str_init(mem_allocator, &parser->stream_name);
 
+  /* Materials */
   htable_yaml2sols_init(mem_allocator, &parser->yaml2mtls);
   darray_material_init(mem_allocator, &parser->mtls);
   darray_material2_init(mem_allocator, &parser->mtls2);
+  darray_matte_init(mem_allocator, &parser->mattes);
+  darray_mirror_init(mem_allocator, &parser->mirrors);
+
+  /* Shapes */
   darray_shape_init(mem_allocator, &parser->shapes);
   darray_cuboid_init(mem_allocator, &parser->cuboids);
   darray_cylinder_init(mem_allocator, &parser->cylinders);

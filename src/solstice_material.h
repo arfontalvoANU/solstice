@@ -33,8 +33,8 @@ struct solstice_material_mirror {
 struct solstice_material {
   enum solstice_material_type type;
   union {
-    struct solstice_material_matte matte;
-    struct solstice_material_mirror mirror;
+    struct solstice_material_matte* matte;
+    struct solstice_material_mirror* mirror;
   } data;
 };
 
