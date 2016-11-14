@@ -18,6 +18,7 @@
 #include "solstice_material.h"
 #include "solstice_parser.h"
 #include "solstice_shape.h"
+#include "solstice_sun.h"
 
 #include <rsys/cstr.h>
 #include <rsys/double3.h>
@@ -139,6 +140,10 @@ struct solstice_parser {
   struct htable_yaml2sols yaml2objs; /* Cache of objects */
   struct darray_object objects;
 
+  /* Sun. Note that only one sun is supported */
+  const yaml_node_t* sun_key; /* Value of the yaml_node_t ptr used to spawn the sun */
+  struct solstice_sun sun; /* The loaded sun */
+
   ref_T ref;
   struct mem_allocator* allocator;
 };
@@ -166,7 +171,8 @@ static res_T
 parse_sun
   (struct solstice_parser* parser,
    yaml_document_t* doc,
-   const yaml_node_t* sun);
+   const yaml_node_t* sun,
+   struct solstice_sun** out_solsun);
 
 /*******************************************************************************
  * Helper functions
@@ -217,6 +223,10 @@ parser_clear(struct solstice_parser* parser)
   /* Objects */
   htable_yaml2sols_clear(&parser->yaml2objs);
   darray_object_clear(&parser->objects);
+
+  /* Sun */
+  solstice_sun_clear(&parser->sun);
+  parser->sun_key = 0;
 }
 
 static void
@@ -250,6 +260,8 @@ parser_release(ref_T* ref)
   /* Objects */
   htable_yaml2sols_release(&parser->yaml2objs);
   darray_object_release(&parser->objects);
+
+  solstice_sun_release(&parser->sun);
 
   MEM_RM(parser->allocator, parser);
 }
@@ -472,15 +484,14 @@ parse_spectrum_data
    yaml_document_t* doc,
    const double lower_bound,
    const double upper_bound,
-   const yaml_node_t* sdata)
+   const yaml_node_t* sdata,
+   struct solstice_spectrum_data* spectrum_data)
 {
   enum { DATA, WAVELENGTH };
-  double wavelength;
-  double data;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
-  ASSERT(doc && data && lower_bound < upper_bound);
+  ASSERT(doc && sdata && lower_bound < upper_bound && spectrum_data);
 
   if(sdata->type != YAML_MAPPING_NODE) {
     log_err(parser, sdata, "expect the definition of a spectrum data.\n");
@@ -512,10 +523,10 @@ parse_spectrum_data
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "data")) {
       SETUP_MASK(DATA, "data");
-      res = parse_real(parser, val, lower_bound, upper_bound, &data);
+      res = parse_real(parser, val, lower_bound, upper_bound, &spectrum_data->data);
     } else if(!strcmp((char*)key->data.scalar.value, "wavelength")) {
       SETUP_MASK(WAVELENGTH, "wavelength");
-      res = parse_real(parser, val, 0, DBL_MAX, &wavelength);
+      res = parse_real(parser, val, 0, DBL_MAX, &spectrum_data->wavelength);
     } else {
       log_err(parser, key, "unknown spectrum data parameter `%s'.\n",
         key->data.scalar.value);
@@ -538,7 +549,7 @@ parse_spectrum_data
 exit:
   return res;
 error:
-    goto exit;
+  goto exit;
 }
 
 static res_T
@@ -547,11 +558,12 @@ parse_spectrum
    yaml_document_t* doc,
    const double lower_bound,
    const double upper_bound,
-   const yaml_node_t* spectrum)
+   const yaml_node_t* spectrum,
+   struct darray_spectrum_data* data)
 {
   intptr_t i, n;
   res_T res = RES_OK;
-  ASSERT(doc && spectrum && lower_bound < upper_bound);
+  ASSERT(doc && spectrum && lower_bound < upper_bound && data);
 
   if(spectrum->type != YAML_SEQUENCE_NODE) {
     log_err(parser, spectrum, "expect a list of spectrum data.\n");
@@ -560,19 +572,27 @@ parse_spectrum
   }
 
   n = spectrum->data.sequence.items.top - spectrum->data.sequence.items.start;
+  res = darray_spectrum_data_resize(data, (size_t)n);
+  if(res != RES_OK) {
+    log_err(parser, spectrum, "could not allocate the list of spectrum data.\n");
+    goto error;
+  }
+
   FOR_EACH(i, 0, n) {
     yaml_node_t* sdata;
+    struct solstice_spectrum_data* spectrum_data;
 
     sdata = yaml_document_get_node(doc, spectrum->data.sequence.items.start[i]);
-    res = parse_spectrum_data(parser, doc, lower_bound, upper_bound, sdata);
+    spectrum_data = darray_spectrum_data_data_get(data) + i;
+    res = parse_spectrum_data
+      (parser, doc, lower_bound, upper_bound, sdata, spectrum_data);
     if(res != RES_OK) goto error;
-
-    /* TODO register the spectrum data */
   }
 
 exit:
   return res;
 error:
+  darray_spectrum_data_clear(data);
   goto exit;
 }
 
@@ -2093,6 +2113,7 @@ parse_target
    const yaml_node_t* target)
 {
   enum { POLICY };
+  struct solstice_sun* sun; /* TODO */
   double direction[3];
   double position[3];
   intptr_t i, n;
@@ -2135,7 +2156,7 @@ parse_target
       res = parse_real3(parser, doc, val, -DBL_MAX, DBL_MAX, position);
     } else if(!strcmp((char*)key->data.scalar.value, "sun")) {
       SETUP_MASK(POLICY, "policy");
-      res = parse_sun(parser, doc, val);
+      res = parse_sun(parser, doc, val, &sun);
     } else {
       log_err(parser, key, "unknown target parameter `%s'.\n",
         key->data.scalar.value);
@@ -2245,14 +2266,14 @@ static res_T
 parse_buie
   (struct solstice_parser* parser,
    yaml_document_t* doc,
-   const yaml_node_t* buie)
+   const yaml_node_t* buie,
+   struct solstice_sun_buie* sun)
 {
   enum { CSR };
   intptr_t i, n;
-  double csr;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
-  ASSERT(doc && buie);
+  ASSERT(doc && buie && sun);
 
   if(buie->type != YAML_MAPPING_NODE) {
     log_err(parser, buie,
@@ -2281,7 +2302,7 @@ parse_buie
         goto error;
       }
       mask |= BIT(CSR);
-      res = parse_real(parser, val, nextafter(0, 1), nextafter(1, 0), &csr);
+      res = parse_real(parser, val, nextafter(0, 1), nextafter(1, 0), &sun->csr);
     } else {
       log_err(parser, key, "unknown buie parameter `%s'.\n",
         key->data.scalar.value);
@@ -2306,14 +2327,14 @@ static res_T
 parse_pillbox
   (struct solstice_parser* parser,
    yaml_document_t* doc,
-   const yaml_node_t* pillbox)
+   const yaml_node_t* pillbox,
+   struct solstice_sun_pillbox* sun)
 {
   enum { APERTURE };
   intptr_t i, n;
-  double aperture;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
-  ASSERT(doc && pillbox);
+  ASSERT(doc && pillbox && sun);
 
   if(pillbox->type != YAML_MAPPING_NODE) {
     log_err(parser, pillbox,
@@ -2341,7 +2362,7 @@ parse_pillbox
         goto error;
       }
       mask |= BIT(APERTURE);
-      res = parse_real(parser, val, nextafter(0, 1), PI/2.0, &aperture);
+      res = parse_real(parser, val, nextafter(0, 1), PI/2.0, &sun->aperture);
     } else {
       log_err(parser, pillbox, "unknown pillbox parameter `%s'.\n",
         key->data.scalar.value);
@@ -2364,14 +2385,33 @@ error:
 
 res_T
 parse_sun
-  (struct solstice_parser* parser, yaml_document_t* doc, const yaml_node_t* sun)
+  (struct solstice_parser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* sun,
+   struct solstice_sun** out_solsun)
 {
   enum { DNI, RADIAL_ANGULAR_DISTRIB, SPECTRUM };
-  double dni;
+  struct solstice_sun* solsun = NULL;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
-  ASSERT(doc && sun);
+  ASSERT(doc && sun && out_solsun);
+
+  if(sun == parser->sun_key) {
+    solsun = &parser->sun;
+    goto exit;
+  } else if(parser->sun_key != 0) {
+    log_err(parser, sun,
+      "a sun is already defined. Previous definition is here %lu:%lu.\n",
+      (unsigned long)parser->sun_key->start_mark.line+1,
+      (unsigned long)parser->sun_key->start_mark.column+1);
+    res = RES_BAD_ARG;
+    goto error;
+  } else {
+    solsun = &parser->sun;
+    parser->sun_key = sun;
+    solsun->radang_distrib_type = SOLSTICE_SUN_RADANG_DISTRIB_DIRECTIONAL;
+  }
 
   if(sun->type != YAML_MAPPING_NODE) {
     log_err(parser, sun, "expect a sun definition.\n");
@@ -2401,16 +2441,18 @@ parse_sun
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "dni")) {
       SETUP_MASK(DNI, "dni");
-      res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &dni);
+      res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &solsun->dni);
     } else if(!strcmp((char*)key->data.scalar.value, "buie")) {
       SETUP_MASK(RADIAL_ANGULAR_DISTRIB, "radial angular distribution");
-      res = parse_buie(parser, doc, val);
+      solsun->radang_distrib_type = SOLSTICE_SUN_RADANG_DISTRIB_BUIE;
+      res = parse_buie(parser, doc, val, &solsun->radang_distrib.buie);
     } else if(!strcmp((char*)key->data.scalar.value, "pillbox")) {
       SETUP_MASK(RADIAL_ANGULAR_DISTRIB, "radial angular distribution");
-      res = parse_pillbox(parser, doc, val);
+      solsun->radang_distrib_type = SOLSTICE_SUN_RADANG_DISTRIB_PILLBOX;
+      res = parse_pillbox(parser, doc, val, &solsun->radang_distrib.pillbox);
     } else if(!strcmp((char*)key->data.scalar.value, "spectrum")) {
       SETUP_MASK(SPECTRUM, "spectrum");
-      res = parse_spectrum(parser, doc, 0, DBL_MAX, val);
+      res = parse_spectrum(parser, doc, 0, DBL_MAX, val, &solsun->spectrum);
     } else {
       log_err(parser, key, "unknown sun parameter `%s'.\n",
         key->data.scalar.value);
@@ -2431,8 +2473,14 @@ parse_sun
   #undef CHECK_PARAM
 
 exit:
+  *out_solsun = solsun;
   return res;
 error:
+  if(solsun) {
+    solstice_sun_clear(solsun);
+    solsun = NULL;
+    parser->sun_key = 0;
+  }
   goto exit;
 }
 
@@ -2447,6 +2495,7 @@ parse_item
 {
   yaml_node_t* key;
   yaml_node_t* val;
+  struct solstice_sun* sun; /* TODO */
   struct solstice_material_double_sided* mtl2; /* TODO */
   struct solstice_object* obj; /* TODO */
   intptr_t n;
@@ -2486,7 +2535,7 @@ parse_item
   } else if(!strcmp((char*)key->data.scalar.value, "pivot")) {
     res = parse_pivot(parser, doc, val);
   } else if(!strcmp((char*)key->data.scalar.value, "sun")) {
-    res = parse_sun(parser, doc, val);
+    res = parse_sun(parser, doc, val, &sun);
   } else {
     log_err(parser, key, "unknown item `%s'.\n", key->data.scalar.value);
     res = RES_BAD_ARG;
@@ -2543,6 +2592,8 @@ solstice_parser_create
   /* Objects */
   htable_yaml2sols_init(mem_allocator, &parser->yaml2objs);
   darray_object_init(mem_allocator, &parser->objects);
+
+  solstice_sun_init(mem_allocator, &parser->sun);
 
 exit:
   *out_parser = parser;

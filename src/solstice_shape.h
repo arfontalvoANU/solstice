@@ -252,5 +252,6 @@ struct solstice_object {
   double rotation[3];
 };
 
+
 #endif /* SOLSTICE_SHAPE_H */
 

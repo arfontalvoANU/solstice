@@ -210,7 +210,7 @@
 ----------------------------------------
 <sun> ::=
   sun:
-    dni: REAL # Direct Normal Irradiance */
+    dni: REAL # Direct Normal Irradiance in ]0, INF) */
     <spectrum>
 [   <radial-angular-distribution> ]
 

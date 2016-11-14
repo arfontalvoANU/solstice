@@ -51,7 +51,11 @@ set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
 set(SOLSTICE_FILES_SRC
   solstice_parser.c)
-set(SOLSTICE_FILES_INC solstice_parser.h)
+set(SOLSTICE_FILES_INC 
+  solstice_material.h
+  solstice_parser.h
+  solstice_shape.h
+  solstice_sun.h)
 set(SOLSTICE_FILES_DOC COPYING README.md)
 
 # Prepend each file in the `SOLSTICE_FILES_<SRC|INC>' list by `SOLSTICE_SOURCE_DIR'
