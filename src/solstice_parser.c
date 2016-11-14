@@ -15,8 +15,9 @@
 
 #define _POSIX_C_SOURCE 200112L /* nextafter support */
 
-#include "solstice_parser.h"
 #include "solstice_material.h"
+#include "solstice_parser.h"
+#include "solstice_shape.h"
 
 #include <rsys/cstr.h>
 #include <rsys/double3.h>
@@ -40,6 +41,11 @@
 #define DARRAY_DATA struct solstice_material_double_sided
 #include <rsys/dynamic_array.h>
 
+/* Declare the array of shapes */
+#define DARRAY_NAME policy
+#define DARRAY_DATA struct solstice_shape
+#include <rsys/dynamic_array.h>
+
 /* Declare the hash table that maps the address of a YAML node to the id of its
  * in memory representation. */
 #define HTABLE_NAME yaml2sols
@@ -56,6 +62,7 @@ struct solstice_parser {
 
   struct darray_material mtls; /* Loaded materials */
   struct darray_material2 mtls2; /* Loaded double sided materials */
+  struct darray_polyclip polyclips; /* Loaded clipping polygon */
 
   ref_T ref;
   struct mem_allocator* allocator;
@@ -149,6 +156,7 @@ parser_release(ref_T* ref)
   htable_yaml2sols_release(&parser->yaml2mtls);
   darray_material_release(&parser->mtls);
   darray_material2_release(&parser->mtls2);
+  darray_polyclip_release(&parser->polyclips);
   MEM_RM(parser->allocator, parser);
 }
 
@@ -788,7 +796,7 @@ parse_material
    struct solstice_material_double_sided** out_mtl2)
 {
   enum { FRONT, BACK };
-  struct solstice_material_double_sided* mtl2;
+  struct solstice_material_double_sided* mtl2 = NULL;
   size_t imtl2;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
@@ -874,10 +882,13 @@ error:
  * Clipping polygon
  ******************************************************************************/
 static res_T
-parse_clip_op(struct solstice_parser* parser, const yaml_node_t* op)
+parse_clip_op
+  (struct solstice_parser* parser,
+   const yaml_node_t* op,
+   enum solstice_clip_op* clip_op)
 {
   res_T res = RES_OK;
-  ASSERT(op);
+  ASSERT(op && clip_op);
 
   if(op->type != YAML_SCALAR_NODE) {
     log_err(parser, op, "expect a clipping operation.\n");
@@ -885,8 +896,10 @@ parse_clip_op(struct solstice_parser* parser, const yaml_node_t* op)
     goto error;
   }
 
-  if(!strcmp((char*)op->data.scalar.value, "AND")) { /* TODO setup op */
-  } else if(!strcmp((char*)op->data.scalar.value, "SUB")) { /* TODO setup op */
+  if(!strcmp((char*)op->data.scalar.value, "AND")) {
+    *clip_op = SOLSTICE_CLIP_OP_AND;
+  } else if(!strcmp((char*)op->data.scalar.value, "SUB")) {
+    *clip_op = SOLSTICE_CLIP_OP_SUB;
   } else {
     log_err(parser, op, "unknown clipping operation `%s'.\n",
       op->data.scalar.value);
@@ -902,11 +915,14 @@ error:
 
 static res_T
 parse_vertices
-  (struct solstice_parser* parser, yaml_document_t* doc, const yaml_node_t* vertices)
+  (struct solstice_parser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* vertices,
+   struct darray_double* coords)
 {
   intptr_t i, n;
   res_T res = RES_OK;
-  ASSERT(doc && vertices);
+  ASSERT(doc && vertices && coords);
 
   if(vertices->type != YAML_SEQUENCE_NODE) {
     log_err(parser, vertices, "expect a list of vertices.\n");
@@ -921,32 +937,42 @@ parse_vertices
     goto error;
   }
 
+  res = darray_double_resize(coords, (size_t)n*3/*#coords per vertex*/);
+  if(res != RES_OK) {
+    log_err(parser, vertices, "could not allocate the array of vertices.\n");
+    goto error;
+  }
+
   FOR_EACH(i, 0, n) {
     yaml_node_t* vertex;
-    double coords[3];
+    double* real3 = darray_double_data_get(coords) + i*3/*#coords per vertex*/;
 
     vertex = yaml_document_get_node(doc, vertices->data.sequence.items.start[i]);
-    res = parse_real3(parser, doc, vertex, -DBL_MAX, DBL_MAX, coords);
+    res = parse_real3(parser, doc, vertex, -DBL_MAX, DBL_MAX, real3);
     if(res != RES_OK) goto error;
-
-    /* TODO register the vertex */
   }
 
 exit:
   return res;
 error:
+  darray_double_clear(coords);
   goto exit;
 }
 
 static res_T
 parse_polyclip
-  (struct solstice_parser* parser, yaml_document_t* doc, const yaml_node_t* polyclip)
+  (struct solstice_parser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* polyclip,
+   struct solstice_polyclip** out_clip)
 {
   enum { OPERATION, VERTICES };
+  struct solstice_polyclip* clip = NULL;
+  size_t iclip;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
-  ASSERT(doc && polyclip);
+  ASSERT(doc && polyclip && out_clip);
 
   if(polyclip->type != YAML_MAPPING_NODE) {
     log_err(parser, polyclip,
@@ -954,6 +980,15 @@ parse_polyclip
     res = RES_OK;
     goto error;
   }
+
+  /* Allocate a clipping polygon */
+  iclip = darray_polyclip_size_get(&parser->polyclips);
+  res = darray_polyclip_resize(&parser->polyclips, iclip + 1);
+  if(res != RES_OK) {
+    log_err(parser, polyclip, "could not allocate the clipping polygon.\n");
+    goto error;
+  }
+  clip = darray_polyclip_data_get(&parser->polyclips) + iclip;
 
   n = polyclip->data.mapping.pairs.top - polyclip->data.mapping.pairs.start;
   FOR_EACH(i, 0, n) {
@@ -979,10 +1014,10 @@ parse_polyclip
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "operation")) {
       SETUP_MASK(OPERATION, "operation");
-      res = parse_clip_op(parser, val);
+      res = parse_clip_op(parser, val, &clip->op);
     } else if(!strcmp((char*)key->data.scalar.value, "vertices")) {
       SETUP_MASK(VERTICES, "vertices");
-      res = parse_vertices(parser, doc, val);
+      res = parse_vertices(parser, doc, val, &clip->vertices);
     } else {
       log_err(parser, key, "unknown clipping polygon parameter `%s'.\n",
         key->data.scalar.value);
@@ -1003,11 +1038,14 @@ parse_polyclip
   CHECK_PARAM(VERTICES, "vertices");
   #undef CHECK_PARAM
 
-  /* TODO register the polyclip */
-
 exit:
+  *out_clip = clip;
   return res;
 error:
+  if(clip) {
+    darray_polyclip_pop_back(&parser->polyclips);
+    clip = NULL;
+  }
   goto exit;
 }
 
@@ -1015,11 +1053,12 @@ static res_T
 parse_clip
   (struct solstice_parser* parser,
    yaml_document_t* doc,
-   const yaml_node_t* clip)
+   const yaml_node_t* clip,
+   struct solstice_polyclip** out_polyclip)
 {
   intptr_t i, n;
   res_T res = RES_OK;
-  ASSERT(doc && clip);
+  ASSERT(doc && clip && out_polyclip);
 
   if(clip->type != YAML_SEQUENCE_NODE) {
     log_err(parser, clip, "expect a list of clipping polygons.\n");
@@ -1032,7 +1071,7 @@ parse_clip
     yaml_node_t* polyclip;
 
     polyclip = yaml_document_get_node(doc, clip->data.sequence.items.start[i]);
-    res = parse_polyclip(parser, doc, polyclip);
+    res = parse_polyclip(parser, doc, polyclip, out_polyclip);
     if(res != RES_OK) goto error;
   }
 
@@ -1255,6 +1294,7 @@ parse_paraboloid
    const enum paraboloid_type type)
 {
   enum { CLIP, FOCAL };
+  struct solstice_polyclip* polyclip = NULL; /* TODO */
   double focal;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
@@ -1291,7 +1331,7 @@ parse_paraboloid
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "clip")) {
       SETUP_MASK(CLIP, "clip");
-      res = parse_clip(parser, doc, val);
+      res = parse_clip(parser, doc, val, &polyclip);
     } else if(!strcmp((char*)key->data.scalar.value, "focal")) {
       SETUP_MASK(FOCAL, "focal");
       res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &focal);
@@ -1329,6 +1369,7 @@ parse_plane
    const yaml_node_t* plane)
 {
   enum { CLIP };
+  struct solstice_polyclip* polyclip = NULL; /* TODO */
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
@@ -1359,7 +1400,7 @@ parse_plane
         goto error;
       }
       mask |= BIT(CLIP);
-      res = parse_clip(parser, doc, val);
+      res = parse_clip(parser, doc, val, &polyclip);
     } else {
       log_err(parser, key, "unknown plane parameter `%s'.\n",
         key->data.scalar.value);
@@ -2195,9 +2236,9 @@ solstice_parser_create
   str_init(mem_allocator, &parser->stream_name);
 
   htable_yaml2sols_init(mem_allocator, &parser->yaml2mtls);
-
   darray_material_init(mem_allocator, &parser->mtls);
   darray_material2_init(mem_allocator, &parser->mtls2);
+  darray_polyclip_init(mem_allocator, &parser->polyclips);
 
 exit:
   *out_parser = parser;
@@ -2278,6 +2319,7 @@ solstice_parser_load(struct solstice_parser* parser)
   htable_yaml2sols_clear(&parser->yaml2mtls);
   darray_material_clear(&parser->mtls);
   darray_material2_clear(&parser->mtls2);
+  darray_polyclip_clear(&parser->polyclips);
 
   if(!parser->parser_is_init) {
     res = RES_BAD_OP;
