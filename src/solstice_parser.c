@@ -168,14 +168,14 @@ parse_node
    yaml_document_t* doc,
    yaml_node_t* node,
    const int is_root_node,
-   struct solstice_node** solnode);
+   struct solstice_node_id* solnode);
 
 static res_T
 parse_object
   (struct solstice_parser* parser,
    yaml_document_t* doc,
    yaml_node_t* object,
-   struct solstice_object** obj);
+   struct solstice_object_id* obj);
 
 static res_T
 parse_pivot
@@ -631,8 +631,8 @@ parse_instance
    const yaml_node_t* inst)
 {
   enum { GEOMETRY, TRANSFORM };
-  struct solstice_object* obj = NULL; /* TODO */
-  struct solstice_node* node = NULL;
+  struct solstice_object_id obj; /* TODO */
+  struct solstice_node_id node; /* TODO */
   double translation[3] = {0, 0, 0};
   double rotation[3] = {0, 0, 0};
   intptr_t i, n;
@@ -709,15 +709,15 @@ parse_material_matte
   (struct solstice_parser* parser,
    yaml_document_t* doc,
    const yaml_node_t* matte,
-   struct solstice_material_matte** out_mtl)
+   struct solstice_material_matte_id* out_imtl)
 {
   enum { REFLECTIVITY };
   struct solstice_material_matte* mtl = NULL;
-  size_t imtl;
+  size_t imtl = SIZE_MAX;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
-  ASSERT(doc && matte && out_mtl);
+  ASSERT(doc && matte && out_imtl);
 
   if(matte->type != YAML_MAPPING_NODE) {
     log_err(parser, matte, "expect a mapping of matte material parameters.\n");
@@ -770,7 +770,7 @@ parse_material_matte
   }
 
 exit:
-  *out_mtl = mtl;
+  out_imtl->i = imtl;
   return res;
 error:
   if(mtl) {
@@ -785,15 +785,15 @@ parse_material_mirror
   (struct solstice_parser* parser,
    yaml_document_t* doc,
    const yaml_node_t* mirror,
-   struct solstice_material_mirror** out_mtl)
+   struct solstice_material_mirror_id* out_imtl)
 {
   enum { REFLECTIVITY, ROUGHNESS };
   struct solstice_material_mirror* mtl = NULL;
-  size_t imtl;
+  size_t imtl = SIZE_MAX;
   int mask = 0; /* Register the parsed attributes */
   intptr_t i, n;
   res_T res = RES_OK;
-  ASSERT(doc && mirror && out_mtl);
+  ASSERT(doc && mirror && out_imtl);
 
   if(mirror->type != YAML_MAPPING_NODE) {
     log_err(parser, mirror,
@@ -859,7 +859,7 @@ parse_material_mirror
   #undef CHECK_PARAM
 
 exit:
-  *out_mtl = mtl;
+  out_imtl->i = imtl;
   return res;
 error:
   if(mtl) {
@@ -874,22 +874,22 @@ parse_material_descriptor
   (struct solstice_parser* parser,
    yaml_document_t* doc,
    yaml_node_t* desc,
-   struct solstice_material** out_mtl)
+   struct solstice_material_id* out_imtl)
 {
   enum { DESCRIPTOR };
   struct solstice_material* mtl = NULL;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   size_t* pimtl;
-  size_t imtl;
+  size_t imtl = SIZE_MAX;
   res_T res = RES_OK;
-  ASSERT(doc && desc && out_mtl);
+  ASSERT(doc && desc && out_imtl);
 
   /* Check whether or not the YAML descriptor alias an already created Solstice
    * material */
   pimtl = htable_yaml2sols_find(&parser->yaml2mtls, &desc);
   if(pimtl) {
-    mtl = darray_material_data_get(&parser->mtls) + *pimtl;
+    imtl = *pimtl;
     goto exit;
   }
 
@@ -961,7 +961,7 @@ parse_material_descriptor
   }
 
 exit:
-  *out_mtl = mtl;
+  out_imtl->i = imtl;
   return res;
 error:
   if(mtl) {
@@ -976,15 +976,15 @@ parse_material
   (struct solstice_parser* parser,
    yaml_document_t* doc,
    yaml_node_t* mtl,
-   struct solstice_material_double_sided** out_mtl2)
+   struct solstice_material_double_sided_id* out_imtl2)
 {
   enum { FRONT, BACK };
   struct solstice_material_double_sided* mtl2 = NULL;
-  size_t imtl2;
+  size_t imtl2 = SIZE_MAX;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
-  ASSERT(doc && mtl);
+  ASSERT(doc && mtl && out_imtl2);
 
   if(mtl->type != YAML_MAPPING_NODE) {
     log_err(parser, mtl, "expect a material definition.\n");
@@ -1051,7 +1051,7 @@ parse_material
   #undef CHECK_PARAM
 
 exit:
-  *out_mtl2 = mtl2;
+  out_imtl2->i = imtl2;
   return res;
 error:
   if(mtl2) {
@@ -1265,15 +1265,15 @@ parse_cuboid
   (struct solstice_parser* parser,
    yaml_document_t* doc,
    const yaml_node_t* cuboid,
-   struct solstice_shape_cuboid** out_shape)
+   struct solstice_shape_cuboid_id* out_ishape)
 {
   enum { SIZE };
   struct solstice_shape_cuboid* shape = NULL;
-  size_t ishape;
+  size_t ishape = SIZE_MAX;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
-  ASSERT(doc && cuboid && out_shape);
+  ASSERT(doc && cuboid && out_ishape);
 
   if(cuboid->type != YAML_MAPPING_NODE) {
     log_err(parser, cuboid, "expect a mapping of cuboid parameters.\n");
@@ -1325,7 +1325,7 @@ parse_cuboid
   }
 
 exit:
-  *out_shape = shape;
+  out_ishape->i = ishape;
   return res;
 error:
   if(shape) {
@@ -1340,15 +1340,15 @@ parse_cylinder
   (struct solstice_parser* parser,
    yaml_document_t* doc,
    const yaml_node_t* cylinder,
-   struct solstice_shape_cylinder** out_shape)
+   struct solstice_shape_cylinder_id* out_ishape)
 {
   enum { HEIGHT, RADIUS, SLICES };
   struct solstice_shape_cylinder* shape = NULL;
-  size_t ishape;
+  size_t ishape = SIZE_MAX;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
-  ASSERT(doc && cylinder && out_shape);
+  ASSERT(doc && cylinder && out_ishape);
 
   if(cylinder->type != YAML_MAPPING_NODE) {
     log_err(parser, cylinder, "expect a mapping of cylinder parameters.\n");
@@ -1416,7 +1416,7 @@ parse_cylinder
   #undef CHECK_PARAM
 
 exit:
-  *out_shape = shape;
+  out_ishape->i = ishape;
   return res;
 error:
   if(shape) {
@@ -1432,17 +1432,17 @@ parse_imported_geometry
    yaml_document_t* doc,
    const yaml_node_t* geom,
    const enum solstice_shape_type type,
-   struct solstice_shape_imported_geometry** out_shape)
+   struct solstice_shape_imported_geometry_id* out_ishape)
 {
   enum { PATH };
   struct solstice_shape_imported_geometry* shape = NULL;
-  size_t ishape;
+  size_t ishape = SIZE_MAX;
   const char* name;
   struct darray_impgeom* impgeoms;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
-  ASSERT(doc && geom && out_shape);
+  ASSERT(doc && geom && out_ishape);
 
   switch(type) {
     case SOLSTICE_SHAPE_OBJ: name = "obj"; impgeoms = &parser->objs; break;
@@ -1500,7 +1500,7 @@ parse_imported_geometry
   }
 
 exit:
-  *out_shape = shape;
+  out_ishape->i = ishape;
   return res;
 error:
   if(shape) {
@@ -1516,17 +1516,17 @@ parse_paraboloid
    yaml_document_t* doc,
    const yaml_node_t* paraboloid,
    const enum solstice_shape_type type,
-   struct solstice_shape_paraboloid** out_shape)
+   struct solstice_shape_paraboloid_id* out_ishape)
 {
   enum { CLIP, FOCAL };
   struct solstice_shape_paraboloid* shape = NULL;
   struct darray_paraboloid* paraboloids;
   const char* name;
-  size_t ishape;
+  size_t ishape = SIZE_MAX;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
-  ASSERT(doc && paraboloid && out_shape);
+  ASSERT(doc && paraboloid && out_ishape);
 
   switch(type) {
     case SOLSTICE_SHAPE_PARABOL:
@@ -1602,7 +1602,7 @@ parse_paraboloid
   #undef CHECK_PARAM
 
 exit:
-  *out_shape = shape;
+  out_ishape->i = ishape;
   return res;
 error:
   if(shape) {
@@ -1617,15 +1617,15 @@ parse_plane
   (struct solstice_parser* parser,
    yaml_document_t* doc,
    const yaml_node_t* plane,
-   struct solstice_shape_plane** out_shape)
+   struct solstice_shape_plane_id* out_ishape)
 {
   enum { CLIP };
   struct solstice_shape_plane* shape = NULL;
-  size_t ishape;
+  size_t ishape = SIZE_MAX;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
-  ASSERT(doc && plane && out_shape);
+  ASSERT(doc && plane && out_ishape);
 
   if(plane->type != YAML_MAPPING_NODE) {
     log_err(parser, plane, "expect a mapping of plane parameters.\n");
@@ -1676,7 +1676,7 @@ parse_plane
   }
 
 exit:
-  *out_shape = shape;
+  out_ishape->i = ishape;
   return res;
 error:
   if(shape) {
@@ -1691,15 +1691,15 @@ parse_sphere
   (struct solstice_parser* parser,
    yaml_document_t* doc,
    const yaml_node_t* sphere,
-   struct solstice_shape_sphere** out_shape)
+   struct solstice_shape_sphere_id* out_ishape)
 {
   enum { RADIUS, SLICES };
   struct solstice_shape_sphere* shape = NULL;
-  size_t ishape;
+  size_t ishape = SIZE_MAX;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
-  ASSERT(doc && sphere && out_shape);
+  ASSERT(doc && sphere && out_ishape);
 
   if(sphere->type != YAML_MAPPING_NODE) {
     log_err(parser, sphere, "expect a mapping of sphere parameters.\n");
@@ -1759,7 +1759,7 @@ parse_sphere
   }
 
 exit:
-  *out_shape = shape;
+  out_ishape->i = ishape;
   return res;
 error:
   if(shape) {
@@ -1777,16 +1777,18 @@ parse_object
   (struct solstice_parser* parser,
    yaml_document_t* doc,
    yaml_node_t* object,
-   struct solstice_object** out_obj)
+   struct solstice_object_id* out_iobj)
 {
   enum { MATERIAL, SHAPE, TRANSFORM };
   struct solstice_object* obj = NULL;
+  struct solstice_shape* shape = NULL;
   size_t* piobj;
-  size_t iobj, ishape;
+  size_t iobj = SIZE_MAX;
+  size_t ishape = SIZE_MAX;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
-  ASSERT(doc && object && out_obj);
+  ASSERT(doc && object && out_iobj);
 
   /* Check whether or not the YAML descriptor alias an already created Solstice
    * object */
@@ -1818,7 +1820,8 @@ parse_object
     log_err(parser, object, "could not allocate the object shape.\n");
     goto error;
   }
-  obj->shape = darray_shape_data_get(&parser->shapes) + ishape;
+  shape = darray_shape_data_get(&parser->shapes) + ishape;
+  obj->shape.i = ishape;
 
   /* Setup default object transformation */
   d3_splat(obj->translation, 0);
@@ -1848,43 +1851,43 @@ parse_object
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "material")) {
       SETUP_MASK(MATERIAL, "material");
-      res = parse_material(parser, doc, val, &obj->mtl);
+      res = parse_material(parser, doc, val, &obj->mtl2);
     } else if(!strcmp((char*)key->data.scalar.value, "cuboid")) {
       SETUP_MASK(SHAPE, "shape");
-      obj->shape->type = SOLSTICE_SHAPE_CUBOID;
-      res = parse_cuboid(parser, doc, val, &obj->shape->data.cuboid);
+      shape->type = SOLSTICE_SHAPE_CUBOID;
+      res = parse_cuboid(parser, doc, val, &shape->data.cuboid);
     } else if(!strcmp((char*)key->data.scalar.value, "cylinder")) {
       SETUP_MASK(SHAPE, "shape");
-      obj->shape->type = SOLSTICE_SHAPE_CYLINDER;
-      res = parse_cylinder(parser, doc, val, &obj->shape->data.cylinder);
+      shape->type = SOLSTICE_SHAPE_CYLINDER;
+      res = parse_cylinder(parser, doc, val, &shape->data.cylinder);
     } else if(!strcmp((char*)key->data.scalar.value, "obj")) {
       SETUP_MASK(SHAPE, "shape");
-      obj->shape->type = SOLSTICE_SHAPE_OBJ;
+      shape->type = SOLSTICE_SHAPE_OBJ;
       res = parse_imported_geometry
-        (parser, doc, val, obj->shape->type, &obj->shape->data.obj);
+        (parser, doc, val, shape->type, &shape->data.obj);
     } else if(!strcmp((char*)key->data.scalar.value, "parabol")) {
       SETUP_MASK(SHAPE, "shape");
-      obj->shape->type = SOLSTICE_SHAPE_PARABOL;
+      shape->type = SOLSTICE_SHAPE_PARABOL;
       res = parse_paraboloid
-        (parser, doc, val, obj->shape->type, &obj->shape->data.parabol);
+        (parser, doc, val, shape->type, &shape->data.parabol);
     } else if(!strcmp((char*)key->data.scalar.value, "parabolic-cylinder")) {
       SETUP_MASK(SHAPE, "shape");
-      obj->shape->type = SOLSTICE_SHAPE_PARABOLIC_CYLINDER;
+      shape->type = SOLSTICE_SHAPE_PARABOLIC_CYLINDER;
       res = parse_paraboloid
-        (parser, doc, val, obj->shape->type, &obj->shape->data.parabolic_cylinder);
+        (parser, doc, val, shape->type, &shape->data.parabolic_cylinder);
     } else if(!strcmp((char*)key->data.scalar.value, "plane")) {
       SETUP_MASK(SHAPE, "shape");
-      obj->shape->type = SOLSTICE_SHAPE_PLANE;
-      res = parse_plane(parser, doc, val, &obj->shape->data.plane);
+      shape->type = SOLSTICE_SHAPE_PLANE;
+      res = parse_plane(parser, doc, val, &shape->data.plane);
     } else if(!strcmp((char*)key->data.scalar.value, "sphere")) {
       SETUP_MASK(SHAPE, "shape");
-      obj->shape->type = SOLSTICE_SHAPE_SPHERE;
-      res = parse_sphere(parser, doc, val, &obj->shape->data.sphere);
+      shape->type = SOLSTICE_SHAPE_SPHERE;
+      res = parse_sphere(parser, doc, val, &shape->data.sphere);
     } else if(!strcmp((char*)key->data.scalar.value, "stl")) {
       SETUP_MASK(SHAPE, "shape");
-      obj->shape->type = SOLSTICE_SHAPE_STL;
+      shape->type = SOLSTICE_SHAPE_STL;
       res = parse_imported_geometry
-        (parser, doc, val, obj->shape->type, &obj->shape->data.stl);
+        (parser, doc, val, shape->type, &shape->data.stl);
     } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
       SETUP_MASK(TRANSFORM, "transform");
       res = parse_transform(parser, doc, val, obj->translation, obj->rotation);
@@ -1915,11 +1918,11 @@ parse_object
   }
 
 exit:
-  *out_obj = obj;
+  out_iobj->i = iobj;
   return res;
 error:
   if(obj) {
-    if(obj->shape) darray_shape_pop_back(&parser->shapes);
+    if(shape) darray_shape_pop_back(&parser->shapes);
     darray_object_pop_back(&parser->objects);
     obj = NULL;
   }
@@ -1954,11 +1957,11 @@ parse_children
   }
 
   FOR_EACH(i, 0, n) {
-    struct solstice_node** pnode = darray_child_data_get(nodes) + i;
+    struct solstice_node_id* node_id = darray_child_data_get(nodes) + i;
     yaml_node_t* child;
 
     child = yaml_document_get_node(doc, children->data.sequence.items.start[i]);
-    res = parse_node(parser, doc, child, 0/*the node is not root*/, pnode);
+    res = parse_node(parser, doc, child, 0/*the node is not root*/, node_id);
     if(res != RES_OK) goto error;
   }
 
@@ -1994,7 +1997,7 @@ parse_geometries
   }
 
   FOR_EACH(i, 0, n) {
-    struct solstice_object** pobj = darray_geometry_data_get(objects) + i;
+    struct solstice_object_id* obj_id = darray_geometry_data_get(objects) + i;
     yaml_node_t* geom;
     yaml_node_t* key;
     yaml_node_t* val;
@@ -2025,7 +2028,7 @@ parse_geometries
     }
 
     if(!strcmp((char*)key->data.scalar.value, "object")) {
-      res = parse_object(parser, doc, val, pobj);
+      res = parse_object(parser, doc, val, obj_id);
     } else {
       log_err(parser, key, "unknown geometry `%s'.\n", key->data.scalar.value);
       res = RES_BAD_ARG;
@@ -2046,15 +2049,15 @@ parse_node
    yaml_document_t* doc,
    yaml_node_t* node,
    const int is_root_node,
-   struct solstice_node** out_solnode)
+   struct solstice_node_id* out_isolnode)
 {
   enum { CHILDREN, DATA, TRANSFORM };
   struct solstice_node* solnode = NULL;
-  size_t isolnode;
+  size_t isolnode = SIZE_MAX;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
-  ASSERT(doc && node && out_solnode);
+  ASSERT(doc && node && out_isolnode);
 
   if(is_root_node) {
     const size_t *pisolnode;
@@ -2143,7 +2146,7 @@ parse_node
   }
 
 exit:
-  *out_solnode = solnode;
+  out_isolnode->i = isolnode;
   return res;
 error:
   if(solnode) {
@@ -2546,9 +2549,9 @@ parse_item
   yaml_node_t* key;
   yaml_node_t* val;
   struct solstice_sun* sun; /* TODO */
-  struct solstice_material_double_sided* mtl2; /* TODO */
-  struct solstice_object* obj; /* TODO */
-  struct solstice_node* node; /* TODO */
+  struct solstice_material_double_sided_id mtl2; /* TODO */
+  struct solstice_object_id obj; /* TODO */
+  struct solstice_node_id node; /* TODO */
   intptr_t n;
   res_T res = RES_OK;
   ASSERT(doc && item);

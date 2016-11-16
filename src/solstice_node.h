@@ -16,16 +16,20 @@
 #ifndef SOLSTICE_NODE_H
 #define SOLSTICE_NODE_H
 
+#include "solstice_shape.h"
+
 #include <rsys/double3.h>
 #include <rsys/dynamic_array.h>
 #include <rsys/list.h>
 
+struct solstice_node_id { size_t i; };
+
 #define DARRAY_NAME geometry
-#define DARRAY_DATA struct solstice_object*
+#define DARRAY_DATA struct solstice_object_id
 #include <rsys/dynamic_array.h>
 
 #define DARRAY_NAME child
-#define DARRAY_DATA struct solstice_node*
+#define DARRAY_DATA struct solstice_node_id
 #include <rsys/dynamic_array.h>
 
 struct solstice_node {

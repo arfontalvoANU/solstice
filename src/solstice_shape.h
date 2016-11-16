@@ -231,27 +231,37 @@ struct solstice_shape_sphere {
   long nslices;
 };
 
+struct solstice_shape_cuboid_id { size_t i; };
+struct solstice_shape_cylinder_id { size_t i; };
+struct solstice_shape_imported_geometry_id { size_t i; };
+struct solstice_shape_paraboloid_id { size_t i; };
+struct solstice_shape_plane_id { size_t i; };
+struct solstice_shape_sphere_id { size_t i; };
+
 struct solstice_shape {
   enum solstice_shape_type type;
   union {
-    struct solstice_shape_cuboid* cuboid;
-    struct solstice_shape_cylinder* cylinder;
-    struct solstice_shape_imported_geometry* obj;
-    struct solstice_shape_paraboloid* parabol;
-    struct solstice_shape_paraboloid* parabolic_cylinder;
-    struct solstice_shape_plane* plane;
-    struct solstice_shape_sphere* sphere;
-    struct solstice_shape_imported_geometry* stl;
+    struct solstice_shape_cuboid_id cuboid;
+    struct solstice_shape_cylinder_id cylinder;
+    struct solstice_shape_imported_geometry_id obj;
+    struct solstice_shape_paraboloid_id parabol;
+    struct solstice_shape_paraboloid_id parabolic_cylinder;
+    struct solstice_shape_plane_id plane;
+    struct solstice_shape_sphere_id sphere;
+    struct solstice_shape_imported_geometry_id stl;
   } data;
 };
 
+struct solstice_shape_id { size_t i; };
+
 struct solstice_object {
-  struct solstice_material_double_sided* mtl;
-  struct solstice_shape* shape;
+  struct solstice_material_double_sided_id mtl2;
+  struct solstice_shape_id shape;
   double translation[3];
   double rotation[3];
 };
 
+struct solstice_object_id { size_t i; };
 
 #endif /* SOLSTICE_SHAPE_H */
 
