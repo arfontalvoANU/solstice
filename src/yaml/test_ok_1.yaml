@@ -3,15 +3,16 @@
       reflectivity: 1
       roughness: 0
 
-- object: &cylinder
-    material: *mirror
-    cylinder:
-      height: 1
-      radius: 1
-      slices: 32
+- geometry: &cylinder
+    - material: *mirror
+      cylinder:
+        height: 1
+        radius: 1
+        slices: 32
 
-- instance:
-    object: *cylinder
+- entity:
+    name: "hop"
+    geometry: *cylinder
     transform:
       translation: [0, 1, 2]
       rotation: [0, 0, 0]
@@ -21,27 +22,31 @@
       reflectivity: 1
       roughness: 0
 
-- object: &cylinder
-    material: *mirror
-    cylinder:
-      height: 1
-      radius: 1
+- geometry: &cylinder
+    - material: *mirror
+      cylinder:
+        height: 1
+        radius: 1
 
-- instance:
-    object: *cylinder
+- entity:
+    name: "entity"
+    geometry: *cylinder
 ---
-- instance:
-    object:
-      material: { mirror: { reflectivity: 0.314, roughness: 0.5 } }
-      cylinder: { height: 10.12, radius: 0.32 }
+- entity:
+    name: entity
+    geometry:
+      - material: { mirror: { reflectivity: 0.314, roughness: 0.5 } }
+        cylinder: { height: 10.12, radius: 0.32 }
 ---
-- instance:
-    object:
-      material: { mirror: { reflectivity: 0, roughness: 0.5 } }
-      cylinder: { height: 1, radius: 1 }
+- entity:
+    name: entity
+    geometry:
+      - material: { mirror: { reflectivity: 0, roughness: 0.5 } }
+        cylinder: { height: 1, radius: 1 }
 ---
-- instance:
-    object:
-      material: { mirror: { reflectivity: 0, roughness: 0.5 } }
-      cylinder: { height: 0, radius: 0 }
+- entity:
+    name: entity
+    geometry:
+      - material: { mirror: { reflectivity: 0, roughness: 0.5 } }
+        cylinder: { height: 0, radius: 0 }
 

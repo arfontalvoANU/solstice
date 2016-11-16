@@ -1,49 +1,52 @@
-- instance:
-    object:
-      transform:
-        rotation: [ 0, 1, 2 ]
-        translation: [ -4, 5.2, -6.5 ]
-      material: { matte: { reflectivity: 1 } }
-      cuboid: { size: [1, 2, 3] }
+- entity:
+    name: "entity"
+    transform:
+      rotation: [ 0, 1, 2 ]
+      translation: [ -4, 5.2, -6.5 ]
+    geometry:
+      - cuboid: { size: [1, 2, 3] }
+        material: { matte: { reflectivity: 1 } }
 
 ---
-- instance:
+- entity:
+    name: "entity"
     transform: { translation: [ 1, 2, 0 ] }
-    object:
-      transform:
-        rotation: [ 0, 1, 2 ]
-      material: { matte: { reflectivity: 1 } }
-      cuboid: { size: [1, 2, 3] }
+    geometry:
+      - transform:
+          rotation: [ 0, 1, 2 ]
+        material: { matte: { reflectivity: 1 } }
+        cuboid: { size: [1, 2, 3] }
 
 ---
-- instance:
-    object:
-      material: { matte: { reflectivity: 1 } }
-      cuboid: { size: [1, 2, 3] }
+- entity:
+    name: "entity"
+    geometry:
+      - material: { matte: { reflectivity: 1 } }
+        cuboid: { size: [1, 2, 3] }
 
 ---
 - material: &lambertian
     matte: { reflectivity: 1 }
 
-- instance:
-    object:
-      material: *lambertian
-      cuboid: { size: [1, 2, 3] }
+- entity:
+    name: "entity"
+    geometry:
+      - material: *lambertian
+        cuboid: { size: [1, 2, 3] }
 
 ---
 - material: &front { matte: { reflectivity: 1 } }
-- material: &back  { matte: { reflectivity: 0.5 } } 
-- object: &cuboid
-    cuboid: { size: [1, 2, 3] }
-    material: { front: *front, back: *back }
-- instance: { object: *cuboid }
+- material: &back  { matte: { reflectivity: 0.5 } }
+- geometry: &cuboid
+    - cuboid: { size: [1, 2, 3] }
+      material: { front: *front, back: *back }
+- entity: { name: "hop", geometry: *cuboid }
 ---
 - material: &lambertian { matte: { reflectivity: 1 } }
-- instance:
-    object: &cuboid
-      cuboid: { size: [1, 2, 3] }
-      material: 
-        front: *lambertian
-        back: *lambertian
-
-
+- entity:
+    name: hop
+    geometry: &cuboid
+      - cuboid: { size: [1, 2, 3] }
+        material:
+          front: *lambertian
+          back: *lambertian

@@ -1,26 +1,31 @@
-- instance:
-    object:
-      material: { matte: { reflectivity: 1 } }
-      stl: { path: path toward }
+- entity:
+    name: 1
+    geometry:
+      - material: { matte: { reflectivity: 1 } }
+        stl: { path: path toward }
 ---
-- instance:
-    object:
-      material: { matte: { reflectivity: 1 } }
-      obj: { path: "my_path" }
+- entity:
+    name: 1a
+    geometry:
+      - material: { matte: { reflectivity: 1 } }
+        obj: { path: "my_path" }
 ---
-- instance:
-    object:
-      material: { matte: { reflectivity: 1 } }
-      obj: { path: "path/path/path" }
-      transform:  { translation: [1, 2, 3] }
+- entity:
+    name: test
+    geometry:
+      - material: { matte: { reflectivity: 1 } }
+        obj: { path: "path/path/path" }
+        transform:  { translation: [1, 2, 3] }
 ---
-- instance:
-    object:
-      material: { matte: { reflectivity: 1 } }
-      obj: { path: "path/path/path" }
-      transform:  { rotation: [0, 0, 0] }
+- entity:
+    name: test
+    geometry:
+      - material: { matte: { reflectivity: 1 } }
+        obj: { path: "path/path/path" }
+        transform:  { rotation: [0, 0, 0] }
 ---
-- instance:
-    object:
-      material: { matte: { reflectivity: 1 } }
-      stl: { path: "path/path/path" }
+- entity:
+    name: hop
+    geometry:
+      - material: { matte: { reflectivity: 1 } }
+        stl: { path: "path/path/path" }

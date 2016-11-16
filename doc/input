@@ -7,69 +7,71 @@
 - material: &mirror
     mirror: { reflectivity: 1, roughness: 0 }
 
-# Declare entities
-- object: &house
-    stl: { path: "house.stl" }
-    material:  *lambertian
+# Declare geometries
+- geometry: &cylinders
+    - cylinder: { height: 5, radius: 0.5 }
+      material: *lambertian
+      transform: { rotation: [0, 90, 0] }
+    - cylinder: { height: 5, radius: 0.5 }
+      material: *lambertian
 
-- object: &cylinder
-    cylinder: { height: 5, radius: 0.5 }
-    material: *lambertian
-
-- object: &cylinder2
-    cylinder: { height: 5, radius: 0.5 }
-    material: *lambertian
-    transform: { translation: [2.5, 11, 0], rotation: [90, 0, 0] }
-- object: &parabol
-    material: *mirror
-    parabol:
-      focal: 1
-      clip:
-        - operation: SUB
-          vertices: [ [1, 2, 3], [3, 4, 5], [6, 7, 8] ]
-
-- instance:
-    name: "inst"
-    object: *cylinder2
-
-# Declare a composition
-- tree: &heliostat0
-    transform: { rotation: [0, 0, 0], translation: [0, 0, 0] }
-    geometries:
-      - object: *cylinder
-    children:
-      - transform: { rotation: [0, 0, 0], translation: [0, 0, 0] }
-        pivot:
-          point: [0, 0, 0]
-          normal: [0, 1, 0]
-          target: { alias: self.anchor0 }
-        children:
-          - transform: { translation: [0, 0, 0] }
-            geometries:
-              - object: *cylinder
-              - object: *cylinder2
-            children:
-              - transform: { translation: [2.5, 11, 0], rotation: [90, 0, 0] }
-                geometries:
-                  - object: *parabol
+- geometry: &parabol
+    - material: *mirror
+      parabol:
+        focal: 1
+        clip:
+          - operation: SUB
+            vertices: [ [1, 2, 3], [3, 4, 5], [6, 7, 8] ]
 
 # Create the solar factory
-- instance:
-    name: "inst"
-    transform: { translation: [0, 0, 0] }
-    tree : *heliostat0
-- instance:
-    transform: { translation: [0, 0, 10] }
-    tree : *heliostat0
-- instance:
-    transform: { translation: [0, 0, 20] }
-    tree : *heliostat0
-- instante:
-    transform: { translation: [0, 0, 30] }
-    tree : *heliostat0
-- instance:
-    transform: { translation: [0, 0, -10] }
-    object : *house
+- entity:
+    name: "entity0"
+    transform: { rotation: [0, 90, 0] }
+    anchors:
+      - name: "anchor0"
+        position: [1, 2, 3]
+      - name: "anchor2"
+        position: [3, 4, 5]
+    geometry:
+      - stl: { path: "house.stl" }
+        transform: { translation: [0, 1, 2] }
+        material: *lambertian
+      - cylinder: { height: 5, radius: 0.5 }
+        material: *mirror
+
+- entity: &composition
+    name: "composition"
+    transform: { translation: [1, 2, 3 ] }
+    geometry:
+      - cylinder: { height: 5, radius: 0.5 }
+        material: *mirror
+    children:
+      - name: "hop"
+        transform: { translation: [1, 2, 3 ] }
+        geometry: *cylinders
+      - name: "hop2"
+        geometry: *parabol
+        children:
+          - transform: { rotation: [0, 0, 0] }
+            pivot:
+              point: [0, 0, 0]
+              normal: [0, 1, 0]
+              target: "entity0.anchor0"
+
+- entity:
+    <<: *composition
+    name: "entity2"
+    transform: { translation: [4, 5, 6] }
+
+- entity:
+    <<: *composition
+    name: "entity3"
+    transform: { translation: [7, 8, 9] }
+
+- entity:
+    <<: *composition
+    name: "entity4"
+    transform: { translation: [10, 11, 12] }
 
 --------------------------------------------------------------------------------
 2/ Grammar
@@ -82,20 +84,21 @@
 [ - <item> ... ]
 
 <items> ::=
-    <object>
+    <geometry>
   | <material>
-  | <root>>
-  | <instance>
+  | <entity>
   | <sun>
 
 ----------------------------------------
+<geometry> ::=
+  geometry:
+    - <object>
+[   - <object> ... ]
+
 <object> ::=
-  object:
-    <shape>
-    <material>
-[   <identifier> ]
-[   <transform> ]
-[   <anchors> ]
+  <shape>
+  <material>
+[ <transform> ]
 
 <pivot> ::=
   pivot:
@@ -104,21 +107,9 @@
     <target>
 [   <transform> ]
 
-<anchors> ::=
-  anchors:
-    - <anchor>
-[   - <anchor> ... ]
-
-<anchor> ::=
-  <identifier>
-  position: <real3>
-
 <target> ::=
   target:
-    alias: <anchor-identifier>
-  | position: <real3>
-  | direction: <real3>
-  | <sun>
+    <anchor-identifier> | <real3> |  <sun>
 
 ----------------------------------------
 <shape> ::=
@@ -204,24 +195,21 @@
     reflectivity: REAL # in [0, 1]
 
 ----------------------------------------
-<tree> ::=
-  tree:
-    <node>
+<entity> ::=
+  entity:
+    <entity-data>
 
-<node-data> ::=
-  <geometries> | <pivot>
+<entity-data> ::=
+  name: STRING
+  <geometry> | <pivot>
+[ <anchors> ]
 [ <transform> ]
 [ <children>  ]
 
-<geometries> ::=
-  geometries:
-    - <object>
-[   - <object> ... ]
-
 <children> ::=
   children:
-    - <node>
-[   - <node> ... ]
+    - <entity-data>
+[   - <entity-data> ... ]
 
 ----------------------------------------
 <sun> ::=
@@ -240,12 +228,6 @@
 <pillbox> ::=
   pillbox:
     aperture: REAL # in ]0, PI/2]
-
-----------------------------------------
-instance:
-  <tree> | <object>
-[ <identifier> ]
-[ <transform> ]
 
 ----------------------------------------
 <transform> ::=

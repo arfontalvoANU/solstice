@@ -15,9 +15,8 @@
 
 #define _POSIX_C_SOURCE 200112L /* nextafter support */
 
-#include "solstice_instance.h"
+#include "solstice_entity.h"
 #include "solstice_material.h"
-#include "solstice_node.h"
 #include "solstice_parser.h"
 #include "solstice_shape.h"
 #include "solstice_sun.h"
@@ -108,18 +107,22 @@
 #define DARRAY_DATA struct solstice_object
 #include <rsys/dynamic_array.h>
 
-/* Declare the array of nodes */
-#define DARRAY_NAME node
-#define DARRAY_DATA struct solstice_node
-#define DARRAY_FUNCTOR_INIT solstice_node_init
-#define DARRAY_FUNCTOR_RELEASE solstice_node_release
-#define DARRAY_FUNCTOR_COPY solstice_node_copy
-#define DARRAY_FUNCTOR_COPY_AND_RELEASE solstice_node_copy_and_release
+/* Declare the array of geometries */
+#define DARRAY_NAME geometry
+#define DARRAY_DATA struct solstice_geometry
+#define DARRAY_FUNCTOR_INIT solstice_geometry_init
+#define DARRAY_FUNCTOR_RELEASE solstice_geometry_release
+#define DARRAY_FUNCTOR_COPY solstice_geometry_copy
+#define DARRAY_FUNCTOR_COPY_AND_RELEASE solstice_geometry_copy_and_release
 #include <rsys/dynamic_array.h>
 
-/* Declare the array of instances */
-#define DARRAY_NAME instance
-#define DARRAY_DATA struct solstice_instance
+/* Declare the array of entities */
+#define DARRAY_NAME entity
+#define DARRAY_DATA struct solstice_entity
+#define DARRAY_FUNCTOR_INIT solstice_entity_init
+#define DARRAY_FUNCTOR_RELEASE solstice_entity_release
+#define DARRAY_FUNCTOR_COPY solstice_entity_copy
+#define DARRAY_FUNCTOR_COPY_AND_RELEASE solstice_entity_copy_and_release
 #include <rsys/dynamic_array.h>
 
 /* Declare the hash table that maps the address of a YAML node to the id of its
@@ -160,31 +163,30 @@ struct solstice_parser {
   const yaml_node_t* sun_key; /* yaml_node_t ptr used to spawn the sun */
   struct solstice_sun sun; /* The loaded sun */
 
-  /* Tree */
-  struct htable_yaml2sols yaml2trees; /* Cache of trees */
-  struct darray_node nodes;
+  /* Entity */
+  struct htable_yaml2sols yaml2entities; /* Cache of entities */
+  struct darray_entity entities;
 
   /* Miscellaneous */
-  struct darray_instance instances;
+  struct darray_geometry geometries;
 
   ref_T ref;
   struct mem_allocator* allocator;
 };
 
 static res_T
-parse_node
+parse_entity
   (struct solstice_parser* parser,
    yaml_document_t* doc,
-   yaml_node_t* node,
-   const int is_root_node,
-   struct solstice_node_id* solnode);
+   yaml_node_t* entity,
+   struct solstice_entity_id* solent);
 
 static res_T
-parse_object
+parse_geometry
   (struct solstice_parser* parser,
    yaml_document_t* doc,
-   yaml_node_t* object,
-   struct solstice_object_id* obj);
+   yaml_node_t* geometry,
+   struct solstice_geometry_id* solgeom);
 
 static res_T
 parse_pivot
@@ -197,7 +199,7 @@ parse_sun
   (struct solstice_parser* parser,
    yaml_document_t* doc,
    const yaml_node_t* sun,
-   struct solstice_sun** out_solsun);
+   struct solstice_sun** solsun);
 
 /*******************************************************************************
  * Helper functions
@@ -254,11 +256,11 @@ parser_clear(struct solstice_parser* parser)
   parser->sun_key = 0;
 
   /* Tree */
-  htable_yaml2sols_clear(&parser->yaml2trees);
-  darray_node_clear(&parser->nodes);
+  htable_yaml2sols_clear(&parser->yaml2entities);
+  darray_entity_clear(&parser->entities);
 
   /* Miscellaneous */
-  darray_instance_clear(&parser->instances);
+  darray_geometry_clear(&parser->geometries);
 }
 
 static void
@@ -297,11 +299,11 @@ parser_release(ref_T* ref)
   solstice_sun_release(&parser->sun);
 
   /* Tree */
-  htable_yaml2sols_release(&parser->yaml2trees);
-  darray_node_release(&parser->nodes);
+  htable_yaml2sols_release(&parser->yaml2entities);
+  darray_entity_release(&parser->entities);
 
   /* Instance */
-  darray_instance_release(&parser->instances);
+  darray_geometry_release(&parser->geometries);
 
   MEM_RM(parser->allocator, parser);
 }
@@ -637,102 +639,6 @@ error:
 }
 
 /*******************************************************************************
- * Instance
- ******************************************************************************/
-static res_T
-parse_instance
-  (struct solstice_parser* parser,
-   yaml_document_t* doc,
-   const yaml_node_t* inst,
-   struct solstice_instance_id* out_isolinst)
-{
-  enum { GEOMETRY, TRANSFORM };
-  struct solstice_instance* solinst = NULL;
-  size_t isolinst = SIZE_MAX;
-  intptr_t i, n;
-  int mask = 0; /* Register the parsed attributes */
-  res_T res = RES_OK;
-  ASSERT(doc && inst);
-
-  if(inst->type != YAML_MAPPING_NODE) {
-    log_err(parser, inst, "expect an instance definition.\n");
-    res = RES_BAD_ARG;
-    goto error;
-  }
-
-  /* Allocate an instance */
-  isolinst = darray_instance_size_get(&parser->instances);
-  res = darray_instance_resize(&parser->instances, isolinst + 1);
-  if(res != RES_OK) {
-    log_err(parser, inst, "could not allocate the instance.\n");
-    goto error;
-  }
-  solinst = darray_instance_data_get(&parser->instances) + isolinst;
-  d3_splat(solinst->translation, 0);
-  d3_splat(solinst->rotation, 0);
-
-  n = inst->data.mapping.pairs.top - inst->data.mapping.pairs.start;
-  FOR_EACH(i, 0, n) {
-    yaml_node_t* key;
-    yaml_node_t* val;
-
-    key = yaml_document_get_node(doc, inst->data.mapping.pairs.start[i].key);
-    val = yaml_document_get_node(doc, inst->data.mapping.pairs.start[i].value);
-    if(key->type != YAML_SCALAR_NODE) {
-      log_err(parser, key, "expect instance parameters.\n");
-      res = RES_BAD_ARG;
-      goto error;
-    }
-    #define SETUP_MASK(Flag, Name) {                                           \
-      if(mask & BIT(Flag)) {                                                   \
-        log_err(parser, key, "the instance "Name" is already defined.\n");     \
-        res = RES_BAD_ARG;                                                     \
-        goto error;                                                            \
-      }                                                                        \
-      mask |= BIT(Flag);                                                       \
-    } (void)0
-    if(!strcmp((char*)key->data.scalar.value, "object")) {
-      SETUP_MASK(GEOMETRY, "geometry");
-      solinst->type = SOLSTICE_INSTANCE_OBJECT;
-      res = parse_object(parser, doc, val, &solinst->data.object);
-    } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
-      SETUP_MASK(TRANSFORM, "transform");
-      res = parse_transform
-        (parser, doc, val, solinst->translation, solinst->rotation);
-    } else if(!strcmp((char*)key->data.scalar.value, "tree")) {
-      SETUP_MASK(GEOMETRY, "geometry");
-      solinst->type = SOLSTICE_INSTANCE_TREE;
-      res = parse_node(parser, doc, val, 1, &solinst->data.tree);
-    } else {
-      log_err(parser, key, "unknown instance parameter `%s'.\n",
-        key->data.scalar.value);
-      res = RES_BAD_ARG;
-    }
-    if(res != RES_OK) goto error;
-    #undef SETUP_MASK
-  }
-
-  #define CHECK_PARAM(Flag, Name)                                              \
-    if(!(mask & BIT(Flag))) {                                                  \
-      log_err(parser, inst, "the instance "Name" is missing.\n");              \
-      res = RES_BAD_ARG;                                                       \
-      goto error;                                                              \
-    } (void)0
-  CHECK_PARAM(GEOMETRY, "geometry");
-  #undef CHECK_PARAM
-
-exit:
-  out_isolinst->i = isolinst;
-  return res;
-error:
-  if(solinst) {
-    darray_instance_pop_back(&parser->instances);
-    solinst = NULL;
-  }
-  goto exit;
-}
-
-/*******************************************************************************
  * Material
  ******************************************************************************/
 static res_T
@@ -806,7 +712,7 @@ exit:
 error:
   if(mtl) {
     darray_matte_pop_back(&parser->mattes);
-    mtl = NULL;
+    imtl = SIZE_MAX;
   }
   goto exit;
 }
@@ -895,7 +801,7 @@ exit:
 error:
   if(mtl) {
     darray_mirror_pop_back(&parser->mirrors);
-    mtl = NULL;
+    imtl = SIZE_MAX;
   }
   goto exit;
 }
@@ -997,7 +903,7 @@ exit:
 error:
   if(mtl) {
     darray_material_pop_back(&parser->mtls);
-    mtl = NULL;
+    imtl = SIZE_MAX;
   }
   goto exit;
 }
@@ -1087,7 +993,7 @@ exit:
 error:
   if(mtl2) {
     darray_material2_pop_back(&parser->mtls2);
-    mtl2 = NULL;
+    imtl2 = SIZE_MAX;
   }
   goto exit;
 }
@@ -1361,7 +1267,7 @@ exit:
 error:
   if(shape) {
     darray_cuboid_pop_back(&parser->cuboids);
-    shape = NULL;
+    ishape = SIZE_MAX;
   }
   goto exit;
 }
@@ -1452,7 +1358,7 @@ exit:
 error:
   if(shape) {
     darray_cylinder_pop_back(&parser->cylinders);
-    shape = NULL;
+    ishape = SIZE_MAX;
   }
   goto exit;
 }
@@ -1536,7 +1442,7 @@ exit:
 error:
   if(shape) {
     darray_impgeom_pop_back(impgeoms);
-    shape = NULL;
+    ishape = SIZE_MAX;
   }
   goto exit;
 }
@@ -1638,7 +1544,7 @@ exit:
 error:
   if(shape) {
     darray_paraboloid_pop_back(paraboloids);
-    shape = NULL;
+    ishape = SIZE_MAX;
   }
   goto exit;
 }
@@ -1712,7 +1618,7 @@ exit:
 error:
   if(shape) {
     darray_plane_pop_back(&parser->planes);
-    shape = NULL;
+    ishape = SIZE_MAX;
   }
   goto exit;
 }
@@ -1795,15 +1701,15 @@ exit:
 error:
   if(shape) {
     darray_sphere_pop_back(&parser->spheres);
-    shape = NULL;
+    ishape = SIZE_MAX;
   }
   goto exit;
 }
 
 /*******************************************************************************
- * Object
+ * Geometry
  ******************************************************************************/
-res_T
+static res_T
 parse_object
   (struct solstice_parser* parser,
    yaml_document_t* doc,
@@ -1960,169 +1866,152 @@ error:
   goto exit;
 }
 
+static res_T
+parse_geometry
+  (struct solstice_parser* parser,
+   yaml_document_t* doc,
+   yaml_node_t* geometry,
+   struct solstice_geometry_id* out_isolgeom)
+{
+  struct solstice_geometry* solgeom = NULL;
+  size_t isolgeom = SIZE_MAX;
+  intptr_t i, n;
+  res_T res = RES_OK;
+  ASSERT(doc && geometry && out_isolgeom);
+
+  if(geometry->type != YAML_SEQUENCE_NODE) {
+    log_err(parser, geometry, "expect a list of objects.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  /* Allocate the geometry */
+  isolgeom = darray_geometry_size_get(&parser->geometries);
+  res = darray_geometry_resize(&parser->geometries, isolgeom + 1);
+  if(res != RES_OK) {
+    log_err(parser, geometry, "could not allocate the geometry.\n");
+    goto error;
+  }
+  solgeom = darray_geometry_data_get(&parser->geometries) + isolgeom;
+
+  n = geometry->data.sequence.items.top - geometry->data.sequence.items.start;
+  res = darray_object_id_resize(&solgeom->objects, (size_t)n);
+  if(res != RES_OK) {
+    log_err(parser, geometry, "could not allocate the objects list.\n");
+    goto error;
+  }
+
+  FOR_EACH(i, 0, n) {
+    struct solstice_object_id* obj_id;
+    yaml_node_t* obj;
+
+    obj_id = darray_object_id_data_get(&solgeom->objects) + i;
+    obj = yaml_document_get_node(doc, geometry->data.sequence.items.start[i]);
+    res = parse_object(parser, doc, obj, obj_id);
+    if(res != RES_OK) goto error;
+  }
+
+exit:
+  out_isolgeom->i = isolgeom;
+  return res;
+error:
+  if(solgeom) {
+    darray_geometry_pop_back(&parser->geometries);
+    isolgeom = SIZE_MAX;
+  }
+  goto exit;
+}
+
+
 /*******************************************************************************
- * Tree
+ * Entity
  ******************************************************************************/
 static res_T
 parse_children
   (struct solstice_parser* parser,
    yaml_document_t* doc,
    const yaml_node_t* children,
-   struct darray_child* nodes)
+   struct darray_child* entities)
 {
   intptr_t i, n;
   res_T res = RES_OK;
-  ASSERT(doc && children && nodes);
+  ASSERT(doc && children && entities);
 
   if(children->type != YAML_SEQUENCE_NODE) {
-    log_err(parser, children, "expect a list of nodes.\n");
+    log_err(parser, children, "expect a list of entities.\n");
     res = RES_BAD_ARG;
     goto error;
   }
 
   n = children->data.sequence.items.top - children->data.sequence.items.start;
-  res = darray_child_resize(nodes, (size_t)n);
+  res = darray_child_resize(entities, (size_t)n);
   if(res != RES_OK) {
     log_err(parser, children, "could not allocate the children list.\n");
     goto error;
   }
 
   FOR_EACH(i, 0, n) {
-    struct solstice_node_id* node_id = darray_child_data_get(nodes) + i;
+    struct solstice_entity_id* entity_id = darray_child_data_get(entities) + i;
     yaml_node_t* child;
 
     child = yaml_document_get_node(doc, children->data.sequence.items.start[i]);
-    res = parse_node(parser, doc, child, 0/*the node is not root*/, node_id);
+    res = parse_entity(parser, doc, child, entity_id);
     if(res != RES_OK) goto error;
   }
 
 exit:
   return res;
 error:
-  darray_child_clear(nodes);
-  goto exit;
-}
-
-static res_T
-parse_geometries
-  (struct solstice_parser* parser,
-   yaml_document_t* doc,
-   const yaml_node_t* geometries,
-   struct darray_geometry* objects)
-{
-  intptr_t i, n;
-  res_T res = RES_OK;
-  ASSERT(doc && geometries && objects);
-
-  if(geometries->type != YAML_SEQUENCE_NODE) {
-    log_err(parser, geometries, "expect a list of objects.\n");
-    res = RES_BAD_ARG;
-    goto error;
-  }
-
-  n = geometries->data.sequence.items.top - geometries->data.sequence.items.start;
-  res = darray_geometry_resize(objects, (size_t)n);
-  if(res != RES_OK) {
-    log_err(parser, geometries, "could not allocate the objects list.\n");
-    goto error;
-  }
-
-  FOR_EACH(i, 0, n) {
-    struct solstice_object_id* obj_id = darray_geometry_data_get(objects) + i;
-    yaml_node_t* geom;
-    yaml_node_t* key;
-    yaml_node_t* val;
-    intptr_t nb;
-
-    geom = yaml_document_get_node(doc, geometries->data.sequence.items.start[i]);
-
-    if(geom->type != YAML_MAPPING_NODE) {
-      log_err(parser, geom, "expect a geometry definition.\n");
-      res = RES_BAD_ARG;
-      goto error;
-    }
-
-    nb = geom->data.mapping.pairs.top - geom->data.mapping.pairs.start;
-    if(nb != 1) {
-      log_err(parser, geom,
-        "expect only one \"key:value\" pair while %li are provided.\n", nb);
-      res = RES_BAD_ARG;
-      goto error;
-    }
-
-    key = yaml_document_get_node(doc, geom->data.mapping.pairs.start[0].key);
-    val = yaml_document_get_node(doc, geom->data.mapping.pairs.start[0].value);
-    if(key->type != YAML_SCALAR_NODE) {
-      log_err(parser, key, "expect a geometry name.\n");
-      res = RES_BAD_ARG;
-      goto error;
-    }
-
-    if(!strcmp((char*)key->data.scalar.value, "object")) {
-      res = parse_object(parser, doc, val, obj_id);
-    } else {
-      log_err(parser, key, "unknown geometry `%s'.\n", key->data.scalar.value);
-      res = RES_BAD_ARG;
-    }
-    if(res != RES_OK) goto error;
-  }
-
-exit:
-  return res;
-error:
-  darray_geometry_clear(objects);
+  darray_child_clear(entities);
   goto exit;
 }
 
 res_T
-parse_node
+parse_entity
   (struct solstice_parser* parser,
    yaml_document_t* doc,
-   yaml_node_t* node,
-   const int is_root_node,
-   struct solstice_node_id* out_isolnode)
+   yaml_node_t* entity,
+   struct solstice_entity_id* out_isolent)
 {
-  enum { CHILDREN, DATA, TRANSFORM };
-  struct solstice_node* solnode = NULL;
-  size_t isolnode = SIZE_MAX;
+  enum { CHILDREN, DATA, NAME, TRANSFORM };
+  struct solstice_entity* solent = NULL;
+  const size_t *pisolent;
+  size_t isolent = SIZE_MAX;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
-  ASSERT(doc && node && out_isolnode);
+  ASSERT(doc && entity && out_isolent);
 
-  if(is_root_node) {
-    const size_t *pisolnode;
-    pisolnode = htable_yaml2sols_find(&parser->yaml2trees, &node);
-    if(pisolnode) {
-      solnode = darray_node_data_get(&parser->nodes) + *pisolnode;
-      goto exit;
-    }
+  pisolent = htable_yaml2sols_find(&parser->yaml2entities, &entity);
+  if(pisolent) {
+    isolent = *pisolent;
+    goto exit;
   }
 
-  if(node->type != YAML_MAPPING_NODE) {
-    log_err(parser, node, "expect a node definition.\n");
+  if(entity->type != YAML_MAPPING_NODE) {
+    log_err(parser, entity, "expect an entity definition.\n");
     res = RES_BAD_ARG;
     goto error;
   }
 
-  /* Allocate the solstice node */
-  isolnode = darray_node_size_get(&parser->nodes);
-  res = darray_node_resize(&parser->nodes, isolnode + 1);
+  /* Allocate the entity */
+  isolent = darray_entity_size_get(&parser->entities);
+  res = darray_entity_resize(&parser->entities, isolent + 1);
   if(res != RES_OK) {
-    log_err(parser, node, "could not allocate the node.\n");
+    log_err(parser, entity, "could not allocate the entity.\n");
     goto error;
   }
-  solnode = darray_node_data_get(&parser->nodes) + isolnode;
+  solent = darray_entity_data_get(&parser->entities) + isolent;
 
-  n = node->data.mapping.pairs.top - node->data.mapping.pairs.start;
+  n = entity->data.mapping.pairs.top - entity->data.mapping.pairs.start;
   FOR_EACH(i, 0, n) {
     yaml_node_t* key;
     yaml_node_t* val;
 
-    key = yaml_document_get_node(doc, node->data.mapping.pairs.start[i].key);
-    val = yaml_document_get_node(doc, node->data.mapping.pairs.start[i].value);
+    key = yaml_document_get_node(doc, entity->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, entity->data.mapping.pairs.start[i].value);
     if(key->type != YAML_SCALAR_NODE) {
-      log_err(parser, key, "expect a node attribute.\n");
+      log_err(parser, key, "expect an entity attribute.\n");
       res = RES_BAD_ARG;
       goto error;
     }
@@ -2130,7 +2019,7 @@ parse_node
     #define SETUP_MASK(Flag, Name) {                                           \
       if(mask & BIT(Flag)) {                                                   \
         log_err(parser, key,                                                   \
-          "the node "Name" is already defined.\n");                            \
+          "the entity "Name" is already defined.\n");                          \
         res = RES_BAD_ARG;                                                     \
         goto error;                                                            \
       }                                                                        \
@@ -2138,19 +2027,21 @@ parse_node
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "children")) {
       SETUP_MASK(CHILDREN, "children");
-      res = parse_children(parser, doc, val, &solnode->children);
-    } else if(!strcmp((char*)key->data.scalar.value, "geometries")) {
+      res = parse_children(parser, doc, val, &solent->children);
+    } else if(!strcmp((char*)key->data.scalar.value, "geometry")) {
       SETUP_MASK(DATA, "data");
-      res = parse_geometries(parser, doc, val, &solnode->geometries);
+      res = parse_geometry(parser, doc, val, &solent->geometry);
+    } else if(!strcmp((char*)key->data.scalar.value, "name")) {
+      SETUP_MASK(NAME, "name"); /* TODO parse the entity name */
     } else if(!strcmp((char*)key->data.scalar.value, "pivot")) {
       SETUP_MASK(DATA, "data");
       res = parse_pivot(parser, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
       SETUP_MASK(TRANSFORM, "transform");
       res = parse_transform
-        (parser, doc, val, solnode->translation, solnode->rotation);
+        (parser, doc, val, solent->translation, solent->rotation);
     } else {
-      log_err(parser, key, "unknown node parameter `%s'.\n",
+      log_err(parser, key, "unknown entity parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
       goto error;
@@ -2161,28 +2052,27 @@ parse_node
 
   #define CHECK_PARAM(Flag, Name)                                              \
     if(!(mask & BIT(Flag))) {                                                  \
-      log_err(parser, node, "the node "Name" is missing.\n");                  \
+      log_err(parser, entity, "the entity "Name" is missing.\n");              \
       res = RES_BAD_ARG;                                                       \
       goto error;                                                              \
     } (void)0
   CHECK_PARAM(DATA, "data");
+  CHECK_PARAM(NAME, "name");
   #undef CHECK_PARAM
 
-  if(is_root_node) {
-    res = htable_yaml2sols_set(&parser->yaml2trees, &node, &isolnode);
-    if(res != RES_OK) {
-      log_err(parser, node, "could not register the tree.\n");
-      goto error;
-    }
+  res = htable_yaml2sols_set(&parser->yaml2entities, &entity, &isolent);
+  if(res != RES_OK) {
+    log_err(parser, entity, "could not register the entity.\n");
+    goto error;
   }
 
 exit:
-  out_isolnode->i = isolnode;
+  out_isolent->i = isolent;
   return res;
 error:
-  if(solnode) {
-    darray_node_pop_back(&parser->nodes);
-    solnode = NULL;
+  if(solent) {
+    darray_entity_pop_back(&parser->entities);
+    isolent = SIZE_MAX;
   }
   goto exit;
 }
@@ -2579,10 +2469,9 @@ parse_item
 {
   yaml_node_t* key;
   yaml_node_t* val;
-  struct solstice_instance_id instance; /* TODO */
   struct solstice_material_double_sided_id mtl2; /* TODO */
-  struct solstice_node_id node; /* TODO */
-  struct solstice_object_id obj; /* TODO */
+  struct solstice_entity_id entity; /* TODO */
+  struct solstice_geometry_id geometry; /* TODO */
   struct solstice_sun* sun; /* TODO */
   intptr_t n;
   res_T res = RES_OK;
@@ -2610,16 +2499,12 @@ parse_item
     goto error;
   }
 
-  if(!strcmp((char*)key->data.scalar.value, "instance")) {
-    res = parse_instance(parser, doc, val, &instance);
-  } else if(!strcmp((char*)key->data.scalar.value, "material")) {
+  if(!strcmp((char*)key->data.scalar.value, "material")) {
     res = parse_material(parser, doc, val, &mtl2);
-  } else if(!strcmp((char*)key->data.scalar.value, "tree")) {
-    res = parse_node(parser, doc, val, 1, &node);
-  } else if(!strcmp((char*)key->data.scalar.value, "object")) {
-    res = parse_object(parser, doc, val, &obj);
-  } else if(!strcmp((char*)key->data.scalar.value, "pivot")) {
-    res = parse_pivot(parser, doc, val);
+  } else if(!strcmp((char*)key->data.scalar.value, "entity")) {
+    res = parse_entity(parser, doc, val, &entity);
+  } else if(!strcmp((char*)key->data.scalar.value, "geometry")) {
+    res = parse_geometry(parser, doc, val, &geometry);
   } else if(!strcmp((char*)key->data.scalar.value, "sun")) {
     res = parse_sun(parser, doc, val, &sun);
   } else {
@@ -2682,11 +2567,11 @@ solstice_parser_create
   solstice_sun_init(mem_allocator, &parser->sun);
 
   /* Tree */
-  htable_yaml2sols_init(mem_allocator, &parser->yaml2trees);
-  darray_node_init(mem_allocator, &parser->nodes);
+  htable_yaml2sols_init(mem_allocator, &parser->yaml2entities);
+  darray_entity_init(mem_allocator, &parser->entities);
 
   /* Miscellaneous */
-  darray_instance_init(mem_allocator, &parser->instances);
+  darray_geometry_init(mem_allocator, &parser->geometries);
 
 exit:
   *out_parser = parser;
