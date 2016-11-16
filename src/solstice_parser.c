@@ -1961,64 +1961,62 @@ error:
 }
 
 static res_T
-parse_entities
+parse_geometries
   (struct solstice_parser* parser,
    yaml_document_t* doc,
-   const yaml_node_t* entities)
+   const yaml_node_t* geometries)
 {
   struct solstice_object* obj;
   intptr_t i, n;
   res_T res = RES_OK;
-  ASSERT(doc && entities);
+  ASSERT(doc && geometries);
 
-  if(entities->type != YAML_SEQUENCE_NODE) {
-    log_err(parser, entities, "expect a list of entities.\n");
+  if(geometries->type != YAML_SEQUENCE_NODE) {
+    log_err(parser, geometries, "expect a list of objects.\n");
     res = RES_BAD_ARG;
     goto error;
   }
 
-  n = entities->data.sequence.items.top - entities->data.sequence.items.start;
+  n = geometries->data.sequence.items.top - geometries->data.sequence.items.start;
   FOR_EACH(i, 0, n) {
-    yaml_node_t* entity;
+    yaml_node_t* geom;
     yaml_node_t* key;
     yaml_node_t* val;
     intptr_t nb;
 
-    entity = yaml_document_get_node(doc, entities->data.sequence.items.start[i]);
+    geom = yaml_document_get_node(doc, geometries->data.sequence.items.start[i]);
 
-    if(entity->type != YAML_MAPPING_NODE) {
-      log_err(parser, entity, "expect an entity definition.\n");
+    if(geom->type != YAML_MAPPING_NODE) {
+      log_err(parser, geom, "expect a geometry definition.\n");
       res = RES_BAD_ARG;
       goto error;
     }
 
-    nb = entity->data.mapping.pairs.top - entity->data.mapping.pairs.start;
+    nb = geom->data.mapping.pairs.top - geom->data.mapping.pairs.start;
     if(nb != 1) {
-      log_err(parser, entity,
+      log_err(parser, geom,
         "expect only one \"key:value\" pair while %li are provided.\n", nb);
       res = RES_BAD_ARG;
       goto error;
     }
 
-    key = yaml_document_get_node(doc, entity->data.mapping.pairs.start[0].key);
-    val = yaml_document_get_node(doc, entity->data.mapping.pairs.start[0].value);
+    key = yaml_document_get_node(doc, geom->data.mapping.pairs.start[0].key);
+    val = yaml_document_get_node(doc, geom->data.mapping.pairs.start[0].value);
     if(key->type != YAML_SCALAR_NODE) {
-      log_err(parser, key, "expect an entity name.\n");
+      log_err(parser, key, "expect a geometry name.\n");
       res = RES_BAD_ARG;
       goto error;
     }
 
     if(!strcmp((char*)key->data.scalar.value, "object")) {
       res = parse_object(parser, doc, val, &obj);
-    } else if(!strcmp((char*)key->data.scalar.value, "pivot")) {
-      res = parse_pivot(parser, doc, val);
     } else {
-      log_err(parser, key, "unknown entity `%s'.\n", key->data.scalar.value);
+      log_err(parser, key, "unknown geometry `%s'.\n", key->data.scalar.value);
       res = RES_BAD_ARG;
     }
     if(res != RES_OK) goto error;
 
-    /* TODO register the entity */
+    /* TODO register the geometry */
   }
 
 exit:
@@ -2033,7 +2031,7 @@ parse_node
    yaml_document_t* doc,
    const yaml_node_t* node)
 {
-  enum { CHILDREN, ENTITIES, TRANSFORM };
+  enum { CHILDREN, DATA, TRANSFORM };
   double translation[3] = {0, 0, 0};
   double rotation[3] = {0, 0, 0};
   intptr_t i, n;
@@ -2063,7 +2061,7 @@ parse_node
     #define SETUP_MASK(Flag, Name) {                                           \
       if(mask & BIT(Flag)) {                                                   \
         log_err(parser, key,                                                   \
-          "the node attribute `"Name"' is already defined.\n");                \
+          "the node "Name" is already defined.\n");                            \
         res = RES_BAD_ARG;                                                     \
         goto error;                                                            \
       }                                                                        \
@@ -2072,9 +2070,12 @@ parse_node
     if(!strcmp((char*)key->data.scalar.value, "children")) {
       SETUP_MASK(CHILDREN, "children");
       res = parse_children(parser, doc, val);
-    } else if(!strcmp((char*)key->data.scalar.value, "entities")) {
-      SETUP_MASK(ENTITIES, "entities");
-      res = parse_entities(parser, doc, val);
+    } else if(!strcmp((char*)key->data.scalar.value, "geometries")) {
+      SETUP_MASK(DATA, "data");
+      res = parse_geometries(parser, doc, val);
+    } else if(!strcmp((char*)key->data.scalar.value, "pivot")) {
+      SETUP_MASK(DATA, "data");
+      res = parse_pivot(parser, doc, val);
     } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
       SETUP_MASK(TRANSFORM, "transform");
       res = parse_transform(parser, doc, val, translation, rotation);
@@ -2090,11 +2091,11 @@ parse_node
 
   #define CHECK_PARAM(Flag, Name)                                              \
     if(!(mask & BIT(Flag))) {                                                  \
-      log_err(parser, node, "the node `"Name"' parameter is missing.\n");      \
+      log_err(parser, node, "the node "Name" is missing.\n");                  \
       res = RES_BAD_ARG;                                                       \
       goto error;                                                              \
     } (void)0
-  CHECK_PARAM(ENTITIES, "entities");
+  CHECK_PARAM(DATA, "data");
   #undef CHECK_PARAM
 
 exit:
