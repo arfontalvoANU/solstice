@@ -16,6 +16,8 @@
 #ifndef SOLSTICE_SHAPE_H
 #define SOLSTICE_SHAPE_H
 
+#include "solstice_material.h"
+
 #include <rsys/dynamic_array_double.h>
 #include <rsys/str.h>
 

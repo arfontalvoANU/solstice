@@ -17,13 +17,9 @@
     material: *lambertian
 
 - object: &cylinder2
-    name: cylinder2
     cylinder: { height: 5, radius: 0.5 }
     material: *lambertian
     transform: { translation: [2.5, 11, 0], rotation: [90, 0, 0] }
-    anchors:
-      - { name: anchor0, position: [1, 2, 3] }
-      - { name: anchor1, position: [4, 5, 6] }
 - object: &parabol
     material: *mirror
     parabol:
@@ -46,7 +42,7 @@
         pivot:
           point: [0, 0, 0]
           normal: [0, 1, 0]
-          target: { alias: self.cylinder2.anchor0 }
+          target: { alias: self.anchor0 }
         children:
           - transform: { translation: [0, 0, 0] }
             geometries:

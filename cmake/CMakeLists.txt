@@ -52,7 +52,9 @@ set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 set(SOLSTICE_FILES_SRC
   solstice_parser.c)
 set(SOLSTICE_FILES_INC 
+  solstice_instance.h
   solstice_material.h
+  solstice_node.h
   solstice_parser.h
   solstice_shape.h
   solstice_sun.h)

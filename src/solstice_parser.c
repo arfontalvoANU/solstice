@@ -15,6 +15,7 @@
 
 #define _POSIX_C_SOURCE 200112L /* nextafter support */
 
+#include "solstice_instance.h"
 #include "solstice_material.h"
 #include "solstice_node.h"
 #include "solstice_parser.h"
@@ -116,6 +117,11 @@
 #define DARRAY_FUNCTOR_COPY_AND_RELEASE solstice_node_copy_and_release
 #include <rsys/dynamic_array.h>
 
+/* Declare the array of instances */
+#define DARRAY_NAME instance
+#define DARRAY_DATA struct solstice_instance
+#include <rsys/dynamic_array.h>
+
 /* Declare the hash table that maps the address of a YAML node to the id of its
  * in memory representation. */
 #define HTABLE_NAME yaml2sols
@@ -151,12 +157,15 @@ struct solstice_parser {
   struct darray_object objects;
 
   /* Sun. Note that only one sun is supported */
-  const yaml_node_t* sun_key; /* Value of the yaml_node_t ptr used to spawn the sun */
+  const yaml_node_t* sun_key; /* yaml_node_t ptr used to spawn the sun */
   struct solstice_sun sun; /* The loaded sun */
 
-  /* Miscellaneous */
+  /* Tree */
   struct htable_yaml2sols yaml2trees; /* Cache of trees */
   struct darray_node nodes;
+
+  /* Miscellaneous */
+  struct darray_instance instances;
 
   ref_T ref;
   struct mem_allocator* allocator;
@@ -247,6 +256,9 @@ parser_clear(struct solstice_parser* parser)
   /* Tree */
   htable_yaml2sols_clear(&parser->yaml2trees);
   darray_node_clear(&parser->nodes);
+
+  /* Miscellaneous */
+  darray_instance_clear(&parser->instances);
 }
 
 static void
@@ -287,6 +299,9 @@ parser_release(ref_T* ref)
   /* Tree */
   htable_yaml2sols_release(&parser->yaml2trees);
   darray_node_release(&parser->nodes);
+
+  /* Instance */
+  darray_instance_release(&parser->instances);
 
   MEM_RM(parser->allocator, parser);
 }
@@ -628,13 +643,12 @@ static res_T
 parse_instance
   (struct solstice_parser* parser,
    yaml_document_t* doc,
-   const yaml_node_t* inst)
+   const yaml_node_t* inst,
+   struct solstice_instance_id* out_isolinst)
 {
   enum { GEOMETRY, TRANSFORM };
-  struct solstice_object_id obj; /* TODO */
-  struct solstice_node_id node; /* TODO */
-  double translation[3] = {0, 0, 0};
-  double rotation[3] = {0, 0, 0};
+  struct solstice_instance* solinst = NULL;
+  size_t isolinst = SIZE_MAX;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
@@ -645,6 +659,17 @@ parse_instance
     res = RES_BAD_ARG;
     goto error;
   }
+
+  /* Allocate an instance */
+  isolinst = darray_instance_size_get(&parser->instances);
+  res = darray_instance_resize(&parser->instances, isolinst + 1);
+  if(res != RES_OK) {
+    log_err(parser, inst, "could not allocate the instance.\n");
+    goto error;
+  }
+  solinst = darray_instance_data_get(&parser->instances) + isolinst;
+  d3_splat(solinst->translation, 0);
+  d3_splat(solinst->rotation, 0);
 
   n = inst->data.mapping.pairs.top - inst->data.mapping.pairs.start;
   FOR_EACH(i, 0, n) {
@@ -666,15 +691,18 @@ parse_instance
       }                                                                        \
       mask |= BIT(Flag);                                                       \
     } (void)0
-    if(!strcmp((char*)key->data.scalar.value, "tree")) {
+    if(!strcmp((char*)key->data.scalar.value, "object")) {
       SETUP_MASK(GEOMETRY, "geometry");
-      res = parse_node(parser, doc, val, 1, &node);
-    } else if(!strcmp((char*)key->data.scalar.value, "object")) {
-      SETUP_MASK(GEOMETRY, "geometry");
-      res = parse_object(parser, doc, val, &obj);
+      solinst->type = SOLSTICE_INSTANCE_OBJECT;
+      res = parse_object(parser, doc, val, &solinst->data.object);
     } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
       SETUP_MASK(TRANSFORM, "transform");
-      res = parse_transform(parser, doc, val, translation, rotation);
+      res = parse_transform
+        (parser, doc, val, solinst->translation, solinst->rotation);
+    } else if(!strcmp((char*)key->data.scalar.value, "tree")) {
+      SETUP_MASK(GEOMETRY, "geometry");
+      solinst->type = SOLSTICE_INSTANCE_TREE;
+      res = parse_node(parser, doc, val, 1, &solinst->data.tree);
     } else {
       log_err(parser, key, "unknown instance parameter `%s'.\n",
         key->data.scalar.value);
@@ -693,11 +721,14 @@ parse_instance
   CHECK_PARAM(GEOMETRY, "geometry");
   #undef CHECK_PARAM
 
-  /* TODO register the instance */
-
 exit:
+  out_isolinst->i = isolinst;
   return res;
 error:
+  if(solinst) {
+    darray_instance_pop_back(&parser->instances);
+    solinst = NULL;
+  }
   goto exit;
 }
 
@@ -2548,10 +2579,11 @@ parse_item
 {
   yaml_node_t* key;
   yaml_node_t* val;
-  struct solstice_sun* sun; /* TODO */
+  struct solstice_instance_id instance; /* TODO */
   struct solstice_material_double_sided_id mtl2; /* TODO */
-  struct solstice_object_id obj; /* TODO */
   struct solstice_node_id node; /* TODO */
+  struct solstice_object_id obj; /* TODO */
+  struct solstice_sun* sun; /* TODO */
   intptr_t n;
   res_T res = RES_OK;
   ASSERT(doc && item);
@@ -2579,7 +2611,7 @@ parse_item
   }
 
   if(!strcmp((char*)key->data.scalar.value, "instance")) {
-    res = parse_instance(parser, doc, val);
+    res = parse_instance(parser, doc, val, &instance);
   } else if(!strcmp((char*)key->data.scalar.value, "material")) {
     res = parse_material(parser, doc, val, &mtl2);
   } else if(!strcmp((char*)key->data.scalar.value, "tree")) {
@@ -2652,6 +2684,9 @@ solstice_parser_create
   /* Tree */
   htable_yaml2sols_init(mem_allocator, &parser->yaml2trees);
   darray_node_init(mem_allocator, &parser->nodes);
+
+  /* Miscellaneous */
+  darray_instance_init(mem_allocator, &parser->instances);
 
 exit:
   *out_parser = parser;
