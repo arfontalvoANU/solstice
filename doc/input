@@ -37,42 +37,40 @@
     object: *cylinder2
 
 # Declare a composition
-- node: &heliostat0
+- tree: &heliostat0
     transform: { rotation: [0, 0, 0], translation: [0, 0, 0] }
     geometries:
       - object: *cylinder
     children:
-      - node:
-          transform: { rotation: [0, 0, 0], translation: [0, 0, 0] }
-          pivot:
-            point: [0, 0, 0]
-            normal: [0, 1, 0]
-            target: { alias: self.cylinder2.anchor0 }
-          children:
-            - node:
+      - transform: { rotation: [0, 0, 0], translation: [0, 0, 0] }
+        pivot:
+          point: [0, 0, 0]
+          normal: [0, 1, 0]
+          target: { alias: self.cylinder2.anchor0 }
+        children:
+          - transform: { translation: [0, 0, 0] }
+            geometries:
+              - object: *cylinder
+              - object: *cylinder2
+            children:
+              - transform: { translation: [2.5, 11, 0], rotation: [90, 0, 0] }
                 geometries:
-                  - object: *cylinder
-                  - object: *cylinder2
-                children:
-                  - node:
-                      transform: { translation: [2.5, 11, 0], rotation: [90, 0, 0] }
-                      geometries:
-                        - object: *parabol
+                  - object: *parabol
 
 # Create the solar factory
 - instance:
     name: "inst"
     transform: { translation: [0, 0, 0] }
-    node : *heliostat0
+    tree : *heliostat0
 - instance:
     transform: { translation: [0, 0, 10] }
-    node : *heliostat0
+    tree : *heliostat0
 - instance:
     transform: { translation: [0, 0, 20] }
-    node : *heliostat0
+    tree : *heliostat0
 - instante:
     transform: { translation: [0, 0, 30] }
-    node : *heliostat0
+    tree : *heliostat0
 - instance:
     transform: { translation: [0, 0, -10] }
     object : *house
@@ -90,7 +88,7 @@
 <items> ::=
     <object>
   | <material>
-  | <node>
+  | <root>>
   | <instance>
   | <sun>
 
@@ -210,13 +208,16 @@
     reflectivity: REAL # in [0, 1]
 
 ----------------------------------------
-<node> ::=
-  node:
-    <geometries> | <pivot>
-[   <transform> ]
-[   <children>  ]
+<tree> ::=
+  tree:
+    <node>
 
-<entities> ::=
+<node-data> ::=
+  <geometries> | <pivot>
+[ <transform> ]
+[ <children>  ]
+
+<geometries> ::=
   geometries:
     - <object>
 [   - <object> ... ]
@@ -246,7 +247,7 @@
 
 ----------------------------------------
 instance:
-  <node> | <object>
+  <tree> | <object>
 [ <identifier> ]
 [ <transform> ]
 
