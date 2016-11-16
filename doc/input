@@ -211,6 +211,15 @@
     - <entity-data>
 [   - <entity-data> ... ]
 
+<anchors> ::=
+  anchors:
+    - <anchor-data>
+[   - <anchor-data> ... ]
+
+<anchor-data> ::=
+  name: STRING
+  position: <real3>
+
 ----------------------------------------
 <sun> ::=
   sun:
