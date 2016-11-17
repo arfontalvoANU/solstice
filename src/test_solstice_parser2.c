@@ -24,6 +24,7 @@ main(int argc, char** argv)
   struct solstice_entity_iterator it, end;
   struct solstice_entity_id entity_id;
   const struct solstice_entity* entity, *entity1, *entity2;
+  const struct solstice_geometry* geom;
   double tmp[3];
 
   FILE* stream;
@@ -73,6 +74,7 @@ main(int argc, char** argv)
   CHECK(d3_eq(entity->rotation, d3(tmp, 4, 5, 6)), 1);
   CHECK(strcmp("lvl0", str_cget(&entity->name)), 0);
   CHECK(solstice_entity_get_children_count(entity), 2);
+  geom = solstice_parser_get_geometry(parser, entity->geometry);
 
   entity_id = solstice_entity_get_child(entity, 0);
   entity1 = solstice_parser_get_entity(parser, entity_id);

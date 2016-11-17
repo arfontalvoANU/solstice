@@ -2772,6 +2772,15 @@ solstice_parser_get_entity
   return darray_entity_cdata_get(&parser->entities) + entity.i;
 }
 
+const struct solstice_geometry*
+solstice_parser_get_geometry
+  (const struct solstice_parser* parser,
+   const struct solstice_geometry_id geom)
+{
+  ASSERT(parser && geom.i < darray_geometry_size_get(&parser->geometries));
+  return darray_geometry_cdata_get(&parser->geometries) + geom.i;
+}
+
 void
 solstice_parser_entity_iterator_begin
   (struct solstice_parser* parser,

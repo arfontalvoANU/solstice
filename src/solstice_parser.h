@@ -58,6 +58,11 @@ solstice_parser_get_entity
   (const struct solstice_parser* parser,
    const struct solstice_entity_id entity);
 
+extern LOCAL_SYM const struct solstice_geometry* 
+solstice_parser_get_geometry
+  (const struct solstice_parser* parser,
+   const struct solstice_geometry_id geom);
+
 extern LOCAL_SYM void
 solstice_parser_entity_iterator_begin
   (struct solstice_parser* parser,

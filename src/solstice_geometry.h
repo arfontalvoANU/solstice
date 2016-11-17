@@ -71,4 +71,19 @@ solstice_geometry_copy_and_release
   return darray_object_id_copy_and_release(&dst->objects, &src->objects);
 }
 
+static FINLINE size_t
+solstice_geometry_get_objects_count(const struct solstice_geometry* geom)
+{
+  ASSERT(geom);
+  return darray_object_id_size_get(&geom->objects);
+}
+
+static FINLINE struct solstice_object_id
+solstice_geometry_get_object
+  (const struct solstice_geometry* geom, const size_t i)
+{
+  ASSERT(geom && i < solstice_geometry_get_objects_count(geom));
+  return darray_object_id_cdata_get(&geom->objects)[i];
+}
+
 #endif /* SOLSTICE_GEOMETRY_H */
