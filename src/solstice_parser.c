@@ -1947,7 +1947,7 @@ entity_register_name
 
   pisolent = htable_str2sols_find(htable, &solent->name);
   if(pisolent) {
-    log_err(parser, entity, 
+    log_err(parser, entity,
       "an entity with the name `%s' is already defined in the current context.\n",
       str_cget(&solent->name));
     return RES_BAD_ARG;
@@ -2761,5 +2761,32 @@ exit:
 error:
   parser_clear(parser);
   goto exit;
+}
+
+const struct solstice_entity*
+solstice_parser_get_entity
+  (const struct solstice_parser* parser,
+   const struct solstice_entity_id entity)
+{
+  ASSERT(parser && entity.i < darray_entity_size_get(&parser->entities));
+  return darray_entity_cdata_get(&parser->entities) + entity.i;
+}
+
+void
+solstice_parser_entity_iterator_begin
+  (struct solstice_parser* parser,
+   struct solstice_entity_iterator* it)
+{
+  ASSERT(parser && it);
+  htable_str2sols_begin(&parser->str2entities, &it->it__);
+}
+
+void
+solstice_parser_entity_iterator_end
+  (struct solstice_parser* parser,
+   struct solstice_entity_iterator* it)
+{
+  ASSERT(parser && it);
+  htable_str2sols_end(&parser->str2entities, &it->it__);
 }
 

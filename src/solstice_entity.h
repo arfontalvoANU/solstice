@@ -112,5 +112,19 @@ solstice_entity_copy_and_release
   return RES_OK;
 }
 
+static INLINE size_t
+solstice_entity_get_children_count(const struct solstice_entity* entity)
+{
+  ASSERT(entity);
+  return darray_child_size_get(&entity->children);
+}
+
+static INLINE struct solstice_entity_id
+solstice_entity_get_child(const struct solstice_entity* entity, const size_t i)
+{
+  ASSERT(entity && i < solstice_entity_get_children_count(entity));
+  return darray_child_cdata_get(&entity->children)[i];
+}
+
 #endif /* SOLSTICE_ENTITY_H */
 

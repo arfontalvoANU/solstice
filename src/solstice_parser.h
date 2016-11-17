@@ -16,11 +16,19 @@
 #ifndef SOLSTICE_PARSER_H
 #define SOLSTICE_PARSER_H
 
+#include "solstice_entity.h"
 #include <rsys/rsys.h>
 
 struct mem_allocator;
 struct solstice_parser;
 
+struct solstice_entity_iterator {
+  struct htable_str2sols_iterator it__; /* Internal data */
+};
+
+/*******************************************************************************
+ * Solstice parser API.
+ ******************************************************************************/
 extern LOCAL_SYM res_T
 solstice_parser_create
   (struct mem_allocator* allocator, /* May be NULL <=> use default allocator */
@@ -44,6 +52,46 @@ solstice_parser_setup
 extern LOCAL_SYM res_T
 solstice_parser_load
   (struct solstice_parser* parser);
+
+extern LOCAL_SYM const struct solstice_entity*
+solstice_parser_get_entity
+  (const struct solstice_parser* parser,
+   const struct solstice_entity_id entity);
+
+extern LOCAL_SYM void
+solstice_parser_entity_iterator_begin
+  (struct solstice_parser* parser,
+   struct solstice_entity_iterator* it);
+
+extern LOCAL_SYM void
+solstice_parser_entity_iterator_end
+  (struct solstice_parser* parser,
+   struct solstice_entity_iterator* it);
+
+static FINLINE void
+solstice_entity_iterator_next(struct solstice_entity_iterator* it)
+{
+  ASSERT(it);
+  htable_str2sols_iterator_next(&it->it__);
+}
+
+static FINLINE int
+solstice_entity_iterator_eq
+  (struct solstice_entity_iterator* a,
+   struct solstice_entity_iterator* b)
+{
+  ASSERT(a && b);
+  return htable_str2sols_iterator_eq(&a->it__, &b->it__);
+}
+
+static FINLINE struct solstice_entity_id
+solstice_entity_iterator_get(struct solstice_entity_iterator* it)
+{
+  struct solstice_entity_id id;
+  ASSERT(it);
+  id.i = *htable_str2sols_iterator_data_get(&it->it__);
+  return id;
+}
 
 #endif /* SOLSTICE_PARSER_H */
 
