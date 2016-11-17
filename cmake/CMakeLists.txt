@@ -87,6 +87,13 @@ if(NOT NO_TEST)
     target_link_libraries(${_name} LibYAML ${MATH_LIB} RSys solstitium)
   endfunction()
 
+  function(new_test _name)
+    build_test(${_name})
+    add_test(${_name} ${_name})
+  endfunction()
+
+  new_test(test_solstice_parser2)
+
   build_test(test_solstice_parser)
   add_test(test_solstice_parser_ok_0 test_solstice_parser
     ${SOLSTICE_SOURCE_DIR}/yaml/test_ok_0.yaml)
