@@ -35,8 +35,6 @@ main(int argc, char** argv)
   if(res != RES_OK) goto error;
 
   FOR_EACH(i, 1, argc) {
-    int is_empty = 1;
-
     file = fopen(argv[i], "rb");
     if(!file) {
       fprintf(stderr, "Could not open the file `%s'.\n", argv[i]);
@@ -48,12 +46,8 @@ main(int argc, char** argv)
 
     do {
       res = solstice_parser_load(parser);
-      if(res != RES_BAD_OP) is_empty = 0;
     } while(res != RES_BAD_OP);
 
-    if(is_empty) {
-      fprintf(stderr, "The `%s' file seems empty.\n", argv[i]);
-    }
     fclose(file);
     file = NULL;
   }
@@ -66,3 +60,4 @@ error:
   err = -1;
   goto exit;
 }
+

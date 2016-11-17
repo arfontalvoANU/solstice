@@ -165,6 +165,7 @@ struct solstice_parser {
 
   /* Entity */
   struct htable_yaml2sols yaml2entities; /* Cache of entities */
+  struct htable_str2sols str2entities;
   struct darray_entity entities;
 
   /* Miscellaneous */
@@ -179,6 +180,7 @@ parse_entity
   (struct solstice_parser* parser,
    yaml_document_t* doc,
    yaml_node_t* entity,
+   struct htable_str2sols* htable,
    struct solstice_entity_id* solent);
 
 static res_T
@@ -257,6 +259,7 @@ parser_clear(struct solstice_parser* parser)
 
   /* Tree */
   htable_yaml2sols_clear(&parser->yaml2entities);
+  htable_str2sols_clear(&parser->str2entities);
   darray_entity_clear(&parser->entities);
 
   /* Miscellaneous */
@@ -300,6 +303,7 @@ parser_release(ref_T* ref)
 
   /* Tree */
   htable_yaml2sols_release(&parser->yaml2entities);
+  htable_str2sols_release(&parser->str2entities);
   darray_entity_release(&parser->entities);
 
   /* Instance */
@@ -1927,15 +1931,47 @@ error:
  * Entity
  ******************************************************************************/
 static res_T
+entity_register_name
+  (struct solstice_parser* parser,
+   const yaml_node_t* entity,
+   struct htable_str2sols* htable,
+   const size_t isolent)
+{
+  struct solstice_entity* solent;
+  size_t* pisolent;
+  res_T res = RES_OK;
+  ASSERT(parser && htable);
+  ASSERT(isolent < darray_entity_size_get(&parser->entities));
+
+  solent = darray_entity_data_get(&parser->entities) + isolent;
+
+  pisolent = htable_str2sols_find(htable, &solent->name);
+  if(pisolent) {
+    log_err(parser, entity, 
+      "an entity with the name `%s' is already defined in the current context.\n",
+      str_cget(&solent->name));
+    return RES_BAD_ARG;
+  }
+
+  res = htable_str2sols_set(htable, &solent->name, &isolent);
+  if(res != RES_OK) {
+    log_err(parser, entity, "could not register the entity.\n");
+    return res;
+  }
+  return RES_OK;
+}
+
+static res_T
 parse_children
   (struct solstice_parser* parser,
    yaml_document_t* doc,
    const yaml_node_t* children,
+   struct htable_str2sols* htable,
    struct darray_child* entities)
 {
   intptr_t i, n;
   res_T res = RES_OK;
-  ASSERT(doc && children && entities);
+  ASSERT(doc && children && htable && entities);
 
   if(children->type != YAML_SEQUENCE_NODE) {
     log_err(parser, children, "expect a list of entities.\n");
@@ -1955,7 +1991,7 @@ parse_children
     yaml_node_t* child;
 
     child = yaml_document_get_node(doc, children->data.sequence.items.start[i]);
-    res = parse_entity(parser, doc, child, entity_id);
+    res = parse_entity(parser, doc, child, htable, entity_id);
     if(res != RES_OK) goto error;
   }
 
@@ -1971,6 +2007,7 @@ parse_entity
   (struct solstice_parser* parser,
    yaml_document_t* doc,
    yaml_node_t* entity,
+   struct htable_str2sols* htable,
    struct solstice_entity_id* out_isolent)
 {
   enum { CHILDREN, DATA, NAME, TRANSFORM };
@@ -1979,12 +2016,15 @@ parse_entity
   size_t isolent = SIZE_MAX;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
+  int cp = 0; /* Defined whether or not the parsed entity was a copy */
   res_T res = RES_OK;
-  ASSERT(doc && entity && out_isolent);
+  ASSERT(doc && entity && htable && out_isolent);
 
   pisolent = htable_yaml2sols_find(&parser->yaml2entities, &entity);
   if(pisolent) {
     isolent = *pisolent;
+    res = entity_register_name(parser, entity, htable, *pisolent);
+    if(res != RES_OK) goto error;
     goto exit;
   }
 
@@ -2027,12 +2067,14 @@ parse_entity
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "children")) {
       SETUP_MASK(CHILDREN, "children");
-      res = parse_children(parser, doc, val, &solent->children);
+      res = parse_children
+        (parser, doc, val, &solent->str2children, &solent->children);
     } else if(!strcmp((char*)key->data.scalar.value, "geometry")) {
       SETUP_MASK(DATA, "data");
       res = parse_geometry(parser, doc, val, &solent->geometry);
     } else if(!strcmp((char*)key->data.scalar.value, "name")) {
-      SETUP_MASK(NAME, "name"); /* TODO parse the entity name */
+      SETUP_MASK(NAME, "name");
+      res = parse_string(parser, val, &solent->name);
     } else if(!strcmp((char*)key->data.scalar.value, "pivot")) {
       SETUP_MASK(DATA, "data");
       res = parse_pivot(parser, doc, val);
@@ -2040,6 +2082,21 @@ parse_entity
       SETUP_MASK(TRANSFORM, "transform");
       res = parse_transform
         (parser, doc, val, solent->translation, solent->rotation);
+    } else if(!strcmp((char*)key->data.scalar.value, "<<")) { /* Copy */
+      struct solstice_entity* cp_solent;
+      pisolent = htable_yaml2sols_find(&parser->yaml2entities, &val);
+      if(!pisolent) {
+        log_err(parser, val, "invalid entity alias.\n");
+        res = RES_BAD_ARG;
+        goto error;
+      }
+      cp_solent = darray_entity_data_get(&parser->entities) + *pisolent;
+      res = solstice_entity_copy(solent, cp_solent);
+      if(res != RES_OK) {
+        log_err(parser, val, "could not copy the entity.\n");
+        goto error;
+      }
+      cp = 1;
     } else {
       log_err(parser, key, "unknown entity parameter `%s'.\n",
         key->data.scalar.value);
@@ -2050,15 +2107,20 @@ parse_entity
     #undef SETUP_MASK
   }
 
-  #define CHECK_PARAM(Flag, Name)                                              \
-    if(!(mask & BIT(Flag))) {                                                  \
-      log_err(parser, entity, "the entity "Name" is missing.\n");              \
-      res = RES_BAD_ARG;                                                       \
-      goto error;                                                              \
-    } (void)0
-  CHECK_PARAM(DATA, "data");
-  CHECK_PARAM(NAME, "name");
-  #undef CHECK_PARAM
+  if(!cp) {
+    #define CHECK_PARAM(Flag, Name)                                              \
+      if(!(mask & BIT(Flag))) {                                                  \
+        log_err(parser, entity, "the entity "Name" is missing.\n");              \
+        res = RES_BAD_ARG;                                                       \
+        goto error;                                                              \
+      } (void)0
+    CHECK_PARAM(DATA, "data");
+    CHECK_PARAM(NAME, "name");
+    #undef CHECK_PARAM
+  }
+
+  res = entity_register_name(parser, entity, htable, isolent);
+  if(res != RES_OK) goto error;
 
   res = htable_yaml2sols_set(&parser->yaml2entities, &entity, &isolent);
   if(res != RES_OK) {
@@ -2071,6 +2133,7 @@ exit:
   return res;
 error:
   if(solent) {
+    htable_str2sols_erase(htable, &solent->name);
     darray_entity_pop_back(&parser->entities);
     isolent = SIZE_MAX;
   }
@@ -2502,7 +2565,7 @@ parse_item
   if(!strcmp((char*)key->data.scalar.value, "material")) {
     res = parse_material(parser, doc, val, &mtl2);
   } else if(!strcmp((char*)key->data.scalar.value, "entity")) {
-    res = parse_entity(parser, doc, val, &entity);
+    res = parse_entity(parser, doc, val, &parser->str2entities, &entity);
   } else if(!strcmp((char*)key->data.scalar.value, "geometry")) {
     res = parse_geometry(parser, doc, val, &geometry);
   } else if(!strcmp((char*)key->data.scalar.value, "sun")) {
@@ -2568,6 +2631,7 @@ solstice_parser_create
 
   /* Tree */
   htable_yaml2sols_init(mem_allocator, &parser->yaml2entities);
+  htable_str2sols_init(mem_allocator, &parser->str2entities);
   darray_entity_init(mem_allocator, &parser->entities);
 
   /* Miscellaneous */
