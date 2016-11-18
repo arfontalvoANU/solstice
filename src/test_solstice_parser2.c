@@ -25,7 +25,7 @@ main(int argc, char** argv)
   struct solstice_entity_id entity_id;
   struct solstice_object_id obj_id;
   struct solstice_geometry_id geom_id;
-  const struct solstice_entity* entity, *entity1, *entity2;
+  const struct solstice_entity* entity, *entity1a, *entity1b, *entity2, *entity3;
   const struct solstice_geometry* geom;
   const struct solstice_object* obj;
   const struct solstice_shape* shape;
@@ -49,7 +49,7 @@ main(int argc, char** argv)
   fprintf(stream, "    - sphere: { radius: 1  }\n");
   fprintf(stream, "      material: { matte: { reflectivity: 1 } }\n");
   fprintf(stream, "- entity:\n");
-  fprintf(stream, "    name: lvl0\n");
+  fprintf(stream, "    name: lvl 0\n");
   fprintf(stream, "    geometry: *sphere\n");
   fprintf(stream, "    transform: { translation: [1,2,3], rotation: [4,5,6]}\n");
   fprintf(stream, "    children:\n");
@@ -84,7 +84,7 @@ main(int argc, char** argv)
 
   CHECK(d3_eq(entity->translation, d3(tmp, 1, 2, 3)), 1);
   CHECK(d3_eq(entity->rotation, d3(tmp, 4, 5, 6)), 1);
-  CHECK(strcmp("lvl0", str_cget(&entity->name)), 0);
+  CHECK(strcmp("lvl 0", str_cget(&entity->name)), 0);
   CHECK(solstice_entity_get_children_count(entity), 2);
   geom_id = entity->geometry;
   geom = solstice_parser_get_geometry(parser, entity->geometry);
@@ -105,13 +105,13 @@ main(int argc, char** argv)
   CHECK(matte->reflectivity, 1);
 
   entity_id = solstice_entity_get_child(entity, 0);
-  entity1 = solstice_parser_get_entity(parser, entity_id);
-  CHECK(d3_eq(entity1->translation, d3_splat(tmp, 0)), 1);
-  CHECK(d3_eq(entity1->rotation, d3_splat(tmp, 0)), 1);
-  CHECK(strcmp("lvl1a", str_cget(&entity1->name)), 0);
-  CHECK(solstice_entity_get_children_count(entity1), 0);
-  NCHECK(entity1->geometry.i, geom_id.i);
-  geom = solstice_parser_get_geometry(parser, entity1->geometry);
+  entity1a = solstice_parser_get_entity(parser, entity_id);
+  CHECK(d3_eq(entity1a->translation, d3_splat(tmp, 0)), 1);
+  CHECK(d3_eq(entity1a->rotation, d3_splat(tmp, 0)), 1);
+  CHECK(strcmp("lvl1a", str_cget(&entity1a->name)), 0);
+  CHECK(solstice_entity_get_children_count(entity1a), 0);
+  NCHECK(entity1a->geometry.i, geom_id.i);
+  geom = solstice_parser_get_geometry(parser, entity1a->geometry);
   CHECK(solstice_geometry_get_objects_count(geom), 1);
   obj_id = solstice_geometry_get_object(geom, 0);
   obj = solstice_parser_get_object(parser, obj_id);
@@ -130,20 +130,31 @@ main(int argc, char** argv)
   CHECK(mirror->roughness, 0.1);
 
   entity_id = solstice_entity_get_child(entity, 1);
-  entity1 = solstice_parser_get_entity(parser, entity_id);
-  CHECK(d3_eq(entity1->translation, d3_splat(tmp, 0)), 1);
-  CHECK(d3_eq(entity1->rotation, d3(tmp, 3.14, 0, -1)), 1);
-  CHECK(strcmp("lvl1b", str_cget(&entity1->name)), 0);
-  CHECK(solstice_entity_get_children_count(entity1), 1);
-  CHECK(entity1->geometry.i, geom_id.i);
+  entity1b = solstice_parser_get_entity(parser, entity_id);
+  CHECK(d3_eq(entity1b->translation, d3_splat(tmp, 0)), 1);
+  CHECK(d3_eq(entity1b->rotation, d3(tmp, 3.14, 0, -1)), 1);
+  CHECK(strcmp("lvl1b", str_cget(&entity1b->name)), 0);
+  CHECK(solstice_entity_get_children_count(entity1b), 1);
+  CHECK(entity1b->geometry.i, geom_id.i);
 
-  entity_id = solstice_entity_get_child(entity1, 0);
+  entity_id = solstice_entity_get_child(entity1b, 0);
   entity2 = solstice_parser_get_entity(parser, entity_id);
   CHECK(d3_eq(entity2->translation, d3_splat(tmp, 0)), 1);
   CHECK(d3_eq(entity2->rotation, d3_splat(tmp, 0)), 1);
   CHECK(strcmp("lvl2", str_cget(&entity2->name)), 0);
   CHECK(solstice_entity_get_children_count(entity2), 0);
   CHECK(entity2->geometry.i, geom_id.i);
+
+  entity3 = solstice_parser_find_entity(parser, "lvl 0");
+  CHECK(entity3, entity);
+  entity3 = solstice_parser_find_entity(parser, "lvl1a");
+  CHECK(entity3, NULL);
+  entity3 = solstice_parser_find_entity(parser, "lvl 0.lvl1a");
+  CHECK(entity3, entity1a);
+  entity3 = solstice_parser_find_entity(parser, "lvl 0.lvl1b");
+  CHECK(entity3, entity1b);
+  entity3 = solstice_parser_find_entity(parser, "lvl 0.lvl1b.lvl2");
+  CHECK(entity3, entity2);
 
   CHECK(solstice_parser_load(parser), RES_BAD_OP);
   solstice_parser_ref_put(parser);
@@ -155,3 +166,4 @@ main(int argc, char** argv)
   CHECK(mem_allocated_size(), 0);
   return 0;
 }
+

@@ -169,8 +169,6 @@ struct solstice_parser {
   struct htable_str2sols str2entities;
   struct darray_entity entities;
 
-  /* Miscellaneous */
-
   ref_T ref;
   struct mem_allocator* allocator;
 };
@@ -1998,6 +1996,30 @@ error:
   goto exit;
 }
 
+static res_T
+parse_entity_name
+  (struct solstice_parser* parser,
+   yaml_node_t* name,
+   struct str* str)
+{
+  res_T res = RES_OK;
+  ASSERT(parser && name && str);
+
+  res = parse_string(parser, name, str);
+  if(res != RES_OK) goto error;
+
+  if(strchr(str_cget(str), '.')) {
+    log_err(parser, name, "invalid character `.' in the entity name `%s'.\n", 
+      str_cget(str));
+    goto error;
+  }
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
 res_T
 parse_entity
   (struct solstice_parser* parser,
@@ -2070,7 +2092,7 @@ parse_entity
       res = parse_geometry(parser, doc, val, &solent->geometry);
     } else if(!strcmp((char*)key->data.scalar.value, "name")) {
       SETUP_MASK(NAME, "name");
-      res = parse_string(parser, val, &solent->name);
+      res = parse_entity_name(parser, val, &solent->name);
     } else if(!strcmp((char*)key->data.scalar.value, "pivot")) {
       SETUP_MASK(DATA, "data");
       res = parse_pivot(parser, doc, val);
@@ -2760,6 +2782,60 @@ exit:
   return res;
 error:
   parser_clear(parser);
+  goto exit;
+}
+
+const struct solstice_entity*
+solstice_parser_find_entity
+  (struct solstice_parser* parser, const char* name)
+{
+  struct htable_str2sols* htable = NULL;
+  struct solstice_entity* entity = NULL;
+  struct str str;
+  struct str str_tk;
+  char* cstr;
+  char* tk;
+  res_T res = RES_OK;
+  ASSERT(parser && name);
+
+  str_init(parser->allocator, &str);
+  str_init(parser->allocator, &str_tk);
+
+  res = str_set(&str, name);
+  if(res != RES_OK) {
+    fprintf(stderr, "%s: could not copy the input string.\n",
+      FUNC_NAME);
+    goto error;
+  }
+  res = str_reserve(&str_tk, str_len(&str));
+  if(res != RES_OK) {
+    fprintf(stderr, "%s: could not allocate the temporary token sting.\n",
+      FUNC_NAME);
+    goto error;
+  }
+
+  cstr = str_get(&str);
+  tk = strtok(cstr, ".");
+  htable = &parser->str2entities;
+  while(tk) {
+    size_t* pientity;
+    str_set(&str_tk, tk);
+    pientity = htable_str2sols_find(htable, &str_tk);
+    if(!pientity) {
+      tk = NULL;
+    } else {
+      tk = strtok(NULL, ".");
+      entity = darray_entity_data_get(&parser->entities) + *pientity;
+      htable = &entity->str2children;
+    }
+  }
+
+exit:
+  str_release(&str);
+  str_release(&str_tk);
+  return entity;
+error:
+  entity = NULL;
   goto exit;
 }
 
