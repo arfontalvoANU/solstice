@@ -1,3 +1,4 @@
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - entity:
     name: "entity"
     transform:
@@ -8,6 +9,7 @@
         material: { matte: { reflectivity: 1 } }
 
 ---
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - entity:
     name: "entity"
     transform: { translation: [ 1, 2, 0 ] }
@@ -18,6 +20,7 @@
         cuboid: { size: [1, 2, 3] }
 
 ---
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - entity:
     name: "entity"
     geometry:
@@ -33,7 +36,7 @@
     geometry:
       - material: *lambertian
         cuboid: { size: [1, 2, 3] }
-
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 ---
 - material: &front { matte: { reflectivity: 1 } }
 - material: &back  { matte: { reflectivity: 0.5 } }
@@ -41,8 +44,10 @@
     - cuboid: { size: [1, 2, 3] }
       material: { front: *front, back: *back }
 - entity: { name: "hop", geometry: *cuboid }
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 ---
 - material: &lambertian { matte: { reflectivity: 1 } }
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - entity:
     name: hop
     geometry: &cuboid
@@ -50,3 +55,4 @@
         material:
           front: *lambertian
           back: *lambertian
+

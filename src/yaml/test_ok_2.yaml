@@ -1,15 +1,18 @@
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - entity:
     name: 1
     geometry:
       - material: { matte: { reflectivity: 1 } }
         stl: { path: path toward }
 ---
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - entity:
     name: 1a
     geometry:
       - material: { matte: { reflectivity: 1 } }
         obj: { path: "my_path" }
 ---
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - entity:
     name: test
     geometry:
@@ -17,6 +20,7 @@
         obj: { path: "path/path/path" }
         transform:  { translation: [1, 2, 3] }
 ---
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - entity:
     name: test
     geometry:
@@ -24,6 +28,7 @@
         obj: { path: "path/path/path" }
         transform:  { rotation: [0, 0, 0] }
 ---
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - entity:
     name: hop
     geometry:

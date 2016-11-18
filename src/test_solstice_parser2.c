@@ -48,7 +48,6 @@ main(int argc, char** argv)
   fprintf(stream, "- geometry: &sphere\n");
   fprintf(stream, "    - sphere: { radius: 1  }\n");
   fprintf(stream, "      material: { matte: { reflectivity: 1 } }\n");
-  fprintf(stream, "\n");
   fprintf(stream, "- entity:\n");
   fprintf(stream, "    name: lvl0\n");
   fprintf(stream, "    geometry: *sphere\n");
@@ -65,6 +64,9 @@ main(int argc, char** argv)
   fprintf(stream, "        children:\n");
   fprintf(stream, "          - name: lvl2\n");
   fprintf(stream, "            geometry: *sphere\n");
+  fprintf(stream, "- sun:\n");
+  fprintf(stream, "    dni: 1\n");
+  fprintf(stream, "    spectrum: [ { wavelength: 1, data: 1} ]\n");
   rewind(stream);
 
   CHECK(solstice_parser_setup(parser, NULL, stream), RES_OK);

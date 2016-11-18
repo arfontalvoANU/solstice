@@ -1,3 +1,5 @@
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
+
 - material: &mirror
     mirror:
       reflectivity: 1
@@ -17,6 +19,8 @@
       translation: [0, 1, 2]
       rotation: [0, 0, 0]
 ---
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
+
 - material: &mirror
     mirror:
       reflectivity: 1
@@ -32,18 +36,21 @@
     name: "entity"
     geometry: *cylinder
 ---
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - entity:
     name: entity
     geometry:
       - material: { mirror: { reflectivity: 0.314, roughness: 0.5 } }
         cylinder: { height: 10.12, radius: 0.32 }
 ---
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - entity:
     name: entity
     geometry:
       - material: { mirror: { reflectivity: 0, roughness: 0.5 } }
         cylinder: { height: 1, radius: 1 }
 ---
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - entity:
     name: entity
     geometry:

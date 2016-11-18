@@ -2749,6 +2749,12 @@ solstice_parser_load(struct solstice_parser* parser)
     if(res != RES_OK) goto error;
   }
 
+  if(!parser->sun_key) {
+    log_err(parser, root, "%s: no sun definition in the document.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
 exit:
   if(doc_is_init) yaml_document_delete(&doc);
   return res;
