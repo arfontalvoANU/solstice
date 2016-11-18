@@ -155,9 +155,10 @@ struct solstice_parser {
   struct darray_sphere spheres;
   struct darray_impgeom stls;
 
-  /* Objects */
-  struct htable_yaml2sols yaml2objs; /* Cache of objects */
+  /* Geometries & objects */
+  struct htable_yaml2sols yaml2geoms; /* Cache of geometries */
   struct darray_object objects;
+  struct darray_geometry geometries;
 
   /* Sun. Note that only one sun is supported */
   const yaml_node_t* sun_key; /* yaml_node_t ptr used to spawn the sun */
@@ -169,7 +170,6 @@ struct solstice_parser {
   struct darray_entity entities;
 
   /* Miscellaneous */
-  struct darray_geometry geometries;
 
   ref_T ref;
   struct mem_allocator* allocator;
@@ -249,9 +249,10 @@ parser_clear(struct solstice_parser* parser)
   darray_sphere_clear(&parser->spheres);
   darray_impgeom_clear(&parser->stls);
 
-  /* Objects */
-  htable_yaml2sols_clear(&parser->yaml2objs);
+  /* Geometries */
+  htable_yaml2sols_clear(&parser->yaml2geoms);
   darray_object_clear(&parser->objects);
+  darray_geometry_clear(&parser->geometries);
 
   /* Sun */
   solstice_sun_clear(&parser->sun);
@@ -261,9 +262,6 @@ parser_clear(struct solstice_parser* parser)
   htable_yaml2sols_clear(&parser->yaml2entities);
   htable_str2sols_clear(&parser->str2entities);
   darray_entity_clear(&parser->entities);
-
-  /* Miscellaneous */
-  darray_geometry_clear(&parser->geometries);
 }
 
 static void
@@ -294,9 +292,10 @@ parser_release(ref_T* ref)
   darray_sphere_release(&parser->spheres);
   darray_impgeom_release(&parser->stls);
 
-  /* Objects */
-  htable_yaml2sols_release(&parser->yaml2objs);
+  /* Geometries */
+  htable_yaml2sols_release(&parser->yaml2geoms);
   darray_object_release(&parser->objects);
+  darray_geometry_release(&parser->geometries);
 
   /* Sun */
   solstice_sun_release(&parser->sun);
@@ -305,9 +304,6 @@ parser_release(ref_T* ref)
   htable_yaml2sols_release(&parser->yaml2entities);
   htable_str2sols_release(&parser->str2entities);
   darray_entity_release(&parser->entities);
-
-  /* Instance */
-  darray_geometry_release(&parser->geometries);
 
   MEM_RM(parser->allocator, parser);
 }
@@ -1723,21 +1719,12 @@ parse_object
   enum { MATERIAL, SHAPE, TRANSFORM };
   struct solstice_object* obj = NULL;
   struct solstice_shape* shape = NULL;
-  size_t* piobj;
   size_t iobj = SIZE_MAX;
   size_t ishape = SIZE_MAX;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
   ASSERT(doc && object && out_iobj);
-
-  /* Check whether or not the YAML descriptor alias an already created Solstice
-   * object */
-  piobj = htable_yaml2sols_find(&parser->yaml2objs, &object);
-  if(piobj) {
-    obj = darray_object_data_get(&parser->objects) + *piobj;
-    goto exit;
-  }
 
   if(object->type != YAML_MAPPING_NODE) {
     log_err(parser, object, "expect an object definition.\n");
@@ -1851,13 +1838,6 @@ parse_object
   CHECK_PARAM(SHAPE, "shape");
   #undef CHECK_PARAM
 
-  /* Cache the object */
-  res = htable_yaml2sols_set(&parser->yaml2objs, &object, &iobj);
-  if(res != RES_OK) {
-    log_err(parser, object, "could not register the object.\n");
-    goto error;
-  }
-
 exit:
   out_iobj->i = iobj;
   return res;
@@ -1878,6 +1858,7 @@ parse_geometry
    struct solstice_geometry_id* out_isolgeom)
 {
   struct solstice_geometry* solgeom = NULL;
+  size_t* pisolgeom;
   size_t isolgeom = SIZE_MAX;
   intptr_t i, n;
   res_T res = RES_OK;
@@ -1887,6 +1868,14 @@ parse_geometry
     log_err(parser, geometry, "expect a list of objects.\n");
     res = RES_BAD_ARG;
     goto error;
+  }
+
+  /* Check whether or not the YAML descriptor alias an already created Solstice
+   * geometry */
+  pisolgeom = htable_yaml2sols_find(&parser->yaml2geoms, &geometry);
+  if(pisolgeom) {
+    isolgeom = *pisolgeom;
+    goto exit;
   }
 
   /* Allocate the geometry */
@@ -1913,6 +1902,13 @@ parse_geometry
     obj = yaml_document_get_node(doc, geometry->data.sequence.items.start[i]);
     res = parse_object(parser, doc, obj, obj_id);
     if(res != RES_OK) goto error;
+  }
+
+  /* Cache the geometry */
+  res = htable_yaml2sols_set(&parser->yaml2geoms, &geometry, &isolgeom);
+  if(res != RES_OK) {
+    log_err(parser, geometry, "could not register the geometry.\n");
+    goto error;
   }
 
 exit:
@@ -2623,9 +2619,10 @@ solstice_parser_create
   darray_sphere_init(mem_allocator, &parser->spheres);
   darray_impgeom_init(mem_allocator, &parser->stls);
 
-  /* Objects */
-  htable_yaml2sols_init(mem_allocator, &parser->yaml2objs);
+  /* Geometries */
+  htable_yaml2sols_init(mem_allocator, &parser->yaml2geoms);
   darray_object_init(mem_allocator, &parser->objects);
+  darray_geometry_init(mem_allocator, &parser->geometries);
 
   solstice_sun_init(mem_allocator, &parser->sun);
 
@@ -2633,9 +2630,6 @@ solstice_parser_create
   htable_yaml2sols_init(mem_allocator, &parser->yaml2entities);
   htable_str2sols_init(mem_allocator, &parser->str2entities);
   darray_entity_init(mem_allocator, &parser->entities);
-
-  /* Miscellaneous */
-  darray_geometry_init(mem_allocator, &parser->geometries);
 
 exit:
   *out_parser = parser;
@@ -2779,6 +2773,69 @@ solstice_parser_get_geometry
 {
   ASSERT(parser && geom.i < darray_geometry_size_get(&parser->geometries));
   return darray_geometry_cdata_get(&parser->geometries) + geom.i;
+}
+
+const struct solstice_material*
+solstice_parser_get_material
+  (const struct solstice_parser* parser,
+   const struct solstice_material_id mtl)
+{
+  ASSERT(parser && mtl.i < darray_material_size_get(&parser->mtls));
+  return darray_material_cdata_get(&parser->mtls) + mtl.i;
+}
+
+const struct solstice_material_double_sided*
+solstice_parser_get_material_double_sided
+  (const struct solstice_parser* parser,
+   const struct solstice_material_double_sided_id mtl2)
+{
+  ASSERT(parser && mtl2.i < darray_material2_size_get(&parser->mtls2));
+  return darray_material2_cdata_get(&parser->mtls2) + mtl2.i;
+}
+
+const struct solstice_material_matte*
+solstice_parser_get_material_matte
+  (const struct solstice_parser* parser,
+   const struct solstice_material_matte_id matte)
+{
+  ASSERT(parser && matte.i < darray_matte_size_get(&parser->mattes));
+  return darray_matte_cdata_get(&parser->mattes) + matte.i;
+}
+
+const struct solstice_material_mirror*
+solstice_parser_get_material_mirror
+  (const struct solstice_parser* parser,
+   const struct solstice_material_mirror_id mirror)
+{
+  ASSERT(parser && mirror.i < darray_mirror_size_get(&parser->mirrors));
+  return darray_mirror_cdata_get(&parser->mirrors) + mirror.i;
+}
+
+const struct solstice_object*
+solstice_parser_get_object
+  (const struct solstice_parser* parser,
+   const struct solstice_object_id obj)
+{
+  ASSERT(parser && obj.i < darray_object_size_get(&parser->objects));
+  return darray_object_cdata_get(&parser->objects) + obj.i;
+}
+
+const struct solstice_shape*
+solstice_parser_get_shape
+  (const struct solstice_parser* parser,
+   const struct solstice_shape_id shape)
+{
+  ASSERT(parser && shape.i < darray_shape_size_get(&parser->shapes));
+  return darray_shape_cdata_get(&parser->shapes) + shape.i;
+}
+
+const struct solstice_shape_sphere*
+solstice_parser_get_shape_sphere
+  (const struct solstice_parser* parser,
+   const struct solstice_shape_sphere_id sphere)
+{
+  ASSERT(parser && sphere.i < darray_sphere_size_get(&parser->spheres));
+  return darray_sphere_cdata_get(&parser->spheres) + sphere.i;
 }
 
 void

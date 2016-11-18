@@ -50,6 +50,8 @@ struct solstice_entity {
 
   struct str name;
   struct solstice_geometry_id geometry;
+
+  /* Internal data. Should not be acceded directly. */
   struct htable_str2sols str2children;
   struct darray_child children; /* List of children nodes */
 };

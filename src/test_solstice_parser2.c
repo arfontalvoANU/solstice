@@ -23,8 +23,17 @@ main(int argc, char** argv)
   struct solstice_parser* parser;
   struct solstice_entity_iterator it, end;
   struct solstice_entity_id entity_id;
+  struct solstice_object_id obj_id;
+  struct solstice_geometry_id geom_id;
   const struct solstice_entity* entity, *entity1, *entity2;
   const struct solstice_geometry* geom;
+  const struct solstice_object* obj;
+  const struct solstice_shape* shape;
+  const struct solstice_material_double_sided* mtl2;
+  const struct solstice_material* mtl;
+  const struct solstice_material_matte* matte;
+  const struct solstice_material_mirror* mirror;
+  const struct solstice_shape_sphere* sphere;
   double tmp[3];
 
   FILE* stream;
@@ -48,7 +57,8 @@ main(int argc, char** argv)
   fprintf(stream, "      - name: lvl1a\n");
   fprintf(stream, "        geometry: \n");
   fprintf(stream, "          - sphere: {radius: 2}\n");
-  fprintf(stream, "            material: { matte: {reflectivity: 0.5}}\n");
+  fprintf(stream, "            material:\n");
+  fprintf(stream, "              mirror: { reflectivity: 0.9, roughness: 0.1 }\n");
   fprintf(stream, "      - name: lvl1b\n");
   fprintf(stream, "        geometry: *sphere\n");
   fprintf(stream, "        transform: { rotation: [3.14, 0, -1] }\n");
@@ -74,7 +84,23 @@ main(int argc, char** argv)
   CHECK(d3_eq(entity->rotation, d3(tmp, 4, 5, 6)), 1);
   CHECK(strcmp("lvl0", str_cget(&entity->name)), 0);
   CHECK(solstice_entity_get_children_count(entity), 2);
+  geom_id = entity->geometry;
   geom = solstice_parser_get_geometry(parser, entity->geometry);
+  CHECK(solstice_geometry_get_objects_count(geom), 1);
+  obj_id = solstice_geometry_get_object(geom, 0);
+  obj = solstice_parser_get_object(parser, obj_id);
+  CHECK(d3_eq(obj->rotation, d3_splat(tmp, 0)), 1);
+  CHECK(d3_eq(obj->translation, d3_splat(tmp, 0)), 1);
+  shape = solstice_parser_get_shape(parser, obj->shape);
+  CHECK(shape->type, SOLSTICE_SHAPE_SPHERE);
+  sphere = solstice_parser_get_shape_sphere(parser, shape->data.sphere);
+  CHECK(sphere->radius, 1);
+  mtl2 = solstice_parser_get_material_double_sided(parser, obj->mtl2);
+  CHECK(mtl2->front.i, mtl2->back.i);
+  mtl = solstice_parser_get_material(parser, mtl2->front);
+  CHECK(mtl->type, SOLSTICE_MATERIAL_MATTE);
+  matte = solstice_parser_get_material_matte(parser, mtl->data.matte);
+  CHECK(matte->reflectivity, 1);
 
   entity_id = solstice_entity_get_child(entity, 0);
   entity1 = solstice_parser_get_entity(parser, entity_id);
@@ -82,6 +108,24 @@ main(int argc, char** argv)
   CHECK(d3_eq(entity1->rotation, d3_splat(tmp, 0)), 1);
   CHECK(strcmp("lvl1a", str_cget(&entity1->name)), 0);
   CHECK(solstice_entity_get_children_count(entity1), 0);
+  NCHECK(entity1->geometry.i, geom_id.i);
+  geom = solstice_parser_get_geometry(parser, entity1->geometry);
+  CHECK(solstice_geometry_get_objects_count(geom), 1);
+  obj_id = solstice_geometry_get_object(geom, 0);
+  obj = solstice_parser_get_object(parser, obj_id);
+  CHECK(d3_eq(obj->rotation, d3_splat(tmp, 0)), 1);
+  CHECK(d3_eq(obj->translation, d3_splat(tmp, 0)), 1);
+  shape = solstice_parser_get_shape(parser, obj->shape);
+  CHECK(shape->type, SOLSTICE_SHAPE_SPHERE);
+  sphere = solstice_parser_get_shape_sphere(parser, shape->data.sphere);
+  CHECK(sphere->radius, 2);
+  mtl2 = solstice_parser_get_material_double_sided(parser, obj->mtl2);
+  CHECK(mtl2->front.i, mtl2->back.i);
+  mtl = solstice_parser_get_material(parser, mtl2->front);
+  CHECK(mtl->type, SOLSTICE_MATERIAL_MIRROR);
+  mirror = solstice_parser_get_material_mirror(parser, mtl->data.mirror);
+  CHECK(mirror->reflectivity, 0.9);
+  CHECK(mirror->roughness, 0.1);
 
   entity_id = solstice_entity_get_child(entity, 1);
   entity1 = solstice_parser_get_entity(parser, entity_id);
@@ -89,6 +133,7 @@ main(int argc, char** argv)
   CHECK(d3_eq(entity1->rotation, d3(tmp, 3.14, 0, -1)), 1);
   CHECK(strcmp("lvl1b", str_cget(&entity1->name)), 0);
   CHECK(solstice_entity_get_children_count(entity1), 1);
+  CHECK(entity1->geometry.i, geom_id.i);
 
   entity_id = solstice_entity_get_child(entity1, 0);
   entity2 = solstice_parser_get_entity(parser, entity_id);
@@ -96,9 +141,12 @@ main(int argc, char** argv)
   CHECK(d3_eq(entity2->rotation, d3_splat(tmp, 0)), 1);
   CHECK(strcmp("lvl2", str_cget(&entity2->name)), 0);
   CHECK(solstice_entity_get_children_count(entity2), 0);
+  CHECK(entity2->geometry.i, geom_id.i);
 
   CHECK(solstice_parser_load(parser), RES_BAD_OP);
   solstice_parser_ref_put(parser);
+
+  fclose(stream);
 
   check_memory_allocator(&allocator);
   mem_shutdown_proxy_allocator(&allocator);

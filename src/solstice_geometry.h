@@ -24,8 +24,8 @@
 struct solstice_object {
   struct solstice_material_double_sided_id mtl2;
   struct solstice_shape_id shape;
-  double translation[3];
   double rotation[3];
+  double translation[3];
 };
 
 struct solstice_object_id { size_t i; };
@@ -35,6 +35,7 @@ struct solstice_object_id { size_t i; };
 #include <rsys/dynamic_array.h>
 
 struct solstice_geometry {
+  /* Internal data. Should not be acceded directly. */
   struct darray_object_id objects;
 };
 

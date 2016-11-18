@@ -58,10 +58,45 @@ solstice_parser_get_entity
   (const struct solstice_parser* parser,
    const struct solstice_entity_id entity);
 
-extern LOCAL_SYM const struct solstice_geometry* 
+extern LOCAL_SYM const struct solstice_geometry*
 solstice_parser_get_geometry
   (const struct solstice_parser* parser,
    const struct solstice_geometry_id geom);
+
+extern LOCAL_SYM const struct solstice_material*
+solstice_parser_get_material
+  (const struct solstice_parser* parser,
+   const struct solstice_material_id mtl);
+
+extern LOCAL_SYM const struct solstice_material_double_sided*
+solstice_parser_get_material_double_sided
+  (const struct solstice_parser* parser,
+   const struct solstice_material_double_sided_id mtl2);
+
+extern LOCAL_SYM const struct solstice_material_matte*
+solstice_parser_get_material_matte
+  (const struct solstice_parser* parser,
+   const struct solstice_material_matte_id matte);
+
+extern LOCAL_SYM const struct solstice_material_mirror*
+solstice_parser_get_material_mirror
+  (const struct solstice_parser* parser,
+   const struct solstice_material_mirror_id mirror);
+
+extern LOCAL_SYM const struct solstice_object*
+solstice_parser_get_object
+  (const struct solstice_parser* parser,
+   const struct solstice_object_id obj);
+
+extern LOCAL_SYM const struct solstice_shape*
+solstice_parser_get_shape
+  (const struct solstice_parser* parser,
+   const struct solstice_shape_id shape);
+
+extern LOCAL_SYM const struct solstice_shape_sphere*
+solstice_parser_get_shape_sphere
+  (const struct solstice_parser* parser,
+   const struct solstice_shape_sphere_id sphere);
 
 extern LOCAL_SYM void
 solstice_parser_entity_iterator_begin
