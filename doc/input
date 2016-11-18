@@ -3,7 +3,8 @@
 --------------------------------------------------------------------------------
 # Declare materials
 - material: &lambertian
-    matte: { reflectivity: 1 }
+    matte: 
+      reflectivity: 1
 - material: &mirror
     mirror: { reflectivity: 1, roughness: 0 }
 
@@ -83,7 +84,7 @@
   - <item>
 [ - <item> ... ]
 
-<items> ::=
+<item> ::=
     <geometry>
   | <material>
   | <entity>

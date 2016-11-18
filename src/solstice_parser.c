@@ -1932,7 +1932,8 @@ entity_register_name
    const size_t isolent)
 {
   struct solstice_entity* solent;
-  size_t* pisolent;
+  struct solstice_entity_id* pisolent;
+  struct solstice_entity_id id;
   res_T res = RES_OK;
   ASSERT(parser && htable);
   ASSERT(isolent < darray_entity_size_get(&parser->entities));
@@ -1947,7 +1948,8 @@ entity_register_name
     return RES_BAD_ARG;
   }
 
-  res = htable_str2sols_set(htable, &solent->name, &isolent);
+  id.i = isolent;
+  res = htable_str2sols_set(htable, &solent->name, &id);
   if(res != RES_OK) {
     log_err(parser, entity, "could not register the entity.\n");
     return res;
@@ -2009,7 +2011,7 @@ parse_entity_name
   if(res != RES_OK) goto error;
 
   if(strchr(str_cget(str), '.')) {
-    log_err(parser, name, "invalid character `.' in the entity name `%s'.\n", 
+    log_err(parser, name, "invalid character `.' in the entity name `%s'.\n",
       str_cget(str));
     goto error;
   }
@@ -2818,14 +2820,14 @@ solstice_parser_find_entity
   tk = strtok(cstr, ".");
   htable = &parser->str2entities;
   while(tk) {
-    size_t* pientity;
+    struct solstice_entity_id* pientity;
     str_set(&str_tk, tk);
     pientity = htable_str2sols_find(htable, &str_tk);
     if(!pientity) {
       tk = NULL;
     } else {
       tk = strtok(NULL, ".");
-      entity = darray_entity_data_get(&parser->entities) + *pientity;
+      entity = darray_entity_data_get(&parser->entities) + pientity->i;
       htable = &entity->str2children;
     }
   }
@@ -2911,6 +2913,61 @@ solstice_parser_get_shape
   return darray_shape_cdata_get(&parser->shapes) + shape.i;
 }
 
+const struct solstice_shape_cuboid*
+solstice_parser_get_shape_cuboid
+  (const struct solstice_parser* parser,
+   const struct solstice_shape_cuboid_id cuboid)
+{
+  ASSERT(parser && cuboid.i < darray_cuboid_size_get(&parser->cuboids));
+  return darray_cuboid_cdata_get(&parser->cuboids) + cuboid.i;
+}
+
+const struct solstice_shape_cylinder*
+solstice_parser_get_shape_cylinder
+  (const struct solstice_parser* parser,
+   const struct solstice_shape_cylinder_id cylinder)
+{
+  ASSERT(parser && cylinder.i < darray_cylinder_size_get(&parser->cylinders));
+  return darray_cylinder_cdata_get(&parser->cylinders) + cylinder.i;
+}
+
+const struct solstice_shape_imported_geometry*
+solstice_parser_get_shape_obj
+  (const struct solstice_parser* parser,
+   const struct solstice_shape_imported_geometry_id impgeom)
+{
+  ASSERT(parser && impgeom.i < darray_impgeom_size_get(&parser->objs));
+  return darray_impgeom_cdata_get(&parser->objs) + impgeom.i;
+}
+
+const struct solstice_shape_paraboloid*
+solstice_parser_get_shape_parabol
+  (const struct solstice_parser* parser,
+   const struct solstice_shape_paraboloid_id paraboloid)
+{
+  ASSERT(parser && paraboloid.i < darray_paraboloid_size_get(&parser->parabols));
+  return darray_paraboloid_cdata_get(&parser->parabols) + paraboloid.i;
+}
+
+const struct solstice_shape_paraboloid*
+solstice_parser_get_shape_parabolic_cylinder
+  (const struct solstice_parser* parser,
+   const struct solstice_shape_paraboloid_id paraboloid)
+{
+  ASSERT(parser);
+  ASSERT(paraboloid.i<darray_paraboloid_size_get(&parser->parabolic_cylinders));
+  return darray_paraboloid_cdata_get(&parser->parabolic_cylinders)+paraboloid.i;
+}
+
+const struct solstice_shape_plane*
+solstice_parser_get_shape_plane
+  (const struct solstice_parser* parser,
+   const struct solstice_shape_plane_id plane)
+{
+  ASSERT(parser && plane.i < darray_plane_size_get(&parser->planes));
+  return darray_plane_cdata_get(&parser->planes) + plane.i;
+}
+
 const struct solstice_shape_sphere*
 solstice_parser_get_shape_sphere
   (const struct solstice_parser* parser,
@@ -2918,6 +2975,22 @@ solstice_parser_get_shape_sphere
 {
   ASSERT(parser && sphere.i < darray_sphere_size_get(&parser->spheres));
   return darray_sphere_cdata_get(&parser->spheres) + sphere.i;
+}
+
+const struct solstice_shape_imported_geometry*
+solstice_parser_get_shape_stl
+  (const struct solstice_parser* parser,
+   const struct solstice_shape_imported_geometry_id impgeom)
+{
+  ASSERT(parser && impgeom.i < darray_impgeom_size_get(&parser->stls));
+  return darray_impgeom_cdata_get(&parser->stls) + impgeom.i;
+}
+
+const struct solstice_sun* 
+solstice_parser_get_sun(const struct solstice_parser* parser)
+{
+  ASSERT(parser && parser->sun_key);
+  return &parser->sun;
 }
 
 void

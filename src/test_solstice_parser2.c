@@ -14,6 +14,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>. */
 
 #include "solstice_parser.h"
+#include "solstice_sun.h"
 #include "test_solstice_utils.h"
 
 int
@@ -34,6 +35,7 @@ main(int argc, char** argv)
   const struct solstice_material_matte* matte;
   const struct solstice_material_mirror* mirror;
   const struct solstice_shape_sphere* sphere;
+  const struct solstice_sun* sun;
   double tmp[3];
 
   FILE* stream;
@@ -155,6 +157,14 @@ main(int argc, char** argv)
   CHECK(entity3, entity1b);
   entity3 = solstice_parser_find_entity(parser, "lvl 0.lvl1b.lvl2");
   CHECK(entity3, entity2);
+
+  sun = solstice_parser_get_sun(parser);
+  NCHECK(sun, NULL);
+  CHECK(sun->dni, 1.0);
+  CHECK(sun->radang_distrib_type, SOLSTICE_SUN_RADANG_DISTRIB_DIRECTIONAL);
+  CHECK(darray_spectrum_data_size_get(&sun->spectrum), 1);
+  CHECK(darray_spectrum_data_cdata_get(&sun->spectrum)[0].wavelength, 1.0);
+  CHECK(darray_spectrum_data_cdata_get(&sun->spectrum)[0].data, 1.0);
 
   CHECK(solstice_parser_load(parser), RES_BAD_OP);
   solstice_parser_ref_put(parser);

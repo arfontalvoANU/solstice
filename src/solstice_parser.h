@@ -99,10 +99,49 @@ solstice_parser_get_shape
   (const struct solstice_parser* parser,
    const struct solstice_shape_id shape);
 
+extern LOCAL_SYM const struct solstice_shape_cuboid*
+solstice_parser_get_shape_cuboid
+  (const struct solstice_parser* parser,
+   const struct solstice_shape_cuboid_id cuboid);
+
+extern LOCAL_SYM const struct solstice_shape_cylinder*
+solstice_parser_get_shape_cylinder
+  (const struct solstice_parser* parser,
+   const struct solstice_shape_cylinder_id cylinder);
+
+extern LOCAL_SYM const struct solstice_shape_imported_geometry*
+solstice_parser_get_shape_obj
+  (const struct solstice_parser* parser,
+   const struct solstice_shape_imported_geometry_id impgeom);
+
+extern LOCAL_SYM const struct solstice_shape_paraboloid*
+solstice_parser_get_shape_parabol
+  (const struct solstice_parser* parser,
+   const struct solstice_shape_paraboloid_id paraboloid);
+
+extern LOCAL_SYM const struct solstice_shape_paraboloid*
+solstice_parser_get_shape_parabolic_cylinder
+  (const struct solstice_parser* parser,
+   const struct solstice_shape_paraboloid_id paraboloid);
+
+extern LOCAL_SYM const struct solstice_shape_plane*
+solstice_parser_get_shape_plane
+  (const struct solstice_parser* parser,
+   const struct solstice_shape_plane_id plane);
+
 extern LOCAL_SYM const struct solstice_shape_sphere*
 solstice_parser_get_shape_sphere
   (const struct solstice_parser* parser,
    const struct solstice_shape_sphere_id sphere);
+
+extern LOCAL_SYM const struct solstice_shape_imported_geometry*
+solstice_parser_get_shape_stl
+  (const struct solstice_parser* parser,
+   const struct solstice_shape_imported_geometry_id impgeom);
+
+extern LOCAL_SYM const struct solstice_sun*
+solstice_parser_get_sun
+  (const struct solstice_parser* parser);
 
 extern LOCAL_SYM void
 solstice_parser_entity_iterator_begin
@@ -133,10 +172,8 @@ solstice_entity_iterator_eq
 static FINLINE struct solstice_entity_id
 solstice_entity_iterator_get(struct solstice_entity_iterator* it)
 {
-  struct solstice_entity_id id;
   ASSERT(it);
-  id.i = *htable_str2sols_iterator_data_get(&it->it__);
-  return id;
+  return *htable_str2sols_iterator_data_get(&it->it__);
 }
 
 #endif /* SOLSTICE_PARSER_H */

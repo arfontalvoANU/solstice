@@ -41,7 +41,7 @@ struct solstice_entity_id { size_t i; };
 #define HTABLE_KEY_FUNCTOR_COPY_AND_RELEASE str_copy_and_release
 #define HTABLE_KEY_FUNCTOR_EQ str_eq
 #define HTABLE_KEY_FUNCTOR_HASH str_hash
-#define HTABLE_DATA size_t
+#define HTABLE_DATA struct solstice_entity_id
 #include <rsys/hash_table.h>
 
 struct solstice_entity {
