@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "solstice_parser.h"
+#include "parser/solstice_parser.h"
 #include <rsys/rsys.h>
 
 int

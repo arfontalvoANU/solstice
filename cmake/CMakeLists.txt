@@ -16,9 +16,9 @@
 cmake_minimum_required(VERSION 2.8)
 project(solstice C CXX)
 enable_testing()
-
-set(SOLSTICE_SOURCE_DIR ${PROJECT_SOURCE_DIR}/../src)
 option(NO_TEST "Do not build tests" OFF)
+
+set(SOLSTICE_SOURCE_DIR ${PROJECT_SOURCE_DIR}/../src/)
 
 ################################################################################
 # Check dependencies
@@ -27,19 +27,19 @@ get_filename_component(_current_source_dir ${CMAKE_CURRENT_LIST_FILE} PATH)
 set(LibYAML_DIR ${_current_source_dir}/)
 
 find_package(LibYAML REQUIRED)
-find_package(RCMake 0.2 REQUIRED)
 find_package(RCMake 0.2.3 REQUIRED)
 find_package(RSys 0.3 REQUIRED)
-find_package(StarSP 0.4 REQUIRED)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${RCMAKE_SOURCE_DIR})
 include(rcmake)
 include(rcmake_runtime)
 
-include_directories(
-  ${LibYAML_INCLUDE_DIR}
-  ${RSys_INCLUDE_DIR}
-  ${StarSP_INCLUDE_DIR})
+include_directories(${RSys_INCLUDE_DIR})
+
+################################################################################
+# Build subprojects
+################################################################################
+add_subdirectory(parser)
 
 ################################################################################
 # Configure and define targets
@@ -49,14 +49,8 @@ set(VERSION_MINOR 1)
 set(VERSION_PATCH 0)
 set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
-set(SOLSTICE_FILES_SRC
-  solstice_parser.c)
-set(SOLSTICE_FILES_INC
-  solstice_entity.h
-  solstice_material.h
-  solstice_parser.h
-  solstice_shape.h
-  solstice_sun.h)
+set(SOLSTICE_FILES_SRC solstice.c)
+set(SOLSTICE_FILES_INC )
 set(SOLSTICE_FILES_DOC COPYING README.md)
 
 # Prepend each file in the `SOLSTICE_FILES_<SRC|INC>' list by `SOLSTICE_SOURCE_DIR'
@@ -68,47 +62,12 @@ if(CMAKE_COMPILER_IS_GNUCC)
   set(MATH_LIB m)
 endif()
 
-add_library(solstitium STATIC ${SOLSTICE_FILES_SRC} ${SOLSTICE_FILES_INC})
 add_executable(solstice ${SOLSTICE_SOURCE_DIR}/solstice.c)
-target_link_libraries(solstice LibYAML RSys StarSP ${MATH_LIB} solstitium)
+target_link_libraries(solstice LibYAML RSys ${MATH_LIB} solstice-parser)
 set_target_properties(solstice PROPERTIES
   VERSION ${VERSION}
   SOVERSION ${VERSION_MAJOR})
 rcmake_copy_runtime_libraries(solstice)
-
-################################################################################
-# Tests
-################################################################################
-if(NOT NO_TEST)
-  function(build_test _name)
-    add_executable(${_name}
-      ${SOLSTICE_SOURCE_DIR}/${_name}.c
-      ${SOLSTICE_SOURCE_DIR}/test_solstice_utils.h)
-    target_link_libraries(${_name} LibYAML ${MATH_LIB} RSys solstitium)
-  endfunction()
-
-  function(new_test _name)
-    build_test(${_name})
-    add_test(${_name} ${_name})
-  endfunction()
-
-  new_test(test_solstice_parser2)
-
-  build_test(test_solstice_parser)
-  add_test(test_solstice_parser_ok_0 test_solstice_parser
-    ${SOLSTICE_SOURCE_DIR}/yaml/test_ok_0.yaml)
-  add_test(test_solstice_parser_ok_1 test_solstice_parser
-    ${SOLSTICE_SOURCE_DIR}/yaml/test_ok_1.yaml)
-  add_test(test_solstice_parser_ok_2 test_solstice_parser
-    ${SOLSTICE_SOURCE_DIR}/yaml/test_ok_2.yaml)
-# TODO rewrite them wrt the update of the  input specification
-#  add_test(test_solstice_parser_ko_0 test_solstice_parser -e
-#    ${SOLSTICE_SOURCE_DIR}/yaml/test_ko_0.yaml)
-#  add_test(test_solstice_parser_ko_1 test_solstice_parser -e
-#    ${SOLSTICE_SOURCE_DIR}/yaml/test_ko_1.yaml)
-#  add_test(test_solstice_parser_ko_2 test_solstice_parser -e
-#    ${SOLSTICE_SOURCE_DIR}/yaml/test_ko_2.yaml)
-endif()
 
 ################################################################################
 # Define output & install directories
@@ -117,6 +76,5 @@ install(TARGETS solstice
   ARCHIVE DESTINATION bin
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin)
-install(FILES ${SOLSTICE_FILES_INC_API} DESTINATION include/solstice)
 install(FILES ${SOLSTICE_FILES_DOC} DESTINATION share/doc/solstice)
 
