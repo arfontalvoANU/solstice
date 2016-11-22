@@ -71,6 +71,11 @@ solstice_parser_find_entity
   (struct solstice_parser* parser,
    const char* entity_name);
 
+extern LOCAL_SYM const struct solstice_anchor*
+solstice_parser_get_anchor
+  (const struct solstice_parser* parser,
+   const struct solstice_anchor_id anchor);
+
 extern LOCAL_SYM const struct solstice_entity*
 solstice_parser_get_entity
   (const struct solstice_parser* parser,

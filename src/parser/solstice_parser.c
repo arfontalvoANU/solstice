@@ -3027,6 +3027,15 @@ error:
   goto exit;
 }
 
+const struct solstice_anchor*
+solstice_parser_get_anchor
+  (const struct solstice_parser* parser,
+   const struct solstice_anchor_id anchor)
+{
+  ASSERT(parser && anchor.i < darray_anchor_size_get(&parser->anchors));
+  return darray_anchor_cdata_get(&parser->anchors) + anchor.i;
+}
+
 const struct solstice_entity*
 solstice_parser_get_entity
   (const struct solstice_parser* parser,
