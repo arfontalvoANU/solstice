@@ -2045,7 +2045,7 @@ parse_anchor
   res_T res = RES_OK;
   ASSERT(parser && anchor && out_isolanchor);
 
-  if(anchor->type == YAML_MAPPING_NODE) {
+  if(anchor->type != YAML_MAPPING_NODE) {
     log_err(parser, anchor, "expect an anchor definition.\n");
     res = RES_BAD_ARG;
     goto error;
