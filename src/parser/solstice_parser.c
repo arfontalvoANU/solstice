@@ -18,6 +18,7 @@
 #include "solstice_entity.h"
 #include "solstice_material.h"
 #include "solstice_parser.h"
+#include "solstice_pivot.h"
 #include "solstice_shape.h"
 #include "solstice_sun.h"
 
@@ -125,6 +126,15 @@
 #define DARRAY_FUNCTOR_COPY_AND_RELEASE solstice_entity_copy_and_release
 #include <rsys/dynamic_array.h>
 
+/* Declare the array of anchors */
+#define DARRAY_NAME anchor
+#define DARRAY_DATA struct solstice_anchor
+#define DARRAY_FUNCTOR_INIT solstice_anchor_init
+#define DARRAY_FUNCTOR_RELEASE solstice_anchor_release
+#define DARRAY_FUNCTOR_COPY solstice_anchor_copy
+#define DARRAY_FUNCTOR_COPY_AND_RELEASE solstice_anchor_copy_and_release
+#include <rsys/dynamic_array.h>
+
 /* Declare the hash table that maps the address of a YAML node to the id of its
  * in memory representation. */
 #define HTABLE_NAME yaml2sols
@@ -168,6 +178,9 @@ struct solstice_parser {
   struct htable_yaml2sols yaml2entities; /* Cache of entities */
   struct htable_str2sols str2entities;
   struct darray_entity entities;
+
+  /* Anchors */
+  struct darray_anchor anchors;
 
   ref_T ref;
   struct mem_allocator* allocator;
@@ -256,10 +269,13 @@ parser_clear(struct solstice_parser* parser)
   solstice_sun_clear(&parser->sun);
   parser->sun_key = 0;
 
-  /* Tree */
+  /* Entitiies */
   htable_yaml2sols_clear(&parser->yaml2entities);
   htable_str2sols_clear(&parser->str2entities);
   darray_entity_clear(&parser->entities);
+
+  /* Anchors */
+  darray_anchor_clear(&parser->anchors);
 }
 
 static void
@@ -298,10 +314,13 @@ parser_release(ref_T* ref)
   /* Sun */
   solstice_sun_release(&parser->sun);
 
-  /* Tree */
+  /* Entities */
   htable_yaml2sols_release(&parser->yaml2entities);
   htable_str2sols_release(&parser->str2entities);
   darray_entity_release(&parser->entities);
+
+  /* Anchors */
+  darray_anchor_release(&parser->anchors);
 
   MEM_RM(parser->allocator, parser);
 }
@@ -1932,8 +1951,7 @@ entity_register_name
    const size_t isolent)
 {
   struct solstice_entity* solent;
-  struct solstice_entity_id* pisolent;
-  struct solstice_entity_id id;
+  size_t* pisolent;
   res_T res = RES_OK;
   ASSERT(parser && htable);
   ASSERT(isolent < darray_entity_size_get(&parser->entities));
@@ -1948,8 +1966,7 @@ entity_register_name
     return RES_BAD_ARG;
   }
 
-  id.i = isolent;
-  res = htable_str2sols_set(htable, &solent->name, &id);
+  res = htable_str2sols_set(htable, &solent->name, &isolent);
   if(res != RES_OK) {
     log_err(parser, entity, "could not register the entity.\n");
     return res;
@@ -1958,48 +1975,38 @@ entity_register_name
 }
 
 static res_T
-parse_children
+anchor_register_name
   (struct solstice_parser* parser,
-   yaml_document_t* doc,
-   const yaml_node_t* children,
+   const yaml_node_t* anchor,
    struct htable_str2sols* htable,
-   struct darray_child* entities)
+   const size_t isolanchor)
 {
-  intptr_t i, n;
+  struct solstice_anchor* solanchor;
+  size_t* pisolanchor;
   res_T res = RES_OK;
-  ASSERT(doc && children && htable && entities);
+  ASSERT(parser && htable);
+  ASSERT(isolanchor < darray_anchor_size_get(&parser->anchors));
 
-  if(children->type != YAML_SEQUENCE_NODE) {
-    log_err(parser, children, "expect a list of entities.\n");
-    res = RES_BAD_ARG;
-    goto error;
+  solanchor = darray_anchor_data_get(&parser->anchors) + isolanchor;
+
+  pisolanchor = htable_str2sols_find(htable, &solanchor->name);
+  if(pisolanchor) {
+    log_err(parser, anchor,
+      "an anchor with the name `%s' is already defined in the cunrrent context.\n",
+      str_cget(&solanchor->name));
+    return RES_BAD_ARG;
   }
 
-  n = children->data.sequence.items.top - children->data.sequence.items.start;
-  res = darray_child_resize(entities, (size_t)n);
+  res = htable_str2sols_set(htable, &solanchor->name, &isolanchor);
   if(res != RES_OK) {
-    log_err(parser, children, "could not allocate the children list.\n");
-    goto error;
+    log_err(parser, anchor, "could not register the anchor.\n");
+    return res;
   }
-
-  FOR_EACH(i, 0, n) {
-    struct solstice_entity_id* entity_id = darray_child_data_get(entities) + i;
-    yaml_node_t* child;
-
-    child = yaml_document_get_node(doc, children->data.sequence.items.start[i]);
-    res = parse_entity(parser, doc, child, htable, entity_id);
-    if(res != RES_OK) goto error;
-  }
-
-exit:
-  return res;
-error:
-  darray_child_clear(entities);
-  goto exit;
+  return RES_OK;
 }
 
 static res_T
-parse_entity_name
+parse_identifier_string
   (struct solstice_parser* parser,
    yaml_node_t* name,
    struct str* str)
@@ -2011,7 +2018,7 @@ parse_entity_name
   if(res != RES_OK) goto error;
 
   if(strchr(str_cget(str), '.')) {
-    log_err(parser, name, "invalid character `.' in the entity name `%s'.\n",
+    log_err(parser, name, "invalid character `.' in the name `%s'.\n",
       str_cget(str));
     goto error;
   }
@@ -2019,6 +2026,178 @@ parse_entity_name
 exit:
   return res;
 error:
+  goto exit;
+}
+
+static res_T
+parse_anchor
+  (struct solstice_parser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* anchor,
+   struct htable_str2sols* htable,
+   struct solstice_anchor_id* out_isolanchor)
+{
+  enum { NAME, POSITION };
+  struct solstice_anchor* solanchor = NULL;
+  size_t isolanchor = SIZE_MAX;
+  intptr_t i, n;
+  int mask = 0; /* Register the parsed attributes */
+  res_T res = RES_OK;
+  ASSERT(parser && anchor && out_isolanchor);
+
+  if(anchor->type == YAML_MAPPING_NODE) {
+    log_err(parser, anchor, "expect an anchor definition.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  /* Allocate the anchor */
+  isolanchor = darray_anchor_size_get(&parser->anchors);
+  res = darray_anchor_resize(&parser->anchors, isolanchor + 1);
+  if(res != RES_OK) {
+    log_err(parser, anchor, "could not allocate the anchor.\n");
+    goto error;
+  }
+  solanchor = darray_anchor_data_get(&parser->anchors) + isolanchor;
+
+  n = anchor->data.mapping.pairs.top - anchor->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, anchor->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, anchor->data.mapping.pairs.start[i].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(parser, key, "expect an anchor attribute.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(parser, key, "the anchor "Name" is already defined.\n");       \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if(!strcmp((char*)key->data.scalar.value, "name")) {
+      SETUP_MASK(NAME, "name");
+      res = parse_identifier_string(parser, val, &solanchor->name);
+    } else if(!strcmp((char*)key->data.scalar.value, "position")) {
+      SETUP_MASK(POSITION, "position");
+      res = parse_real3(parser, doc, val, -DBL_MAX, DBL_MAX, solanchor->position);
+    } else {
+      log_err(parser, key, "unknown anchor parameter `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+    }
+    if(res != RES_OK) goto error;
+    #undef SETUP_MASK
+  }
+
+  #define CHECK_PARAM(Flag, Name)                                              \
+    if(!(mask & BIT(Flag))) {                                                  \
+      log_err(parser, anchor, "the anchor "Name" is missing.\n");              \
+      res = RES_BAD_ARG;                                                       \
+      goto error;                                                              \
+    } (void)0
+  CHECK_PARAM(NAME, "name");
+  CHECK_PARAM(POSITION, "position");
+  #undef CHECK_PARAM
+
+  res = anchor_register_name(parser, anchor, htable, isolanchor);
+  if(res != RES_OK) goto error;
+
+exit:
+  out_isolanchor->i = isolanchor;
+  return res;
+error:
+  if(solanchor) {
+    darray_anchor_pop_back(&parser->anchors);
+    isolanchor = SIZE_MAX;
+  }
+  goto exit;
+}
+
+static res_T
+parse_anchors
+  (struct solstice_parser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* anchors,
+   struct htable_str2sols* htable,
+   struct darray_anchor_id* solanchors)
+{
+  intptr_t i, n;
+  res_T res = RES_OK;
+  ASSERT(parser && anchors);
+
+  if(anchors->type != YAML_SEQUENCE_NODE) {
+    log_err(parser, anchors, "expect a list of anchors.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  n = anchors->data.sequence.items.top - anchors->data.sequence.items.start;
+  res = darray_anchor_id_resize(solanchors, (size_t)n);
+  if(res != RES_OK) {
+    log_err(parser, anchors, "could not allocate the anchors list.\n");
+    goto error;
+  }
+
+  FOR_EACH(i, 0, n) {
+    struct solstice_anchor_id* anchor_id;
+    yaml_node_t* anchor;
+
+    anchor_id = darray_anchor_id_data_get(solanchors)+i;
+    anchor = yaml_document_get_node(doc, anchors->data.sequence.items.start[i]);
+    res = parse_anchor(parser, doc, anchor, htable, anchor_id);
+    if(res != RES_OK) goto error;
+  }
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+static res_T
+parse_children
+  (struct solstice_parser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* children,
+   struct htable_str2sols* htable,
+   struct darray_child_id* entities)
+{
+  intptr_t i, n;
+  res_T res = RES_OK;
+  ASSERT(parser && children && htable && entities);
+
+  if(children->type != YAML_SEQUENCE_NODE) {
+    log_err(parser, children, "expect a list of entities.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  n = children->data.sequence.items.top - children->data.sequence.items.start;
+  res = darray_child_id_resize(entities, (size_t)n);
+  if(res != RES_OK) {
+    log_err(parser, children, "could not allocate the children list.\n");
+    goto error;
+  }
+
+  FOR_EACH(i, 0, n) {
+    struct solstice_entity_id* entity_id = darray_child_id_data_get(entities) + i;
+    yaml_node_t* child;
+
+    child = yaml_document_get_node(doc, children->data.sequence.items.start[i]);
+    res = parse_entity(parser, doc, child, htable, entity_id);
+    if(res != RES_OK) goto error;
+  }
+
+exit:
+  return res;
+error:
+  darray_child_id_clear(entities);
   goto exit;
 }
 
@@ -2030,7 +2209,7 @@ parse_entity
    struct htable_str2sols* htable,
    struct solstice_entity_id* out_isolent)
 {
-  enum { CHILDREN, DATA, NAME, TRANSFORM };
+  enum { ANCHORS, CHILDREN, DATA, NAME, TRANSFORM };
   struct solstice_entity* solent = NULL;
   const size_t *pisolent;
   size_t isolent = SIZE_MAX;
@@ -2085,7 +2264,11 @@ parse_entity
       }                                                                        \
       mask |= BIT(Flag);                                                       \
     } (void)0
-    if(!strcmp((char*)key->data.scalar.value, "children")) {
+    if(!strcmp((char*)key->data.scalar.value, "anchors")) {
+      SETUP_MASK(ANCHORS, "anchors");
+      res = parse_anchors
+        (parser, doc, val, &solent->str2anchors, &solent->anchors);
+    } else if(!strcmp((char*)key->data.scalar.value, "children")) {
       SETUP_MASK(CHILDREN, "children");
       res = parse_children
         (parser, doc, val, &solent->str2children, &solent->children);
@@ -2094,7 +2277,7 @@ parse_entity
       res = parse_geometry(parser, doc, val, &solent->geometry);
     } else if(!strcmp((char*)key->data.scalar.value, "name")) {
       SETUP_MASK(NAME, "name");
-      res = parse_entity_name(parser, val, &solent->name);
+      res = parse_identifier_string(parser, val, &solent->name);
     } else if(!strcmp((char*)key->data.scalar.value, "pivot")) {
       SETUP_MASK(DATA, "data");
       res = parse_pivot(parser, doc, val);
@@ -2650,10 +2833,13 @@ solstice_parser_create
 
   solstice_sun_init(mem_allocator, &parser->sun);
 
-  /* Tree */
+  /* Entities */
   htable_yaml2sols_init(mem_allocator, &parser->yaml2entities);
   htable_str2sols_init(mem_allocator, &parser->str2entities);
   darray_entity_init(mem_allocator, &parser->entities);
+
+  /* Anchors */
+  darray_anchor_init(mem_allocator, &parser->anchors);
 
 exit:
   *out_parser = parser;
@@ -2820,14 +3006,14 @@ solstice_parser_find_entity
   tk = strtok(cstr, ".");
   htable = &parser->str2entities;
   while(tk) {
-    struct solstice_entity_id* pientity;
+    size_t* pientity;
     str_set(&str_tk, tk);
     pientity = htable_str2sols_find(htable, &str_tk);
     if(!pientity) {
       tk = NULL;
     } else {
       tk = strtok(NULL, ".");
-      entity = darray_entity_data_get(&parser->entities) + pientity->i;
+      entity = darray_entity_data_get(&parser->entities) + *pientity;
       htable = &entity->str2children;
     }
   }

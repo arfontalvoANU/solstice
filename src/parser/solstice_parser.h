@@ -187,8 +187,10 @@ solstice_entity_iterator_eq
 static FINLINE struct solstice_entity_id
 solstice_entity_iterator_get(struct solstice_entity_iterator* it)
 {
+  struct solstice_entity_id id;
   ASSERT(it);
-  return *htable_str2sols_iterator_data_get(&it->it__);
+  id.i = *htable_str2sols_iterator_data_get(&it->it__);
+  return id;
 }
 
 /*******************************************************************************

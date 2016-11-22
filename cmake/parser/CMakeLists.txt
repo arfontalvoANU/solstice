@@ -35,6 +35,7 @@ set(PARSER_FILES_INC
   solstice_entity.h
   solstice_material.h
   solstice_parser.h
+  solstice_pivot.h
   solstice_shape.h
   solstice_sun.h)
 
