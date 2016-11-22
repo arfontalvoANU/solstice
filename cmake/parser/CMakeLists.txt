@@ -66,8 +66,6 @@ if(NOT NO_TEST)
     add_test(${_name} ${_name})
   endfunction()
 
-  new_test(test_solstice_parser2)
-
   build_test(test_solstice_parser)
   add_test(test_solstice_parser_ok_0 test_solstice_parser
     ${PARSER_SOURCE_DIR}/yaml/test_ok_0.yaml)
@@ -82,6 +80,9 @@ if(NOT NO_TEST)
 #    ${SOLSTICE_SOURCE_DIR}/yaml/test_ko_1.yaml)
 #  add_test(test_solstice_parser_ko_2 test_solstice_parser -e
 #    ${SOLSTICE_SOURCE_DIR}/yaml/test_ko_2.yaml)
+
+  new_test(test_solstice_parser2)
+  new_test(test_solstice_parser3)
 endif()
 
 

@@ -43,7 +43,6 @@ main(int argc, char** argv)
   size_t nmtls = 0;
   size_t ngeoms = 0;
   double tmp[3];
-
   FILE* stream;
   (void)argc, (void)argv;
 
