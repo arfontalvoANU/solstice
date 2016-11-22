@@ -26,6 +26,12 @@ struct solstice_entity_iterator {
   struct htable_str2sols_iterator it__; /* Internal data */
 };
 
+struct solstice_material_iterator {
+  /* Internal data */
+  const struct solstice_material* mtls__;
+  size_t imtl__;
+};
+
 /*******************************************************************************
  * Solstice parser API.
  ******************************************************************************/
@@ -143,6 +149,9 @@ extern LOCAL_SYM const struct solstice_sun*
 solstice_parser_get_sun
   (const struct solstice_parser* parser);
 
+/*******************************************************************************
+ * Entity interator
+ ******************************************************************************/
 extern LOCAL_SYM void
 solstice_parser_entity_iterator_begin
   (struct solstice_parser* parser,
@@ -162,8 +171,8 @@ solstice_entity_iterator_next(struct solstice_entity_iterator* it)
 
 static FINLINE int
 solstice_entity_iterator_eq
-  (struct solstice_entity_iterator* a,
-   struct solstice_entity_iterator* b)
+  (const struct solstice_entity_iterator* a,
+   const struct solstice_entity_iterator* b)
 {
   ASSERT(a && b);
   return htable_str2sols_iterator_eq(&a->it__, &b->it__);
@@ -174,6 +183,44 @@ solstice_entity_iterator_get(struct solstice_entity_iterator* it)
 {
   ASSERT(it);
   return *htable_str2sols_iterator_data_get(&it->it__);
+}
+
+/*******************************************************************************
+ * Material iterator
+ ******************************************************************************/
+extern LOCAL_SYM void
+solstice_parser_material_iterator_begin
+  (struct solstice_parser* parser,
+   struct solstice_material_iterator* it);
+
+extern LOCAL_SYM void
+solstice_parser_material_iterator_end
+  (struct solstice_parser* parser,
+   struct solstice_material_iterator* it);
+
+static FINLINE void
+solstice_material_iterator_next(struct solstice_material_iterator* it)
+{
+  ASSERT(it);
+  ++it->imtl__;
+}
+
+static FINLINE int
+solstice_material_iterator_eq
+  (const struct solstice_material_iterator* a,
+   const struct solstice_material_iterator* b)
+{
+  ASSERT(a && b);
+  return a->mtls__ == b->mtls__ && a->imtl__ == b->imtl__;
+}
+
+static FINLINE struct solstice_material_id
+solstice_material_iterator_get(struct solstice_material_iterator* it)
+{
+  struct solstice_material_id id;
+  ASSERT(it);
+  id.i = it->imtl__;
+  return id;
 }
 
 #endif /* SOLSTICE_PARSER_H */

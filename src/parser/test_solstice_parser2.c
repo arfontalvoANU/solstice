@@ -23,9 +23,11 @@ main(int argc, char** argv)
   struct mem_allocator allocator;
   struct solstice_parser* parser;
   struct solstice_entity_iterator it, end;
+  struct solstice_material_iterator mtl_it, mtl_it_end;
   struct solstice_entity_id entity_id;
   struct solstice_object_id obj_id;
   struct solstice_geometry_id geom_id;
+  const struct solstice_material* mtls[2] = { NULL, NULL };
   const struct solstice_entity* entity, *entity1a, *entity1b, *entity2, *entity3;
   const struct solstice_geometry* geom;
   const struct solstice_object* obj;
@@ -36,6 +38,7 @@ main(int argc, char** argv)
   const struct solstice_material_mirror* mirror;
   const struct solstice_shape_sphere* sphere;
   const struct solstice_sun* sun;
+  size_t nmtls = 0;
   double tmp[3];
 
   FILE* stream;
@@ -74,6 +77,19 @@ main(int argc, char** argv)
   CHECK(solstice_parser_setup(parser, NULL, stream), RES_OK);
   CHECK(solstice_parser_load(parser), RES_OK);
 
+  solstice_parser_material_iterator_begin(parser, &mtl_it);
+  solstice_parser_material_iterator_end(parser, &mtl_it_end);
+  nmtls = 0;
+  while(!solstice_material_iterator_eq(&mtl_it, &mtl_it_end)) {
+    struct solstice_material_id mtl_id;
+    CHECK(nmtls < 2, 1);
+    mtl_id = solstice_material_iterator_get(&mtl_it);
+    solstice_material_iterator_next(&mtl_it);
+    mtls[nmtls] = solstice_parser_get_material(parser, mtl_id);
+    ++nmtls;
+  }
+  CHECK(nmtls == 2, 1);
+
   solstice_parser_entity_iterator_begin(parser, &it);
   solstice_parser_entity_iterator_end(parser, &end);
   CHECK(solstice_entity_iterator_eq(&it, &end), 0);
@@ -102,6 +118,7 @@ main(int argc, char** argv)
   mtl2 = solstice_parser_get_material_double_sided(parser, obj->mtl2);
   CHECK(mtl2->front.i, mtl2->back.i);
   mtl = solstice_parser_get_material(parser, mtl2->front);
+  CHECK(mtl == mtls[0] || mtl == mtls[1], 1);
   CHECK(mtl->type, SOLSTICE_MATERIAL_MATTE);
   matte = solstice_parser_get_material_matte(parser, mtl->data.matte);
   CHECK(matte->reflectivity, 1);
@@ -126,6 +143,7 @@ main(int argc, char** argv)
   mtl2 = solstice_parser_get_material_double_sided(parser, obj->mtl2);
   CHECK(mtl2->front.i, mtl2->back.i);
   mtl = solstice_parser_get_material(parser, mtl2->front);
+  CHECK(mtl == mtls[0] || mtl == mtls[1], 1);
   CHECK(mtl->type, SOLSTICE_MATERIAL_MIRROR);
   mirror = solstice_parser_get_material_mirror(parser, mtl->data.mirror);
   CHECK(mirror->reflectivity, 0.9);

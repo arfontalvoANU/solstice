@@ -3011,3 +3011,21 @@ solstice_parser_entity_iterator_end
   htable_str2sols_end(&parser->str2entities, &it->it__);
 }
 
+void
+solstice_parser_material_iterator_begin
+  (struct solstice_parser* parser, struct solstice_material_iterator* it)
+{
+  ASSERT(parser && it);
+  it->mtls__ = darray_material_cdata_get(&parser->mtls);
+  it->imtl__ = 0;
+}
+
+void
+solstice_parser_material_iterator_end
+  (struct solstice_parser* parser, struct solstice_material_iterator* it)
+{
+  ASSERT(parser && it);
+  it->mtls__ = darray_material_cdata_get(&parser->mtls);
+  it->imtl__ = darray_material_size_get(&parser->mtls);
+} 
+
