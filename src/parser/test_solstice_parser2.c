@@ -23,10 +23,12 @@ main(int argc, char** argv)
   struct mem_allocator allocator;
   struct solstice_parser* parser;
   struct solstice_entity_iterator it, end;
+  struct solstice_geometry_iterator geom_it, geom_it_end;
   struct solstice_material_iterator mtl_it, mtl_it_end;
   struct solstice_entity_id entity_id;
   struct solstice_object_id obj_id;
   struct solstice_geometry_id geom_id;
+  const struct solstice_geometry* geoms[2] = { NULL, NULL };
   const struct solstice_material* mtls[2] = { NULL, NULL };
   const struct solstice_entity* entity, *entity1a, *entity1b, *entity2, *entity3;
   const struct solstice_geometry* geom;
@@ -39,6 +41,7 @@ main(int argc, char** argv)
   const struct solstice_shape_sphere* sphere;
   const struct solstice_sun* sun;
   size_t nmtls = 0;
+  size_t ngeoms = 0;
   double tmp[3];
 
   FILE* stream;
@@ -77,6 +80,18 @@ main(int argc, char** argv)
   CHECK(solstice_parser_setup(parser, NULL, stream), RES_OK);
   CHECK(solstice_parser_load(parser), RES_OK);
 
+  solstice_parser_geometry_iterator_begin(parser, &geom_it);
+  solstice_parser_geometry_iterator_end(parser, &geom_it_end);
+  ngeoms = 0;
+  while(!solstice_geometry_iterator_eq(&geom_it, &geom_it_end)) {
+    CHECK(ngeoms < 2, 1);
+    geom_id = solstice_geometry_iterator_get(&geom_it);
+    solstice_geometry_iterator_next(&geom_it);
+    geoms[ngeoms] = solstice_parser_get_geometry(parser, geom_id);
+    ++ngeoms;
+  }
+  CHECK(ngeoms, 2);
+
   solstice_parser_material_iterator_begin(parser, &mtl_it);
   solstice_parser_material_iterator_end(parser, &mtl_it_end);
   nmtls = 0;
@@ -88,7 +103,7 @@ main(int argc, char** argv)
     mtls[nmtls] = solstice_parser_get_material(parser, mtl_id);
     ++nmtls;
   }
-  CHECK(nmtls == 2, 1);
+  CHECK(nmtls, 2);
 
   solstice_parser_entity_iterator_begin(parser, &it);
   solstice_parser_entity_iterator_end(parser, &end);
@@ -106,6 +121,7 @@ main(int argc, char** argv)
   CHECK(solstice_entity_get_children_count(entity), 2);
   geom_id = entity->geometry;
   geom = solstice_parser_get_geometry(parser, entity->geometry);
+  CHECK(geom == geoms[0] || geom == geoms[1], 1);
   CHECK(solstice_geometry_get_objects_count(geom), 1);
   obj_id = solstice_geometry_get_object(geom, 0);
   obj = solstice_parser_get_object(parser, obj_id);
@@ -131,6 +147,7 @@ main(int argc, char** argv)
   CHECK(solstice_entity_get_children_count(entity1a), 0);
   NCHECK(entity1a->geometry.i, geom_id.i);
   geom = solstice_parser_get_geometry(parser, entity1a->geometry);
+  CHECK(geom == geoms[0] || geom == geoms[1], 1);
   CHECK(solstice_geometry_get_objects_count(geom), 1);
   obj_id = solstice_geometry_get_object(geom, 0);
   obj = solstice_parser_get_object(parser, obj_id);

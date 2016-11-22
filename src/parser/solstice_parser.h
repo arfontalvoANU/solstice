@@ -32,6 +32,12 @@ struct solstice_material_iterator {
   size_t imtl__;
 };
 
+struct solstice_geometry_iterator {
+  /* Internal data */
+  const struct solstice_geometry* geoms__;
+  size_t igeom__;
+};
+
 /*******************************************************************************
  * Solstice parser API.
  ******************************************************************************/
@@ -220,6 +226,44 @@ solstice_material_iterator_get(struct solstice_material_iterator* it)
   struct solstice_material_id id;
   ASSERT(it);
   id.i = it->imtl__;
+  return id;
+}
+
+/*******************************************************************************
+ * Geometry iterator
+ ******************************************************************************/
+extern LOCAL_SYM void
+solstice_parser_geometry_iterator_begin
+  (struct solstice_parser* parser,
+   struct solstice_geometry_iterator* it);
+
+extern LOCAL_SYM void
+solstice_parser_geometry_iterator_end
+  (struct solstice_parser* parser,
+   struct solstice_geometry_iterator* it);
+
+static FINLINE void
+solstice_geometry_iterator_next(struct solstice_geometry_iterator* it)
+{
+  ASSERT(it);
+  ++it->igeom__;
+}
+
+static FINLINE int
+solstice_geometry_iterator_eq
+  (const struct solstice_geometry_iterator* a,
+   const struct solstice_geometry_iterator* b)
+{
+  ASSERT(a && b);
+  return a->geoms__ == b->geoms__ && a->igeom__ == b->igeom__;
+}
+
+static FINLINE struct solstice_geometry_id
+solstice_geometry_iterator_get(struct solstice_geometry_iterator* it)
+{
+  struct solstice_geometry_id id;
+  ASSERT(it);
+  id.i = it->igeom__;
   return id;
 }
 

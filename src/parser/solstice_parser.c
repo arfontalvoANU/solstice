@@ -2986,7 +2986,7 @@ solstice_parser_get_shape_stl
   return darray_impgeom_cdata_get(&parser->stls) + impgeom.i;
 }
 
-const struct solstice_sun* 
+const struct solstice_sun*
 solstice_parser_get_sun(const struct solstice_parser* parser)
 {
   ASSERT(parser && parser->sun_key);
@@ -3027,5 +3027,23 @@ solstice_parser_material_iterator_end
   ASSERT(parser && it);
   it->mtls__ = darray_material_cdata_get(&parser->mtls);
   it->imtl__ = darray_material_size_get(&parser->mtls);
-} 
+}
+
+void
+solstice_parser_geometry_iterator_begin
+  (struct solstice_parser* parser, struct solstice_geometry_iterator* it)
+{
+  ASSERT(parser && it);
+  it->geoms__ = darray_geometry_cdata_get(&parser->geometries);
+  it->igeom__ = 0;
+}
+
+void
+solstice_parser_geometry_iterator_end
+  (struct solstice_parser* parser, struct solstice_geometry_iterator* it)
+{
+  ASSERT(parser && it);
+  it->geoms__ = darray_geometry_cdata_get(&parser->geometries);
+  it->igeom__ = darray_geometry_size_get(&parser->geometries);
+}
 
