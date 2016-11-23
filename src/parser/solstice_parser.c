@@ -2219,7 +2219,8 @@ parse_entity
    struct solstice_entity_id* out_isolent)
 {
   enum { ANCHORS, CHILDREN, DATA, NAME, TRANSFORM };
-  struct solstice_entity* solent = NULL;
+  struct solstice_entity solent;
+  struct solstice_entity* psolent;
   const size_t *pisolent;
   size_t isolent = SIZE_MAX;
   intptr_t i, n;
@@ -2227,6 +2228,8 @@ parse_entity
   int cp = 0; /* Defined whether or not the parsed entity was a copy */
   res_T res = RES_OK;
   ASSERT(doc && entity && htable && out_isolent);
+
+  solstice_entity_init(parser->allocator, &solent);
 
   pisolent = htable_yaml2sols_find(&parser->yaml2entities, &entity);
   if(pisolent) {
@@ -2242,14 +2245,15 @@ parse_entity
     goto error;
   }
 
-  /* Allocate the entity */
+  /* Allocate the entity but *DO NOT* retrieve a pointer onto it since the
+   * allocation of its children may update its memory location. Use the "on
+   * stack" entity `solent' instead. */
   isolent = darray_entity_size_get(&parser->entities);
   res = darray_entity_resize(&parser->entities, isolent + 1);
   if(res != RES_OK) {
     log_err(parser, entity, "could not allocate the entity.\n");
     goto error;
   }
-  solent = darray_entity_data_get(&parser->entities) + isolent;
 
   n = entity->data.mapping.pairs.top - entity->data.mapping.pairs.start;
   FOR_EACH(i, 0, n) {
@@ -2276,26 +2280,26 @@ parse_entity
     if(!strcmp((char*)key->data.scalar.value, "anchors")) {
       SETUP_MASK(ANCHORS, "anchors");
       res = parse_anchors
-        (parser, doc, val, &solent->str2anchors, &solent->anchors);
+        (parser, doc, val, &solent.str2anchors, &solent.anchors);
     } else if(!strcmp((char*)key->data.scalar.value, "children")) {
       SETUP_MASK(CHILDREN, "children");
       res = parse_children
-        (parser, doc, val, &solent->str2children, &solent->children);
+        (parser, doc, val, &solent.str2children, &solent.children);
     } else if(!strcmp((char*)key->data.scalar.value, "geometry")) {
       SETUP_MASK(DATA, "data");
-      solent->type = SOLSTICE_ENTITY_GEOMETRY;
-      res = parse_geometry(parser, doc, val, &solent->data.geometry);
+      solent.type = SOLSTICE_ENTITY_GEOMETRY;
+      res = parse_geometry(parser, doc, val, &solent.data.geometry);
     } else if(!strcmp((char*)key->data.scalar.value, "name")) {
       SETUP_MASK(NAME, "name");
-      res = parse_identifier_string(parser, val, &solent->name);
+      res = parse_identifier_string(parser, val, &solent.name);
     } else if(!strcmp((char*)key->data.scalar.value, "pivot")) {
       SETUP_MASK(DATA, "data");
-      solent->type = SOLSTICE_ENTITY_PIVOT;
-      res = parse_pivot(parser, doc, val, &solent->data.pivot);
+      solent.type = SOLSTICE_ENTITY_PIVOT;
+      res = parse_pivot(parser, doc, val, &solent.data.pivot);
     } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
       SETUP_MASK(TRANSFORM, "transform");
       res = parse_transform
-        (parser, doc, val, solent->translation, solent->rotation);
+        (parser, doc, val, solent.translation, solent.rotation);
     } else if(!strcmp((char*)key->data.scalar.value, "<<")) { /* Copy */
       struct solstice_entity* cp_solent;
       pisolent = htable_yaml2sols_find(&parser->yaml2entities, &val);
@@ -2305,7 +2309,7 @@ parse_entity
         goto error;
       }
       cp_solent = darray_entity_data_get(&parser->entities) + *pisolent;
-      res = solstice_entity_copy(solent, cp_solent);
+      res = solstice_entity_copy(&solent, cp_solent);
       if(res != RES_OK) {
         log_err(parser, val, "could not copy the entity.\n");
         goto error;
@@ -2333,6 +2337,13 @@ parse_entity
     #undef CHECK_PARAM
   }
 
+  psolent = darray_entity_data_get(&parser->entities) + isolent;
+  res = solstice_entity_copy_and_clear(psolent, &solent);
+  if(res != RES_OK) {
+    log_err(parser, entity,
+      "could not copy the loaded entity into the parser data structures.\n");
+    goto error;
+  }
   res = entity_register_name(parser, entity, htable, isolent);
   if(res != RES_OK) goto error;
 
@@ -2343,11 +2354,12 @@ parse_entity
   }
 
 exit:
+  solstice_entity_release(&solent);
   out_isolent->i = isolent;
   return res;
 error:
-  if(solent) {
-    htable_str2sols_erase(htable, &solent->name);
+  if(isolent != SIZE_MAX) {
+    htable_str2sols_erase(htable, &solent.name);
     darray_entity_pop_back(&parser->entities);
     isolent = SIZE_MAX;
   }

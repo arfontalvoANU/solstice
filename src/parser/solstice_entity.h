@@ -146,6 +146,29 @@ solstice_entity_copy_and_release
   return RES_OK;
 }
 
+static INLINE res_T
+solstice_entity_copy_and_clear
+  (struct solstice_entity* dst, struct solstice_entity* src)
+{
+  res_T res = RES_OK;
+  ASSERT(dst && src);
+  d3_set(dst->translation, src->translation);
+  d3_set(dst->rotation, src->rotation);
+  dst->type = src->type;
+  dst->data = src->data;
+  res = str_copy_and_clear(&dst->name, &src->name);
+  if(res != RES_OK) return res;
+  res = htable_str2sols_copy_and_clear(&dst->str2anchors, &src->str2anchors);
+  if(res != RES_OK) return res;
+  res = htable_str2sols_copy_and_clear(&dst->str2children, &src->str2children);
+  if(res != RES_OK) return res;
+  res = darray_anchor_id_copy_and_clear(&dst->anchors, &src->anchors);
+  if(res != RES_OK) return res;
+  res = darray_child_id_copy_and_clear(&dst->children, &src->children);
+  if(res != RES_OK) return res;
+  return RES_OK;
+}
+
 static INLINE size_t
 solstice_entity_get_anchors_count(const struct solstice_entity* entity)
 {
