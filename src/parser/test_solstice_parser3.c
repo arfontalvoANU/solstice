@@ -25,8 +25,8 @@ main(int argc, char** argv)
   struct solstice_anchor_id anchor_id;
   struct solstice_entity_id entity_id;
   struct solstice_object_id obj_id;
-  const struct solstice_anchor* anchor;
-  const struct solstice_entity* entity;
+  const struct solstice_anchor* anchor0, *anchor1, *anchor2, *anchor3, *anchor4;
+  const struct solstice_entity* entity, *entity1;
   const struct solstice_geometry* geom;
   const struct solstice_material_matte* matte;
   const struct solstice_material* mtl;
@@ -60,6 +60,17 @@ main(int argc, char** argv)
   fprintf(stream, "        position: [1, 2, 3]\n");
   fprintf(stream, "      - name: anchor1\n");
   fprintf(stream, "        position: [4, 5, 6]\n");
+  fprintf(stream, "    children:\n");
+  fprintf(stream, "      - name: entity0a\n");
+  fprintf(stream, "        geometry: *cylinder\n");
+  fprintf(stream, "      - name: entity0b\n");
+  fprintf(stream, "        geometry: *cylinder\n");
+  fprintf(stream, "        anchors:\n\n");
+  fprintf(stream, "          - name: anchor0\n");
+  fprintf(stream, "            position: [4, 5, 6]\n");
+  fprintf(stream, "          - name: entity0b\n");
+  fprintf(stream, "            position: [7, 8, 9]\n");
+
   rewind(stream);
 
   CHECK(solstice_parser_setup(parser, NULL, stream), RES_OK);
@@ -100,18 +111,57 @@ main(int argc, char** argv)
   matte = solstice_parser_get_material_matte(parser, mtl->data.matte);
   CHECK(matte->reflectivity, 0.5);
 
-  CHECK(solstice_entity_get_children_count(entity), 0);
+  CHECK(solstice_entity_get_children_count(entity), 2);
   CHECK(solstice_entity_get_anchors_count(entity), 2);
 
   anchor_id = solstice_entity_get_anchor(entity, 0);
-  anchor = solstice_parser_get_anchor(parser, anchor_id);
-  CHECK(strcmp(str_cget(&anchor->name), "anchor0"), 0);
-  CHECK(d3_eq(anchor->position, d3(tmp, 1, 2, 3)), 1);
+  anchor0 = solstice_parser_get_anchor(parser, anchor_id);
+  CHECK(strcmp(str_cget(&anchor0->name), "anchor0"), 0);
+  CHECK(d3_eq(anchor0->position, d3(tmp, 1, 2, 3)), 1);
 
   anchor_id = solstice_entity_get_anchor(entity, 1);
-  anchor = solstice_parser_get_anchor(parser, anchor_id);
-  CHECK(strcmp(str_cget(&anchor->name), "anchor1"), 0);
-  CHECK(d3_eq(anchor->position, d3(tmp, 4, 5, 6)), 1);
+  anchor1 = solstice_parser_get_anchor(parser, anchor_id);
+  CHECK(strcmp(str_cget(&anchor1->name), "anchor1"), 0);
+  CHECK(d3_eq(anchor1->position, d3(tmp, 4, 5, 6)), 1);
+
+  entity_id = solstice_entity_get_child(entity, 0);
+  entity1 = solstice_parser_get_entity(parser, entity_id);
+  CHECK(strcmp(str_cget(&entity1->name), "entity0a"), 0);
+  CHECK(entity->geometry.i, entity1->geometry.i);
+  CHECK(solstice_entity_get_anchors_count(entity1), 0);
+  CHECK(solstice_entity_get_children_count(entity1), 0);
+
+  entity_id = solstice_entity_get_child(entity, 1);
+  entity1 = solstice_parser_get_entity(parser, entity_id);
+  CHECK(strcmp(str_cget(&entity1->name), "entity0b"), 0);
+  CHECK(entity->geometry.i, entity1->geometry.i);
+  CHECK(solstice_entity_get_anchors_count(entity1), 2);
+  CHECK(solstice_entity_get_children_count(entity1), 0);
+
+  anchor_id = solstice_entity_get_anchor(entity1, 0);
+  anchor2 = solstice_parser_get_anchor(parser, anchor_id);
+  CHECK(strcmp(str_cget(&anchor2->name), "anchor0"), 0);
+  CHECK(d3_eq(anchor2->position, d3(tmp, 4, 5, 6)), 1);
+
+  anchor_id = solstice_entity_get_anchor(entity1, 1);
+  anchor3 = solstice_parser_get_anchor(parser, anchor_id);
+  CHECK(strcmp(str_cget(&anchor3->name), "entity0b"), 0);
+  CHECK(d3_eq(anchor3->position, d3(tmp, 7, 8, 9)), 1);
+
+  anchor4 = solstice_parser_find_anchor(parser, "entity0");
+  CHECK(anchor4, NULL);
+  anchor4 = solstice_parser_find_anchor(parser, "entity0.anchor0");
+  CHECK(anchor4, anchor0);
+  anchor4 = solstice_parser_find_anchor(parser, "entity0.anchor1");
+  CHECK(anchor4, anchor1);
+  anchor4 = solstice_parser_find_anchor(parser, "entity0.entity0a.anchor0");
+  CHECK(anchor4, NULL);
+  anchor4 = solstice_parser_find_anchor(parser, "entity0.entity0b.anchor0");
+  CHECK(anchor4, anchor2);
+  anchor4 = solstice_parser_find_anchor(parser, "entity0.entity0b.entity0b");
+  CHECK(anchor4, anchor3);
+  anchor4 = solstice_parser_find_anchor(parser, "entity1.entity0b.anchor1");
+  CHECK(anchor4, NULL);
 
   CHECK(solstice_parser_load(parser), RES_BAD_OP);
   solstice_parser_ref_put(parser);

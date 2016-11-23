@@ -2973,6 +2973,76 @@ error:
   goto exit;
 }
 
+const struct solstice_anchor*
+solstice_parser_find_anchor
+  (struct solstice_parser* parser, const char* name)
+{
+  struct str str;
+  struct str str_tk;
+  struct htable_str2sols* htable = NULL;
+  struct solstice_entity* entity = NULL;
+  struct solstice_anchor* anchor = NULL;
+  char* cstr;
+  char* tk;
+  char* tk_anchor;
+  res_T res = RES_OK;
+  ASSERT(parser && name);
+
+  str_init(parser->allocator, &str);
+  str_init(parser->allocator, &str_tk);
+
+  res = str_set(&str, name);
+  if(res != RES_OK) {
+    fprintf(stderr, "%s: could not copy the input string.\n", FUNC_NAME);
+    goto error;
+  }
+  res = str_reserve(&str_tk, str_len(&str));
+  if(res != RES_OK) {
+    fprintf(stderr, "%s: could not allocate the temporary token string.\n",
+      FUNC_NAME);
+    goto error;
+  }
+
+  cstr = str_get(&str);
+  tk_anchor = strrchr(cstr, '.');
+  if(!tk_anchor) goto exit;
+  *tk_anchor='\0';
+  ++tk_anchor;
+
+  tk = strtok(cstr, ".");
+  htable = &parser->str2entities;
+  while(tk) {
+    size_t* pientity;
+    str_set(&str_tk, tk);
+    pientity = htable_str2sols_find(htable, &str_tk);
+    if(!pientity) {
+      tk = NULL;
+      entity = NULL;
+    } else {
+      tk = strtok(NULL, ".");
+      entity = darray_entity_data_get(&parser->entities) + *pientity;
+      htable = &entity->str2children;
+    }
+  }
+
+  if(entity) {
+    size_t* pianchor;
+    str_set(&str_tk, tk_anchor);
+    pianchor = htable_str2sols_find(&entity->str2anchors, &str_tk);
+    if(pianchor) {
+      anchor = darray_anchor_data_get(&parser->anchors) + *pianchor;
+    }
+  }
+
+exit:
+  str_release(&str);
+  str_release(&str_tk);
+  return anchor;
+error:
+  anchor = NULL;
+  goto exit;
+}
+
 const struct solstice_entity*
 solstice_parser_find_entity
   (struct solstice_parser* parser, const char* name)

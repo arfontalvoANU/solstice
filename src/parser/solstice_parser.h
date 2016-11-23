@@ -65,7 +65,13 @@ extern LOCAL_SYM res_T
 solstice_parser_load
   (struct solstice_parser* parser);
 
-/* Return NULL if the no entity is found */
+/* Return NULL if no entity is found */
+extern LOCAL_SYM const struct solstice_anchor*
+solstice_parser_find_anchor
+  (struct solstice_parser* parser,
+   const char* anchor_name);
+
+/* Return NULL if no entity is found */
 extern LOCAL_SYM const struct solstice_entity*
 solstice_parser_find_entity
   (struct solstice_parser* parser,
