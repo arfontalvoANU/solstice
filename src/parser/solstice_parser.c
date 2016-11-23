@@ -135,6 +135,11 @@
 #define DARRAY_FUNCTOR_COPY_AND_RELEASE solstice_anchor_copy_and_release
 #include <rsys/dynamic_array.h>
 
+/* Declare the array of pivots */
+#define DARRAY_NAME pivot
+#define DARRAY_DATA struct solstice_pivot
+#include <rsys/dynamic_array.h>
+
 /* Declare the hash table that maps the address of a YAML node to the id of its
  * in memory representation. */
 #define HTABLE_NAME yaml2sols
@@ -179,8 +184,9 @@ struct solstice_parser {
   struct htable_str2sols str2entities;
   struct darray_entity entities;
 
-  /* Anchors */
+  /* Miscellaneous */
   struct darray_anchor anchors;
+  struct darray_pivot pivots;
 
   ref_T ref;
   struct mem_allocator* allocator;
@@ -205,7 +211,8 @@ static res_T
 parse_pivot
   (struct solstice_parser* parser,
    yaml_document_t* doc,
-   const yaml_node_t* pivot);
+   const yaml_node_t* pivot,
+   struct solstice_pivot_id* out_isolpivot);
 
 static res_T
 parse_sun
@@ -269,13 +276,14 @@ parser_clear(struct solstice_parser* parser)
   solstice_sun_clear(&parser->sun);
   parser->sun_key = 0;
 
-  /* Entitiies */
+  /* Entities */
   htable_yaml2sols_clear(&parser->yaml2entities);
   htable_str2sols_clear(&parser->str2entities);
   darray_entity_clear(&parser->entities);
 
-  /* Anchors */
+  /* Miscellaneous */
   darray_anchor_clear(&parser->anchors);
+  darray_pivot_clear(&parser->pivots);
 }
 
 static void
@@ -319,8 +327,9 @@ parser_release(ref_T* ref)
   htable_str2sols_release(&parser->str2entities);
   darray_entity_release(&parser->entities);
 
-  /* Anchors */
+  /* Miscellaneous */
   darray_anchor_release(&parser->anchors);
+  darray_pivot_release(&parser->pivots);
 
   MEM_RM(parser->allocator, parser);
 }
@@ -2274,13 +2283,15 @@ parse_entity
         (parser, doc, val, &solent->str2children, &solent->children);
     } else if(!strcmp((char*)key->data.scalar.value, "geometry")) {
       SETUP_MASK(DATA, "data");
-      res = parse_geometry(parser, doc, val, &solent->geometry);
+      solent->type = SOLSTICE_ENTITY_GEOMETRY;
+      res = parse_geometry(parser, doc, val, &solent->data.geometry);
     } else if(!strcmp((char*)key->data.scalar.value, "name")) {
       SETUP_MASK(NAME, "name");
       res = parse_identifier_string(parser, val, &solent->name);
     } else if(!strcmp((char*)key->data.scalar.value, "pivot")) {
       SETUP_MASK(DATA, "data");
-      res = parse_pivot(parser, doc, val);
+      solent->type = SOLSTICE_ENTITY_PIVOT;
+      res = parse_pivot(parser, doc, val, &solent->data.pivot);
     } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
       SETUP_MASK(TRANSFORM, "transform");
       res = parse_transform
@@ -2347,19 +2358,54 @@ error:
  * Pivot
  ******************************************************************************/
 static res_T
+parse_anchor_alias
+  (struct solstice_parser* parser,
+   const yaml_node_t* alias,
+   struct solstice_anchor_id* out_ianchor)
+{
+  const struct solstice_anchor* anchor = NULL;
+  intptr_t ianchor = INTPTR_MAX;
+  res_T res = RES_OK;
+  ASSERT(parser && alias && out_ianchor);
+
+  if(alias->type != YAML_SCALAR_NODE) {
+    log_err(parser, alias, "expect an anchor idententifier.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  anchor = solstice_parser_find_anchor(parser, (char*)alias->data.scalar.value);
+  if(!anchor) {
+    log_err(parser, alias, "undefined anchor `%s'.\n",
+      alias->data.scalar.value);
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  ianchor = anchor - darray_anchor_cdata_get(&parser->anchors);
+  ASSERT(ianchor >= 0);
+  ASSERT((size_t)ianchor < darray_anchor_size_get(&parser->anchors));
+
+exit:
+  out_ianchor->i = (size_t)ianchor;
+  return res;
+error:
+  ianchor = INTPTR_MAX;
+  goto exit;
+}
+
+static res_T
 parse_target
   (struct solstice_parser* parser,
    yaml_document_t* doc,
-   const yaml_node_t* target)
+   const yaml_node_t* target,
+   struct solstice_pivot* pivot)
 {
   enum { POLICY };
-  struct solstice_sun* sun; /* TODO */
-  double direction[3];
-  double position[3];
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
-  ASSERT(doc && target);
+  ASSERT(doc && target && pivot);
 
   if(target->type != YAML_MAPPING_NODE) {
     log_err(parser, target, "expect a target definition.\n");
@@ -2388,14 +2434,28 @@ parse_target
       }                                                                        \
       mask |= BIT(Flag);                                                       \
     } (void)0
-    if(!strcmp((char*)key->data.scalar.value, "direction")) {
+    if(!strcmp((char*)key->data.scalar.value, "anchor")) {
       SETUP_MASK(POLICY, "policy");
-      res = parse_real3(parser, doc, val, -DBL_MAX, DBL_MAX, direction);
+      pivot->target_type = SOLSTICE_TARGET_ANCHOR;
+      res = parse_anchor_alias(parser, val, &pivot->target.anchor);
+    } else if(!strcmp((char*)key->data.scalar.value, "direction")) {
+      SETUP_MASK(POLICY, "policy");
+      pivot->target_type = SOLSTICE_TARGET_DIRECTION;
+      res = parse_real3
+        (parser, doc, val, -DBL_MAX, DBL_MAX, pivot->target.direction);
     } else if(!strcmp((char*)key->data.scalar.value, "position")) {
       SETUP_MASK(POLICY, "policy");
-      res = parse_real3(parser, doc, val, -DBL_MAX, DBL_MAX, position);
+      pivot->target_type = SOLSTICE_TARGET_POSITION;
+      res = parse_real3
+        (parser, doc, val, -DBL_MAX, DBL_MAX, pivot->target.position);
     } else if(!strcmp((char*)key->data.scalar.value, "sun")) {
+      /* There is only one sun per YAML file. It is thus sufficient to define
+       * the target_type to SOLSTICE_TARGET_SUN to indentify which data is
+       * targeted, i.e. it is not necessary to store the identifier of the sun
+       * to target */
+      struct solstice_sun* sun;
       SETUP_MASK(POLICY, "policy");
+      pivot->target_type = SOLSTICE_TARGET_SUN;
       res = parse_sun(parser, doc, val, &sun);
     } else {
       log_err(parser, key, "unknown target parameter `%s'.\n",
@@ -2423,23 +2483,32 @@ static res_T
 parse_pivot
   (struct solstice_parser* parser,
    yaml_document_t* doc,
-   const yaml_node_t* pivot)
+   const yaml_node_t* pivot,
+   struct solstice_pivot_id* out_isolpivot)
 {
   enum { NORMAL, POINT, TARGET, TRANSFORM };
-  double point[3];
-  double normal[3];
-  double translation[3] = {0, 0, 0};
-  double rotation[3] = {0, 0, 0};
+  struct solstice_pivot* solpivot = NULL;
+  size_t isolpivot = SIZE_MAX;
   int mask = 0; /* Register the parsed attributes */
   intptr_t i, n;
   res_T res = RES_OK;
-  ASSERT(doc && pivot);
+  ASSERT(doc && pivot && out_isolpivot);
 
   if(pivot->type != YAML_MAPPING_NODE) {
     log_err(parser, pivot, "expect a pivot definition.\n");
     res = RES_BAD_ARG;
     goto error;
   }
+
+  /* Allocate the solstice pivot */
+  isolpivot = darray_pivot_size_get(&parser->pivots);
+  res = darray_pivot_resize(&parser->pivots, isolpivot + 1);
+  if(res != RES_OK) {
+    log_err(parser, pivot, "could not allocate the pivot.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+  solpivot = darray_pivot_data_get(&parser->pivots) + isolpivot;
 
   n = pivot->data.mapping.pairs.top - pivot->data.mapping.pairs.start;
   FOR_EACH(i, 0, n) {
@@ -2464,16 +2533,17 @@ parse_pivot
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "point")) {
       SETUP_MASK(POINT, "point");
-      res = parse_real3(parser, doc, val, -DBL_MAX, DBL_MAX, point);
+      res = parse_real3(parser, doc, val, -DBL_MAX, DBL_MAX, solpivot->point);
     } else if(!strcmp((char*)key->data.scalar.value, "normal")) {
       SETUP_MASK(NORMAL, "normal");
-      res = parse_real3(parser, doc, val, -DBL_MAX, DBL_MAX, normal);
+      res = parse_real3(parser, doc, val, -DBL_MAX, DBL_MAX, solpivot->normal);
     } else if(!strcmp((char*)key->data.scalar.value, "target")) {
       SETUP_MASK(TARGET, "target");
-      res = parse_target(parser, doc, val);
+      res = parse_target(parser, doc, val, solpivot);
     } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
       SETUP_MASK(TRANSFORM, "transform");
-      res = parse_transform(parser, doc, val, translation, rotation);
+      res = parse_transform
+        (parser, doc, val, solpivot->translation, solpivot->rotation);
     } else {
       log_err(parser, key, "unknown pivot parameter `%s'.\n",
         key->data.scalar.value);
@@ -2491,11 +2561,17 @@ parse_pivot
     } (void)0
   CHECK_PARAM(POINT, "point");
   CHECK_PARAM(NORMAL, "normal");
+  CHECK_PARAM(TARGET, "target");
   #undef CHECK_PARAM
 
 exit:
+  out_isolpivot->i = isolpivot;
   return res;
 error:
+  if(solpivot) {
+    darray_pivot_pop_back(&parser->pivots);
+    isolpivot = SIZE_MAX;
+  }
   goto exit;
 }
 
@@ -2831,6 +2907,7 @@ solstice_parser_create
   darray_object_init(mem_allocator, &parser->objects);
   darray_geometry_init(mem_allocator, &parser->geometries);
 
+  /* Sun */
   solstice_sun_init(mem_allocator, &parser->sun);
 
   /* Entities */
@@ -2840,6 +2917,7 @@ solstice_parser_create
 
   /* Anchors */
   darray_anchor_init(mem_allocator, &parser->anchors);
+  darray_pivot_init(mem_allocator, &parser->pivots);
 
 exit:
   *out_parser = parser;

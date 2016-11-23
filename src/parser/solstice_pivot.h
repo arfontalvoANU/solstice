@@ -68,8 +68,8 @@ solstice_anchor_copy_and_release
 struct solstice_pivot {
   double point[3];
   double normal[3];
-  double position[3];
   double rotation[3];
+  double translation[3];
   enum solstice_target_type target_type;
   union {
     double position[3]; /* World space position */

@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 # Declare materials
 - material: &lambertian
-    matte: 
+    matte:
       reflectivity: 1
 - material: &mirror
     mirror: { reflectivity: 1, roughness: 0 }
@@ -57,7 +57,7 @@
             pivot:
               point: [0, 0, 0]
               normal: [0, 1, 0]
-              target: "entity0.anchor0"
+
 
 - entity:
     <<: *composition
@@ -110,7 +110,11 @@
 
 <target> ::=
   target:
-    <anchor-identifier> | <real3> |  <sun>
+    anchor: <anchor-identifier>
+  | direction: <real3>
+  | position: <real3>
+  | <sun>
+
 
 ----------------------------------------
 <shape> ::=
@@ -221,6 +225,12 @@
   name: STRING
   position: <real3>
 
+<entity-identifier> ::=
+  STRING[.STRING ... ]
+
+<anchor-identifier> ::=
+  <entity-identifier>.STRING
+
 ----------------------------------------
 <sun> ::=
   sun:
@@ -259,9 +269,4 @@
   wavelength: REAL
   data: REAL
 
-<identifier> ::=
-  name: STRING
-
-<anchor-identifier> ::=
-  "<identifier>.<identifier>.<identifier>"
 

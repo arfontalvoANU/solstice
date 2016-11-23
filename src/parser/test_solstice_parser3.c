@@ -85,8 +85,9 @@ main(int argc, char** argv)
   CHECK(strcmp(str_cget(&entity->name), "entity0"), 0);
   CHECK(d3_eq(entity->rotation, d3_splat(tmp, 0)), 1);
   CHECK(d3_eq(entity->translation, d3_splat(tmp, 0)), 1);
+  CHECK(entity->type, SOLSTICE_ENTITY_GEOMETRY);
 
-  geom = solstice_parser_get_geometry(parser, entity->geometry);
+  geom = solstice_parser_get_geometry(parser, entity->data.geometry);
   CHECK(solstice_geometry_get_objects_count(geom), 1);
 
   obj_id = solstice_geometry_get_object(geom, 0);
@@ -127,14 +128,16 @@ main(int argc, char** argv)
   entity_id = solstice_entity_get_child(entity, 0);
   entity1 = solstice_parser_get_entity(parser, entity_id);
   CHECK(strcmp(str_cget(&entity1->name), "entity0a"), 0);
-  CHECK(entity->geometry.i, entity1->geometry.i);
+  CHECK(entity1->type, SOLSTICE_ENTITY_GEOMETRY);
+  CHECK(entity->data.geometry.i, entity1->data.geometry.i);
   CHECK(solstice_entity_get_anchors_count(entity1), 0);
   CHECK(solstice_entity_get_children_count(entity1), 0);
 
   entity_id = solstice_entity_get_child(entity, 1);
   entity1 = solstice_parser_get_entity(parser, entity_id);
   CHECK(strcmp(str_cget(&entity1->name), "entity0b"), 0);
-  CHECK(entity->geometry.i, entity1->geometry.i);
+  CHECK(entity->type, SOLSTICE_ENTITY_GEOMETRY);
+  CHECK(entity->data.geometry.i, entity1->data.geometry.i);
   CHECK(solstice_entity_get_anchors_count(entity1), 2);
   CHECK(solstice_entity_get_children_count(entity1), 0);
 
@@ -162,6 +165,9 @@ main(int argc, char** argv)
   CHECK(anchor4, anchor3);
   anchor4 = solstice_parser_find_anchor(parser, "entity1.entity0b.anchor1");
   CHECK(anchor4, NULL);
+
+  solstice_entity_iterator_next(&it);
+  CHECK(solstice_entity_iterator_eq(&it, &it_end), 1);
 
   CHECK(solstice_parser_load(parser), RES_BAD_OP);
   solstice_parser_ref_put(parser);

@@ -26,6 +26,11 @@
 #include <rsys/list.h>
 #include <rsys/str.h>
 
+enum solstice_entity_type {
+  SOLSTICE_ENTITY_GEOMETRY,
+  SOLSTICE_ENTITY_PIVOT
+};
+
 struct solstice_entity_id { size_t i; };
 
 #define DARRAY_NAME child_id
@@ -54,7 +59,12 @@ struct solstice_entity {
   double translation[3];
 
   struct str name;
-  struct solstice_geometry_id geometry;
+
+  enum solstice_entity_type type;
+  union {
+    struct solstice_geometry_id geometry;
+    struct solstice_pivot_id pivot;
+  } data;
 
   /* Internal data. Should not be acceded directly. */
   struct htable_str2sols str2anchors;
@@ -70,7 +80,8 @@ solstice_entity_init
   ASSERT(entity);
   d3_splat(entity->rotation, 0);
   d3_splat(entity->translation, 0);
-  entity->geometry.i = SIZE_MAX;
+  entity->type = SOLSTICE_ENTITY_GEOMETRY;
+  entity->data.geometry.i = SIZE_MAX;
   str_init(allocator, &entity->name);
   htable_str2sols_init(allocator, &entity->str2anchors);
   htable_str2sols_init(allocator, &entity->str2children);
@@ -97,7 +108,8 @@ solstice_entity_copy
   ASSERT(dst && src);
   d3_set(dst->translation, src->translation);
   d3_set(dst->rotation, src->rotation);
-  dst->geometry = src->geometry;
+  dst->type = src->type;
+  dst->data = src->data;
   res = str_copy(&dst->name, &src->name);
   if(res != RES_OK) return res;
   res = htable_str2sols_copy(&dst->str2anchors, &src->str2anchors);
@@ -119,7 +131,8 @@ solstice_entity_copy_and_release
   ASSERT(dst && src);
   d3_set(dst->translation, src->translation);
   d3_set(dst->rotation, src->rotation);
-  dst->geometry = src->geometry;
+  dst->type = src->type;
+  dst->data = src->data;
   res = str_copy_and_release(&dst->name, &src->name);
   if(res != RES_OK) return res;
   res = htable_str2sols_copy_and_release(&dst->str2anchors, &src->str2anchors);

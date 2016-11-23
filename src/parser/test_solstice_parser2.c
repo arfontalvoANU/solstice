@@ -118,8 +118,9 @@ main(int argc, char** argv)
   CHECK(d3_eq(entity->rotation, d3(tmp, 4, 5, 6)), 1);
   CHECK(strcmp("lvl 0", str_cget(&entity->name)), 0);
   CHECK(solstice_entity_get_children_count(entity), 2);
-  geom_id = entity->geometry;
-  geom = solstice_parser_get_geometry(parser, entity->geometry);
+  CHECK(entity->type, SOLSTICE_ENTITY_GEOMETRY);
+  geom_id = entity->data.geometry;
+  geom = solstice_parser_get_geometry(parser, entity->data.geometry);
   CHECK(geom == geoms[0] || geom == geoms[1], 1);
   CHECK(solstice_geometry_get_objects_count(geom), 1);
   obj_id = solstice_geometry_get_object(geom, 0);
@@ -144,8 +145,9 @@ main(int argc, char** argv)
   CHECK(d3_eq(entity1a->rotation, d3_splat(tmp, 0)), 1);
   CHECK(strcmp("lvl1a", str_cget(&entity1a->name)), 0);
   CHECK(solstice_entity_get_children_count(entity1a), 0);
-  NCHECK(entity1a->geometry.i, geom_id.i);
-  geom = solstice_parser_get_geometry(parser, entity1a->geometry);
+  CHECK(entity1a->type, SOLSTICE_ENTITY_GEOMETRY);
+  NCHECK(entity1a->data.geometry.i, geom_id.i);
+  geom = solstice_parser_get_geometry(parser, entity1a->data.geometry);
   CHECK(geom == geoms[0] || geom == geoms[1], 1);
   CHECK(solstice_geometry_get_objects_count(geom), 1);
   obj_id = solstice_geometry_get_object(geom, 0);
@@ -171,7 +173,8 @@ main(int argc, char** argv)
   CHECK(d3_eq(entity1b->rotation, d3(tmp, 3.14, 0, -1)), 1);
   CHECK(strcmp("lvl1b", str_cget(&entity1b->name)), 0);
   CHECK(solstice_entity_get_children_count(entity1b), 1);
-  CHECK(entity1b->geometry.i, geom_id.i);
+  CHECK(entity1b->type, SOLSTICE_ENTITY_GEOMETRY);
+  CHECK(entity1b->data.geometry.i, geom_id.i);
 
   entity_id = solstice_entity_get_child(entity1b, 0);
   entity2 = solstice_parser_get_entity(parser, entity_id);
@@ -179,7 +182,8 @@ main(int argc, char** argv)
   CHECK(d3_eq(entity2->rotation, d3_splat(tmp, 0)), 1);
   CHECK(strcmp("lvl2", str_cget(&entity2->name)), 0);
   CHECK(solstice_entity_get_children_count(entity2), 0);
-  CHECK(entity2->geometry.i, geom_id.i);
+  CHECK(entity2->type, SOLSTICE_ENTITY_GEOMETRY);
+  CHECK(entity2->data.geometry.i, geom_id.i);
 
   entity3 = solstice_parser_find_entity(parser, "lvl 0");
   CHECK(entity3, entity);
