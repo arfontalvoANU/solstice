@@ -25,7 +25,12 @@ unset(LibYAML_LIBRARY CACHE)
 unset(LibYAML_LIBRARY_DEBUG CACHE)
 unset(LibYAML_LIBRARY_RELWITHDEBINFO CACHE)
 unset(LibYAML_LIBRARY_MINSIZEREL CACHE)
-find_library(LibYAML_LIBRARY yaml DOC "Path to library yaml.")
+find_library(LibYAML_LIBRARY yaml DOC 
+  "Path to the LibYAML library used during release builds."
+  PATH_SUFFIXES bin)
+find_library(LibYAML_LIBRARY_DEBUG yaml-dbg DOC 
+  "Path to the LibYAML library used during debug builds."
+  PATH_SUFFIXES bin)
 
 # Create the imported library target
 if(CMAKE_HOST_WIN32)
@@ -34,7 +39,10 @@ else(CMAKE_HOST_WIN32)
   set(_property IMPORTED_LOCATION)
 endif(CMAKE_HOST_WIN32)
 add_library(LibYAML SHARED IMPORTED)
-set_target_properties(LibYAML PROPERTIES ${_property} ${LibYAML_LIBRARY})
+set_target_properties(LibYAML PROPERTIES 
+  ${_property} ${LibYAML_LIBRARY_DEBUG}
+  ${_property}_DEBUG ${LibYAML_LIBRARY_DEBUG}
+  ${_property}_RELEASE ${LibYAML_LIBRARY})
 
 # Check the package
 include(FindPackageHandleStandardArgs)
