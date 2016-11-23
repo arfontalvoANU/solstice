@@ -117,6 +117,11 @@ solstice_parser_get_object
   (const struct solstice_parser* parser,
    const struct solstice_object_id obj);
 
+extern LOCAL_SYM const struct solstice_pivot*
+solstice_parser_get_pivot
+  (const struct solstice_parser* parser,
+   const struct solstice_pivot_id pivot);
+
 extern LOCAL_SYM const struct solstice_shape*
 solstice_parser_get_shape
   (const struct solstice_parser* parser,

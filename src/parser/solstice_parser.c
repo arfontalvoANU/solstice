@@ -3247,6 +3247,15 @@ solstice_parser_get_object
   return darray_object_cdata_get(&parser->objects) + obj.i;
 }
 
+const struct solstice_pivot*
+solstice_parser_get_pivot
+  (const struct solstice_parser* parser,
+   const struct solstice_pivot_id pivot)
+{
+  ASSERT(parser && pivot.i < darray_pivot_size_get(&parser->pivots));
+  return darray_pivot_cdata_get(&parser->pivots) + pivot.i;
+}
+
 const struct solstice_shape*
 solstice_parser_get_shape
   (const struct solstice_parser* parser,
