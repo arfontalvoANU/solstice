@@ -2661,8 +2661,8 @@ parse_pillbox
 
   n = pillbox->data.mapping.pairs.top - pillbox->data.mapping.pairs.start;
   FOR_EACH(i, 0, n) {
-    yaml_node_t* key = key;
-    yaml_node_t* val = val;
+    yaml_node_t* key;
+    yaml_node_t* val;
 
     key = yaml_document_get_node(doc, pillbox->data.mapping.pairs.start[i].key);
     val = yaml_document_get_node(doc, pillbox->data.mapping.pairs.start[i].value);

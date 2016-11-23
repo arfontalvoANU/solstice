@@ -22,7 +22,7 @@ main(int argc, char** argv)
   FILE* file = NULL;
   struct solstice_parser* parser = NULL;
   res_T res;
-  int err;
+  int err = 0;
   int i;
 
   if(argc < 2) {
