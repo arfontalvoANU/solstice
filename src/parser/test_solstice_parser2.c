@@ -191,6 +191,8 @@ main(int argc, char** argv)
   CHECK(entity3, entity1b);
   entity3 = solstice_parser_find_entity(parser, "lvl 0.lvl1b.lvl2");
   CHECK(entity3, entity2);
+  entity3 = solstice_parser_find_entity(parser,"lvl 0.lvl1b.bad_name");
+  CHECK(entity3, NULL);
 
   sun = solstice_parser_get_sun(parser);
   NCHECK(sun, NULL);

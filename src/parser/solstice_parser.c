@@ -2991,8 +2991,7 @@ solstice_parser_find_entity
 
   res = str_set(&str, name);
   if(res != RES_OK) {
-    fprintf(stderr, "%s: could not copy the input string.\n",
-      FUNC_NAME);
+    fprintf(stderr, "%s: could not copy the input string.\n", FUNC_NAME);
     goto error;
   }
   res = str_reserve(&str_tk, str_len(&str));
@@ -3011,6 +3010,7 @@ solstice_parser_find_entity
     pientity = htable_str2sols_find(htable, &str_tk);
     if(!pientity) {
       tk = NULL;
+      entity = NULL;
     } else {
       tk = strtok(NULL, ".");
       entity = darray_entity_data_get(&parser->entities) + *pientity;
