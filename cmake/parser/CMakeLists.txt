@@ -42,7 +42,7 @@ set(PARSER_FILES_INC
 # Prepend each file in the `SOLSTICE_FILES_<SRC|INC>' list by `SOLSTICE_SOURCE_DIR'
 rcmake_prepend_path(PARSER_FILES_SRC ${PARSER_SOURCE_DIR})
 rcmake_prepend_path(PARSER_FILES_INC ${PARSER_SOURCE_DIR})
-rcmake_prepend_path(SOARSER_FILES_DOC ${PROJECT_SOURCE_DIR}/../)
+rcmake_prepend_path(PARSER_FILES_DOC ${PROJECT_SOURCE_DIR}/../)
 
 if(CMAKE_COMPILER_IS_GNUCC)
   set(MATH_LIB m)
