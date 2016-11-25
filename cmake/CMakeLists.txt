@@ -28,18 +28,25 @@ set(LibYAML_DIR ${_current_source_dir}/)
 
 find_package(LibYAML REQUIRED)
 find_package(RCMake 0.2.3 REQUIRED)
-find_package(RSys 0.3 REQUIRED)
+find_package(RSys 0.4 REQUIRED)
+find_package(StarSP 0.4 REQUIRED)
+find_package(SolAnim 0.1 REQUIRED)
+find_package(SolSolver 0.1 REQUIRED)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${RCMAKE_SOURCE_DIR})
 include(rcmake)
 include(rcmake_runtime)
 
-include_directories(${RSys_INCLUDE_DIR})
+include_directories(
+  ${RSys_INCLUDE_DIR}
+  ${SolAnim_INCLUDE_DIR}
+  ${SolSolver_INCLUDE_DIR})
 
 ################################################################################
 # Build subprojects
 ################################################################################
 add_subdirectory(parser)
+add_subdirectory(core)
 
 ################################################################################
 # Configure and define targets
@@ -63,7 +70,7 @@ if(CMAKE_COMPILER_IS_GNUCC)
 endif()
 
 add_executable(solstice ${SOLSTICE_SOURCE_DIR}/solstice.c)
-target_link_libraries(solstice LibYAML RSys ${MATH_LIB} solstice-parser)
+target_link_libraries(solstice LibYAML RSys ${MATH_LIB} solstice-parser SolAnim SolSolver)
 set_target_properties(solstice PROPERTIES
   VERSION ${VERSION}
   SOVERSION ${VERSION_MAJOR})
