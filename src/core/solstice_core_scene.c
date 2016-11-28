@@ -127,7 +127,7 @@ node_to_solver(const struct sanim_node* node_, const double transform[12], void*
   node = CONTAINER_OF(node_, struct score_node, anim);
   switch (node->type) {
   case NODE_TEMPLATE_ROOT:
-    res = RES_BAD_ARG;
+    ASSERT(0);
     break;
   case NODE_INSTANCE_ROOT:
     /* the root doesn't include any solver-related item */
@@ -136,7 +136,7 @@ node_to_solver(const struct sanim_node* node_, const double transform[12], void*
     /* not a solver-related item */
     break;
   case NODE_TEMPLATE:
-    res = RES_BAD_ARG;
+    ASSERT(0);
     break;
   case NODE_INSTANCE:
     SSOL(instance_set_transform(
@@ -168,16 +168,16 @@ node_to_solver_update(const struct sanim_node* node_, const double transform[12]
   node = CONTAINER_OF(node_, struct score_node, anim);
   switch (node->type) {
   case NODE_TEMPLATE_ROOT:
-    res = RES_BAD_ARG;
+    ASSERT(0);
     break;
   case NODE_INSTANCE_ROOT:
-    res = RES_BAD_ARG; /* should only visit post-pivot nodes */
+    ASSERT(0); /* should only visit post-pivot nodes */
     break;
   case NODE_TRACKING_TARGET:
     /* not a solver-related item */
     break;
   case NODE_TEMPLATE:
-    res = RES_BAD_ARG;
+    ASSERT(0);
     break;
   case NODE_INSTANCE:
     SSOL(instance_set_transform(
@@ -243,7 +243,7 @@ score_scene_create
 {
   struct score_scene* scene;
   res_T res = RES_OK;
-  if (!dev || !out_scene) return RES_BAD_ARG;
+  ASSERT(dev && out_scene);
 
   scene = MEM_CALLOC(dev->allocator, 1, sizeof(struct score_scene));
   if (!scene) {
@@ -297,7 +297,7 @@ score_scene_attach_instance
     && !instance->data.instance_root.scene_attachment);
   anim = &instance->anim;
   SANIM(node_is_initialized(anim, &ok));
-  if (!ok) return RES_BAD_ARG;
+  ASSERT(ok);
   res = darray_nodes_push_back(&scene->instances, &anim);
   if (res != RES_OK) goto error;
   instance->data.instance_root.scene_attachment = scene;
@@ -395,7 +395,7 @@ score_scene_reset_simulation(struct score_scene* scene)
   size_t count = 0, i;
   struct sanim_node** instances;
   double sun_dir[3];
-  if (!scene || !scene->sun) return RES_BAD_ARG;
+  ASSERT(scene && scene->sun);
   SSOL(sun_get_direction(scene->sun, sun_dir));
   count = darray_nodes_size_get(&scene->instances);
   instances = darray_nodes_data_get(&scene->instances);
@@ -427,7 +427,7 @@ score_scene_update_simulation(struct score_scene* scene)
   size_t p_count = 0, p;
   struct sanim_node** instances;
   double sun_dir[3];
-  if (!scene || !scene->sun) return RES_BAD_ARG;
+  ASSERT(scene && scene->sun);
   SSOL(sun_get_direction(scene->sun, sun_dir));
   count = darray_nodes_size_get(&scene->instances);
   instances = darray_nodes_data_get(&scene->instances);

@@ -146,9 +146,6 @@ main(int argc, char** argv)
   CHECK(ssol_device_ref_put(sol_dev), RES_OK);
 
   /* some scene API tests */
-
-  CHECK(score_scene_create(NULL, &scene), RES_BAD_ARG);
-  CHECK(score_scene_create(dev, NULL), RES_BAD_ARG);
   CHECK(score_scene_create(dev, &scene), RES_OK);
   score_scene_ref_put(scene);
 
@@ -158,18 +155,7 @@ main(int argc, char** argv)
   NCHECK(tmp = tmpfile(), 0);
   CHECK(ssp_rng_create(&allocator, &ssp_rng_threefry, &rng), RES_OK);
   CHECK(ssol_estimator_create(sol_dev, &estimator), RES_OK);
-  CHECK(score_solve(scene, NULL, N__, tmp, estimator), RES_BAD_ARG);
-  CHECK(score_solve(scene, rng, 0, tmp, estimator), RES_BAD_ARG);
-  CHECK(score_solve(scene, rng, N__, NULL, estimator), RES_BAD_ARG);
-  CHECK(score_solve(scene, rng, N__, tmp, NULL), RES_BAD_ARG);
-  /* incomplete scene (see solver lib) */
-  CHECK(score_solve(scene, rng, N__, tmp, estimator), RES_BAD_ARG);
-
-  CHECK(score_scene_attach_instance(NULL, inst1), RES_BAD_ARG);
-  CHECK(score_scene_attach_instance(scene, NULL), RES_BAD_ARG);
-  CHECK(score_scene_attach_instance(scene, piv), RES_BAD_ARG);
   CHECK(score_scene_attach_instance(scene, inst1), RES_OK);
-  CHECK(score_scene_attach_instance(scene, inst1), RES_BAD_ARG);
 
   score_scene_detach_instance(scene, inst1);
 

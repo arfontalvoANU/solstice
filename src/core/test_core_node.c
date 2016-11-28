@@ -59,23 +59,15 @@ main(int argc, char** argv)
 
   score_device_create(&logger, &allocator, 1, 0, &dev);
 
-  CHECK(score_node_template_create(NULL, &temp), RES_BAD_ARG);
-  CHECK(score_node_template_create(dev, NULL), RES_BAD_ARG);
   CHECK(score_node_template_create(dev, &temp), RES_OK);
   score_node_ref_put(temp);
 
-  CHECK(score_node_create_object(NULL, &geom1), RES_BAD_ARG);
-  CHECK(score_node_create_object(dev, NULL), RES_BAD_ARG);
   CHECK(score_node_create_object(dev, &geom1), RES_OK);
   score_node_ref_put(geom1);
   
-  CHECK(score_node_pivot_create(NULL, &piv), RES_BAD_ARG);
-  CHECK(score_node_pivot_create(dev, NULL), RES_BAD_ARG);
   CHECK(score_node_pivot_create(dev, &piv), RES_OK);
   score_node_ref_put(piv);
 
-  CHECK(score_node_tracking_target_create(NULL, &tgt), RES_BAD_ARG);
-  CHECK(score_node_tracking_target_create(dev, NULL), RES_BAD_ARG);
   CHECK(score_node_tracking_target_create(dev, &tgt), RES_OK);
   score_node_ref_put(tgt);
 
@@ -92,9 +84,6 @@ main(int argc, char** argv)
   CHECK(tracking.policy, TRACKING_NODE_TARGET);
   /* cannot check tracking.data.node_target.tracked_node validity */
 
-  CHECK(score_node_instantiate(NULL, &inst), RES_BAD_ARG);
-  CHECK(score_node_instantiate(temp, NULL), RES_BAD_ARG);
-  CHECK(score_node_instantiate(geom1, &inst), RES_BAD_ARG);
   CHECK(score_node_instantiate(temp, &inst), RES_OK);
   score_node_ref_put(inst);
 
@@ -120,8 +109,6 @@ main(int argc, char** argv)
   tracking.policy = TRACKING_SUN;
   pivot.type = PIVOT_SINGLE_AXIS;
   d3(pivot.data.pivot1.ref_normal, 0, 0, 1);
-  CHECK(score_node_object_setup(NULL, obj1), RES_BAD_ARG);
-  CHECK(score_node_object_setup(geom1, NULL), RES_BAD_ARG);
   CHECK(score_node_object_setup(geom1, obj1), RES_OK);
 
   CHECK(score_node_pivot_setup(piv, &pivot, &tracking), RES_OK);
@@ -147,16 +134,8 @@ main(int argc, char** argv)
   CHECK(ssol_shape_ref_put(shape2), RES_OK);
   CHECK(ssol_device_ref_put(sol_dev), RES_OK);
 
-  CHECK(score_node_add_child(NULL, geom1), RES_BAD_ARG);
-  CHECK(score_node_add_child(temp, NULL), RES_BAD_ARG);
-  CHECK(score_node_add_child(tgt, geom1), RES_BAD_ARG);
-  CHECK(score_node_add_child(inst, geom1), RES_BAD_ARG);
-  CHECK(score_node_add_child(geom1, temp), RES_BAD_ARG);
-  CHECK(score_node_add_child(geom1, inst), RES_BAD_ARG);
   CHECK(score_node_add_child(temp, geom1), RES_OK);
-  CHECK(score_node_add_child(geom1, geom1), RES_BAD_ARG);
   CHECK(score_node_add_child(geom1, piv), RES_OK);
-  CHECK(score_node_add_child(piv, piv2), RES_BAD_ARG);
   score_node_ref_put(piv2);
 
   score_node_set_translation(inst, transl);

@@ -187,7 +187,7 @@ node_instanciate_any
     if (res != RES_OK) goto error;
     break;
   case NODE_INSTANCE_ROOT:
-    res = RES_BAD_ARG;
+    ASSERT(0);
     goto error;
   case NODE_TRACKING_TARGET:
     res = score_node_tracking_target_create(dev, &node);
@@ -214,7 +214,7 @@ node_instanciate_any
     SANIM(node_set_rotations(&node->anim, v));
     break;
   case NODE_INSTANCE:
-    res = RES_BAD_ARG;
+    ASSERT(0);
     goto error;
   case NODE_PIVOT:
 #ifndef NDEBUG
@@ -362,7 +362,7 @@ score_node_object_setup
    struct ssol_object* object)
 {
   res_T res = RES_OK;
-  ASSERT(node && object && node->type != NODE_TEMPLATE);
+  ASSERT(node && object && node->type == NODE_TEMPLATE);
   /* TODO: deal with multiple setups */
   res = sanim_node_initialize(node->device->allocator, &node->anim);
   if (res != RES_OK) goto error;
@@ -387,7 +387,7 @@ score_node_pivot_setup
    const struct sanim_tracking* tracking)
 {
   res_T res = RES_OK;
-  ASSERT(node && pivot && tracking && node->type != NODE_PIVOT);
+  ASSERT(node && pivot && tracking && node->type == NODE_PIVOT);
   /* TODO: deal with multiple setups */
   res = sanim_node_initialize_pivot(
     node->device->allocator, pivot, tracking, &node->anim);
@@ -406,7 +406,7 @@ score_node_track_me
   (const struct score_node* node,
    struct sanim_tracking* tracking)
 {
-  ASSERT(node && tracking && node->type != NODE_TRACKING_TARGET);
+  ASSERT(node && tracking && node->type == NODE_TRACKING_TARGET);
   SANIM(node_track_me(&node->anim, tracking));
 }
 

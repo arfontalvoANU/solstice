@@ -26,7 +26,6 @@ score_solve
    FILE* output,
    struct ssol_estimator* estimator)
 {
-  if (!scene || !rng || !realisations_count || !output || !estimator)
-    return RES_BAD_ARG;
+  ASSERT(scene && rng  && realisations_count && output && estimator);
   return ssol_solve(scene->solver, rng, realisations_count, output, estimator);
 }
