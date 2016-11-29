@@ -26,20 +26,11 @@
 #include <string.h>
 
 void
-log_stream(const char* msg, void* ctx) {
+log_stream(const char* msg, void* ctx)
+{
   ASSERT(msg);
   (void) msg, (void) ctx;
   printf("%s\n", msg);
-}
-
-void
-check_memory_allocator(struct mem_allocator* allocator) {
-  if (MEM_ALLOCATED_SIZE(allocator)) {
-    char dump[512];
-    MEM_DUMP(allocator, dump, sizeof(dump) / sizeof(char));
-    fprintf(stderr, "%s\n", dump);
-    FATAL("Memory leaks\n");
-  }
 }
 
 const float VERTICES__ [] = {

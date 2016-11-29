@@ -15,6 +15,7 @@
 
 #include "solstice_core.h"
 #include "test_core_utils.h"
+#include "test_solstice_utils.h"
 
 #include <rsys/logger.h>
 
