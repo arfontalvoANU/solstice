@@ -53,12 +53,18 @@ main(int argc, char** argv)
 
   FOR_EACH(i, ifile, argc) {
     FILE* file = fopen(argv[i], "rb");
+    int count = 0;
     NCHECK(file, NULL);
     CHECK(solstice_parser_setup(parser, argv[i], file), RES_OK);
     for(;;) {
       const res_T res = solstice_parser_load(parser);
-      if(res == RES_BAD_OP) break;
+      if(count == 0 && load_res == RES_OK) {
+        CHECK(res, RES_OK);
+      } else if(res == RES_BAD_OP) {
+        break;
+      }
       CHECK(res, load_res);
+      ++count;
     }
     fclose(file);
   }

@@ -73,6 +73,8 @@ if(NOT NO_TEST)
     ${PARSER_SOURCE_DIR}/yaml/test_ok_1.yaml)
   add_test(test_solstice_parser_ok_2 test_solstice_parser
     ${PARSER_SOURCE_DIR}/yaml/test_ok_2.yaml)
+  add_test(test_solstice_parser_ok_2 test_solstice_parser
+    ${PARSER_SOURCE_DIR}/yaml/test_ok_3.yaml)
 # TODO rewrite them wrt the update of the  input specification
 #  add_test(test_solstice_parser_ko_0 test_solstice_parser -e
 #    ${SOLSTICE_SOURCE_DIR}/yaml/test_ko_0.yaml)

@@ -111,11 +111,7 @@ main(int argc, char** argv)
   entity_id = solstice_entity_iterator_get(&it);
   entity = solstice_parser_get_entity(parser, entity_id);
 
-  solstice_entity_iterator_next(&it);
-  CHECK(solstice_entity_iterator_eq(&it, &end), 1);
-
-  CHECK(d3_eq(entity->translation, d3(tmp, 1, 2, 3)), 1);
-  CHECK(d3_eq(entity->rotation, d3(tmp, 4, 5, 6)), 1);
+  
   CHECK(strcmp("lvl 0", str_cget(&entity->name)), 0);
   CHECK(solstice_entity_get_children_count(entity), 2);
   CHECK(entity->type, SOLSTICE_ENTITY_GEOMETRY);

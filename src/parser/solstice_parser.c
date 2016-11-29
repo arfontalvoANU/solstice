@@ -2225,7 +2225,6 @@ parse_entity
   size_t isolent = SIZE_MAX;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
-  int cp = 0; /* Defined whether or not the parsed entity was a copy */
   res_T res = RES_OK;
   ASSERT(doc && entity && htable && out_isolent);
 
@@ -2300,21 +2299,6 @@ parse_entity
       SETUP_MASK(TRANSFORM, "transform");
       res = parse_transform
         (parser, doc, val, solent.translation, solent.rotation);
-    } else if(!strcmp((char*)key->data.scalar.value, "<<")) { /* Copy */
-      struct solstice_entity* cp_solent;
-      pisolent = htable_yaml2sols_find(&parser->yaml2entities, &val);
-      if(!pisolent) {
-        log_err(parser, val, "invalid entity alias.\n");
-        res = RES_BAD_ARG;
-        goto error;
-      }
-      cp_solent = darray_entity_data_get(&parser->entities) + *pisolent;
-      res = solstice_entity_copy(&solent, cp_solent);
-      if(res != RES_OK) {
-        log_err(parser, val, "could not copy the entity.\n");
-        goto error;
-      }
-      cp = 1;
     } else {
       log_err(parser, key, "unknown entity parameter `%s'.\n",
         key->data.scalar.value);
@@ -2325,17 +2309,18 @@ parse_entity
     #undef SETUP_MASK
   }
 
-  if(!cp) {
-    #define CHECK_PARAM(Flag, Name)                                              \
-      if(!(mask & BIT(Flag))) {                                                  \
-        log_err(parser, entity, "the entity "Name" is missing.\n");              \
-        res = RES_BAD_ARG;                                                       \
-        goto error;                                                              \
-      } (void)0
-    CHECK_PARAM(DATA, "data");
-    CHECK_PARAM(NAME, "name");
-    #undef CHECK_PARAM
+  if(!(mask & BIT(DATA))) {
+    solent.type = SOLSTICE_ENTITY_EMPTY;
   }
+
+  #define CHECK_PARAM(Flag, Name)                                              \
+    if(!(mask & BIT(Flag))) {                                                  \
+      log_err(parser, entity, "the entity "Name" is missing.\n");              \
+      res = RES_BAD_ARG;                                                       \
+      goto error;                                                              \
+    } (void)0
+  CHECK_PARAM(NAME, "name");
+  #undef CHECK_PARAM
 
   psolent = darray_entity_data_get(&parser->entities) + isolent;
   res = solstice_entity_copy_and_clear(psolent, &solent);
@@ -2857,6 +2842,8 @@ parse_item
     res = parse_material(parser, doc, val, &mtl2);
   } else if(!strcmp((char*)key->data.scalar.value, "entity")) {
     res = parse_entity(parser, doc, val, &parser->str2entities, &entity);
+  } else if(!strcmp((char*)key->data.scalar.value, "entity-template")) {
+    /* Deferred the parsing */
   } else if(!strcmp((char*)key->data.scalar.value, "geometry")) {
     res = parse_geometry(parser, doc, val, &geometry);
   } else if(!strcmp((char*)key->data.scalar.value, "sun")) {

@@ -1,0 +1,38 @@
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
+
+- material: &lambertian
+    front: { matte: { reflectivity: 1 } }
+    back : { matte: { reflectivity: 0.5 } }
+
+- geometry: &geom
+    - cylinder: { height: 1, radius: 1 }
+      material: *lambertian
+    - sphere: { radius: 1 }
+      material: *lambertian
+      transform: { translation: [ 1, 2, 3 ] }
+
+- entity-template: &template
+    name: "template"
+    geometry: *geom
+    children:
+      - name: "child0"
+        geometry: *geom
+        transform: { rotation: [1, 2, 3] }
+
+- entity-template: &template2
+    name: "template2"
+    transform: { translation: [ -1.0E-6, -2.e-6, -3.e-6 ] }
+    children: [ *template ]
+
+- entity: &entity0
+    name: "entity0"
+    transform: { translation: [1.2, 3.4, 5.6] }
+    children: [ *template ]
+
+- entity:
+    name: "entity1"
+    transform: { translation: [0, 1, -6.3], rotation: [ 1, 2, 3 ] }
+    children:
+      - *template
+      - *template2
+      - *entity0

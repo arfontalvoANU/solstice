@@ -40,7 +40,7 @@
       - cylinder: { height: 5, radius: 0.5 }
         material: *mirror
 
-- entity: &composition
+- entity-template: &composition
     name: "composition"
     transform: { translation: [1, 2, 3 ] }
     geometry:
@@ -58,21 +58,20 @@
               point: [0, 0, 0]
               normal: [0, 1, 0]
 
-
 - entity:
-    <<: *composition
     name: "entity2"
     transform: { translation: [4, 5, 6] }
+    children: [ *composition ]
 
 - entity:
-    <<: *composition
     name: "entity3"
     transform: { translation: [7, 8, 9] }
+    children: [ *composition ]
 
 - entity:
-    <<: *composition
     name: "entity4"
     transform: { translation: [10, 11, 12] }
+    children: [ *composition ]
 
 --------------------------------------------------------------------------------
 2/ Grammar
@@ -88,6 +87,7 @@
     <geometry>
   | <material>
   | <entity>
+  | <entity-template>
   | <sun>
 
 ----------------------------------------
@@ -204,9 +204,13 @@
   entity:
     <entity-data>
 
+<entity-template> ::=
+  entity-template:
+    <entity-data>
+
 <entity-data> ::=
   name: STRING
-  <geometry> | <pivot>
+[ <geometry> | <pivot> ]
 [ <anchors> ]
 [ <transform> ]
 [ <children>  ]

@@ -27,6 +27,7 @@
 #include <rsys/str.h>
 
 enum solstice_entity_type {
+  SOLSTICE_ENTITY_EMPTY,
   SOLSTICE_ENTITY_GEOMETRY,
   SOLSTICE_ENTITY_PIVOT
 };
