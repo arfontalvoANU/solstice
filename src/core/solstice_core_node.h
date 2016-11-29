@@ -18,17 +18,15 @@
 
 #include <solstice/sanim.h>
 
+#include <rsys/dynamic_array.h>
 #include <rsys/ref_count.h>
 
-#ifndef SOLSTICE_DARRAY_NODES
-#define SOLSTICE_DARRAY_NODES
-#include <rsys/dynamic_array.h>
 struct sanim_node;
+
 /* Define the darray_nodes data structure */
 #define DARRAY_NAME nodes
 #define DARRAY_DATA struct sanim_node*
 #include <rsys/dynamic_array.h>
-#endif
 
 struct score_device;
 struct score_node;

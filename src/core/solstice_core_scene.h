@@ -16,19 +16,11 @@
 #ifndef SCORE_SCENE_H
 #define SCORE_SCENE_H
 
-#include <rsys/ref_count.h>
-
 #include "solstice_core.h"
+#include "solstice_core_node.h"
 
-#ifndef SOLSTICE_DARRAY_NODES
-#define SOLSTICE_DARRAY_NODES
 #include <rsys/dynamic_array.h>
-struct sanim_node;
-/* Define the darray_nodes data structure */
-#define DARRAY_NAME nodes
-#define DARRAY_DATA struct sanim_node*
-#include <rsys/dynamic_array.h>
-#endif
+#include <rsys/ref_count.h>
 
 struct ssol_scene;
 struct ssol_sun;
