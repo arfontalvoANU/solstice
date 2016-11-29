@@ -144,10 +144,9 @@ node_ref_put_children(struct sanim_node* node)
   }
 }
 
-res_T
+static res_T
 instance_internal_node_create
-(struct score_device* dev,
-  struct score_node** node)
+  (struct score_device* dev, struct score_node** node)
 {
   struct sanim_node* anim;
   res_T res = RES_OK;

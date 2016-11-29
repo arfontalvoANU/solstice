@@ -79,8 +79,6 @@ score_device_create
   dev->logger = logger ? logger : LOGGER_DEFAULT;
   dev->allocator = allocator;
   dev->verbose = verbose;
-  dev->nthreads = MMIN(nthreads_hint, (unsigned) omp_get_num_procs());
-  omp_set_num_threads((int) dev->nthreads);
 
   res = ssol_device_create(logger, allocator, nthreads_hint, verbose, &dev->ssol);
   if (res != RES_OK) goto error;

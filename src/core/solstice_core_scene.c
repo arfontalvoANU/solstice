@@ -25,8 +25,7 @@
 /*******************************************************************************
  * Helper functions
  ******************************************************************************/
-
-FINLINE struct sanim_node**
+static INLINE struct sanim_node**
 contains(struct darray_nodes* array, struct sanim_node* elt)
 {
   size_t count, i;
@@ -191,7 +190,7 @@ node_to_solver_update(const struct sanim_node* node_, const double transform[12]
   return res;
 }
 
-static res_T
+static INLINE res_T
 update_pivots(struct score_scene* scene, const double sun_dir[3])
 {
   size_t i_count, i;
@@ -448,3 +447,4 @@ exit:
 error:
   goto exit;
 }
+

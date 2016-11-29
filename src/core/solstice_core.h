@@ -76,8 +76,8 @@ score_node_instantiate
 
 extern LOCAL_SYM res_T
 score_node_create_object
-(struct score_device* dev,
-  struct score_node** node);
+  (struct score_device* dev,
+   struct score_node** node);
 
 extern LOCAL_SYM res_T
 score_node_pivot_create

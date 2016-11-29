@@ -59,14 +59,17 @@ add_library(solstice-core STATIC ${CORE_FILES_SRC} ${CORE_FILES_INC})
 ################################################################################
 if(NOT NO_TEST)
   function(new_test _name)
-    add_executable(${_name}
-      ${CORE_SOURCE_DIR}/test_core_utils.h
-      ${CORE_SOURCE_DIR}/test_core_utils.c
-      ${CORE_SOURCE_DIR}/${_name}.c)
-    target_link_libraries(${_name} RSys ${MATH_LIB} StarSP SolAnim SolSolver solstice-core)
+    add_executable(${_name} ${CORE_SOURCE_DIR}/${_name}.c)
+    target_link_libraries(${_name} RSys ${MATH_LIB} StarSP SolAnim SolSolver 
+      solstice-core solstice-core-test)
     add_test(${_name} ${_name})
     rcmake_set_test_runtime_dirs(${_name} _runtime_dirs)
   endfunction()
+
+  add_library(solstice-core-test 
+    ${CORE_SOURCE_DIR}/test_core_utils.h
+    ${CORE_SOURCE_DIR}/test_core_utils.c)
+
   
   new_test(test_core_device)
   new_test(test_core_node)

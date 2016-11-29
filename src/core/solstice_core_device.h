@@ -25,7 +25,6 @@ struct ssol_device;
 struct score_device {
   struct logger* logger;
   struct mem_allocator* allocator;
-  unsigned nthreads;
   int verbose;
   struct ssol_device* ssol;
 
@@ -36,9 +35,9 @@ struct score_device {
  * with respect to the device verbose flag */
 extern LOCAL_SYM void
 log_error
-(struct score_device* dev,
-  const char* msg,
-  ...)
+  (struct score_device* dev,
+   const char* msg,
+   ...)
 #ifdef COMPILER_GCC
   __attribute((format(printf, 2, 3)))
 #endif
@@ -48,9 +47,9 @@ log_error
  * with respect to the device verbose flag */
 extern LOCAL_SYM void
 log_warning
-(struct score_device* dev,
-  const char* msg,
-  ...)
+  (struct score_device* dev,
+   const char* msg,
+   ...)
 #ifdef COMPILER_GCC
   __attribute((format(printf, 2, 3)))
 #endif
