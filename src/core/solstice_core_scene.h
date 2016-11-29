@@ -13,8 +13,8 @@
 * You should have received a copy of the GNU General Public License
 * along with this program. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef score_scene_H
-#define score_scene_H
+#ifndef SCORE_SCENE_H
+#define SCORE_SCENE_H
 
 #include <rsys/ref_count.h>
 
@@ -45,4 +45,4 @@ struct score_scene {
   ref_T ref;
 };
 
-#endif /* score_scene_H */
+#endif /* SCORE_SCENE_H */
