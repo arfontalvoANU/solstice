@@ -141,7 +141,7 @@ main(int argc, char** argv)
 
   solstice_parser_geometry_iterator_begin(parser, &it_geom);
   solstice_parser_geometry_iterator_end(parser, &it_end_geom);
-  CHECK(solstice_entity_iterator_eq(&it, &it_end), 0);
+  CHECK(solstice_geometry_iterator_eq(&it_geom, &it_end_geom), 0);
   geom_id = solstice_geometry_iterator_get(&it_geom);
   geometry = solstice_parser_get_geometry(parser, geom_id);
   solstice_geometry_iterator_next(&it_geom);
