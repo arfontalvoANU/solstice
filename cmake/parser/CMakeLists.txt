@@ -85,6 +85,7 @@ if(NOT NO_TEST)
 
   new_test(test_solstice_parser2)
   new_test(test_solstice_parser3)
+  new_test(test_solstice_parser4)
 
   rcmake_copy_runtime_libraries(test_solstice_parser)
 endif()
