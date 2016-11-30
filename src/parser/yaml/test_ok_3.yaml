@@ -11,7 +11,7 @@
       material: *lambertian
       transform: { translation: [ 1, 2, 3 ] }
 
-- entity-template: &template
+- template: &template
     name: "template"
     geometry: *geom
     children:
@@ -19,7 +19,7 @@
         geometry: *geom
         transform: { rotation: [1, 2, 3] }
 
-- entity-template: &template2
+- template: &template2
     name: "template2"
     transform: { translation: [ -1.0E-6, -2.e-6, -3.e-6 ] }
     children: [ *template ]

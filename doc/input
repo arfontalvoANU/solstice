@@ -40,7 +40,7 @@
       - cylinder: { height: 5, radius: 0.5 }
         material: *mirror
 
-- entity-template: &composition
+- template: &composition
     name: "composition"
     transform: { translation: [1, 2, 3 ] }
     geometry:
@@ -87,7 +87,7 @@
     <geometry>
   | <material>
   | <entity>
-  | <entity-template>
+  | <template>
   | <sun>
 
 ----------------------------------------
@@ -204,8 +204,8 @@
   entity:
     <entity-data>
 
-<entity-template> ::=
-  entity-template:
+<template> ::=
+  template:
     <entity-data>
 
 <entity-data> ::=

@@ -2842,8 +2842,10 @@ parse_item
     res = parse_material(parser, doc, val, &mtl2);
   } else if(!strcmp((char*)key->data.scalar.value, "entity")) {
     res = parse_entity(parser, doc, val, &parser->str2entities, &entity);
-  } else if(!strcmp((char*)key->data.scalar.value, "entity-template")) {
-    /* Deferred the parsing */
+  } else if(!strcmp((char*)key->data.scalar.value, "template")) {
+    /* The parsing of the template data is deferred to its explicit used in the
+     * definition of an entity. If the parsing of the template becomes a
+     * bottleneck, parse the data only once here and cache them for reuse. */
   } else if(!strcmp((char*)key->data.scalar.value, "geometry")) {
     res = parse_geometry(parser, doc, val, &geometry);
   } else if(!strcmp((char*)key->data.scalar.value, "sun")) {

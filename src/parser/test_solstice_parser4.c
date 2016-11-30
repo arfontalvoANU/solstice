@@ -27,7 +27,7 @@ static const char* input[] = {
   "- geometry: &cuboid\n",
   "    - cuboid: { size: [1, 2, 3] }\n",
   "      material: *lambertian\n",
-  "- entity-template: &template\n",
+  "- template: &template\n",
   "    name: template0\n",
   "    geometry: *cuboid\n",
   "- entity:\n",
