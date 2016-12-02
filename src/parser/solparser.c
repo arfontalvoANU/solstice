@@ -15,12 +15,12 @@
 
 #define _POSIX_C_SOURCE 200112L /* nextafter support */
 
-#include "solstice_entity.h"
-#include "solstice_material.h"
-#include "solstice_parser.h"
-#include "solstice_pivot.h"
-#include "solstice_shape.h"
-#include "solstice_sun.h"
+#include "solparser.h"
+#include "solparser_entity.h"
+#include "solparser_material.h"
+#include "solparser_pivot.h"
+#include "solparser_shape.h"
+#include "solparser_sun.h"
 
 #include <rsys/cstr.h>
 #include <rsys/double3.h>
@@ -36,108 +36,108 @@
 
 /* Declare the array of matte materials */
 #define DARRAY_NAME matte
-#define DARRAY_DATA struct solstice_material_matte
+#define DARRAY_DATA struct solparser_material_matte
 #include <rsys/dynamic_array.h>
 
 /* Declare the array of mirror materials */
 #define DARRAY_NAME mirror
-#define DARRAY_DATA struct solstice_material_mirror
+#define DARRAY_DATA struct solparser_material_mirror
 #include <rsys/dynamic_array.h>
 
 /* Declare the array of materials  */
 #define DARRAY_NAME material
-#define DARRAY_DATA struct solstice_material
+#define DARRAY_DATA struct solparser_material
 #include <rsys/dynamic_array.h>
 
 /* Declare the array of the double sided materials */
 #define DARRAY_NAME material2
-#define DARRAY_DATA struct solstice_material_double_sided
+#define DARRAY_DATA struct solparser_material_double_sided
 #include <rsys/dynamic_array.h>
 
 /* Declare the array of the shapes */
 #define DARRAY_NAME shape
-#define DARRAY_DATA struct solstice_shape
+#define DARRAY_DATA struct solparser_shape
 #include <rsys/dynamic_array.h>
 
 /* Declare the array of cuboid */
 #define DARRAY_NAME cuboid
-#define DARRAY_DATA struct solstice_shape_cuboid
+#define DARRAY_DATA struct solparser_shape_cuboid
 #include <rsys/dynamic_array.h>
 
 /* Declare the array of cylinder */
 #define DARRAY_NAME cylinder
-#define DARRAY_DATA struct solstice_shape_cylinder
+#define DARRAY_DATA struct solparser_shape_cylinder
 #include <rsys/dynamic_array.h>
 
 /* Declare the array of imported geometries */
 #define DARRAY_NAME impgeom
-#define DARRAY_DATA struct solstice_shape_imported_geometry
-#define DARRAY_FUNCTOR_INIT solstice_shape_imported_geometry_init
-#define DARRAY_FUNCTOR_RELEASE solstice_shape_imported_geometry_release
-#define DARRAY_FUNCTOR_COPY solstice_shape_imported_geometry_copy
+#define DARRAY_DATA struct solparser_shape_imported_geometry
+#define DARRAY_FUNCTOR_INIT solparser_shape_imported_geometry_init
+#define DARRAY_FUNCTOR_RELEASE solparser_shape_imported_geometry_release
+#define DARRAY_FUNCTOR_COPY solparser_shape_imported_geometry_copy
 #define DARRAY_FUNCTOR_COPY_AND_RELEASE \
-  solstice_shape_imported_geometry_copy_and_release
+  solparser_shape_imported_geometry_copy_and_release
 #include <rsys/dynamic_array.h>
 
 /* Declare the array of paraboloids */
 #define DARRAY_NAME paraboloid
-#define DARRAY_DATA struct solstice_shape_paraboloid
-#define DARRAY_FUNCTOR_INIT solstice_shape_paraboloid_init
-#define DARRAY_FUNCTOR_RELEASE solstice_shape_paraboloid_release
-#define DARRAY_FUNCTOR_COPY solstice_shape_paraboloid_copy
+#define DARRAY_DATA struct solparser_shape_paraboloid
+#define DARRAY_FUNCTOR_INIT solparser_shape_paraboloid_init
+#define DARRAY_FUNCTOR_RELEASE solparser_shape_paraboloid_release
+#define DARRAY_FUNCTOR_COPY solparser_shape_paraboloid_copy
 #define DARRAY_FUNCTOR_COPY_AND_RELEASE \
-  solstice_shape_paraboloid_copy_and_release
+  solparser_shape_paraboloid_copy_and_release
 #include <rsys/dynamic_array.h>
 
 /* Declare the array of planes */
 #define DARRAY_NAME plane
-#define DARRAY_DATA struct solstice_shape_plane
-#define DARRAY_FUNCTOR_INIT solstice_shape_plane_init
-#define DARRAY_FUNCTOR_RELEASE solstice_shape_plane_release
-#define DARRAY_FUNCTOR_COPY solstice_shape_plane_copy
-#define DARRAY_FUNCTOR_COPY_AND_RELEASE solstice_shape_plane_copy_and_release
+#define DARRAY_DATA struct solparser_shape_plane
+#define DARRAY_FUNCTOR_INIT solparser_shape_plane_init
+#define DARRAY_FUNCTOR_RELEASE solparser_shape_plane_release
+#define DARRAY_FUNCTOR_COPY solparser_shape_plane_copy
+#define DARRAY_FUNCTOR_COPY_AND_RELEASE solparser_shape_plane_copy_and_release
 #include <rsys/dynamic_array.h>
 
 /* Declare the array of spheres */
 #define DARRAY_NAME sphere
-#define DARRAY_DATA struct solstice_shape_sphere
+#define DARRAY_DATA struct solparser_shape_sphere
 #include <rsys/dynamic_array.h>
 
 /* Declare the array of objects */
 #define DARRAY_NAME object
-#define DARRAY_DATA struct solstice_object
+#define DARRAY_DATA struct solparser_object
 #include <rsys/dynamic_array.h>
 
 /* Declare the array of geometries */
 #define DARRAY_NAME geometry
-#define DARRAY_DATA struct solstice_geometry
-#define DARRAY_FUNCTOR_INIT solstice_geometry_init
-#define DARRAY_FUNCTOR_RELEASE solstice_geometry_release
-#define DARRAY_FUNCTOR_COPY solstice_geometry_copy
-#define DARRAY_FUNCTOR_COPY_AND_RELEASE solstice_geometry_copy_and_release
+#define DARRAY_DATA struct solparser_geometry
+#define DARRAY_FUNCTOR_INIT solparser_geometry_init
+#define DARRAY_FUNCTOR_RELEASE solparser_geometry_release
+#define DARRAY_FUNCTOR_COPY solparser_geometry_copy
+#define DARRAY_FUNCTOR_COPY_AND_RELEASE solparser_geometry_copy_and_release
 #include <rsys/dynamic_array.h>
 
 /* Declare the array of entities */
 #define DARRAY_NAME entity
-#define DARRAY_DATA struct solstice_entity
-#define DARRAY_FUNCTOR_INIT solstice_entity_init
-#define DARRAY_FUNCTOR_RELEASE solstice_entity_release
-#define DARRAY_FUNCTOR_COPY solstice_entity_copy
-#define DARRAY_FUNCTOR_COPY_AND_RELEASE solstice_entity_copy_and_release
+#define DARRAY_DATA struct solparser_entity
+#define DARRAY_FUNCTOR_INIT solparser_entity_init
+#define DARRAY_FUNCTOR_RELEASE solparser_entity_release
+#define DARRAY_FUNCTOR_COPY solparser_entity_copy
+#define DARRAY_FUNCTOR_COPY_AND_RELEASE solparser_entity_copy_and_release
 #include <rsys/dynamic_array.h>
 
 /* Declare the array of anchors */
 #define DARRAY_NAME anchor
-#define DARRAY_DATA struct solstice_anchor
-#define DARRAY_FUNCTOR_INIT solstice_anchor_init
-#define DARRAY_FUNCTOR_RELEASE solstice_anchor_release
-#define DARRAY_FUNCTOR_COPY solstice_anchor_copy
-#define DARRAY_FUNCTOR_COPY_AND_RELEASE solstice_anchor_copy_and_release
+#define DARRAY_DATA struct solparser_anchor
+#define DARRAY_FUNCTOR_INIT solparser_anchor_init
+#define DARRAY_FUNCTOR_RELEASE solparser_anchor_release
+#define DARRAY_FUNCTOR_COPY solparser_anchor_copy
+#define DARRAY_FUNCTOR_COPY_AND_RELEASE solparser_anchor_copy_and_release
 #include <rsys/dynamic_array.h>
 
 /* Declare the array of pivots */
 #define DARRAY_NAME pivot
-#define DARRAY_DATA struct solstice_pivot
+#define DARRAY_DATA struct solparser_pivot
 #include <rsys/dynamic_array.h>
 
 /* Declare the hash table that maps the address of a YAML node to the id of its
@@ -147,7 +147,7 @@
 #define HTABLE_DATA size_t
 #include <rsys/hash_table.h>
 
-struct solstice_parser {
+struct solparser {
   yaml_parser_t parser;
   struct str stream_name;
   int parser_is_init;
@@ -177,7 +177,7 @@ struct solstice_parser {
 
   /* Sun. Note that only one sun is supported */
   const yaml_node_t* sun_key; /* yaml_node_t ptr used to spawn the sun */
-  struct solstice_sun sun; /* The loaded sun */
+  struct solparser_sun sun; /* The loaded sun */
 
   /* Entity */
   struct htable_yaml2sols yaml2entities; /* Cache of entities */
@@ -194,39 +194,39 @@ struct solstice_parser {
 
 static res_T
 parse_entity
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_document_t* doc,
    yaml_node_t* entity,
    struct htable_str2sols* htable,
-   struct solstice_entity_id* solent);
+   struct solparser_entity_id* solent);
 
 static res_T
 parse_geometry
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_document_t* doc,
    yaml_node_t* geometry,
-   struct solstice_geometry_id* solgeom);
+   struct solparser_geometry_id* solgeom);
 
 static res_T
 parse_pivot
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* pivot,
-   struct solstice_pivot_id* out_isolpivot);
+   struct solparser_pivot_id* out_isolpivot);
 
 static res_T
 parse_sun
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* sun,
-   struct solstice_sun** solsun);
+   struct solparser_sun** solsun);
 
 /*******************************************************************************
  * Helper functions
  ******************************************************************************/
 static INLINE void
 log_err
-  (const struct solstice_parser* parser,
+  (const struct solparser* parser,
    const yaml_node_t* node,
    const char* fmt,
    ...)
@@ -245,7 +245,7 @@ log_err
 
 /* Clean up loaded data */
 static INLINE void
-parser_clear(struct solstice_parser* parser)
+parser_clear(struct solparser* parser)
 {
   ASSERT(parser);
 
@@ -273,7 +273,7 @@ parser_clear(struct solstice_parser* parser)
   darray_geometry_clear(&parser->geometries);
 
   /* Sun */
-  solstice_sun_clear(&parser->sun);
+  solparser_sun_clear(&parser->sun);
   parser->sun_key = 0;
 
   /* Entities */
@@ -289,10 +289,10 @@ parser_clear(struct solstice_parser* parser)
 static void
 parser_release(ref_T* ref)
 {
-  struct solstice_parser* parser;
+  struct solparser* parser;
   ASSERT(ref);
 
-  parser = CONTAINER_OF(ref, struct solstice_parser, ref);
+  parser = CONTAINER_OF(ref, struct solparser, ref);
   if(parser->parser_is_init) yaml_parser_delete(&parser->parser);
   str_release(&parser->stream_name);
 
@@ -320,7 +320,7 @@ parser_release(ref_T* ref)
   darray_geometry_release(&parser->geometries);
 
   /* Sun */
-  solstice_sun_release(&parser->sun);
+  solparser_sun_release(&parser->sun);
 
   /* Entities */
   htable_yaml2sols_release(&parser->yaml2entities);
@@ -339,7 +339,7 @@ parser_release(ref_T* ref)
  ******************************************************************************/
 static res_T
 parse_real
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    const yaml_node_t* real,
    const double lower_bound,
    const double upper_bound,
@@ -378,7 +378,7 @@ error:
 
 static res_T
 parse_real3
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* real3,
    const double lower_bound,
@@ -418,7 +418,7 @@ error:
 
 static res_T
 parse_integer
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_node_t* integer,
    const long lower_bound,
    const long upper_bound,
@@ -456,7 +456,7 @@ error:
 
 static res_T
 parse_string
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_node_t* string,
    struct str* str)
 {
@@ -484,7 +484,7 @@ error:
 
 static res_T
 parse_transform
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* transform,
    double translation[3],
@@ -548,12 +548,12 @@ error:
 
 static res_T
 parse_spectrum_data
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_document_t* doc,
    const double lower_bound,
    const double upper_bound,
    const yaml_node_t* sdata,
-   struct solstice_spectrum_data* spectrum_data)
+   struct solparser_spectrum_data* spectrum_data)
 {
   enum { DATA, WAVELENGTH };
   intptr_t i, n;
@@ -622,7 +622,7 @@ error:
 
 static res_T
 parse_spectrum
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_document_t* doc,
    const double lower_bound,
    const double upper_bound,
@@ -648,7 +648,7 @@ parse_spectrum
 
   FOR_EACH(i, 0, n) {
     yaml_node_t* sdata;
-    struct solstice_spectrum_data* spectrum_data;
+    struct solparser_spectrum_data* spectrum_data;
 
     sdata = yaml_document_get_node(doc, spectrum->data.sequence.items.start[i]);
     spectrum_data = darray_spectrum_data_data_get(data) + i;
@@ -669,13 +669,13 @@ error:
  ******************************************************************************/
 static res_T
 parse_material_matte
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* matte,
-   struct solstice_material_matte_id* out_imtl)
+   struct solparser_material_matte_id* out_imtl)
 {
   enum { REFLECTIVITY };
-  struct solstice_material_matte* mtl = NULL;
+  struct solparser_material_matte* mtl = NULL;
   size_t imtl = SIZE_MAX;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
@@ -745,13 +745,13 @@ error:
 
 static res_T
 parse_material_mirror
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* mirror,
-   struct solstice_material_mirror_id* out_imtl)
+   struct solparser_material_mirror_id* out_imtl)
 {
   enum { REFLECTIVITY, ROUGHNESS };
-  struct solstice_material_mirror* mtl = NULL;
+  struct solparser_material_mirror* mtl = NULL;
   size_t imtl = SIZE_MAX;
   int mask = 0; /* Register the parsed attributes */
   intptr_t i, n;
@@ -834,13 +834,13 @@ error:
 
 static res_T
 parse_material_descriptor
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_document_t* doc,
    yaml_node_t* desc,
-   struct solstice_material_id* out_imtl)
+   struct solparser_material_id* out_imtl)
 {
   enum { DESCRIPTOR };
-  struct solstice_material* mtl = NULL;
+  struct solparser_material* mtl = NULL;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   size_t* pimtl;
@@ -894,11 +894,11 @@ parse_material_descriptor
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "matte")) {
       SETUP_MASK(DESCRIPTOR, "descriptor");
-      mtl->type = SOLSTICE_MATERIAL_MATTE;
+      mtl->type = SOLPARSER_MATERIAL_MATTE;
       res = parse_material_matte(parser, doc, val, &mtl->data.matte);
     } else if(!strcmp((char*)key->data.scalar.value, "mirror")) {
       SETUP_MASK(DESCRIPTOR, "descriptor");
-      mtl->type = SOLSTICE_MATERIAL_MIRROR;
+      mtl->type = SOLPARSER_MATERIAL_MIRROR;
       res = parse_material_mirror(parser, doc, val, &mtl->data.mirror);
     } else {
       log_err(parser, key, "unknown material descriptor `%s'.\n",
@@ -936,13 +936,13 @@ error:
 
 static res_T
 parse_material
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_document_t* doc,
    yaml_node_t* mtl,
-   struct solstice_material_double_sided_id* out_imtl2)
+   struct solparser_material_double_sided_id* out_imtl2)
 {
   enum { FRONT, BACK };
-  struct solstice_material_double_sided* mtl2 = NULL;
+  struct solparser_material_double_sided* mtl2 = NULL;
   size_t imtl2 = SIZE_MAX;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
@@ -1029,9 +1029,9 @@ error:
  ******************************************************************************/
 static res_T
 parse_clip_op
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    const yaml_node_t* op,
-   enum solstice_clip_op* clip_op)
+   enum solparser_clip_op* clip_op)
 {
   res_T res = RES_OK;
   ASSERT(op && clip_op);
@@ -1043,9 +1043,9 @@ parse_clip_op
   }
 
   if(!strcmp((char*)op->data.scalar.value, "AND")) {
-    *clip_op = SOLSTICE_CLIP_OP_AND;
+    *clip_op = SOLPARSER_CLIP_OP_AND;
   } else if(!strcmp((char*)op->data.scalar.value, "SUB")) {
-    *clip_op = SOLSTICE_CLIP_OP_SUB;
+    *clip_op = SOLPARSER_CLIP_OP_SUB;
   } else {
     log_err(parser, op, "unknown clipping operation `%s'.\n",
       op->data.scalar.value);
@@ -1061,7 +1061,7 @@ error:
 
 static res_T
 parse_vertices
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* vertices,
    struct darray_double* coords)
@@ -1107,10 +1107,10 @@ error:
 
 static res_T
 parse_polyclip
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* polyclip,
-   struct solstice_polyclip* clip)
+   struct solparser_polyclip* clip)
 {
   enum { OPERATION, VERTICES };
   intptr_t i, n;
@@ -1181,7 +1181,7 @@ error:
 
 static res_T
 parse_clip
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* clip,
    struct darray_polyclip* polyclips)
@@ -1207,7 +1207,7 @@ parse_clip
 
   FOR_EACH(i, 0, n) {
     yaml_node_t* node;
-    struct solstice_polyclip* polyclip = darray_polyclip_data_get(polyclips) + i;
+    struct solparser_polyclip* polyclip = darray_polyclip_data_get(polyclips) + i;
 
     node = yaml_document_get_node(doc, clip->data.sequence.items.start[i]);
     res = parse_polyclip(parser, doc, node, polyclip);
@@ -1225,13 +1225,13 @@ error:
  ******************************************************************************/
 static res_T
 parse_cuboid
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* cuboid,
-   struct solstice_shape_cuboid_id* out_ishape)
+   struct solparser_shape_cuboid_id* out_ishape)
 {
   enum { SIZE };
-  struct solstice_shape_cuboid* shape = NULL;
+  struct solparser_shape_cuboid* shape = NULL;
   size_t ishape = SIZE_MAX;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
@@ -1300,13 +1300,13 @@ error:
 
 static res_T
 parse_cylinder
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* cylinder,
-   struct solstice_shape_cylinder_id* out_ishape)
+   struct solparser_shape_cylinder_id* out_ishape)
 {
   enum { HEIGHT, RADIUS, SLICES };
-  struct solstice_shape_cylinder* shape = NULL;
+  struct solparser_shape_cylinder* shape = NULL;
   size_t ishape = SIZE_MAX;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
@@ -1391,14 +1391,14 @@ error:
 
 static res_T
 parse_imported_geometry
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* geom,
-   const enum solstice_shape_type type,
-   struct solstice_shape_imported_geometry_id* out_ishape)
+   const enum solparser_shape_type type,
+   struct solparser_shape_imported_geometry_id* out_ishape)
 {
   enum { PATH };
-  struct solstice_shape_imported_geometry* shape = NULL;
+  struct solparser_shape_imported_geometry* shape = NULL;
   size_t ishape = SIZE_MAX;
   const char* name;
   struct darray_impgeom* impgeoms;
@@ -1408,8 +1408,8 @@ parse_imported_geometry
   ASSERT(doc && geom && out_ishape);
 
   switch(type) {
-    case SOLSTICE_SHAPE_OBJ: name = "obj"; impgeoms = &parser->objs; break;
-    case SOLSTICE_SHAPE_STL: name = "stl"; impgeoms = &parser->stls; break;
+    case SOLPARSER_SHAPE_OBJ: name = "obj"; impgeoms = &parser->objs; break;
+    case SOLPARSER_SHAPE_STL: name = "stl"; impgeoms = &parser->stls; break;
     default: FATAL("Unreachable code.\n"); break;
   }
 
@@ -1475,14 +1475,14 @@ error:
 
 static res_T
 parse_paraboloid
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* paraboloid,
-   const enum solstice_shape_type type,
-   struct solstice_shape_paraboloid_id* out_ishape)
+   const enum solparser_shape_type type,
+   struct solparser_shape_paraboloid_id* out_ishape)
 {
   enum { CLIP, FOCAL };
-  struct solstice_shape_paraboloid* shape = NULL;
+  struct solparser_shape_paraboloid* shape = NULL;
   struct darray_paraboloid* paraboloids;
   const char* name;
   size_t ishape = SIZE_MAX;
@@ -1492,11 +1492,11 @@ parse_paraboloid
   ASSERT(doc && paraboloid && out_ishape);
 
   switch(type) {
-    case SOLSTICE_SHAPE_PARABOL:
+    case SOLPARSER_SHAPE_PARABOL:
       name = "parabol";
       paraboloids = &parser->parabols;
       break;
-    case SOLSTICE_SHAPE_PARABOLIC_CYLINDER:
+    case SOLPARSER_SHAPE_PARABOLIC_CYLINDER:
       name = "parabolic cylinder";
       paraboloids = &parser->parabolic_cylinders;
       break;
@@ -1577,13 +1577,13 @@ error:
 
 static res_T
 parse_plane
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* plane,
-   struct solstice_shape_plane_id* out_ishape)
+   struct solparser_shape_plane_id* out_ishape)
 {
   enum { CLIP };
-  struct solstice_shape_plane* shape = NULL;
+  struct solparser_shape_plane* shape = NULL;
   size_t ishape = SIZE_MAX;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
@@ -1651,13 +1651,13 @@ error:
 
 static res_T
 parse_sphere
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* sphere,
-   struct solstice_shape_sphere_id* out_ishape)
+   struct solparser_shape_sphere_id* out_ishape)
 {
   enum { RADIUS, SLICES };
-  struct solstice_shape_sphere* shape = NULL;
+  struct solparser_shape_sphere* shape = NULL;
   size_t ishape = SIZE_MAX;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
@@ -1737,14 +1737,14 @@ error:
  ******************************************************************************/
 static res_T
 parse_object
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_document_t* doc,
    yaml_node_t* object,
-   struct solstice_object_id* out_iobj)
+   struct solparser_object_id* out_iobj)
 {
   enum { MATERIAL, SHAPE, TRANSFORM };
-  struct solstice_object* obj = NULL;
-  struct solstice_shape* shape = NULL;
+  struct solparser_object* obj = NULL;
+  struct solparser_shape* shape = NULL;
   size_t iobj = SIZE_MAX;
   size_t ishape = SIZE_MAX;
   intptr_t i, n;
@@ -1808,38 +1808,38 @@ parse_object
       res = parse_material(parser, doc, val, &obj->mtl2);
     } else if(!strcmp((char*)key->data.scalar.value, "cuboid")) {
       SETUP_MASK(SHAPE, "shape");
-      shape->type = SOLSTICE_SHAPE_CUBOID;
+      shape->type = SOLPARSER_SHAPE_CUBOID;
       res = parse_cuboid(parser, doc, val, &shape->data.cuboid);
     } else if(!strcmp((char*)key->data.scalar.value, "cylinder")) {
       SETUP_MASK(SHAPE, "shape");
-      shape->type = SOLSTICE_SHAPE_CYLINDER;
+      shape->type = SOLPARSER_SHAPE_CYLINDER;
       res = parse_cylinder(parser, doc, val, &shape->data.cylinder);
     } else if(!strcmp((char*)key->data.scalar.value, "obj")) {
       SETUP_MASK(SHAPE, "shape");
-      shape->type = SOLSTICE_SHAPE_OBJ;
+      shape->type = SOLPARSER_SHAPE_OBJ;
       res = parse_imported_geometry
         (parser, doc, val, shape->type, &shape->data.obj);
     } else if(!strcmp((char*)key->data.scalar.value, "parabol")) {
       SETUP_MASK(SHAPE, "shape");
-      shape->type = SOLSTICE_SHAPE_PARABOL;
+      shape->type = SOLPARSER_SHAPE_PARABOL;
       res = parse_paraboloid
         (parser, doc, val, shape->type, &shape->data.parabol);
     } else if(!strcmp((char*)key->data.scalar.value, "parabolic-cylinder")) {
       SETUP_MASK(SHAPE, "shape");
-      shape->type = SOLSTICE_SHAPE_PARABOLIC_CYLINDER;
+      shape->type = SOLPARSER_SHAPE_PARABOLIC_CYLINDER;
       res = parse_paraboloid
         (parser, doc, val, shape->type, &shape->data.parabolic_cylinder);
     } else if(!strcmp((char*)key->data.scalar.value, "plane")) {
       SETUP_MASK(SHAPE, "shape");
-      shape->type = SOLSTICE_SHAPE_PLANE;
+      shape->type = SOLPARSER_SHAPE_PLANE;
       res = parse_plane(parser, doc, val, &shape->data.plane);
     } else if(!strcmp((char*)key->data.scalar.value, "sphere")) {
       SETUP_MASK(SHAPE, "shape");
-      shape->type = SOLSTICE_SHAPE_SPHERE;
+      shape->type = SOLPARSER_SHAPE_SPHERE;
       res = parse_sphere(parser, doc, val, &shape->data.sphere);
     } else if(!strcmp((char*)key->data.scalar.value, "stl")) {
       SETUP_MASK(SHAPE, "shape");
-      shape->type = SOLSTICE_SHAPE_STL;
+      shape->type = SOLPARSER_SHAPE_STL;
       res = parse_imported_geometry
         (parser, doc, val, shape->type, &shape->data.stl);
     } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
@@ -1878,12 +1878,12 @@ error:
 
 static res_T
 parse_geometry
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_document_t* doc,
    yaml_node_t* geometry,
-   struct solstice_geometry_id* out_isolgeom)
+   struct solparser_geometry_id* out_isolgeom)
 {
-  struct solstice_geometry* solgeom = NULL;
+  struct solparser_geometry* solgeom = NULL;
   size_t* pisolgeom;
   size_t isolgeom = SIZE_MAX;
   intptr_t i, n;
@@ -1921,7 +1921,7 @@ parse_geometry
   }
 
   FOR_EACH(i, 0, n) {
-    struct solstice_object_id* obj_id;
+    struct solparser_object_id* obj_id;
     yaml_node_t* obj;
 
     obj_id = darray_object_id_data_get(&solgeom->objects) + i;
@@ -1954,12 +1954,12 @@ error:
  ******************************************************************************/
 static res_T
 entity_register_name
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    const yaml_node_t* entity,
    struct htable_str2sols* htable,
    const size_t isolent)
 {
-  struct solstice_entity* solent;
+  struct solparser_entity* solent;
   size_t* pisolent;
   res_T res = RES_OK;
   ASSERT(parser && htable);
@@ -1985,12 +1985,12 @@ entity_register_name
 
 static res_T
 anchor_register_name
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    const yaml_node_t* anchor,
    struct htable_str2sols* htable,
    const size_t isolanchor)
 {
-  struct solstice_anchor* solanchor;
+  struct solparser_anchor* solanchor;
   size_t* pisolanchor;
   res_T res = RES_OK;
   ASSERT(parser && htable);
@@ -2016,7 +2016,7 @@ anchor_register_name
 
 static res_T
 parse_identifier_string
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_node_t* name,
    struct str* str)
 {
@@ -2040,14 +2040,14 @@ error:
 
 static res_T
 parse_anchor
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* anchor,
    struct htable_str2sols* htable,
-   struct solstice_anchor_id* out_isolanchor)
+   struct solparser_anchor_id* out_isolanchor)
 {
   enum { NAME, POSITION };
-  struct solstice_anchor* solanchor = NULL;
+  struct solparser_anchor* solanchor = NULL;
   size_t isolanchor = SIZE_MAX;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
@@ -2131,7 +2131,7 @@ error:
 
 static res_T
 parse_anchors
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* anchors,
    struct htable_str2sols* htable,
@@ -2155,7 +2155,7 @@ parse_anchors
   }
 
   FOR_EACH(i, 0, n) {
-    struct solstice_anchor_id* anchor_id;
+    struct solparser_anchor_id* anchor_id;
     yaml_node_t* anchor;
 
     anchor_id = darray_anchor_id_data_get(solanchors)+i;
@@ -2171,7 +2171,7 @@ error:
 
 static res_T
 parse_children
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* children,
    struct htable_str2sols* htable,
@@ -2195,7 +2195,7 @@ parse_children
   }
 
   FOR_EACH(i, 0, n) {
-    struct solstice_entity_id* entity_id = darray_child_id_data_get(entities) + i;
+    struct solparser_entity_id* entity_id = darray_child_id_data_get(entities) + i;
     yaml_node_t* child;
 
     child = yaml_document_get_node(doc, children->data.sequence.items.start[i]);
@@ -2212,15 +2212,15 @@ error:
 
 res_T
 parse_entity
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_document_t* doc,
    yaml_node_t* entity,
    struct htable_str2sols* htable,
-   struct solstice_entity_id* out_isolent)
+   struct solparser_entity_id* out_isolent)
 {
   enum { ANCHORS, CHILDREN, DATA, NAME, TRANSFORM };
-  struct solstice_entity solent;
-  struct solstice_entity* psolent;
+  struct solparser_entity solent;
+  struct solparser_entity* psolent;
   const size_t *pisolent;
   size_t isolent = SIZE_MAX;
   intptr_t i, n;
@@ -2228,7 +2228,7 @@ parse_entity
   res_T res = RES_OK;
   ASSERT(doc && entity && htable && out_isolent);
 
-  solstice_entity_init(parser->allocator, &solent);
+  solparser_entity_init(parser->allocator, &solent);
 
   pisolent = htable_yaml2sols_find(&parser->yaml2entities, &entity);
   if(pisolent) {
@@ -2286,14 +2286,14 @@ parse_entity
         (parser, doc, val, &solent.str2children, &solent.children);
     } else if(!strcmp((char*)key->data.scalar.value, "geometry")) {
       SETUP_MASK(DATA, "data");
-      solent.type = SOLSTICE_ENTITY_GEOMETRY;
+      solent.type = SOLPARSER_ENTITY_GEOMETRY;
       res = parse_geometry(parser, doc, val, &solent.data.geometry);
     } else if(!strcmp((char*)key->data.scalar.value, "name")) {
       SETUP_MASK(NAME, "name");
       res = parse_identifier_string(parser, val, &solent.name);
     } else if(!strcmp((char*)key->data.scalar.value, "pivot")) {
       SETUP_MASK(DATA, "data");
-      solent.type = SOLSTICE_ENTITY_PIVOT;
+      solent.type = SOLPARSER_ENTITY_PIVOT;
       res = parse_pivot(parser, doc, val, &solent.data.pivot);
     } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
       SETUP_MASK(TRANSFORM, "transform");
@@ -2310,7 +2310,7 @@ parse_entity
   }
 
   if(!(mask & BIT(DATA))) {
-    solent.type = SOLSTICE_ENTITY_EMPTY;
+    solent.type = SOLPARSER_ENTITY_EMPTY;
   }
 
   #define CHECK_PARAM(Flag, Name)                                              \
@@ -2323,7 +2323,7 @@ parse_entity
   #undef CHECK_PARAM
 
   psolent = darray_entity_data_get(&parser->entities) + isolent;
-  res = solstice_entity_copy_and_clear(psolent, &solent);
+  res = solparser_entity_copy_and_clear(psolent, &solent);
   if(res != RES_OK) {
     log_err(parser, entity,
       "could not copy the loaded entity into the parser data structures.\n");
@@ -2339,7 +2339,7 @@ parse_entity
   }
 
 exit:
-  solstice_entity_release(&solent);
+  solparser_entity_release(&solent);
   out_isolent->i = isolent;
   return res;
 error:
@@ -2356,11 +2356,11 @@ error:
  ******************************************************************************/
 static res_T
 parse_anchor_alias
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    const yaml_node_t* alias,
-   struct solstice_anchor_id* out_ianchor)
+   struct solparser_anchor_id* out_ianchor)
 {
-  const struct solstice_anchor* anchor = NULL;
+  const struct solparser_anchor* anchor = NULL;
   intptr_t ianchor = INTPTR_MAX;
   res_T res = RES_OK;
   ASSERT(parser && alias && out_ianchor);
@@ -2371,7 +2371,7 @@ parse_anchor_alias
     goto error;
   }
 
-  anchor = solstice_parser_find_anchor(parser, (char*)alias->data.scalar.value);
+  anchor = solparser_find_anchor(parser, (char*)alias->data.scalar.value);
   if(!anchor) {
     log_err(parser, alias, "undefined anchor `%s'.\n",
       alias->data.scalar.value);
@@ -2393,10 +2393,10 @@ error:
 
 static res_T
 parse_target
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* target,
-   struct solstice_pivot* pivot)
+   struct solparser_pivot* pivot)
 {
   enum { POLICY };
   intptr_t i, n;
@@ -2433,26 +2433,26 @@ parse_target
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "anchor")) {
       SETUP_MASK(POLICY, "policy");
-      pivot->target_type = SOLSTICE_TARGET_ANCHOR;
+      pivot->target_type = SOLPARSER_TARGET_ANCHOR;
       res = parse_anchor_alias(parser, val, &pivot->target.anchor);
     } else if(!strcmp((char*)key->data.scalar.value, "direction")) {
       SETUP_MASK(POLICY, "policy");
-      pivot->target_type = SOLSTICE_TARGET_DIRECTION;
+      pivot->target_type = SOLPARSER_TARGET_DIRECTION;
       res = parse_real3
         (parser, doc, val, -DBL_MAX, DBL_MAX, pivot->target.direction);
     } else if(!strcmp((char*)key->data.scalar.value, "position")) {
       SETUP_MASK(POLICY, "policy");
-      pivot->target_type = SOLSTICE_TARGET_POSITION;
+      pivot->target_type = SOLPARSER_TARGET_POSITION;
       res = parse_real3
         (parser, doc, val, -DBL_MAX, DBL_MAX, pivot->target.position);
     } else if(!strcmp((char*)key->data.scalar.value, "sun")) {
       /* There is only one sun per YAML file. It is thus sufficient to define
-       * the target_type to SOLSTICE_TARGET_SUN to indentify which data is
+       * the target_type to SOLPARSER_TARGET_SUN to indentify which data is
        * targeted, i.e. it is not necessary to store the identifier of the sun
        * to target */
-      struct solstice_sun* sun;
+      struct solparser_sun* sun;
       SETUP_MASK(POLICY, "policy");
-      pivot->target_type = SOLSTICE_TARGET_SUN;
+      pivot->target_type = SOLPARSER_TARGET_SUN;
       res = parse_sun(parser, doc, val, &sun);
     } else {
       log_err(parser, key, "unknown target parameter `%s'.\n",
@@ -2478,13 +2478,13 @@ error:
 
 static res_T
 parse_pivot
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* pivot,
-   struct solstice_pivot_id* out_isolpivot)
+   struct solparser_pivot_id* out_isolpivot)
 {
   enum { NORMAL, POINT, TARGET, TRANSFORM };
-  struct solstice_pivot* solpivot = NULL;
+  struct solparser_pivot* solpivot = NULL;
   size_t isolpivot = SIZE_MAX;
   int mask = 0; /* Register the parsed attributes */
   intptr_t i, n;
@@ -2577,10 +2577,10 @@ error:
  ******************************************************************************/
 static res_T
 parse_buie
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* buie,
-   struct solstice_sun_buie* sun)
+   struct solparser_sun_buie* sun)
 {
   enum { CSR };
   intptr_t i, n;
@@ -2638,10 +2638,10 @@ error:
 
 static res_T
 parse_pillbox
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* pillbox,
-   struct solstice_sun_pillbox* sun)
+   struct solparser_sun_pillbox* sun)
 {
   enum { APERTURE };
   intptr_t i, n;
@@ -2698,13 +2698,13 @@ error:
 
 res_T
 parse_sun
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* sun,
-   struct solstice_sun** out_solsun)
+   struct solparser_sun** out_solsun)
 {
   enum { DNI, RADIAL_ANGULAR_DISTRIB, SPECTRUM };
-  struct solstice_sun* solsun = NULL;
+  struct solparser_sun* solsun = NULL;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
@@ -2723,7 +2723,7 @@ parse_sun
   } else {
     solsun = &parser->sun;
     parser->sun_key = sun;
-    solsun->radang_distrib_type = SOLSTICE_SUN_RADANG_DISTRIB_DIRECTIONAL;
+    solsun->radang_distrib_type = SOLPARSER_SUN_RADANG_DISTRIB_DIRECTIONAL;
   }
 
   if(sun->type != YAML_MAPPING_NODE) {
@@ -2757,11 +2757,11 @@ parse_sun
       res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &solsun->dni);
     } else if(!strcmp((char*)key->data.scalar.value, "buie")) {
       SETUP_MASK(RADIAL_ANGULAR_DISTRIB, "radial angular distribution");
-      solsun->radang_distrib_type = SOLSTICE_SUN_RADANG_DISTRIB_BUIE;
+      solsun->radang_distrib_type = SOLPARSER_SUN_RADANG_DISTRIB_BUIE;
       res = parse_buie(parser, doc, val, &solsun->radang_distrib.buie);
     } else if(!strcmp((char*)key->data.scalar.value, "pillbox")) {
       SETUP_MASK(RADIAL_ANGULAR_DISTRIB, "radial angular distribution");
-      solsun->radang_distrib_type = SOLSTICE_SUN_RADANG_DISTRIB_PILLBOX;
+      solsun->radang_distrib_type = SOLPARSER_SUN_RADANG_DISTRIB_PILLBOX;
       res = parse_pillbox(parser, doc, val, &solsun->radang_distrib.pillbox);
     } else if(!strcmp((char*)key->data.scalar.value, "spectrum")) {
       SETUP_MASK(SPECTRUM, "spectrum");
@@ -2790,7 +2790,7 @@ exit:
   return res;
 error:
   if(solsun) {
-    solstice_sun_clear(solsun);
+    solparser_sun_clear(solsun);
     solsun = NULL;
     parser->sun_key = 0;
   }
@@ -2802,16 +2802,16 @@ error:
  ******************************************************************************/
 static res_T
 parse_item
-  (struct solstice_parser* parser,
+  (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* item)
 {
   yaml_node_t* key;
   yaml_node_t* val;
-  struct solstice_material_double_sided_id mtl2; /* TODO */
-  struct solstice_entity_id entity; /* TODO */
-  struct solstice_geometry_id geometry; /* TODO */
-  struct solstice_sun* sun; /* TODO */
+  struct solparser_material_double_sided_id mtl2; /* TODO */
+  struct solparser_entity_id entity; /* TODO */
+  struct solparser_geometry_id geometry; /* TODO */
+  struct solparser_sun* sun; /* TODO */
   intptr_t n;
   res_T res = RES_OK;
   ASSERT(doc && item);
@@ -2866,16 +2866,16 @@ error:
  * Local functions
  ******************************************************************************/
 res_T
-solstice_parser_create
-  (struct mem_allocator* allocator, struct solstice_parser** out_parser)
+solparser_create
+  (struct mem_allocator* allocator, struct solparser** out_parser)
 {
-  struct solstice_parser* parser = NULL;
+  struct solparser* parser = NULL;
   struct mem_allocator* mem_allocator;
   res_T res = RES_OK;
   ASSERT(out_parser);
 
   mem_allocator = allocator ? allocator : &mem_default_allocator;
-  parser = MEM_CALLOC(mem_allocator, 1, sizeof(struct solstice_parser));
+  parser = MEM_CALLOC(mem_allocator, 1, sizeof(struct solparser));
   if(!parser) {
     fprintf(stderr, "Could not allocat the Solstice parser.\n");
     res = RES_MEM_ERR;
@@ -2909,7 +2909,7 @@ solstice_parser_create
   darray_geometry_init(mem_allocator, &parser->geometries);
 
   /* Sun */
-  solstice_sun_init(mem_allocator, &parser->sun);
+  solparser_sun_init(mem_allocator, &parser->sun);
 
   /* Entities */
   htable_yaml2sols_init(mem_allocator, &parser->yaml2entities);
@@ -2925,29 +2925,29 @@ exit:
   return res;
 error:
   if(parser) {
-    solstice_parser_ref_put(parser);
+    solparser_ref_put(parser);
     parser = NULL;
   }
   goto exit;
 }
 
 void
-solstice_parser_ref_get(struct solstice_parser* parser)
+solparser_ref_get(struct solparser* parser)
 {
   ASSERT(parser);
   ref_get(&parser->ref);
 }
 
 void
-solstice_parser_ref_put(struct solstice_parser* parser)
+solparser_ref_put(struct solparser* parser)
 {
   ASSERT(parser);
   ref_put(&parser->ref, parser_release);
 }
 
 res_T
-solstice_parser_setup
-  (struct solstice_parser* parser,
+solparser_setup
+  (struct solparser* parser,
    const char* stream_name,
    FILE* stream)
 {
@@ -2983,7 +2983,7 @@ error:
 }
 
 res_T
-solstice_parser_load(struct solstice_parser* parser)
+solparser_load(struct solparser* parser)
 {
   yaml_document_t doc;
   yaml_node_t* root;
@@ -3052,15 +3052,15 @@ error:
   goto exit;
 }
 
-const struct solstice_anchor*
-solstice_parser_find_anchor
-  (struct solstice_parser* parser, const char* name)
+const struct solparser_anchor*
+solparser_find_anchor
+  (struct solparser* parser, const char* name)
 {
   struct str str;
   struct str str_tk;
   struct htable_str2sols* htable = NULL;
-  struct solstice_entity* entity = NULL;
-  struct solstice_anchor* anchor = NULL;
+  struct solparser_entity* entity = NULL;
+  struct solparser_anchor* anchor = NULL;
   char* cstr;
   char* tk;
   char* tk_anchor;
@@ -3122,12 +3122,12 @@ error:
   goto exit;
 }
 
-const struct solstice_entity*
-solstice_parser_find_entity
-  (struct solstice_parser* parser, const char* name)
+const struct solparser_entity*
+solparser_find_entity
+  (struct solparser* parser, const char* name)
 {
   struct htable_str2sols* htable = NULL;
-  struct solstice_entity* entity = NULL;
+  struct solparser_entity* entity = NULL;
   struct str str;
   struct str str_tk;
   char* cstr;
@@ -3176,197 +3176,197 @@ error:
   goto exit;
 }
 
-const struct solstice_anchor*
-solstice_parser_get_anchor
-  (const struct solstice_parser* parser,
-   const struct solstice_anchor_id anchor)
+const struct solparser_anchor*
+solparser_get_anchor
+  (const struct solparser* parser,
+   const struct solparser_anchor_id anchor)
 {
   ASSERT(parser && anchor.i < darray_anchor_size_get(&parser->anchors));
   return darray_anchor_cdata_get(&parser->anchors) + anchor.i;
 }
 
-const struct solstice_entity*
-solstice_parser_get_entity
-  (const struct solstice_parser* parser,
-   const struct solstice_entity_id entity)
+const struct solparser_entity*
+solparser_get_entity
+  (const struct solparser* parser,
+   const struct solparser_entity_id entity)
 {
   ASSERT(parser && entity.i < darray_entity_size_get(&parser->entities));
   return darray_entity_cdata_get(&parser->entities) + entity.i;
 }
 
-const struct solstice_geometry*
-solstice_parser_get_geometry
-  (const struct solstice_parser* parser,
-   const struct solstice_geometry_id geom)
+const struct solparser_geometry*
+solparser_get_geometry
+  (const struct solparser* parser,
+   const struct solparser_geometry_id geom)
 {
   ASSERT(parser && geom.i < darray_geometry_size_get(&parser->geometries));
   return darray_geometry_cdata_get(&parser->geometries) + geom.i;
 }
 
-const struct solstice_material*
-solstice_parser_get_material
-  (const struct solstice_parser* parser,
-   const struct solstice_material_id mtl)
+const struct solparser_material*
+solparser_get_material
+  (const struct solparser* parser,
+   const struct solparser_material_id mtl)
 {
   ASSERT(parser && mtl.i < darray_material_size_get(&parser->mtls));
   return darray_material_cdata_get(&parser->mtls) + mtl.i;
 }
 
-const struct solstice_material_double_sided*
-solstice_parser_get_material_double_sided
-  (const struct solstice_parser* parser,
-   const struct solstice_material_double_sided_id mtl2)
+const struct solparser_material_double_sided*
+solparser_get_material_double_sided
+  (const struct solparser* parser,
+   const struct solparser_material_double_sided_id mtl2)
 {
   ASSERT(parser && mtl2.i < darray_material2_size_get(&parser->mtls2));
   return darray_material2_cdata_get(&parser->mtls2) + mtl2.i;
 }
 
-const struct solstice_material_matte*
-solstice_parser_get_material_matte
-  (const struct solstice_parser* parser,
-   const struct solstice_material_matte_id matte)
+const struct solparser_material_matte*
+solparser_get_material_matte
+  (const struct solparser* parser,
+   const struct solparser_material_matte_id matte)
 {
   ASSERT(parser && matte.i < darray_matte_size_get(&parser->mattes));
   return darray_matte_cdata_get(&parser->mattes) + matte.i;
 }
 
-const struct solstice_material_mirror*
-solstice_parser_get_material_mirror
-  (const struct solstice_parser* parser,
-   const struct solstice_material_mirror_id mirror)
+const struct solparser_material_mirror*
+solparser_get_material_mirror
+  (const struct solparser* parser,
+   const struct solparser_material_mirror_id mirror)
 {
   ASSERT(parser && mirror.i < darray_mirror_size_get(&parser->mirrors));
   return darray_mirror_cdata_get(&parser->mirrors) + mirror.i;
 }
 
-const struct solstice_object*
-solstice_parser_get_object
-  (const struct solstice_parser* parser,
-   const struct solstice_object_id obj)
+const struct solparser_object*
+solparser_get_object
+  (const struct solparser* parser,
+   const struct solparser_object_id obj)
 {
   ASSERT(parser && obj.i < darray_object_size_get(&parser->objects));
   return darray_object_cdata_get(&parser->objects) + obj.i;
 }
 
-const struct solstice_pivot*
-solstice_parser_get_pivot
-  (const struct solstice_parser* parser,
-   const struct solstice_pivot_id pivot)
+const struct solparser_pivot*
+solparser_get_pivot
+  (const struct solparser* parser,
+   const struct solparser_pivot_id pivot)
 {
   ASSERT(parser && pivot.i < darray_pivot_size_get(&parser->pivots));
   return darray_pivot_cdata_get(&parser->pivots) + pivot.i;
 }
 
-const struct solstice_shape*
-solstice_parser_get_shape
-  (const struct solstice_parser* parser,
-   const struct solstice_shape_id shape)
+const struct solparser_shape*
+solparser_get_shape
+  (const struct solparser* parser,
+   const struct solparser_shape_id shape)
 {
   ASSERT(parser && shape.i < darray_shape_size_get(&parser->shapes));
   return darray_shape_cdata_get(&parser->shapes) + shape.i;
 }
 
-const struct solstice_shape_cuboid*
-solstice_parser_get_shape_cuboid
-  (const struct solstice_parser* parser,
-   const struct solstice_shape_cuboid_id cuboid)
+const struct solparser_shape_cuboid*
+solparser_get_shape_cuboid
+  (const struct solparser* parser,
+   const struct solparser_shape_cuboid_id cuboid)
 {
   ASSERT(parser && cuboid.i < darray_cuboid_size_get(&parser->cuboids));
   return darray_cuboid_cdata_get(&parser->cuboids) + cuboid.i;
 }
 
-const struct solstice_shape_cylinder*
-solstice_parser_get_shape_cylinder
-  (const struct solstice_parser* parser,
-   const struct solstice_shape_cylinder_id cylinder)
+const struct solparser_shape_cylinder*
+solparser_get_shape_cylinder
+  (const struct solparser* parser,
+   const struct solparser_shape_cylinder_id cylinder)
 {
   ASSERT(parser && cylinder.i < darray_cylinder_size_get(&parser->cylinders));
   return darray_cylinder_cdata_get(&parser->cylinders) + cylinder.i;
 }
 
-const struct solstice_shape_imported_geometry*
-solstice_parser_get_shape_obj
-  (const struct solstice_parser* parser,
-   const struct solstice_shape_imported_geometry_id impgeom)
+const struct solparser_shape_imported_geometry*
+solparser_get_shape_obj
+  (const struct solparser* parser,
+   const struct solparser_shape_imported_geometry_id impgeom)
 {
   ASSERT(parser && impgeom.i < darray_impgeom_size_get(&parser->objs));
   return darray_impgeom_cdata_get(&parser->objs) + impgeom.i;
 }
 
-const struct solstice_shape_paraboloid*
-solstice_parser_get_shape_parabol
-  (const struct solstice_parser* parser,
-   const struct solstice_shape_paraboloid_id paraboloid)
+const struct solparser_shape_paraboloid*
+solparser_get_shape_parabol
+  (const struct solparser* parser,
+   const struct solparser_shape_paraboloid_id paraboloid)
 {
   ASSERT(parser && paraboloid.i < darray_paraboloid_size_get(&parser->parabols));
   return darray_paraboloid_cdata_get(&parser->parabols) + paraboloid.i;
 }
 
-const struct solstice_shape_paraboloid*
-solstice_parser_get_shape_parabolic_cylinder
-  (const struct solstice_parser* parser,
-   const struct solstice_shape_paraboloid_id paraboloid)
+const struct solparser_shape_paraboloid*
+solparser_get_shape_parabolic_cylinder
+  (const struct solparser* parser,
+   const struct solparser_shape_paraboloid_id paraboloid)
 {
   ASSERT(parser);
   ASSERT(paraboloid.i<darray_paraboloid_size_get(&parser->parabolic_cylinders));
   return darray_paraboloid_cdata_get(&parser->parabolic_cylinders)+paraboloid.i;
 }
 
-const struct solstice_shape_plane*
-solstice_parser_get_shape_plane
-  (const struct solstice_parser* parser,
-   const struct solstice_shape_plane_id plane)
+const struct solparser_shape_plane*
+solparser_get_shape_plane
+  (const struct solparser* parser,
+   const struct solparser_shape_plane_id plane)
 {
   ASSERT(parser && plane.i < darray_plane_size_get(&parser->planes));
   return darray_plane_cdata_get(&parser->planes) + plane.i;
 }
 
-const struct solstice_shape_sphere*
-solstice_parser_get_shape_sphere
-  (const struct solstice_parser* parser,
-   const struct solstice_shape_sphere_id sphere)
+const struct solparser_shape_sphere*
+solparser_get_shape_sphere
+  (const struct solparser* parser,
+   const struct solparser_shape_sphere_id sphere)
 {
   ASSERT(parser && sphere.i < darray_sphere_size_get(&parser->spheres));
   return darray_sphere_cdata_get(&parser->spheres) + sphere.i;
 }
 
-const struct solstice_shape_imported_geometry*
-solstice_parser_get_shape_stl
-  (const struct solstice_parser* parser,
-   const struct solstice_shape_imported_geometry_id impgeom)
+const struct solparser_shape_imported_geometry*
+solparser_get_shape_stl
+  (const struct solparser* parser,
+   const struct solparser_shape_imported_geometry_id impgeom)
 {
   ASSERT(parser && impgeom.i < darray_impgeom_size_get(&parser->stls));
   return darray_impgeom_cdata_get(&parser->stls) + impgeom.i;
 }
 
-const struct solstice_sun*
-solstice_parser_get_sun(const struct solstice_parser* parser)
+const struct solparser_sun*
+solparser_get_sun(const struct solparser* parser)
 {
   ASSERT(parser && parser->sun_key);
   return &parser->sun;
 }
 
 void
-solstice_parser_entity_iterator_begin
-  (struct solstice_parser* parser,
-   struct solstice_entity_iterator* it)
+solparser_entity_iterator_begin
+  (struct solparser* parser,
+   struct solparser_entity_iterator* it)
 {
   ASSERT(parser && it);
   htable_str2sols_begin(&parser->str2entities, &it->it__);
 }
 
 void
-solstice_parser_entity_iterator_end
-  (struct solstice_parser* parser,
-   struct solstice_entity_iterator* it)
+solparser_entity_iterator_end
+  (struct solparser* parser,
+   struct solparser_entity_iterator* it)
 {
   ASSERT(parser && it);
   htable_str2sols_end(&parser->str2entities, &it->it__);
 }
 
 void
-solstice_parser_material_iterator_begin
-  (struct solstice_parser* parser, struct solstice_material_iterator* it)
+solparser_material_iterator_begin
+  (struct solparser* parser, struct solparser_material_iterator* it)
 {
   ASSERT(parser && it);
   it->mtls__ = darray_material_cdata_get(&parser->mtls);
@@ -3374,8 +3374,8 @@ solstice_parser_material_iterator_begin
 }
 
 void
-solstice_parser_material_iterator_end
-  (struct solstice_parser* parser, struct solstice_material_iterator* it)
+solparser_material_iterator_end
+  (struct solparser* parser, struct solparser_material_iterator* it)
 {
   ASSERT(parser && it);
   it->mtls__ = darray_material_cdata_get(&parser->mtls);
@@ -3383,8 +3383,8 @@ solstice_parser_material_iterator_end
 }
 
 void
-solstice_parser_geometry_iterator_begin
-  (struct solstice_parser* parser, struct solstice_geometry_iterator* it)
+solparser_geometry_iterator_begin
+  (struct solparser* parser, struct solparser_geometry_iterator* it)
 {
   ASSERT(parser && it);
   it->geoms__ = darray_geometry_cdata_get(&parser->geometries);
@@ -3392,8 +3392,8 @@ solstice_parser_geometry_iterator_begin
 }
 
 void
-solstice_parser_geometry_iterator_end
-  (struct solstice_parser* parser, struct solstice_geometry_iterator* it)
+solparser_geometry_iterator_end
+  (struct solparser* parser, struct solparser_geometry_iterator* it)
 {
   ASSERT(parser && it);
   it->geoms__ = darray_geometry_cdata_get(&parser->geometries);

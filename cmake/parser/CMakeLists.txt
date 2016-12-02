@@ -16,7 +16,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(solstice-parser C CXX)
 
-set(PARSER_SOURCE_DIR ${PROJECT_SOURCE_DIR}/../../src/parser)
+set(SOLPARSER_SOURCE_DIR ${PROJECT_SOURCE_DIR}/../../src/parser)
 
 ################################################################################
 # Define include directories
@@ -24,31 +24,31 @@ set(PARSER_SOURCE_DIR ${PROJECT_SOURCE_DIR}/../../src/parser)
 include_directories(
   ${LibYAML_INCLUDE_DIR}
   ${RSys_INCLUDE_DIR}
-  ${PARSER_SOURCE_DIR}/../)
+  ${SOLPARSER_SOURCE_DIR}/../)
 
 ################################################################################
 # Configure and define targets
 ################################################################################
-set(PARSER_FILES_SRC
-  solstice_parser.c)
-set(PARSER_FILES_INC
-  solstice_entity.h
-  solstice_material.h
-  solstice_parser.h
-  solstice_pivot.h
-  solstice_shape.h
-  solstice_sun.h)
+set(SOLPARSER_FILES_SRC
+  solparser.c)
+set(SOLPARSER_FILES_INC
+  solparser.h
+  solparser_entity.h
+  solparser_material.h
+  solparser_pivot.h
+  solparser_shape.h
+  solparser_sun.h)
 
 # Prepend each file in the `SOLSTICE_FILES_<SRC|INC>' list by `SOLSTICE_SOURCE_DIR'
-rcmake_prepend_path(PARSER_FILES_SRC ${PARSER_SOURCE_DIR})
-rcmake_prepend_path(PARSER_FILES_INC ${PARSER_SOURCE_DIR})
-rcmake_prepend_path(PARSER_FILES_DOC ${PROJECT_SOURCE_DIR}/../)
+rcmake_prepend_path(SOLPARSER_FILES_SRC ${SOLPARSER_SOURCE_DIR})
+rcmake_prepend_path(SOLPARSER_FILES_INC ${SOLPARSER_SOURCE_DIR})
+rcmake_prepend_path(SOLPARSER_FILES_DOC ${PROJECT_SOURCE_DIR}/../)
 
 if(CMAKE_COMPILER_IS_GNUCC)
   set(MATH_LIB m)
 endif()
 
-add_library(solstice-parser STATIC ${PARSER_FILES_SRC} ${PARSER_FILES_INC})
+add_library(solparser STATIC ${SOLPARSER_FILES_SRC} ${SOLPARSER_FILES_INC})
 
 ################################################################################
 # Tests
@@ -56,9 +56,9 @@ add_library(solstice-parser STATIC ${PARSER_FILES_SRC} ${PARSER_FILES_INC})
 if(NOT NO_TEST)
   function(build_test _name)
     add_executable(${_name}
-      ${PARSER_SOURCE_DIR}/${_name}.c
-      ${PARSER_SOURCE_DIR}/../test_solstice_utils.h)
-    target_link_libraries(${_name} LibYAML ${MATH_LIB} RSys solstice-parser)
+      ${SOLPARSER_SOURCE_DIR}/${_name}.c
+      ${SOLPARSER_SOURCE_DIR}/../test_solstice_utils.h)
+    target_link_libraries(${_name} LibYAML ${MATH_LIB} RSys solparser)
   endfunction()
 
   function(new_test _name)
@@ -66,15 +66,15 @@ if(NOT NO_TEST)
     add_test(${_name} ${_name})
   endfunction()
 
-  build_test(test_solstice_parser)
-  add_test(test_solstice_parser_ok_0 test_solstice_parser
-    ${PARSER_SOURCE_DIR}/yaml/test_ok_0.yaml)
-  add_test(test_solstice_parser_ok_1 test_solstice_parser
-    ${PARSER_SOURCE_DIR}/yaml/test_ok_1.yaml)
-  add_test(test_solstice_parser_ok_2 test_solstice_parser
-    ${PARSER_SOURCE_DIR}/yaml/test_ok_2.yaml)
-  add_test(test_solstice_parser_ok_2 test_solstice_parser
-    ${PARSER_SOURCE_DIR}/yaml/test_ok_3.yaml)
+  build_test(test_solparser)
+  add_test(test_solparser_ok_0 test_solparser
+    ${SOLPARSER_SOURCE_DIR}/yaml/test_ok_0.yaml)
+  add_test(test_solparser_ok_1 test_solparser
+    ${SOLPARSER_SOURCE_DIR}/yaml/test_ok_1.yaml)
+  add_test(test_solparser_ok_2 test_solparser
+    ${SOLPARSER_SOURCE_DIR}/yaml/test_ok_2.yaml)
+  add_test(test_solparser_ok_2 test_solparser
+    ${SOLPARSER_SOURCE_DIR}/yaml/test_ok_3.yaml)
 # TODO rewrite them wrt the update of the  input specification
 #  add_test(test_solstice_parser_ko_0 test_solstice_parser -e
 #    ${SOLSTICE_SOURCE_DIR}/yaml/test_ko_0.yaml)
@@ -83,11 +83,11 @@ if(NOT NO_TEST)
 #  add_test(test_solstice_parser_ko_2 test_solstice_parser -e
 #    ${SOLSTICE_SOURCE_DIR}/yaml/test_ko_2.yaml)
 
-  new_test(test_solstice_parser2)
-  new_test(test_solstice_parser3)
-  new_test(test_solstice_parser4)
+  new_test(test_solparser2)
+  new_test(test_solparser3)
+  new_test(test_solparser4)
 
-  rcmake_copy_runtime_libraries(test_solstice_parser)
+  rcmake_copy_runtime_libraries(test_solparser)
 endif()
 
 

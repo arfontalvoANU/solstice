@@ -70,7 +70,7 @@ if(CMAKE_COMPILER_IS_GNUCC)
 endif()
 
 add_executable(solstice ${SOLSTICE_SOURCE_DIR}/solstice.c)
-target_link_libraries(solstice LibYAML RSys ${MATH_LIB} solstice-parser SolAnim SolSolver)
+target_link_libraries(solstice LibYAML RSys ${MATH_LIB} solparser SolAnim SolSolver)
 set_target_properties(solstice PROPERTIES
   VERSION ${VERSION}
   SOVERSION ${VERSION_MAJOR})

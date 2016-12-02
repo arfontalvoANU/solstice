@@ -13,44 +13,44 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef SOLSTICE_MATERIAL_H
-#define SOLSTICE_MATERIAL_H
+#ifndef SOLPARSER_MATERIAL_H
+#define SOLPARSER_MATERIAL_H
 
 #include <stddef.h>
 
-enum solstice_material_type {
-  SOLSTICE_MATERIAL_MATTE,
-  SOLSTICE_MATERIAL_MIRROR
+enum solparser_material_type {
+  SOLPARSER_MATERIAL_MATTE,
+  SOLPARSER_MATERIAL_MIRROR
 };
 
-struct solstice_material_matte {
+struct solparser_material_matte {
   double reflectivity; /* In [0, 1] */
 };
 
-struct solstice_material_matte_id { size_t i; };
+struct solparser_material_matte_id { size_t i; };
 
-struct solstice_material_mirror {
+struct solparser_material_mirror {
   double roughness; /* In [0, 1] */
   double reflectivity; /* In [0, 1] */
 };
 
-struct solstice_material_mirror_id { size_t i; };
+struct solparser_material_mirror_id { size_t i; };
 
-struct solstice_material {
-  enum solstice_material_type type;
+struct solparser_material {
+  enum solparser_material_type type;
   union {
-    struct solstice_material_matte_id matte;
-    struct solstice_material_mirror_id mirror;
+    struct solparser_material_matte_id matte;
+    struct solparser_material_mirror_id mirror;
   } data;
 };
 
-struct solstice_material_id { size_t i; };
+struct solparser_material_id { size_t i; };
 
-struct solstice_material_double_sided {
-  struct solstice_material_id front;
-  struct solstice_material_id back;
+struct solparser_material_double_sided {
+  struct solparser_material_id front;
+  struct solparser_material_id back;
 };
 
-struct solstice_material_double_sided_id { size_t i; };
+struct solparser_material_double_sided_id { size_t i; };
 
-#endif /* SOLSTICE_MATERIAL_H */
+#endif /* SOLPARSER_MATERIAL_H */

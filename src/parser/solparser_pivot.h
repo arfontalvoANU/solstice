@@ -13,43 +13,43 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef SOLSTICE_PIVOT_H
-#define SOLSTICE_PIVOT_H
+#ifndef SOLPARSER_PIVOT_H
+#define SOLPARSER_PIVOT_H
 
 #include <rsys/double3.h>
 
-enum solstice_target_type {
-  SOLSTICE_TARGET_ANCHOR,
-  SOLSTICE_TARGET_DIRECTION,
-  SOLSTICE_TARGET_POSITION,
-  SOLSTICE_TARGET_SUN
+enum solparser_target_type {
+  SOLPARSER_TARGET_ANCHOR,
+  SOLPARSER_TARGET_DIRECTION,
+  SOLPARSER_TARGET_POSITION,
+  SOLPARSER_TARGET_SUN
 };
 
-struct solstice_anchor_id { size_t i; };
+struct solparser_anchor_id { size_t i; };
 
-struct solstice_anchor {
+struct solparser_anchor {
   struct str name;
   double position[3];
 };
 
 static INLINE void
-solstice_anchor_init
-  (struct mem_allocator* allocator, struct solstice_anchor* anchor)
+solparser_anchor_init
+  (struct mem_allocator* allocator, struct solparser_anchor* anchor)
 {
   ASSERT(anchor);
   str_init(allocator, &anchor->name);
 }
 
 static INLINE void
-solstice_anchor_release(struct solstice_anchor* anchor)
+solparser_anchor_release(struct solparser_anchor* anchor)
 {
   ASSERT(anchor);
   str_release(&anchor->name);
 }
 
 static INLINE res_T
-solstice_anchor_copy
-  (struct solstice_anchor* dst, const struct solstice_anchor* src)
+solparser_anchor_copy
+  (struct solparser_anchor* dst, const struct solparser_anchor* src)
 {
   ASSERT(dst && src);
   d3_set(dst->position, src->position);
@@ -57,28 +57,28 @@ solstice_anchor_copy
 }
 
 static INLINE res_T
-solstice_anchor_copy_and_release
-  (struct solstice_anchor* dst, struct solstice_anchor* src)
+solparser_anchor_copy_and_release
+  (struct solparser_anchor* dst, struct solparser_anchor* src)
 {
   ASSERT(dst && src);
   d3_set(dst->position, src->position);
   return str_copy_and_release(&dst->name, &src->name);
 }
 
-struct solstice_pivot {
+struct solparser_pivot {
   double point[3];
   double normal[3];
   double rotation[3];
   double translation[3];
-  enum solstice_target_type target_type;
+  enum solparser_target_type target_type;
   union {
     double position[3]; /* World space position */
     double direction[3]; /* World space direction */
-    struct solstice_anchor_id anchor;
+    struct solparser_anchor_id anchor;
   } target;
 };
 
-struct solstice_pivot_id { size_t i; };
+struct solparser_pivot_id { size_t i; };
 
-#endif /* SOLSTICE_PIVOT_H */
+#endif /* SOLPARSER_PIVOT_H */
 

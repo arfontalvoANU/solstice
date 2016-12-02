@@ -13,76 +13,76 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef SOLSTICE_SUN_H
-#define SOLSTICE_SUN_H
+#ifndef SOLPARSER_SUN_H
+#define SOLPARSER_SUN_H
 
 #include <rsys/dynamic_array.h>
 
-enum solstice_sun_radang_distrib_type { /* Radial Angular distribution */
-  SOLSTICE_SUN_RADANG_DISTRIB_BUIE,
-  SOLSTICE_SUN_RADANG_DISTRIB_DIRECTIONAL,
-  SOLSTICE_SUN_RADANG_DISTRIB_PILLBOX
+enum solparser_sun_radang_distrib_type { /* Radial Angular distribution */
+  SOLPARSER_SUN_RADANG_DISTRIB_BUIE,
+  SOLPARSER_SUN_RADANG_DISTRIB_DIRECTIONAL,
+  SOLPARSER_SUN_RADANG_DISTRIB_PILLBOX
 };
 
-struct solstice_spectrum_data {
+struct solparser_spectrum_data {
   double wavelength;
   double data;
 };
 
 #define DARRAY_NAME spectrum_data
-#define DARRAY_DATA struct solstice_spectrum_data
+#define DARRAY_DATA struct solparser_spectrum_data
 #include <rsys/dynamic_array.h>
 
-struct solstice_sun_buie { double csr; };
-struct solstice_sun_pillbox { double aperture; };
+struct solparser_sun_buie { double csr; };
+struct solparser_sun_pillbox { double aperture; };
 
-struct solstice_sun {
+struct solparser_sun {
   double dni; /* In ]0, INF) */
   struct darray_spectrum_data spectrum;
-  enum solstice_sun_radang_distrib_type radang_distrib_type;
+  enum solparser_sun_radang_distrib_type radang_distrib_type;
   union {
-    struct solstice_sun_buie buie;
-    struct solstice_sun_pillbox pillbox;
+    struct solparser_sun_buie buie;
+    struct solparser_sun_pillbox pillbox;
   } radang_distrib;
 };
 
 static INLINE void
-solstice_sun_init(struct mem_allocator* allocator, struct solstice_sun* sun)
+solparser_sun_init(struct mem_allocator* allocator, struct solparser_sun* sun)
 {
   ASSERT(sun);
   sun->dni = 1.0;
-  sun->radang_distrib_type = SOLSTICE_SUN_RADANG_DISTRIB_DIRECTIONAL;
+  sun->radang_distrib_type = SOLPARSER_SUN_RADANG_DISTRIB_DIRECTIONAL;
   darray_spectrum_data_init(allocator, &sun->spectrum);
 }
 
 static INLINE void
-solstice_sun_release(struct solstice_sun* sun)
+solparser_sun_release(struct solparser_sun* sun)
 {
   ASSERT(sun);
   darray_spectrum_data_release(&sun->spectrum);
 }
 
 static INLINE res_T
-solstice_sun_copy(struct solstice_sun* dst, const struct solstice_sun* src)
+solparser_sun_copy(struct solparser_sun* dst, const struct solparser_sun* src)
 {
   ASSERT(dst && src);
   return darray_spectrum_data_copy(&dst->spectrum, &src->spectrum);
 }
 
 static INLINE res_T
-solstice_sun_copy_and_release
-  (struct solstice_sun* dst, struct solstice_sun* src)
+solparser_sun_copy_and_release
+  (struct solparser_sun* dst, struct solparser_sun* src)
 {
   ASSERT(dst && src);
   return darray_spectrum_data_copy_and_release(&dst->spectrum, &src->spectrum);
 }
 
 static INLINE void
-solstice_sun_clear(struct solstice_sun* sun)
+solparser_sun_clear(struct solparser_sun* sun)
 {
   ASSERT(sun);
   darray_spectrum_data_clear(&sun->spectrum);
 }
 
-#endif /* SOLSTICE_SUN_H */
+#endif /* SOLPARSER_SUN_H */
 

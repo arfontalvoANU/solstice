@@ -13,78 +13,78 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef SOLSTICE_GEOMETRY_H
-#define SOLSTICE_GEOMETRY_H
+#ifndef SOLPARSER_GEOMETRY_H
+#define SOLPARSER_GEOMETRY_H
 
-#include "solstice_material.h"
-#include "solstice_shape.h"
+#include "solparser_material.h"
+#include "solparser_shape.h"
 
 #include <rsys/dynamic_array.h>
 
-struct solstice_object {
-  struct solstice_material_double_sided_id mtl2;
-  struct solstice_shape_id shape;
+struct solparser_object {
+  struct solparser_material_double_sided_id mtl2;
+  struct solparser_shape_id shape;
   double rotation[3];
   double translation[3];
 };
 
-struct solstice_object_id { size_t i; };
+struct solparser_object_id { size_t i; };
 
 #define DARRAY_NAME object_id
-#define DARRAY_DATA struct solstice_object_id
+#define DARRAY_DATA struct solparser_object_id
 #include <rsys/dynamic_array.h>
 
-struct solstice_geometry {
+struct solparser_geometry {
   /* Internal data. Should not be acceded directly. */
   struct darray_object_id objects;
 };
 
-struct solstice_geometry_id { size_t i; };
+struct solparser_geometry_id { size_t i; };
 
 static INLINE void
-solstice_geometry_init
-  (struct mem_allocator* allocator, struct solstice_geometry* geom)
+solparser_geometry_init
+  (struct mem_allocator* allocator, struct solparser_geometry* geom)
 {
   ASSERT(geom);
   darray_object_id_init(allocator, &geom->objects);
 }
 
 static INLINE void
-solstice_geometry_release(struct solstice_geometry* geom)
+solparser_geometry_release(struct solparser_geometry* geom)
 {
   ASSERT(geom);
   darray_object_id_release(&geom->objects);
 }
 
 static INLINE res_T
-solstice_geometry_copy
-  (struct solstice_geometry* dst, const struct solstice_geometry* src)
+solparser_geometry_copy
+  (struct solparser_geometry* dst, const struct solparser_geometry* src)
 {
   ASSERT(dst && src);
   return darray_object_id_copy(&dst->objects, &src->objects);
 }
 
 static INLINE res_T
-solstice_geometry_copy_and_release
-  (struct solstice_geometry* dst, struct solstice_geometry* src)
+solparser_geometry_copy_and_release
+  (struct solparser_geometry* dst, struct solparser_geometry* src)
 {
   ASSERT(dst && src);
   return darray_object_id_copy_and_release(&dst->objects, &src->objects);
 }
 
 static FINLINE size_t
-solstice_geometry_get_objects_count(const struct solstice_geometry* geom)
+solparser_geometry_get_objects_count(const struct solparser_geometry* geom)
 {
   ASSERT(geom);
   return darray_object_id_size_get(&geom->objects);
 }
 
-static FINLINE struct solstice_object_id
-solstice_geometry_get_object
-  (const struct solstice_geometry* geom, const size_t i)
+static FINLINE struct solparser_object_id
+solparser_geometry_get_object
+  (const struct solparser_geometry* geom, const size_t i)
 {
-  ASSERT(geom && i < solstice_geometry_get_objects_count(geom));
+  ASSERT(geom && i < solparser_geometry_get_objects_count(geom));
   return darray_object_id_cdata_get(&geom->objects)[i];
 }
 
-#endif /* SOLSTICE_GEOMETRY_H */
+#endif /* SOLPARSER_GEOMETRY_H */

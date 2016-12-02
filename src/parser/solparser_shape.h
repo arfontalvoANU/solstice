@@ -13,57 +13,57 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef SOLSTICE_SHAPE_H
-#define SOLSTICE_SHAPE_H
+#ifndef SOLPARSER_SHAPE_H
+#define SOLPARSER_SHAPE_H
 
-#include "solstice_material.h"
+#include "solparser_material.h"
 
 #include <rsys/dynamic_array_double.h>
 #include <rsys/str.h>
 
-enum solstice_clip_op {
-  SOLSTICE_CLIP_OP_AND,
-  SOLSTICE_CLIP_OP_SUB
+enum solparser_clip_op {
+  SOLPARSER_CLIP_OP_AND,
+  SOLPARSER_CLIP_OP_SUB
 };
 
-enum solstice_shape_type {
-  SOLSTICE_SHAPE_CUBOID,
-  SOLSTICE_SHAPE_CYLINDER,
-  SOLSTICE_SHAPE_OBJ, /* Imported Alias Wavefront obj */
-  SOLSTICE_SHAPE_PARABOL,
-  SOLSTICE_SHAPE_PARABOLIC_CYLINDER,
-  SOLSTICE_SHAPE_PLANE,
-  SOLSTICE_SHAPE_SPHERE,
-  SOLSTICE_SHAPE_STL /* Imported STereo Lithography */
+enum solparser_shape_type {
+  SOLPARSER_SHAPE_CUBOID,
+  SOLPARSER_SHAPE_CYLINDER,
+  SOLPARSER_SHAPE_OBJ, /* Imported Alias Wavefront obj */
+  SOLPARSER_SHAPE_PARABOL,
+  SOLPARSER_SHAPE_PARABOLIC_CYLINDER,
+  SOLPARSER_SHAPE_PLANE,
+  SOLPARSER_SHAPE_SPHERE,
+  SOLPARSER_SHAPE_STL /* Imported STereo Lithography */
 };
 
 /*******************************************************************************
  * Clipping polygon
  ******************************************************************************/
-struct solstice_polyclip {
-  enum solstice_clip_op op;
+struct solparser_polyclip {
+  enum solparser_clip_op op;
   struct darray_double vertices;
 };
 
 static INLINE void
-solstice_polyclip_init
+solparser_polyclip_init
   (struct mem_allocator* allocator,
-   struct solstice_polyclip* polyclip)
+   struct solparser_polyclip* polyclip)
 {
   ASSERT(polyclip);
   darray_double_init(allocator, &polyclip->vertices);
 }
 
 static INLINE void
-solstice_polyclip_release(struct solstice_polyclip* polyclip)
+solparser_polyclip_release(struct solparser_polyclip* polyclip)
 {
   ASSERT(polyclip);
   darray_double_release(&polyclip->vertices);
 }
 
 static INLINE res_T
-solstice_polyclip_copy
-  (struct solstice_polyclip* dst, const struct solstice_polyclip* src)
+solparser_polyclip_copy
+  (struct solparser_polyclip* dst, const struct solparser_polyclip* src)
 {
   ASSERT(dst && src);
   dst->op = src->op;
@@ -71,8 +71,8 @@ solstice_polyclip_copy
 }
 
 static INLINE res_T
-solstice_polyclip_copy_and_release
-  (struct solstice_polyclip* dst, struct solstice_polyclip* src)
+solparser_polyclip_copy_and_release
+  (struct solparser_polyclip* dst, struct solparser_polyclip* src)
 {
   ASSERT(dst && src);
   dst->op = src->op;
@@ -81,50 +81,50 @@ solstice_polyclip_copy_and_release
 
 /* Declare the array of clipping polygons */
 #define DARRAY_NAME polyclip
-#define DARRAY_DATA struct solstice_polyclip
-#define DARRAY_FUNCTOR_INIT solstice_polyclip_init
-#define DARRAY_FUNCTOR_RELEASE solstice_polyclip_release
-#define DARRAY_FUNCTOR_COPY solstice_polyclip_copy
-#define DARRAY_FUNCTOR_COPY_AND_RELEASE solstice_polyclip_copy_and_release
+#define DARRAY_DATA struct solparser_polyclip
+#define DARRAY_FUNCTOR_INIT solparser_polyclip_init
+#define DARRAY_FUNCTOR_RELEASE solparser_polyclip_release
+#define DARRAY_FUNCTOR_COPY solparser_polyclip_copy
+#define DARRAY_FUNCTOR_COPY_AND_RELEASE solparser_polyclip_copy_and_release
 #include <rsys/dynamic_array.h>
 
 /*******************************************************************************
  * Imported geometry shape
  ******************************************************************************/
-struct solstice_shape_imported_geometry {
+struct solparser_shape_imported_geometry {
   struct str filename;
 };
 
 static INLINE void
-solstice_shape_imported_geometry_init
+solparser_shape_imported_geometry_init
   (struct mem_allocator* allocator,
-   struct solstice_shape_imported_geometry* impgeom)
+   struct solparser_shape_imported_geometry* impgeom)
 {
   ASSERT(impgeom);
   str_init(allocator, &impgeom->filename);
 }
 
 static INLINE void
-solstice_shape_imported_geometry_release
-  (struct solstice_shape_imported_geometry* impgeom)
+solparser_shape_imported_geometry_release
+  (struct solparser_shape_imported_geometry* impgeom)
 {
   ASSERT(impgeom);
   str_release(&impgeom->filename);
 }
 
 static INLINE res_T
-solstice_shape_imported_geometry_copy
-  (struct solstice_shape_imported_geometry* dst,
-   const struct solstice_shape_imported_geometry* src)
+solparser_shape_imported_geometry_copy
+  (struct solparser_shape_imported_geometry* dst,
+   const struct solparser_shape_imported_geometry* src)
 {
   ASSERT(dst && src);
   return str_copy(&dst->filename, &src->filename);
 }
 
 static INLINE res_T
-solstice_shape_imported_geometry_copy_and_release
-  (struct solstice_shape_imported_geometry* dst,
-   struct solstice_shape_imported_geometry* src)
+solparser_shape_imported_geometry_copy_and_release
+  (struct solparser_shape_imported_geometry* dst,
+   struct solparser_shape_imported_geometry* src)
 {
   ASSERT(dst && src);
   return str_copy_and_release(&dst->filename, &src->filename);
@@ -133,31 +133,31 @@ solstice_shape_imported_geometry_copy_and_release
 /*******************************************************************************
  * Paraboloid shape
  ******************************************************************************/
-struct solstice_shape_paraboloid {
+struct solparser_shape_paraboloid {
   double focal;
   struct darray_polyclip polyclips;
 };
 
 static INLINE void
-solstice_shape_paraboloid_init
+solparser_shape_paraboloid_init
   (struct mem_allocator* allocator,
-   struct solstice_shape_paraboloid* paraboloid)
+   struct solparser_shape_paraboloid* paraboloid)
 {
   ASSERT(paraboloid);
   darray_polyclip_init(allocator, &paraboloid->polyclips);
 }
 
 static INLINE void
-solstice_shape_paraboloid_release(struct solstice_shape_paraboloid* paraboloid)
+solparser_shape_paraboloid_release(struct solparser_shape_paraboloid* paraboloid)
 {
   ASSERT(paraboloid);
   darray_polyclip_release(&paraboloid->polyclips);
 }
 
 static INLINE res_T
-solstice_shape_paraboloid_copy
-  (struct solstice_shape_paraboloid* dst,
-   const struct solstice_shape_paraboloid* src)
+solparser_shape_paraboloid_copy
+  (struct solparser_shape_paraboloid* dst,
+   const struct solparser_shape_paraboloid* src)
 {
   ASSERT(dst && src);
   dst->focal = src->focal;
@@ -165,9 +165,9 @@ solstice_shape_paraboloid_copy
 }
 
 static INLINE res_T
-solstice_shape_paraboloid_copy_and_release
-  (struct solstice_shape_paraboloid* dst,
-   struct solstice_shape_paraboloid* src)
+solparser_shape_paraboloid_copy_and_release
+  (struct solparser_shape_paraboloid* dst,
+   struct solparser_shape_paraboloid* src)
 {
   ASSERT(dst && src);
   dst->focal = src->focal;
@@ -177,39 +177,39 @@ solstice_shape_paraboloid_copy_and_release
 /*******************************************************************************
  * Plane shape
  ******************************************************************************/
-struct solstice_shape_plane {
+struct solparser_shape_plane {
   struct darray_polyclip polyclips;
 };
 
 static INLINE void
-solstice_shape_plane_init
+solparser_shape_plane_init
   (struct mem_allocator* allocator,
-   struct solstice_shape_plane* plane)
+   struct solparser_shape_plane* plane)
 {
   ASSERT(plane);
   darray_polyclip_init(allocator, &plane->polyclips);
 }
 
 static INLINE void
-solstice_shape_plane_release(struct solstice_shape_plane* plane)
+solparser_shape_plane_release(struct solparser_shape_plane* plane)
 {
   ASSERT(plane);
   darray_polyclip_release(&plane->polyclips);
 }
 
 static INLINE res_T
-solstice_shape_plane_copy
-  (struct solstice_shape_plane* dst,
-   const struct solstice_shape_plane* src)
+solparser_shape_plane_copy
+  (struct solparser_shape_plane* dst,
+   const struct solparser_shape_plane* src)
 {
   ASSERT(dst && src);
   return darray_polyclip_copy(&dst->polyclips, &src->polyclips);
 }
 
 static INLINE res_T
-solstice_shape_plane_copy_and_release
-  (struct solstice_shape_plane* dst,
-   struct solstice_shape_plane* src)
+solparser_shape_plane_copy_and_release
+  (struct solparser_shape_plane* dst,
+   struct solparser_shape_plane* src)
 {
   ASSERT(dst && src);
   return darray_polyclip_copy_and_release(&dst->polyclips, &src->polyclips);
@@ -218,43 +218,43 @@ solstice_shape_plane_copy_and_release
 /*******************************************************************************
  * POD shape data
  ******************************************************************************/
-struct solstice_shape_cuboid {
+struct solparser_shape_cuboid {
   double size[3]; /* Size along the X, Y and Z dimension */
 };
 
-struct solstice_shape_cylinder {
+struct solparser_shape_cylinder {
   double height;
   double radius;
   long nslices;
 };
 
-struct solstice_shape_sphere {
+struct solparser_shape_sphere {
   double radius;
   long nslices;
 };
 
-struct solstice_shape_cuboid_id { size_t i; };
-struct solstice_shape_cylinder_id { size_t i; };
-struct solstice_shape_imported_geometry_id { size_t i; };
-struct solstice_shape_paraboloid_id { size_t i; };
-struct solstice_shape_plane_id { size_t i; };
-struct solstice_shape_sphere_id { size_t i; };
+struct solparser_shape_cuboid_id { size_t i; };
+struct solparser_shape_cylinder_id { size_t i; };
+struct solparser_shape_imported_geometry_id { size_t i; };
+struct solparser_shape_paraboloid_id { size_t i; };
+struct solparser_shape_plane_id { size_t i; };
+struct solparser_shape_sphere_id { size_t i; };
 
-struct solstice_shape {
-  enum solstice_shape_type type;
+struct solparser_shape {
+  enum solparser_shape_type type;
   union {
-    struct solstice_shape_cuboid_id cuboid;
-    struct solstice_shape_cylinder_id cylinder;
-    struct solstice_shape_imported_geometry_id obj;
-    struct solstice_shape_paraboloid_id parabol;
-    struct solstice_shape_paraboloid_id parabolic_cylinder;
-    struct solstice_shape_plane_id plane;
-    struct solstice_shape_sphere_id sphere;
-    struct solstice_shape_imported_geometry_id stl;
+    struct solparser_shape_cuboid_id cuboid;
+    struct solparser_shape_cylinder_id cylinder;
+    struct solparser_shape_imported_geometry_id obj;
+    struct solparser_shape_paraboloid_id parabol;
+    struct solparser_shape_paraboloid_id parabolic_cylinder;
+    struct solparser_shape_plane_id plane;
+    struct solparser_shape_sphere_id sphere;
+    struct solparser_shape_imported_geometry_id stl;
   } data;
 };
 
-struct solstice_shape_id { size_t i; };
+struct solparser_shape_id { size_t i; };
 
-#endif /* SOLSTICE_SHAPE_H */
+#endif /* SOLPARSER_SHAPE_H */
 

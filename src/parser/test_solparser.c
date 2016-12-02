@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "solstice_parser.h"
+#include "solparser.h"
 #include "test_solstice_utils.h"
 
 #include <string.h>
@@ -22,7 +22,7 @@ int
 main(int argc, char** argv)
 {
   struct mem_allocator allocator;
-  struct solstice_parser* parser;
+  struct solparser* parser;
   int ifile = 1;
   int i;
   res_T load_res = RES_OK;
@@ -45,19 +45,19 @@ main(int argc, char** argv)
   }
 
   CHECK(mem_init_proxy_allocator(&allocator, &mem_default_allocator), RES_OK);
-  solstice_parser_create(&allocator, &parser);
+  solparser_create(&allocator, &parser);
 
-  CHECK(solstice_parser_setup(parser, NULL, tmpfile()), RES_OK);
-  CHECK(solstice_parser_setup(parser, "yop", tmpfile()), RES_OK);
-  CHECK(solstice_parser_load(parser), RES_BAD_OP); /* Empty stream */
+  CHECK(solparser_setup(parser, NULL, tmpfile()), RES_OK);
+  CHECK(solparser_setup(parser, "yop", tmpfile()), RES_OK);
+  CHECK(solparser_load(parser), RES_BAD_OP); /* Empty stream */
 
   FOR_EACH(i, ifile, argc) {
     FILE* file = fopen(argv[i], "rb");
     int count = 0;
     NCHECK(file, NULL);
-    CHECK(solstice_parser_setup(parser, argv[i], file), RES_OK);
+    CHECK(solparser_setup(parser, argv[i], file), RES_OK);
     for(;;) {
-      const res_T res = solstice_parser_load(parser);
+      const res_T res = solparser_load(parser);
       if(count == 0 && load_res == RES_OK) {
         CHECK(res, RES_OK);
       } else if(res == RES_BAD_OP) {
@@ -69,9 +69,9 @@ main(int argc, char** argv)
     fclose(file);
   }
 
-  solstice_parser_ref_get(parser);
-  solstice_parser_ref_put(parser);
-  solstice_parser_ref_put(parser);
+  solparser_ref_get(parser);
+  solparser_ref_put(parser);
+  solparser_ref_put(parser);
 
   check_memory_allocator(&allocator);
   mem_shutdown_proxy_allocator(&allocator);
