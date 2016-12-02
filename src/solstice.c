@@ -19,6 +19,41 @@
 #include <solstice/ssol.h>
 
 /*******************************************************************************
+ * Helper functions
+ ******************************************************************************/
+static void
+clear_materials(struct htable_material* materials)
+{
+  struct htable_material_iterator it, end;
+  ASSERT(materials);
+
+  htable_material_begin(materials, &it);
+  htable_material_end(materials, &end);
+  while(!htable_material_iterator_eq(&it, &end)) {
+    struct ssol_material* mtl = *htable_material_iterator_data_get(&it);
+    SSOL(material_ref_put(mtl));
+    htable_material_iterator_next(&it);
+  }
+  htable_material_clear(materials);
+}
+
+static void
+clear_objects(struct htable_object* objects)
+{
+  struct htable_object_iterator it, end;
+  ASSERT(objects);
+
+  htable_object_begin(objects, &it);
+  htable_object_end(objects, &end);
+  while(!htable_object_iterator_eq(&it, &end)) {
+    struct ssol_object* obj = *htable_object_iterator_data_get(&it);
+    SSOL(object_ref_put(obj));
+    htable_object_iterator_next(&it);
+  }
+  htable_object_clear(objects);
+}
+
+/*******************************************************************************
  * Solstice local functions
  ******************************************************************************/
 res_T
@@ -55,6 +90,8 @@ void
 solstice_release(struct solstice* solstice)
 {
   ASSERT(solstice);
+  clear_materials(&solstice->materials);
+  clear_objects(&solstice->objects);
   if(solstice->ssol) SSOL(device_ref_put(solstice->ssol));
   if(solstice->parser) solparser_ref_put(solstice->parser);
   htable_material_release(&solstice->materials);

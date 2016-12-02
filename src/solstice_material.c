@@ -145,39 +145,48 @@ error:
  * Local functions
  ******************************************************************************/
 res_T
-solstice_create_ssol_material
+solstice_get_ssol_material
   (struct solstice* solstice,
-   const struct solparser_material_id mtl_id)
+   const struct solparser_material_id mtl_id,
+   struct ssol_material** out_ssol_mtl)
 {
-  const struct solparser_material* mtl;
-  const struct solparser_material_matte* matte;
-  const struct solparser_material_mirror* mirror;
   struct ssol_material* ssol_mtl = NULL;
+  struct ssol_material** pssol_mtl = NULL;
   res_T res = RES_OK;
   ASSERT(solstice);
 
-  mtl = solparser_get_material(solstice->parser, mtl_id);
-  ASSERT(mtl);
+  pssol_mtl = htable_material_find(&solstice->materials, &mtl_id.i);
+  if(pssol_mtl) {
+    ssol_mtl = *pssol_mtl;
+  } else {
+    const struct solparser_material* mtl;
+    const struct solparser_material_matte* matte;
+    const struct solparser_material_mirror* mirror;
 
-  switch(mtl->type) {
-    case SOLPARSER_MATERIAL_MIRROR:
-      mirror = solparser_get_material_mirror(solstice->parser, mtl->data.mirror);
-      res = create_material_mirror(solstice, mirror, &ssol_mtl);
-      break;
-    case SOLPARSER_MATERIAL_MATTE:
-      matte = solparser_get_material_matte(solstice->parser, mtl->data.matte);
-      res = create_material_matte(solstice, matte, &ssol_mtl);
-    default: FATAL("Unreachable code.\n"); break;
-  }
-  if(res != RES_OK) goto error;
+    mtl = solparser_get_material(solstice->parser, mtl_id);
+    ASSERT(mtl);
 
-  res = htable_material_set(&solstice->materials, &mtl_id.i, &ssol_mtl);
-  if(res != RES_OK) {
-    fprintf(stderr, "Could not register the material into solstice.\n");
-    goto error;
+    switch(mtl->type) {
+      case SOLPARSER_MATERIAL_MIRROR:
+        mirror = solparser_get_material_mirror(solstice->parser, mtl->data.mirror);
+        res = create_material_mirror(solstice, mirror, &ssol_mtl);
+        break;
+      case SOLPARSER_MATERIAL_MATTE:
+        matte = solparser_get_material_matte(solstice->parser, mtl->data.matte);
+        res = create_material_matte(solstice, matte, &ssol_mtl);
+      default: FATAL("Unreachable code.\n"); break;
+    }
+    if(res != RES_OK) goto error;
+
+    res = htable_material_set(&solstice->materials, &mtl_id.i, &ssol_mtl);
+    if(res != RES_OK) {
+      fprintf(stderr, "Could not register the material into solstice.\n");
+      goto error;
+    }
   }
 
 exit:
+  *out_ssol_mtl = ssol_mtl;
   return res;
 error:
   if(ssol_mtl) SSOL(material_ref_put(ssol_mtl));

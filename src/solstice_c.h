@@ -19,22 +19,11 @@
 #include "solstice.h"
 #include "parser/solparser.h"
 
-extern LOCAL_SYM res_T
-solstice_create_ssol_material
-  (struct solstice* solstice,
-   const struct solparser_material_id mtl_id);
-
-/* Return NULL if the material does not exist */
-static FINLINE struct ssol_material*
+extern FINLINE res_T
 solstice_get_ssol_material
   (struct solstice* solstice,
-   const struct solparser_material_id mtl_id)
-{
-  struct ssol_material** pmtl;
-  ASSERT(solstice);
-  pmtl = htable_material_find(&solstice->materials, &mtl_id.i);
-  return pmtl ? *pmtl : NULL;
-}
+   const struct solparser_material_id mtl_id,
+   struct ssol_material** mtl);
 
 #endif /* SOLSTICE_C_H */
 
