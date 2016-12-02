@@ -23,6 +23,7 @@
 
 struct mem_allocator;
 struct ssol_device;
+struct ssol_param_buffer;
 
 /*******************************************************************************
  * Utilities
@@ -59,6 +60,7 @@ get_polygon_vertices(const size_t ivert, double position[2], void* ctx);
 void
 get_shader_normal
   (struct ssol_device* dev,
+   struct ssol_param_buffer* buf,
    const double wavelength,
    const double P[3],
    const double Ng[3],
@@ -70,6 +72,7 @@ get_shader_normal
 void
 get_shader_reflectivity
   (struct ssol_device* dev,
+   struct ssol_param_buffer* buf,
    const double wavelength,
    const double P[3],
    const double Ng[3],
@@ -81,6 +84,7 @@ get_shader_reflectivity
 void
 get_shader_roughness
   (struct ssol_device* dev,
+   struct ssol_param_buffer* buf,
    const double wavelength,
    const double P[3],
    const double Ng[3],
