@@ -56,8 +56,8 @@ set(VERSION_MINOR 1)
 set(VERSION_PATCH 0)
 set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
-set(SOLSTICE_FILES_SRC solstice.c)
-set(SOLSTICE_FILES_INC )
+set(SOLSTICE_FILES_SRC solstice.c solstice_material.c)
+set(SOLSTICE_FILES_INC solstice.h solstice_c.h)
 set(SOLSTICE_FILES_DOC COPYING README.md)
 
 # Prepend each file in the `SOLSTICE_FILES_<SRC|INC>' list by `SOLSTICE_SOURCE_DIR'
@@ -69,8 +69,10 @@ if(CMAKE_COMPILER_IS_GNUCC)
   set(MATH_LIB m)
 endif()
 
-add_executable(solstice ${SOLSTICE_SOURCE_DIR}/solstice.c)
-target_link_libraries(solstice LibYAML RSys ${MATH_LIB} solparser SolAnim SolSolver)
+add_library(sollib STATIC ${SOLSTICE_FILES_SRC} ${SOLSTICE_FILES_INC})
+add_executable(solstice ${SOLSTICE_SOURCE_DIR}/main.c)
+target_link_libraries(solstice
+  LibYAML RSys ${MATH_LIB} sollib solparser SolAnim SolSolver)
 set_target_properties(solstice PROPERTIES
   VERSION ${VERSION}
   SOVERSION ${VERSION_MAJOR})

@@ -1,0 +1,186 @@
+/* Copyright (C) CNRS 2016
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>. */
+
+#include "solstice.h"
+#include "solstice_c.h"
+
+#include <solstice/ssol.h>
+
+/*******************************************************************************
+ * Helper functions
+ ******************************************************************************/
+static void
+mirror_get_normal
+  (struct ssol_device* dev,
+   struct ssol_param_buffer* buf,
+   const double wavelength,
+   const double P[3],
+   const double Ng[3],
+   const double Ns[3],
+   const double uv[2],
+   const double w[3],
+   double* val)
+{
+  (void)dev, (void)buf, (void)wavelength, (void)P, (void)Ng, (void)uv, (void)w;
+  val[0] = Ns[0];
+  val[1] = Ns[1];
+  val[2] = Ns[2];
+}
+
+static void
+mirror_get_reflectivity
+  (struct ssol_device* dev,
+   struct ssol_param_buffer* buf,
+   const double wavelength,
+   const double P[3],
+   const double Ng[3],
+   const double Ns[3],
+   const double uv[2],
+   const double w[3],
+   double* val)
+{
+  const void* p;
+  (void)dev, (void)wavelength, (void)P, (void)Ng, (void)Ns, (void)uv, (void)w;
+  SSOL(param_buffer_get(buf, "reflectivity", &p));
+  *val = *(double*)p;
+}
+
+static void
+mirror_get_roughness
+  (struct ssol_device* dev,
+   struct ssol_param_buffer* buf,
+   const double wavelength,
+   const double P[3],
+   const double Ng[3],
+   const double Ns[3],
+   const double uv[2],
+   const double w[3],
+   double* val)
+{
+  const void* p;
+  (void)dev, (void)wavelength, (void)P, (void)Ng, (void)Ns, (void)uv, (void)w;
+  SSOL(param_buffer_get(buf, "roughness", &p));
+  *val = *(double*)p;
+}
+
+static res_T
+create_material_matte
+  (struct solstice* solstice,
+   const struct solparser_material_matte* matte,
+   struct ssol_material** out_mtl)
+{
+  (void)solstice, (void)matte, (void)out_mtl;
+  /* TODO when the matte material will be available in Solstice Solver */
+  return RES_BAD_ARG;
+}
+
+static res_T
+create_material_mirror
+  (struct solstice* solstice,
+   const struct solparser_material_mirror* mirror,
+   struct ssol_material** out_mtl)
+{
+  struct ssol_mirror_shader shader = SSOL_MIRROR_SHADER_NULL;
+  struct ssol_material* mtl = NULL;
+  struct ssol_param_buffer* pbuf = NULL;
+  res_T res = RES_OK;
+  ASSERT(solstice && mirror && out_mtl);
+
+  res = ssol_material_create_mirror(solstice->ssol, &mtl);
+  if(res != RES_OK) {
+    fprintf(stderr, "Could not create the Solstice Solver mirror material.\n");
+    goto error;
+  }
+
+  res = ssol_param_buffer_create(solstice->ssol, &pbuf);
+  if(res != RES_OK) {
+    fprintf(stderr, "Could not create the Solstice Solver parameter buffer.\n");
+    goto error;
+  }
+
+  res = ssol_param_buffer_set(pbuf, "reflectivity", sizeof(double),
+    ALIGNOF(double), &mirror->reflectivity);
+  if(res != RES_OK) {
+    fprintf(stderr,
+      "Could not set the mirror reflectivity into the parameter buffer.\n");
+    goto error;
+  }
+
+  res = ssol_param_buffer_set(pbuf, "roughness", sizeof(double),
+    ALIGNOF(double), &mirror->roughness);
+  if(res != RES_OK) {
+    fprintf(stderr,
+      "Could not set the material roughness into the parameter buffer.\n");
+    goto error;
+  }
+
+  shader.normal = mirror_get_normal;
+  shader.reflectivity = mirror_get_reflectivity;
+  shader.roughness = mirror_get_roughness;
+  SSOL(mirror_set_shader(mtl, &shader));
+  SSOL(material_set_param_buffer(mtl, pbuf));
+
+exit:
+  if(pbuf) SSOL(param_buffer_ref_put(pbuf));
+  *out_mtl = mtl;
+  return res;
+error:
+  if(mtl) SSOL(material_ref_put(mtl));
+  goto exit;
+}
+
+/*******************************************************************************
+ * Local functions
+ ******************************************************************************/
+res_T
+solstice_create_ssol_material
+  (struct solstice* solstice,
+   const struct solparser_material_id mtl_id)
+{
+  const struct solparser_material* mtl;
+  const struct solparser_material_matte* matte;
+  const struct solparser_material_mirror* mirror;
+  struct ssol_material* ssol_mtl = NULL;
+  res_T res = RES_OK;
+  ASSERT(solstice);
+
+  mtl = solparser_get_material(solstice->parser, mtl_id);
+  ASSERT(mtl);
+
+  switch(mtl->type) {
+    case SOLPARSER_MATERIAL_MIRROR:
+      mirror = solparser_get_material_mirror(solstice->parser, mtl->data.mirror);
+      res = create_material_mirror(solstice, mirror, &ssol_mtl);
+      break;
+    case SOLPARSER_MATERIAL_MATTE:
+      matte = solparser_get_material_matte(solstice->parser, mtl->data.matte);
+      res = create_material_matte(solstice, matte, &ssol_mtl);
+    default: FATAL("Unreachable code.\n"); break;
+  }
+  if(res != RES_OK) goto error;
+
+  res = htable_material_set(&solstice->materials, &mtl_id.i, &ssol_mtl);
+  if(res != RES_OK) {
+    fprintf(stderr, "Could not register the material into solstice.\n");
+    goto error;
+  }
+
+exit:
+  return res;
+error:
+  if(ssol_mtl) SSOL(material_ref_put(ssol_mtl));
+  goto exit;
+}
+
