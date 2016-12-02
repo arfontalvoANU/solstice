@@ -56,8 +56,16 @@ set(VERSION_MINOR 1)
 set(VERSION_PATCH 0)
 set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
-set(SOLSTICE_FILES_SRC solstice.c solstice_material.c)
-set(SOLSTICE_FILES_INC solstice.h solstice_c.h)
+set(SOLSTICE_FILES_SRC
+  solstice.c
+  solstice_entity.c
+  solstice_material.c
+  solstice_object.c
+)
+set(SOLSTICE_FILES_INC
+  solstice.h
+  solstice_c.h
+)
 set(SOLSTICE_FILES_DOC COPYING README.md)
 
 # Prepend each file in the `SOLSTICE_FILES_<SRC|INC>' list by `SOLSTICE_SOURCE_DIR'
