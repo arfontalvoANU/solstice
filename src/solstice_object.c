@@ -131,7 +131,7 @@ create_cuboid
   struct s3dut_mesh* mesh = NULL;
   struct ssol_shape* ssol_shape = NULL;
   res_T res = RES_OK;
-  ASSERT(out_ssol_shape);
+  ASSERT(solstice && out_ssol_shape);
 
   cuboid = solparser_get_shape_cuboid(solstice->parser, cuboid_id);
   res = s3dut_create_cuboid(solstice->allocator, cuboid->size[0],
@@ -167,7 +167,7 @@ create_cylinder
   struct s3dut_mesh* mesh = NULL;
   struct ssol_shape* ssol_shape = NULL;
   res_T res = RES_OK;
-  ASSERT(out_ssol_shape);
+  ASSERT(solstice && out_ssol_shape);
 
   cylinder = solparser_get_shape_cylinder(solstice->parser, cylinder_id);
   ASSERT(cylinder->nslices > 0 && cylinder->nslices < UINT_MAX);
@@ -204,7 +204,7 @@ create_sphere
   struct s3dut_mesh* mesh = NULL;
   struct ssol_shape* ssol_shape = NULL;
   res_T res = RES_OK;
-  ASSERT(out_ssol_shape);
+  ASSERT(solstice && out_ssol_shape);
 
   sphere = solparser_get_shape_sphere(solstice->parser, sphere_id);
   ASSERT(sphere->nslices > 0 && sphere->nslices < UINT_MAX);
@@ -231,29 +231,20 @@ error:
 }
 
 static res_T
-create_parabol
+create_ssol_shape_punched_surface
   (struct solstice* solstice,
-   const double transform[12],
-   const struct solparser_shape_paraboloid_id paraboloid_id,
+   const struct darray_polyclip* clips,
+   struct ssol_quadric* quadric,
    struct ssol_shape** out_ssol_shape)
 {
-  const struct solparser_shape_paraboloid* paraboloid;
   struct ssol_shape* ssol_shape = NULL;
-  struct ssol_quadric quadric;
   struct ssol_carving carvings[MAX_POLYCLIPS];
-  struct ssol_punched_surface punched_surf;
+  struct ssol_punched_surface punched_surf = SSOL_PUNCHED_SURFACE_NULL;
   size_t iclip, nclips;
   res_T res = RES_OK;
-  ASSERT(out_ssol_shape);
+  ASSERT(solstice && quadric && out_ssol_shape);
 
-  paraboloid = solparser_get_shape_parabol(solstice->parser, paraboloid_id);
-
-  quadric.type = SSOL_QUADRIC_PARABOL;
-  quadric.data.parabol.focal = paraboloid->focal;
-  d33_set(quadric.transform, transform);
-  d3_set(quadric.transform+9, transform+9);
-
-  nclips = solparser_shape_paraboloid_get_polyclips_count(paraboloid);
+  nclips = darray_polyclip_size_get(clips);
   if(nclips > MAX_POLYCLIPS) {
     fprintf(stderr, "Too many clipping polygons. "
 "%lu are submitted while at most %lu can be defined.\n",
@@ -264,7 +255,7 @@ create_parabol
 
   FOR_EACH(iclip, 0, nclips) {
     const struct solparser_polyclip* clip;
-    clip = solparser_shape_paraboloid_get_polyclip(paraboloid, iclip);
+    clip = darray_polyclip_cdata_get(clips) + iclip;
 
     carvings[iclip].get = get_carving_pos;
     carvings[iclip].nb_vertices = solparser_polyclip_get_vertices_count(clip);
@@ -272,7 +263,7 @@ create_parabol
     carvings[iclip].context = (void*)clip;
   }
 
-  punched_surf.quadric = &quadric;
+  punched_surf.quadric = quadric;
   punched_surf.carvings = carvings;
   punched_surf.nb_carvings = nclips;
 
@@ -296,6 +287,73 @@ error:
     ssol_shape = NULL;
   }
   goto exit;
+
+}
+
+static res_T
+create_parabol
+  (struct solstice* solstice,
+   const double transform[12],
+   const struct solparser_shape_paraboloid_id id,
+   struct ssol_shape** out_ssol_shape)
+{
+  const struct solparser_shape_paraboloid* paraboloid;
+  struct ssol_quadric quadric = SSOL_QUADRIC_DEFAULT;
+  ASSERT(solstice);
+
+  paraboloid = solparser_get_shape_parabol(solstice->parser, id);
+
+  quadric.type = SSOL_QUADRIC_PARABOL;
+  quadric.data.parabol.focal = paraboloid->focal;
+  d33_set(quadric.transform, transform);
+  d3_set(quadric.transform+9, transform+9);
+
+  return create_ssol_shape_punched_surface
+    (solstice, &paraboloid->polyclips, &quadric, out_ssol_shape);
+}
+
+static res_T
+create_parabolic_cylinder
+  (struct solstice* solstice,
+   const double transform[12],
+   const struct solparser_shape_paraboloid_id id,
+   struct ssol_shape** out_ssol_shape)
+{
+  const struct solparser_shape_paraboloid* paraboloid;
+  struct ssol_quadric quadric = SSOL_QUADRIC_DEFAULT;
+  ASSERT(solstice);
+
+  paraboloid = solparser_get_shape_parabolic_cylinder(solstice->parser, id);
+
+  quadric.type = SSOL_QUADRIC_PARABOLIC_CYLINDER;
+  quadric.data.parabol.focal = paraboloid->focal;
+  d33_set(quadric.transform, transform);
+  d3_set(quadric.transform+9, transform+9);
+
+  return create_ssol_shape_punched_surface
+    (solstice, &paraboloid->polyclips, &quadric, out_ssol_shape);
+
+}
+
+static res_T
+create_plane
+  (struct solstice* solstice,
+   const double transform[12],
+   const struct solparser_shape_plane_id id,
+   struct ssol_shape** out_ssol_shape)
+{
+  const struct solparser_shape_plane* plane;
+  struct ssol_quadric quadric;
+  ASSERT(solstice);
+
+  plane = solparser_get_shape_plane(solstice->parser, id);
+
+  quadric.type = SSOL_QUADRIC_PLANE;
+  d33_set(quadric.transform, transform);
+  d3_set(quadric.transform+9, transform+9);
+
+  return create_ssol_shape_punched_surface
+    (solstice, &plane->polyclips, &quadric, out_ssol_shape);
 }
 
 static res_T
@@ -329,17 +387,23 @@ create_shaded_shape
       res = create_cuboid(solstice, transform, shape->data.cuboid, ssol_shape);
       break;
     case SOLPARSER_SHAPE_CYLINDER:
-      res = create_cylinder(solstice, transform, shape->data.cylinder, ssol_shape);
+      res = create_cylinder
+        (solstice, transform, shape->data.cylinder, ssol_shape);
       break;
     case SOLPARSER_SHAPE_OBJ:
-      fprintf(stderr, "'obj' shapes are not supported yet.\n");
+      fprintf(stderr, "`obj' shapes are not supported yet.\n");
       res = RES_BAD_ARG;
       break;
     case SOLPARSER_SHAPE_PARABOL:
       res = create_parabol(solstice, transform, shape->data.parabol, ssol_shape);
       break;
-    case SOLPARSER_SHAPE_PARABOLIC_CYLINDER: break;
-    case SOLPARSER_SHAPE_PLANE: break;
+    case SOLPARSER_SHAPE_PARABOLIC_CYLINDER:
+      res = create_parabolic_cylinder
+        (solstice, transform, shape->data.parabol, ssol_shape);
+      break;
+    case SOLPARSER_SHAPE_PLANE:
+      res = create_plane(solstice, transform, shape->data.plane, ssol_shape);
+      break;
     case SOLPARSER_SHAPE_SPHERE:
       res = create_sphere(solstice, transform, shape->data.sphere, ssol_shape);
       break;

@@ -158,7 +158,6 @@ solparser_shape_imported_geometry_copy_and_release
  ******************************************************************************/
 struct solparser_shape_paraboloid {
   double focal;
-  /* Internal data. Should not be accessed directly */
   struct darray_polyclip polyclips; 
 };
 
@@ -196,24 +195,6 @@ solparser_shape_paraboloid_copy_and_release
   ASSERT(dst && src);
   dst->focal = src->focal;
   return darray_polyclip_copy_and_release(&dst->polyclips, &src->polyclips);
-}
-
-static INLINE size_t
-solparser_shape_paraboloid_get_polyclips_count
-  (const struct solparser_shape_paraboloid* paraboloid)
-{
-  ASSERT(paraboloid);
-  return darray_polyclip_size_get(&paraboloid->polyclips);
-}
-
-static INLINE const struct solparser_polyclip*
-solparser_shape_paraboloid_get_polyclip
-  (const struct solparser_shape_paraboloid* paraboloid,
-   const size_t i)
-{
-  ASSERT(paraboloid);
-  ASSERT(i < solparser_shape_paraboloid_get_polyclips_count(paraboloid));
-  return darray_polyclip_cdata_get(&paraboloid->polyclips) + i;
 }
 
 /*******************************************************************************
