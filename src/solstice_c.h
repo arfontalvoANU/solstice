@@ -19,11 +19,19 @@
 #include "solstice.h"
 #include "parser/solparser.h"
 
-extern FINLINE res_T
+struct ssol_instance;
+
+extern LOCAL_SYM res_T
 solstice_get_ssol_material
   (struct solstice* solstice,
    const struct solparser_material_id mtl_id,
    struct ssol_material** mtl);
+
+extern LOCAL_SYM res_T
+solstice_instantiate_geometry
+  (struct solstice* solstice,
+   const struct solparser_geometry_id geom_id,
+   struct ssol_instance** inst);
 
 #endif /* SOLSTICE_C_H */
 

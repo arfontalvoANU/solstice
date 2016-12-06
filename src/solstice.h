@@ -42,6 +42,8 @@ struct solstice {
 
   struct htable_material materials;
   struct htable_object objects;
+
+  struct mem_allocator* allocator;
 };
 
 extern LOCAL_SYM res_T

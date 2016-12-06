@@ -66,6 +66,8 @@ solstice_init(struct mem_allocator* allocator, struct solstice* solstice)
   htable_material_init(allocator, &solstice->materials);
   htable_object_init(allocator, &solstice->objects);
 
+  solstice->allocator = allocator ? allocator : &mem_default_allocator;
+
   res = ssol_device_create
     (NULL, allocator, SSOL_NTHREADS_DEFAULT, 0, &solstice->ssol);
   if(res != RES_OK) {

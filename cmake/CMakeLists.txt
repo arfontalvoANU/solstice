@@ -29,9 +29,10 @@ set(LibYAML_DIR ${_current_source_dir}/)
 find_package(LibYAML REQUIRED)
 find_package(RCMake 0.2.3 REQUIRED)
 find_package(RSys 0.4 REQUIRED)
-find_package(StarSP 0.4 REQUIRED)
 find_package(SolAnim 0.1 REQUIRED)
 find_package(SolSolver 0.1 REQUIRED)
+find_package(Star3DUT REQUIRED)
+find_package(StarSP 0.4 REQUIRED)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${RCMAKE_SOURCE_DIR})
 include(rcmake)
@@ -40,7 +41,9 @@ include(rcmake_runtime)
 include_directories(
   ${RSys_INCLUDE_DIR}
   ${SolAnim_INCLUDE_DIR}
-  ${SolSolver_INCLUDE_DIR})
+  ${SolSolver_INCLUDE_DIR}
+  ${StarSP_INCLUDE_DIR}
+  ${Star3DUT_INCLUDE_DIR})
 
 ################################################################################
 # Build subprojects
@@ -60,12 +63,10 @@ set(SOLSTICE_FILES_SRC
   solstice.c
   solstice_entity.c
   solstice_material.c
-  solstice_object.c
-)
+  solstice_object.c)
 set(SOLSTICE_FILES_INC
   solstice.h
-  solstice_c.h
-)
+  solstice_c.h)
 set(SOLSTICE_FILES_DOC COPYING README.md)
 
 # Prepend each file in the `SOLSTICE_FILES_<SRC|INC>' list by `SOLSTICE_SOURCE_DIR'

@@ -15,7 +15,8 @@ It also depends on the
 [LibYAML](http://pyyaml.org/wiki/LibYAML),
 [RSys](https://gitlab.com/vaplv/rsys/),
 [Solstice-Anim](https://gitlab.com/meso-star/solstice-anim/),
-[Solstice-Solver](https://gitlab.com/meso-star/solstice-solver/) and
+[Solstice-Solver](https://gitlab.com/meso-star/solstice-solver/),
+[Star-3DUT](https://gitlab.com/meso-star/star-3dut/) and,
 [Star-SP](https://gitlab.com/meso-star/star-sp/) libraries.
 
 First ensure that CMake is installed on your system. Then install the RCMake
