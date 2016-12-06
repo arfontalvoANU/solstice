@@ -15,10 +15,17 @@
 
 #include "solstice_c.h"
 
+#include <rsys/double33.h>
+#include <rsys/float3.h>
 #include <solstice/ssol.h>
 #include <star/s3dut.h>
 
 #include <limits.h>
+
+struct mesh_context {
+  struct s3dut_mesh_data data;
+  double transform[12];
+};
 
 /*******************************************************************************
  * Helper functions
@@ -26,41 +33,46 @@
 static void
 get_ids(const unsigned itri, unsigned ids[3], void* ctx)
 {
-  const struct s3dut_mesh_data* mesh = ctx;
-  ASSERT(ids && ctx && itri < mesh->nprimitives);
-  ASSERT(mesh->indices[itri*3+0] <= UINT_MAX);
-  ASSERT(mesh->indices[itri*3+1] <= UINT_MAX);
-  ASSERT(mesh->indices[itri*3+2] <= UINT_MAX);
-  ids[0] = (unsigned)mesh->indices[itri*3+0];
-  ids[1] = (unsigned)mesh->indices[itri*3+1];
-  ids[2] = (unsigned)mesh->indices[itri*3+2];
+  const struct mesh_context* mesh = ctx;
+  ASSERT(ids && ctx && itri < mesh->data.nprimitives);
+  ASSERT(mesh->data.indices[itri*3+0] <= UINT_MAX);
+  ASSERT(mesh->data.indices[itri*3+1] <= UINT_MAX);
+  ASSERT(mesh->data.indices[itri*3+2] <= UINT_MAX);
+  ids[0] = (unsigned)mesh->data.indices[itri*3+0];
+  ids[1] = (unsigned)mesh->data.indices[itri*3+1];
+  ids[2] = (unsigned)mesh->data.indices[itri*3+2];
 }
 
 static void
 get_pos(const unsigned ivert, float pos[3], void* ctx)
 {
-  const struct s3dut_mesh_data* mesh = ctx;
-  ASSERT(pos && ctx && ivert < mesh->nvertices);
-  pos[0] = (float)mesh->positions[ivert*3+0];
-  pos[1] = (float)mesh->positions[ivert*3+1];
-  pos[2] = (float)mesh->positions[ivert*3+2];
+  const struct mesh_context* mesh = ctx;
+  double tmp[3];
+  ASSERT(pos && ctx && ivert < mesh->data.nvertices);
+  d3_set(tmp, mesh->data.positions + ivert*3);
+  d33_muld3(tmp, mesh->transform, tmp);
+  d3_add(tmp, mesh->transform+9, tmp);
+  f3_set_d3(pos, tmp);
 }
 
 static res_T
 create_ssol_shape_mesh
   (struct solstice* solstice,
+   const double transform[12],
    const struct s3dut_mesh* mesh,
    struct ssol_shape** out_ssol_shape)
 {
-  struct s3dut_mesh_data mesh_data;
+  struct mesh_context mesh_ctx;
   struct ssol_vertex_data vertex_data = SSOL_VERTEX_DATA_NULL;
   struct ssol_shape* ssol_shape = NULL;
   res_T res = RES_OK;
   ASSERT(solstice && mesh && out_ssol_shape);
 
-  S3DUT(mesh_get_data(mesh, &mesh_data));
-  ASSERT(mesh_data.nprimitives <= UINT_MAX);
-  ASSERT(mesh_data.nvertices <= UINT_MAX);
+  S3DUT(mesh_get_data(mesh, &mesh_ctx.data));
+  ASSERT(mesh_ctx.data.nprimitives <= UINT_MAX);
+  ASSERT(mesh_ctx.data.nvertices <= UINT_MAX);
+  d33_set(mesh_ctx.transform, transform);
+  d3_set(mesh_ctx.transform+9, transform+9);
 
   res = ssol_shape_create_mesh(solstice->ssol, &ssol_shape);
   if(res != RES_OK) {
@@ -70,8 +82,8 @@ create_ssol_shape_mesh
 
   vertex_data.usage = SSOL_POSITION;
   vertex_data.get = get_pos;
-  res = ssol_mesh_setup(ssol_shape, (unsigned)mesh_data.nprimitives, get_ids,
-    (unsigned)mesh_data.nvertices, &vertex_data, 1, &mesh_data);
+  res = ssol_mesh_setup(ssol_shape, (unsigned)mesh_ctx.data.nprimitives,
+    get_ids, (unsigned)mesh_ctx.data.nvertices, &vertex_data, 1, &mesh_ctx);
   if(res != RES_OK) {
     fprintf(stderr, "Could not setup a Solstice Solver mesh shape.\n");
     goto error;
@@ -91,6 +103,7 @@ error:
 static res_T
 create_cuboid
   (struct solstice* solstice,
+   const double transform[12],
    const struct solparser_shape_cuboid_id cuboid_id,
    struct ssol_shape** out_ssol_shape)
 {
@@ -108,7 +121,81 @@ create_cuboid
     goto error;
   }
 
-  res = create_ssol_shape_mesh(solstice, mesh, &ssol_shape);
+  res = create_ssol_shape_mesh(solstice, transform, mesh, &ssol_shape);
+  if(res != RES_OK) goto error;
+
+exit:
+  if(mesh) S3DUT(mesh_ref_put(mesh));
+  *out_ssol_shape = ssol_shape;
+  return res;
+error:
+  if(ssol_shape) {
+    SSOL(shape_ref_put(ssol_shape));
+    ssol_shape = NULL;
+  }
+  goto exit;
+}
+
+static res_T
+create_cylinder
+  (struct solstice* solstice,
+   const double transform[12],
+   const struct solparser_shape_cylinder_id cylinder_id,
+   struct ssol_shape** out_ssol_shape)
+{
+  const struct solparser_shape_cylinder* cylinder;
+  struct s3dut_mesh* mesh = NULL;
+  struct ssol_shape* ssol_shape = NULL;
+  res_T res = RES_OK;
+  ASSERT(out_ssol_shape);
+
+  cylinder = solparser_get_shape_cylinder(solstice->parser, cylinder_id);
+  ASSERT(cylinder->nslices > 0 && cylinder->nslices < UINT_MAX);
+  res = s3dut_create_cylinder(solstice->allocator, cylinder->radius,
+    cylinder->height, (unsigned)cylinder->nslices, 1, &mesh);
+  if(res != RES_OK) {
+    fprintf(stderr, "Could not create the cylinder 3D data.\n");
+    goto error;
+  }
+
+  res = create_ssol_shape_mesh(solstice, transform, mesh, &ssol_shape);
+  if(res != RES_OK) goto error;
+
+exit:
+  if(mesh) S3DUT(mesh_ref_put(mesh));
+  *out_ssol_shape = ssol_shape;
+  return res;
+error:
+  if(ssol_shape) {
+    SSOL(shape_ref_put(ssol_shape));
+    ssol_shape = NULL;
+  }
+  goto exit;
+}
+
+static res_T
+create_sphere
+  (struct solstice* solstice,
+   const double transform[12],
+   const struct solparser_shape_sphere_id sphere_id,
+   struct ssol_shape** out_ssol_shape)
+{
+  const struct solparser_shape_sphere* sphere;
+  struct s3dut_mesh* mesh = NULL;
+  struct ssol_shape* ssol_shape = NULL;
+  res_T res = RES_OK;
+  ASSERT(out_ssol_shape);
+
+  sphere = solparser_get_shape_sphere(solstice->parser, sphere_id);
+  ASSERT(sphere->nslices > 0 && sphere->nslices < UINT_MAX);
+  res = s3dut_create_sphere(solstice->allocator, sphere->radius,
+    (unsigned)sphere->nslices, (unsigned)(sphere->nslices/2), &mesh);
+  if(res != RES_OK) {
+    fprintf(stderr, "Could not create the sphere 3D data.\n");
+    goto error;
+  }
+
+  res = create_ssol_shape_mesh(solstice, transform, mesh, &ssol_shape);
   if(res != RES_OK) goto error;
 
 exit:
@@ -134,6 +221,7 @@ create_shaded_shape
   const struct solparser_material_double_sided* mtl2;
   const struct solparser_object* obj;
   const struct solparser_shape* shape;
+  double transform[12];
   res_T res = RES_OK;
   ASSERT(solstice && ssol_front && ssol_back && ssol_shape);
 
@@ -143,18 +231,32 @@ create_shaded_shape
   solstice_get_ssol_material(solstice, mtl2->front, ssol_front);
   solstice_get_ssol_material(solstice, mtl2->back, ssol_back);
 
+  /* Define the shape transformation */
+  d33_rotation(transform, obj->rotation[0], obj->rotation[1], obj->rotation[2]);
+  d33_muld3(transform+9, transform, obj->translation);
+
   shape = solparser_get_shape(solstice->parser, obj->shape);
   switch(shape->type) {
     case SOLPARSER_SHAPE_CUBOID:
-      res = create_cuboid(solstice, shape->data.cuboid, ssol_shape);
+      res = create_cuboid(solstice, transform, shape->data.cuboid, ssol_shape);
       break;
-    case SOLPARSER_SHAPE_CYLINDER: break;
-    case SOLPARSER_SHAPE_OBJ: break;
+    case SOLPARSER_SHAPE_CYLINDER:
+      res = create_cylinder(solstice, transform, shape->data.cylinder, ssol_shape);
+      break;
+    case SOLPARSER_SHAPE_OBJ:
+      fprintf(stderr, "'obj' shapes are not supported yet.\n");
+      res = RES_BAD_ARG;
+      break;
     case SOLPARSER_SHAPE_PARABOL: break;
     case SOLPARSER_SHAPE_PARABOLIC_CYLINDER: break;
     case SOLPARSER_SHAPE_PLANE: break;
-    case SOLPARSER_SHAPE_SPHERE: break;
-    case SOLPARSER_SHAPE_STL: break;
+    case SOLPARSER_SHAPE_SPHERE:
+      res = create_sphere(solstice, transform, shape->data.sphere, ssol_shape);
+      break;
+    case SOLPARSER_SHAPE_STL:
+      fprintf(stderr, "`STL' shapes are not supported yet.\n");
+      res = RES_BAD_ARG;
+      break;
     default: FATAL("Unreachable code.\n"); break;
   }
   return res;
