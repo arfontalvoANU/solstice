@@ -377,35 +377,36 @@ error:
 }
 
 static res_T
-parse_real3
+parse_realX
   (struct solparser* parser,
    yaml_document_t* doc,
-   const yaml_node_t* real3,
+   const yaml_node_t* realX,
    const double lower_bound,
    const double upper_bound,
-   double dst[3])
+   const size_t dim,
+   double dst[])
 {
   intptr_t i, n;
   res_T res = RES_OK;
-  ASSERT(doc && real3 && dst);
+  ASSERT(doc && realX && dst && dim > 0);
 
-  if(real3->type != YAML_SEQUENCE_NODE) {
-    log_err(parser, real3, "expect a sequence of 3 reals.\n");
+  if(realX->type != YAML_SEQUENCE_NODE) {
+    log_err(parser, realX, "expect a sequence of 3 reals.\n");
     res = RES_BAD_ARG;
     goto error;
   }
 
-  n = real3->data.sequence.items.top - real3->data.sequence.items.start;
-  if(n != 3) {
-    log_err(parser, real3, "expect 3 reals while `%li' %s submitted.\n",
-      n, n > 1 ? "are" : "is");
+  n = realX->data.sequence.items.top - realX->data.sequence.items.start;
+  if((size_t)n != dim) {
+    log_err(parser, realX, "expect %lu reals while `%li' %s submitted.\n",
+      (unsigned long)dim, n, n > 1 ? "are" : "is");
     res = RES_BAD_ARG;
     goto error;
   }
 
   FOR_EACH(i, 0, n) {
     yaml_node_t* real;
-    real = yaml_document_get_node(doc, real3->data.sequence.items.start[i]);
+    real = yaml_document_get_node(doc, realX->data.sequence.items.start[i]);
     res = parse_real(parser, real, lower_bound, upper_bound, dst + i);
     if(res != RES_OK) goto error;
   }
@@ -414,6 +415,30 @@ exit:
   return res;
 error:
   goto exit;
+}
+
+static FINLINE res_T
+parse_real3
+  (struct solparser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* real3,
+   const double lower_bound,
+   const double upper_bound,
+   double dst[3])
+{
+  return parse_realX(parser, doc, real3, lower_bound, upper_bound, 3, dst);
+}
+
+static FINLINE res_T
+parse_real2
+  (struct solparser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* real2,
+   const double lower_bound,
+   const double upper_bound,
+   double dst[2])
+{
+  return parse_realX(parser, doc, real2, lower_bound, upper_bound, 2, dst);
 }
 
 static res_T
@@ -1083,7 +1108,7 @@ parse_vertices
     goto error;
   }
 
-  res = darray_double_resize(coords, (size_t)n*3/*#coords per vertex*/);
+  res = darray_double_resize(coords, (size_t)n*2/*#coords per vertex*/);
   if(res != RES_OK) {
     log_err(parser, vertices, "could not allocate the array of vertices.\n");
     goto error;
@@ -1091,10 +1116,10 @@ parse_vertices
 
   FOR_EACH(i, 0, n) {
     yaml_node_t* vertex;
-    double* real3 = darray_double_data_get(coords) + i*3/*#coords per vertex*/;
+    double* real2 = darray_double_data_get(coords) + i*2/*#coords per vertex*/;
 
     vertex = yaml_document_get_node(doc, vertices->data.sequence.items.start[i]);
-    res = parse_real3(parser, doc, vertex, -DBL_MAX, DBL_MAX, real3);
+    res = parse_real2(parser, doc, vertex, -DBL_MAX, DBL_MAX, real2);
     if(res != RES_OK) goto error;
   }
 

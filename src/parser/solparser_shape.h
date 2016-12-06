@@ -79,6 +79,29 @@ solparser_polyclip_copy_and_release
   return darray_double_copy_and_release(&dst->vertices, &src->vertices);
 }
 
+static INLINE size_t
+solparser_polyclip_get_vertices_count
+  (const struct solparser_polyclip* polyclip)
+{
+  size_t n;
+  ASSERT(polyclip);
+  n = darray_double_size_get(&polyclip->vertices);
+  ASSERT((n % 2/*#coords per vertex*/) == 0);
+  return n / 2/*#coords per vertex*/;
+}
+
+static INLINE void
+solparser_polyclip_get_vertex
+  (const struct solparser_polyclip* polyclip,
+   const size_t ivert,
+   double pos[2])
+{
+  ASSERT(polyclip && ivert < solparser_polyclip_get_vertices_count(polyclip));
+  pos[0] = darray_double_cdata_get(&polyclip->vertices)[ivert*2+0];
+  pos[1] = darray_double_cdata_get(&polyclip->vertices)[ivert*2+1];
+}
+
+
 /* Declare the array of clipping polygons */
 #define DARRAY_NAME polyclip
 #define DARRAY_DATA struct solparser_polyclip
@@ -135,7 +158,8 @@ solparser_shape_imported_geometry_copy_and_release
  ******************************************************************************/
 struct solparser_shape_paraboloid {
   double focal;
-  struct darray_polyclip polyclips;
+  /* Internal data. Should not be accessed directly */
+  struct darray_polyclip polyclips; 
 };
 
 static INLINE void
@@ -172,6 +196,24 @@ solparser_shape_paraboloid_copy_and_release
   ASSERT(dst && src);
   dst->focal = src->focal;
   return darray_polyclip_copy_and_release(&dst->polyclips, &src->polyclips);
+}
+
+static INLINE size_t
+solparser_shape_paraboloid_get_polyclips_count
+  (const struct solparser_shape_paraboloid* paraboloid)
+{
+  ASSERT(paraboloid);
+  return darray_polyclip_size_get(&paraboloid->polyclips);
+}
+
+static INLINE const struct solparser_polyclip*
+solparser_shape_paraboloid_get_polyclip
+  (const struct solparser_shape_paraboloid* paraboloid,
+   const size_t i)
+{
+  ASSERT(paraboloid);
+  ASSERT(i < solparser_shape_paraboloid_get_polyclips_count(paraboloid));
+  return darray_polyclip_cdata_get(&paraboloid->polyclips) + i;
 }
 
 /*******************************************************************************

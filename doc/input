@@ -22,7 +22,7 @@
         focal: 1
         clip:
           - operation: SUB
-            vertices: [ [1, 2, 3], [3, 4, 5], [6, 7, 8] ]
+            vertices: [ [1, 2], [3, 4], [6, 7] ]
 
 # Create the solar factory
 - entity:
@@ -174,10 +174,10 @@
   vertices: <vertices-list>
 
 <vertices-list> ::=
-  - <real3>
-  - <real3>
-  - <real3>
-[ - <real3> ... ]
+  - <real2>
+  - <real2>
+  - <real2>
+[ - <real2> ... ]
 
 ----------------------------------------
 <material> ::=
@@ -258,6 +258,10 @@
   transform:
     translation: <real3>
     rotation: <real3>
+
+<real2> ::=
+  - REAL
+  - REAL
 
 <real3> ::=
   - REAL
