@@ -22,6 +22,8 @@
 
 #include <limits.h>
 
+#define MAX_POLYCLIPS 16
+
 struct mesh_context {
   struct s3dut_mesh_data data;
   double transform[12];
@@ -53,6 +55,24 @@ get_pos(const unsigned ivert, float pos[3], void* ctx)
   d33_muld3(tmp, mesh->transform, tmp);
   d3_add(tmp, mesh->transform+9, tmp);
   f3_set_d3(pos, tmp);
+}
+
+static void
+get_carving_pos(const size_t ivert, double pos[2], void* ctx)
+{
+  const struct solparser_polyclip* polyclip = ctx;
+  ASSERT(pos && ctx);
+  solparser_polyclip_get_vertex(polyclip, ivert, pos);
+}
+
+static INLINE enum ssol_clipping_op
+solparser_clip_op_to_ssol_clipping_op(const enum solparser_clip_op op)
+{
+  switch(op) {
+    case SOLPARSER_CLIP_OP_SUB: return SSOL_SUB;
+    case SOLPARSER_CLIP_OP_AND: return SSOL_AND;
+    default: FATAL("Unreachable code.\n");
+  }
 }
 
 static res_T
@@ -211,6 +231,74 @@ error:
 }
 
 static res_T
+create_parabol
+  (struct solstice* solstice,
+   const double transform[12],
+   const struct solparser_shape_paraboloid_id paraboloid_id,
+   struct ssol_shape** out_ssol_shape)
+{
+  const struct solparser_shape_paraboloid* paraboloid;
+  struct ssol_shape* ssol_shape = NULL;
+  struct ssol_quadric quadric;
+  struct ssol_carving carvings[MAX_POLYCLIPS];
+  struct ssol_punched_surface punched_surf;
+  size_t iclip, nclips;
+  res_T res = RES_OK;
+  ASSERT(out_ssol_shape);
+
+  paraboloid = solparser_get_shape_parabol(solstice->parser, paraboloid_id);
+
+  quadric.type = SSOL_QUADRIC_PARABOL;
+  quadric.data.parabol.focal = paraboloid->focal;
+  d33_set(quadric.transform, transform);
+  d3_set(quadric.transform+9, transform+9);
+
+  nclips = solparser_shape_paraboloid_get_polyclips_count(paraboloid);
+  if(nclips > MAX_POLYCLIPS) {
+    fprintf(stderr, "Too many clipping polygons. "
+"%lu are submitted while at most %lu can be defined.\n",
+      (unsigned long)nclips, (unsigned long)MAX_POLYCLIPS);
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  FOR_EACH(iclip, 0, nclips) {
+    const struct solparser_polyclip* clip;
+    clip = solparser_shape_paraboloid_get_polyclip(paraboloid, iclip);
+
+    carvings[iclip].get = get_carving_pos;
+    carvings[iclip].nb_vertices = solparser_polyclip_get_vertices_count(clip);
+    carvings[iclip].operation = solparser_clip_op_to_ssol_clipping_op(clip->op);
+    carvings[iclip].context = (void*)clip;
+  }
+
+  punched_surf.quadric = &quadric;
+  punched_surf.carvings = carvings;
+  punched_surf.nb_carvings = nclips;
+
+  res = ssol_shape_create_punched_surface(solstice->ssol, &ssol_shape);
+  if(res != RES_OK) {
+    fprintf(stderr, "Could not create a Solstice Solver parabol.\n");
+    goto error;
+  }
+
+  res = ssol_punched_surface_setup(ssol_shape, &punched_surf);
+  if(res != RES_OK) {
+    fprintf(stderr, "Could not setup the Solstice Solver parabol.\n");
+    goto error;
+  }
+exit:
+  *out_ssol_shape = ssol_shape;
+  return res;
+error:
+  if(ssol_shape) {
+    SSOL(shape_ref_put(ssol_shape));
+    ssol_shape = NULL;
+  }
+  goto exit;
+}
+
+static res_T
 create_shaded_shape
   (struct solstice* solstice,
    const struct solparser_object_id obj_id,
@@ -247,7 +335,9 @@ create_shaded_shape
       fprintf(stderr, "'obj' shapes are not supported yet.\n");
       res = RES_BAD_ARG;
       break;
-    case SOLPARSER_SHAPE_PARABOL: break;
+    case SOLPARSER_SHAPE_PARABOL:
+      res = create_parabol(solstice, transform, shape->data.parabol, ssol_shape);
+      break;
     case SOLPARSER_SHAPE_PARABOLIC_CYLINDER: break;
     case SOLPARSER_SHAPE_PLANE: break;
     case SOLPARSER_SHAPE_SPHERE:
