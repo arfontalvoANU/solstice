@@ -269,13 +269,13 @@ create_ssol_shape_punched_surface
 
   res = ssol_shape_create_punched_surface(solstice->ssol, &ssol_shape);
   if(res != RES_OK) {
-    fprintf(stderr, "Could not create a Solstice Solver parabol.\n");
+    fprintf(stderr, "Could not create a Solstice Solver punched surface.\n");
     goto error;
   }
 
   res = ssol_punched_surface_setup(ssol_shape, &punched_surf);
   if(res != RES_OK) {
-    fprintf(stderr, "Could not setup the Solstice Solver parabol.\n");
+    fprintf(stderr, "Could not setup the Solstice Solver punched surface.\n");
     goto error;
   }
 exit:
