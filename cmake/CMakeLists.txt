@@ -34,6 +34,11 @@ find_package(SolSolver 0.1 REQUIRED)
 find_package(Star3DUT REQUIRED)
 find_package(StarSP 0.4 REQUIRED)
 
+if(MSVC)
+  find_package(MuslGetopt REQUIRED)
+  include_directories(${MuslGetopt_INCLUDE_DIR})
+endif()
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${RCMAKE_SOURCE_DIR})
 include(rcmake)
 include(rcmake_runtime)
@@ -61,11 +66,13 @@ set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
 set(SOLSTICE_FILES_SRC
   solstice.c
+  solstice_args.c
   solstice_entity.c
   solstice_material.c
   solstice_object.c)
 set(SOLSTICE_FILES_INC
   solstice.h
+  solstice_args.h
   solstice_c.h)
 set(SOLSTICE_FILES_DOC COPYING README.md)
 

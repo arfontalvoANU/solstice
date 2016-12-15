@@ -13,24 +13,29 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "solstice_args.h"
+#ifndef SOLSTICE_ARGS_H
+#define SOLSTICE_ARGS_H
+
 #include <rsys/rsys.h>
 
-int
-main(int argc, char** argv)
-{
-  struct solstice_args args;
-  res_T res;
-  int err = 0;
+struct solstice_args {
+  const char* output_filename;
+  unsigned long nrealisations; /* #realisations */
+  int quiet;
+};
 
-  res = solstice_args_init(&args, argc, argv);
-  if(res != RES_OK) goto error;
+#define SOLSTICE_ARGS_NULL__ {NULL, 0, 0}
+static const struct solstice_args SOLSTICE_ARGS_NULL = SOLSTICE_ARGS_NULL__;
 
-exit:
-  solstice_args_release(&args);
-  return err;
-error:
-  err = -1;
-  goto exit;
-}
+extern LOCAL_SYM res_T
+solstice_args_init
+  (struct solstice_args* args,
+   const int argc,
+   char** argv);
+
+extern LOCAL_SYM void
+solstice_args_release
+  (struct solstice_args* args);
+
+#endif /* SOLSTICE_ARGS_H */
 
