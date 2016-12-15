@@ -18,6 +18,11 @@
 
 #include <solstice/ssol.h>
 
+struct mirror_param {
+  double roughness;
+  double reflectivity;
+};
+
 /*******************************************************************************
  * Helper functions
  ******************************************************************************/
@@ -51,10 +56,10 @@ mirror_get_reflectivity
    const double w[3],
    double* val)
 {
-  const void* p;
+  const struct mirror_param* param;
   (void)dev, (void)wavelength, (void)P, (void)Ng, (void)Ns, (void)uv, (void)w;
-  SSOL(param_buffer_get(buf, "reflectivity", &p));
-  *val = *(double*)p;
+  param = ssol_param_buffer_get(buf);
+  *val = param->reflectivity;
 }
 
 static void
@@ -69,10 +74,10 @@ mirror_get_roughness
    const double w[3],
    double* val)
 {
-  const void* p;
+  const struct mirror_param* param;
   (void)dev, (void)wavelength, (void)P, (void)Ng, (void)Ns, (void)uv, (void)w;
-  SSOL(param_buffer_get(buf, "roughness", &p));
-  *val = *(double*)p;
+  param = ssol_param_buffer_get(buf);
+  *val = param->roughness;
 }
 
 static res_T
@@ -95,6 +100,7 @@ create_material_mirror
   struct ssol_mirror_shader shader = SSOL_MIRROR_SHADER_NULL;
   struct ssol_material* mtl = NULL;
   struct ssol_param_buffer* pbuf = NULL;
+  struct mirror_param* param;
   res_T res = RES_OK;
   ASSERT(solstice && mirror && out_mtl);
 
@@ -104,27 +110,18 @@ create_material_mirror
     goto error;
   }
 
-  res = ssol_param_buffer_create(solstice->ssol, &pbuf);
+  res = ssol_param_buffer_create
+    (solstice->ssol, sizeof(struct mirror_param), &pbuf);
   if(res != RES_OK) {
     fprintf(stderr, "Could not create the Solstice Solver parameter buffer.\n");
     goto error;
   }
 
-  res = ssol_param_buffer_set(pbuf, "reflectivity", sizeof(double),
-    ALIGNOF(double), &mirror->reflectivity);
-  if(res != RES_OK) {
-    fprintf(stderr,
-      "Could not set the mirror reflectivity into the parameter buffer.\n");
-    goto error;
-  }
-
-  res = ssol_param_buffer_set(pbuf, "roughness", sizeof(double),
-    ALIGNOF(double), &mirror->roughness);
-  if(res != RES_OK) {
-    fprintf(stderr,
-      "Could not set the material roughness into the parameter buffer.\n");
-    goto error;
-  }
+  param = ssol_param_buffer_allocate
+    (pbuf, sizeof(struct mirror_param), ALIGNOF(struct mirror_param));
+  ASSERT(param);
+  param->reflectivity = mirror->reflectivity;
+  param->roughness = mirror->roughness;
 
   shader.normal = mirror_get_normal;
   shader.reflectivity = mirror_get_reflectivity;
