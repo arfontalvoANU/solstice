@@ -1,0 +1,27 @@
+solstice
+  -d <date-list>:<pos-on-earth>
+  -D <sun-dir-list>
+  -h # Short help and exit
+  -o OUTPUT # defaulting to stdout if not defined
+  -q # don't print a message if no INPUT is submitted
+  -n INTEGER # Realisations count
+  -r [camera] # Switch in rendering mode
+  INPUT # Input scene in YAML
+
+<date-list> ::=
+  <date> [ ... ]
+
+<date> ::=
+  year:month:day:minutes:seconds:timezone # <=> UNIX format
+
+<sun-dir-list> ::=
+  <sun-dir> [ ... ]
+
+<sun-dir> ::=
+  azimuth:elevation
+
+<pos-on-earth> ::=
+  longititude:latitude:altitude
+
+<camera> ::=
+  position[:target:[up]]
