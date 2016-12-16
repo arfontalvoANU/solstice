@@ -95,6 +95,26 @@ set_target_properties(solstice PROPERTIES
 rcmake_copy_runtime_libraries(solstice)
 
 ################################################################################
+# Tests
+################################################################################
+if(NOT NO_TEST)
+  function(build_test _name)
+    add_executable(${_name}
+      ${SOLSTICE_SOURCE_DIR}/${_name}.c
+      ${SOLSTICE_SOURCE_DIR}/test_solstice_utils.h)
+    target_link_libraries(${_name} ${MATH_LIB} RSys sollib)
+  endfunction()
+
+  function(new_test _name)
+    build_test(${_name})
+    add_test(${_name} ${_name})
+  endfunction()
+
+  new_test(test_solstice_args)
+
+endif()
+
+################################################################################
 # Define output & install directories
 ################################################################################
 install(TARGETS solstice
