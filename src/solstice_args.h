@@ -21,10 +21,24 @@
 struct solstice_args {
   const char* output_filename;
   unsigned long nrealisations; /* #realisations */
+
+  struct {
+    double pos[3];
+    double tgt[3];
+    double up[3];
+    double fov_x;
+  } camera;
+
+  struct {
+    unsigned long width;
+    unsigned long height;
+  } img;
+
+  int rendering;
   int quiet;
 };
 
-#define SOLSTICE_ARGS_NULL__ {NULL, 0, 0}
+#define SOLSTICE_ARGS_NULL__ {0}
 static const struct solstice_args SOLSTICE_ARGS_NULL = SOLSTICE_ARGS_NULL__;
 
 extern LOCAL_SYM res_T

@@ -18,12 +18,16 @@
 #include "solstice_args.h"
 
 #include <rsys/cstr.h>
+#include <rsys/double3.h>
 
 #ifdef COMPILER_CL
   #include <getopt.h>
+  #define strtok_r strtok_s
 #else
   #include <unistd.h>
 #endif
+
+#include <string.h>
 
 /*******************************************************************************
  * Helper functions
@@ -39,19 +43,197 @@ print_help(const char* program)
 }
 
 static res_T
-parse_rendering(const char* str, struct solstice_args* args)
+parse_fov(const char* str, double* out_fov)
 {
+  double fov;
+  res_T res = RES_OK;
+  ASSERT(str && out_fov);
+
+  res = cstr_to_double(str, &fov);
+  if(res != RES_OK) {
+    fprintf(stderr, "Invalid field of view `%s'.\n", str);
+    return RES_BAD_ARG;
+  }
+
+  if(fov < 30 || fov > 120) {
+    fprintf(stderr, "The field of view %g is not in [30, 120].\n", fov);
+    return RES_BAD_ARG;
+  }
+  *out_fov = MDEG2RAD(fov);
+  return RES_OK;
+}
+
+
+static res_T
+parse_double3(const char* str, double dbl3[3])
+{
+  char buf[64];
+  char* tk;
+  char* ctx;
+  res_T res = RES_OK;
+  ASSERT(str && dbl3);
+
+  if(strlen(str) >= sizeof(buf) - 1/*NULL char*/) {
+    fprintf(stderr,
+      "Could not duplicate the string `%s'.\n", str);
+    return RES_MEM_ERR;
+  }
+  strncpy(buf, str, sizeof(buf));
+
+  tk = strtok_r(buf, ",", &ctx);
+  res = cstr_to_double(tk, dbl3+0);
+  if(res != RES_OK) return res;
+
+  tk = strtok_r(NULL, ",", &ctx);
+  res = cstr_to_double(tk, dbl3+1);
+  if(res != RES_OK) return res;
+
+  tk = strtok_r(NULL, "", &ctx);
+  res = cstr_to_double(tk, dbl3+2);
+  if(res != RES_OK) return res;
+
+  return RES_OK;
+}
+
+static res_T
+parse_image_definition
+  (const char* str,
+   unsigned long* width,
+   unsigned long* height)
+{
+  char buf[64];
+  char* tk;
+  char* ctx;
+  res_T res = RES_OK;
+  ASSERT(str && width && height);
+
+  if(strlen(str) >= sizeof(buf) - 1/*NULL char*/) {
+    fprintf(stderr,
+      "Could not duplicate the image definition string `%s'.\n", str);
+    return RES_MEM_ERR;
+  }
+  strncpy(buf, str, sizeof(buf));
+
+  tk = strtok_r(buf, "x", &ctx);
+  res = cstr_to_ulong(tk, width);
+  if(res != RES_OK) {
+    fprintf(stderr, "Invalid image width `%s'\n", tk);
+    return res;
+  }
+
+  tk = strtok_r(NULL, "", &ctx);
+  res = cstr_to_ulong(tk, height);
+  if(res != RES_OK) {
+    fprintf(stderr, "Invalid image height `%s'\n", tk);
+    return res;
+  }
+
+  return res;
+}
+
+static res_T
+parse_rendering_option(const char* str, struct solstice_args* args)
+{
+  char buf[128];
+  char* key;
+  char* val;
+  char* ctx;
+  res_T res;
+  ASSERT(str && args);
+
+  if(strlen(str) >= sizeof(buf) - 1/*NULL char*/) {
+    fprintf(stderr,
+      "Could not duplicate the rendering option string `%s'\n", str);
+    res = RES_MEM_ERR;
+    goto error;
+  }
+  strncpy(buf, str, sizeof(buf));
+
+  key = strtok_r(buf, "=", &ctx);
+  val = strtok_r(NULL, "", &ctx);
+
+  if(!strcmp(key, "fov")) {
+    res = parse_fov(val, &args->camera.fov_x);
+    if(res != RES_OK) goto error;
+  } else if(!strcmp(key, "img")) {
+    res = parse_image_definition(val, &args->img.width, &args->img.height);
+    if(res != RES_OK) goto error;
+  } else if(!strcmp(key, "pos")) {
+    res = parse_double3(val, args->camera.pos);
+    if(res != RES_OK) {
+      fprintf(stderr, "Invalid camera position `%s'.\n", val);
+      goto error;
+    }
+  } else if(!strcmp(key, "tgt")) {
+    res = parse_double3(val, args->camera.tgt);
+    if(res != RES_OK) {
+      fprintf(stderr, "Invalid camera target `%s'.\n", val);
+      goto error;
+    }
+  } else if(!strcmp(key, "up")) {
+    res = parse_double3(val, args->camera.up);
+    if(res != RES_OK) {
+      fprintf(stderr, "Invalid camera up vector `%s'.\n", val);
+      goto error;
+    }
+  } else {
+    fprintf(stderr, "Invalid rendering option `%s'.\n", val);
+    res = RES_BAD_ARG;
+    goto error;
+  }
+  args->rendering = 1;
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+static res_T
+parse_rendering_options(const char* str, struct solstice_args* args)
+{
+  char buf[512];
+  char* tk;
+  char* ctx;
+  res_T res = RES_OK;
   ASSERT(args);
   (void)str, (void)args;
-  /* TODO */
-  return RES_OK;
+
+  /* Setup default values of the rendering parameters */
+  d3(args->camera.pos, 0, 0, 0);
+  d3(args->camera.tgt, 0, 0, -1);
+  d3(args->camera.up, 0, 1, 0);
+  args->camera.fov_x = MDEG2RAD(70);
+  args->img.width = 800;
+  args->img.height = 600;
+
+  if(!str) goto exit;
+
+  if(strlen(str) >= sizeof(buf) - 1/*NULL char*/) {
+    fprintf(stderr,
+      "Could not duplicate the rendering options string `%s'.\n", str);
+    res = RES_MEM_ERR;
+    goto error;
+  }
+  strncpy(buf, str, sizeof(buf));
+
+  tk = strtok_r(buf, ":", &ctx);
+  do {
+    res = parse_rendering_option(tk, args);
+    tk = strtok_r(NULL, ":", &ctx);
+  } while(tk);
+
+exit:
+  return res;
+error:
+  goto exit;
 }
 
 /*******************************************************************************
  * Local function
  ******************************************************************************/
 res_T
-solstice_args_init(struct solstice_args* args, const int argc,  char** argv)
+solstice_args_init(struct solstice_args* args, const int argc, char** argv)
 {
   int opt;
   res_T res = RES_OK;
@@ -59,6 +241,7 @@ solstice_args_init(struct solstice_args* args, const int argc,  char** argv)
 
   *args = SOLSTICE_ARGS_NULL;
 
+  optind = 1;
   while((opt = getopt(argc, argv, "hn:o:qr:")) != -1) {
     switch(opt) {
       case 'h':
@@ -71,7 +254,7 @@ solstice_args_init(struct solstice_args* args, const int argc,  char** argv)
         break;
       case 'o': args->output_filename = optarg; break;
       case 'q': args->quiet = 1; break;
-      case 'r': res = parse_rendering(optarg, args); break;
+      case 'r': res = parse_rendering_options(optarg, args); break;
       default: res = RES_BAD_ARG; break;
     }
     if(res != RES_OK) {
@@ -82,7 +265,9 @@ solstice_args_init(struct solstice_args* args, const int argc,  char** argv)
       goto error;
     }
   }
+
 exit:
+  optind = 1;
   return res;
 error:
   solstice_args_release(args);
