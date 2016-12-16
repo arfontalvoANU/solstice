@@ -16,6 +16,8 @@
 #ifndef SOLSTICE_CORE_DEVICE_H
 #define SOLSTICE_CORE_DEVICE_H
 
+#include "solstice_core_node.h"
+
 #include <rsys/ref_count.h>
 #include <rsys/mem_allocator.h>
 
@@ -27,6 +29,10 @@ struct score_device {
   struct mem_allocator* allocator;
   int verbose;
   struct ssol_device* ssol;
+
+  struct darray_nodes instances;
+  struct darray_nodes pivots;
+  struct ssol_scene* solver;
 
   ref_T ref;
 };

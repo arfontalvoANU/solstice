@@ -35,7 +35,6 @@ struct ssp_rng;
 
 struct score_device;
 struct score_node;
-struct score_scene;
 
 /*******************************************************************************
  * Device API - Main entry point of Solstice core. Applications
@@ -65,22 +64,17 @@ score_device_get_solver_device
  * Node API
  ******************************************************************************/
 extern LOCAL_SYM res_T
-score_node_template_create
+score_node_geometry_create
   (struct score_device* dev,
-   struct score_node** node);
-
-extern LOCAL_SYM res_T
-score_node_instantiate
-  (struct score_node* template,
-   struct score_node** instance);
-
-extern LOCAL_SYM res_T
-score_node_create_object
-  (struct score_device* dev,
-   struct score_node** node);
+   struct score_node** geom);
 
 extern LOCAL_SYM res_T
 score_node_pivot_create
+  (struct score_device* dev,
+   struct score_node** node);
+
+extern LOCAL_SYM res_T
+score_node_empty_create
   (struct score_device* dev,
    struct score_node** node);
 
@@ -98,9 +92,9 @@ score_node_ref_put
   (struct score_node* node);
 
 extern LOCAL_SYM res_T
-score_node_object_setup
+score_node_geometry_setup
   (struct score_node* node,
-   struct ssol_object* object);
+   struct ssol_instance* geom);
 
 extern LOCAL_SYM res_T
 score_node_pivot_setup
@@ -150,80 +144,26 @@ score_node_sample
   (struct score_node* node,
    const int sample);
 
-/* Temporary API for testing purpose
- * Instance introspection.
- * If the template tree from which instance was created contains node,
- * find the corresponding node in instance */
-extern LOCAL_SYM void
-score_node_get_instance_of
-  (const struct score_node* instance,
-   const struct score_node* node,
-   struct ssol_instance** solver);
-
 /*******************************************************************************
- * Scene API
- ******************************************************************************/
-extern LOCAL_SYM res_T
-score_scene_create
-  (struct score_device* dev,
-   struct score_scene** scene);
-
-extern LOCAL_SYM void
-score_scene_ref_get
-  (struct score_scene* scene);
-
-extern LOCAL_SYM void
-score_scene_ref_put
-  (struct score_scene* scene);
-
-extern LOCAL_SYM res_T
-score_scene_attach_instance
-  (struct score_scene* scene,
-   struct score_node* instance);
-
-extern LOCAL_SYM void
-score_scene_detach_instance
-  (struct score_scene* scene,
-   struct score_node* instance);
-
-extern LOCAL_SYM void
-score_scene_attach_sun
-  (struct score_scene* scene,
-   struct ssol_sun* sun);
-
-extern LOCAL_SYM void
-score_scene_detach_sun
-  (struct score_scene* scene,
-   struct ssol_sun* sun);
-
-extern LOCAL_SYM void
-score_scene_attach_atmosphere
-  (struct score_scene* scene,
-   struct ssol_atmosphere* atm);
-
-extern LOCAL_SYM void
-score_scene_detach_atmosphere
-  (struct score_scene* scene,
-   struct ssol_atmosphere* atm);
-
+* Miscellaneous functions
+******************************************************************************/
 extern LOCAL_SYM void
 score_scene_clear
-  (struct score_scene* scene);
+  (struct score_device* dev);
 
 extern LOCAL_SYM res_T
-score_scene_reset_simulation
-  (struct score_scene* scene);
+score_reset_simulation
+  (struct score_device* dev,
+   const double sun_dir[3]);
 
 extern LOCAL_SYM res_T
-score_scene_update_simulation
-  (struct score_scene* scene);
+score_update_simulation
+  (struct score_device* dev,
+   const double sun_dir[3]);
 
-/*******************************************************************************
- * Miscellaneous functions
- ******************************************************************************/
 extern LOCAL_SYM res_T
 score_solve
-  (struct score_scene* scene,
+  (struct score_device* dev,
    struct ssp_rng* rng,
    const size_t realisations_count,
    FILE* output,

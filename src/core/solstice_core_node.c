@@ -36,22 +36,11 @@ node_release(ref_T* ref)
   dev = node->device;
   ASSERT(dev && dev->allocator);
   switch (node->type) {
-  case NODE_TEMPLATE_ROOT:
-    break;
-  case NODE_INSTANCE_ROOT:
-    darray_nodes_release(&node->data.instance_root.pivots);
-    if (node->data.instance_root.template)
-      score_node_ref_put(node->data.instance_root.template);
-    break;
   case NODE_TRACKING_TARGET:
     break;
-  case NODE_TEMPLATE:
-    if (node->data.template_node.solver_object)
-      SSOL(object_ref_put(node->data.template_node.solver_object));
-    break;
-  case NODE_INSTANCE:
-    if (node->data.instance_node.solver_instance)
-      SSOL(instance_ref_put(node->data.instance_node.solver_instance));
+  case NODE_GEOMETRY:
+    if (node->data.geometry_node.solver_instance)
+      SSOL(instance_ref_put(node->data.geometry_node.solver_instance));
     break;
   case NODE_PIVOT:
     break;
@@ -68,27 +57,6 @@ struct data {
   struct ssol_instance* result;
 };
 
-static res_T
-search(const struct sanim_node* n, void* data_, int* found)
-{
-  const struct score_node* node;
-  struct data* data;
-  ASSERT(n && data_ && found);
-
-  data = data_;
-  node = CONTAINER_OF(n, struct score_node, anim);
-  if (node->type == NODE_INSTANCE) {
-    const struct ssol_object* solver_model;
-    ASSERT(node->data.instance_node.model->type == NODE_TEMPLATE);
-    solver_model = node->data.instance_node.model->data.template_node.solver_object;
-    if (solver_model == data->searched) {
-      data->result = node->data.instance_node.solver_instance;
-      *found = 1;
-      return RES_OK;
-    }
-  }
-  return RES_OK;
-}
 
 /*******************************************************************************
 * Local functions
@@ -144,145 +112,27 @@ node_ref_put_children(struct sanim_node* node)
   }
 }
 
-static res_T
-instance_internal_node_create
-  (struct score_device* dev, struct score_node** node)
-{
-  struct sanim_node* anim;
-  res_T res = RES_OK;
-  res = node_create(dev, node, NODE_INSTANCE);
-  if (res != RES_OK) goto error;
-  anim = &(*node)->anim;
-  res = sanim_node_initialize((*node)->device->allocator, anim);
-  if (res != RES_OK) goto error;
-exit:
-  return res;
-error:
-  if (node && *node) {
-    score_node_ref_put(*node);
-    *node = NULL;
-  }
-  goto exit;
-}
-
-res_T
-node_instanciate_any
-  (struct score_node* tp_node,
-   struct score_node** out_node)
-{
-  struct score_node* node = NULL;
-  struct score_device* dev;
-  double v[3];
-  res_T res = RES_OK;
-
-  ASSERT(tp_node && out_node);
-
-  dev = tp_node->device;
-  ASSERT(dev && dev->allocator);
-
-  switch (tp_node->type) {
-  case NODE_TEMPLATE_ROOT:
-    res = score_node_instantiate(tp_node, &node);
-    if (res != RES_OK) goto error;
-    break;
-  case NODE_INSTANCE_ROOT:
-    ASSERT(0);
-    goto error;
-  case NODE_TRACKING_TARGET:
-    res = score_node_tracking_target_create(dev, &node);
-    if (res != RES_OK) goto error;
-    SANIM(node_get_translation(&tp_node->anim, v));
-    SANIM(node_set_translation(&node->anim, v));
-    /* rotations have no meaning for a target */
-    break;
-  case NODE_TEMPLATE:
-    res = instance_internal_node_create(dev, &node);
-    if (res != RES_OK) goto error;
-    res = ssol_object_instantiate(
-      tp_node->data.template_node.solver_object,
-      &node->data.instance_node.solver_instance);
-    if (res != RES_OK) goto error;
-    node->data.instance_node.model = tp_node;
-    node->data.instance_node.receiver_mask
-      = tp_node->data.template_node.receiver_mask;
-    node->data.instance_node.sample
-      = tp_node->data.template_node.sample;
-    SANIM(node_get_translation(&tp_node->anim, v));
-    SANIM(node_set_translation(&node->anim, v));
-    SANIM(node_get_rotations(&tp_node->anim, v));
-    SANIM(node_set_rotations(&node->anim, v));
-    break;
-  case NODE_INSTANCE:
-    ASSERT(0);
-    goto error;
-  case NODE_PIVOT:
-#ifndef NDEBUG
-  {
-    int p;
-    ASSERT(sanim_node_is_pivot(&tp_node->anim, &p) == RES_OK && p);
-  }
-#endif
-    res = score_node_pivot_create(dev, &node);
-    if (res != RES_OK) goto error;
-    res = sanim_node_copy_initialize(
-      dev->allocator, &tp_node->anim, &node->anim);
-    /* copy includes translation and rotations */
-    if (res != RES_OK) goto error;
-    break;
-  default: FATAL("Unreachable code.\n"); break;
-  }
-
-exit:
-  if (out_node) *out_node = node;
-  return res;
-error:
-  if (node) {
-    score_node_ref_put(node);
-    node = NULL;
-  }
-  goto exit;
-}
-
 /*******************************************************************************
  * Exported score_node functions
  ******************************************************************************/
 res_T
-score_node_template_create
+score_node_geometry_create
   (struct score_device* dev,
-   struct score_node** node)
+   struct score_node** geom)
 {
   struct sanim_node* anim;
   res_T res = RES_OK;
-  res = node_create(dev, node, NODE_TEMPLATE_ROOT);
+  res = node_create(dev, geom, NODE_GEOMETRY);
   if (res != RES_OK) goto error;
-  anim = &(*node)->anim;
-  res = sanim_node_initialize((*node)->device->allocator, anim);
+  anim = &(*geom)->anim;
+  res = sanim_node_initialize((*geom)->device->allocator, anim);
   if (res != RES_OK) goto error;
 exit:
   return res;
 error:
-  if (node && *node) {
-    score_node_ref_put(*node);
-    *node = NULL;
-  }
-  goto exit;
-}
-
-res_T
-score_node_create_object
-  (struct score_device* dev,
-   struct score_node** node)
-{
-  res_T res = RES_OK;
-  res = node_create(dev, node, NODE_TEMPLATE);
-  if (res != RES_OK) goto error;
-  (*node)->data.template_node.sample = 1;
-exit:
-  return res;
-error:
-  if (node && *node) {
-    score_node_ref_put(*node);
-    *node = NULL;
+  if (geom && *geom) {
+    score_node_ref_put(*geom);
+    *geom = NULL;
   }
   goto exit;
 }
@@ -294,6 +144,24 @@ score_node_pivot_create
 {
   res_T res = RES_OK;
   res = node_create(dev, node, NODE_PIVOT);
+  if (res != RES_OK) goto error;
+exit:
+  return res;
+error:
+  if (node && *node) {
+    score_node_ref_put(*node);
+    *node = NULL;
+  }
+  goto exit;
+}
+
+res_T
+score_node_empty_create
+  (struct score_device* dev,
+   struct score_node** node)
+{
+  res_T res = RES_OK;
+  res = node_create(dev, node, NODE_EMPTY);
   if (res != RES_OK) goto error;
 exit:
   return res;
@@ -326,52 +194,22 @@ error:
 }
 
 res_T
-score_node_instantiate
-  (struct score_node* template,
-   struct score_node** out_instance)
-{
-  res_T res = RES_OK;
-  struct score_device* dev;
-  struct score_node* instance;
-  ASSERT(template && out_instance && template->type == NODE_TEMPLATE_ROOT);
-  dev = template->device;
-  ASSERT(dev);
-  res = node_create(dev, &instance, NODE_INSTANCE_ROOT);
-  if (res != RES_OK) goto error;
-  res = sanim_node_initialize(instance->device->allocator, &instance->anim);
-  if (res != RES_OK) goto error;
-  /* actual instantiation is deferred */
-  instance->data.instance_root.template = template;
-  darray_nodes_init(dev->allocator, &instance->data.instance_root.pivots);
-  score_node_ref_get(template);
-exit:
-  *out_instance = instance;
-  return res;
-error:
-  if (instance) {
-    score_node_ref_put(instance);
-    instance = NULL;
-  }
-  goto exit;
-}
-
-res_T
-score_node_object_setup
+score_node_geometry_setup
   (struct score_node* node,
-   struct ssol_object* object)
+   struct ssol_instance* instance)
 {
   res_T res = RES_OK;
-  ASSERT(node && object && node->type == NODE_TEMPLATE);
+  ASSERT(node && instance && node->type == NODE_GEOMETRY);
   /* TODO: deal with multiple setups */
   res = sanim_node_initialize(node->device->allocator, &node->anim);
   if (res != RES_OK) goto error;
-  node->data.template_node.solver_object = object;
-  SSOL(object_ref_get(object));
+  node->data.geometry_node.solver_instance = instance;
+  SSOL(instance_ref_put(instance));
 exit:
   return res;
 error:
-  if (node->data.template_node.solver_object) {
-    SSOL(object_ref_put(node->data.template_node.solver_object));
+  if (node->data.geometry_node.solver_instance) {
+    SSOL(instance_ref_put(node->data.geometry_node.solver_instance));
   }
   if (node->anim.data) {
     SANIM(node_release(&node->anim));
@@ -416,11 +254,7 @@ score_node_add_child
 {
   res_T res = RES_OK;
   ASSERT(father && child
-    && father->type != NODE_INSTANCE_ROOT
-    && father->type != NODE_TRACKING_TARGET
-    && child->type != NODE_TEMPLATE_ROOT
-    && child->type != NODE_INSTANCE_ROOT
-    );
+    && father->type != NODE_TRACKING_TARGET);
   res = sanim_node_add_child(&father->anim, &child->anim);
   if (res != RES_OK) return res;
   score_node_ref_get(child);
@@ -446,7 +280,7 @@ score_node_set_translation
   (struct score_node* node,
    const double translation[3])
 {
-  ASSERT(node && translation && node->type != NODE_TEMPLATE_ROOT);
+  ASSERT(node && translation);
   SANIM(node_set_translation(&node->anim, translation));
 }
 
@@ -455,7 +289,7 @@ score_node_get_translation
   (const struct score_node* node,
    double translation[3])
 {
-  ASSERT(node && translation && node->type != NODE_TEMPLATE_ROOT);
+  ASSERT(node && translation);
   SANIM(node_get_translation(&node->anim, translation));
 }
 
@@ -465,7 +299,6 @@ score_node_set_rotations
    const double rotations[3])
 {
   ASSERT(node && rotations
-    && node->type != NODE_TEMPLATE_ROOT
     && node->type != NODE_TRACKING_TARGET);
   SANIM(node_set_rotations(&node->anim, rotations));
 }
@@ -476,7 +309,6 @@ score_node_get_rotations
    double rotations[3])
 {
   ASSERT(node && rotations
-    && node->type != NODE_TEMPLATE_ROOT
     && node->type != NODE_TRACKING_TARGET);
   SANIM(node_get_rotations(&node->anim, rotations));
 }
@@ -486,8 +318,8 @@ score_node_set_receiver
   (struct score_node* node,
    const int mask)
 {
-  ASSERT(node && node->type == NODE_TEMPLATE);
-  node->data.template_node.receiver_mask = mask;
+  ASSERT(node && node->type == NODE_GEOMETRY);
+  node->data.geometry_node.receiver_mask = mask;
 }
 
 void
@@ -495,25 +327,7 @@ score_node_sample
   (struct score_node* node,
    const int sample)
 {
-  ASSERT(node && node->type == NODE_TEMPLATE);
-  node->data.template_node.sample = sample;
+  ASSERT(node && node->type == NODE_GEOMETRY);
+  node->data.geometry_node.sample = sample;
 }
 
-void
-score_node_get_instance_of
-  (const struct score_node* instance,
-   const struct score_node* node,
-   struct ssol_instance** solver)
-{
-  struct data data;
-  int found = 0;
-  ASSERT(instance && node && solver
-    && instance->type == NODE_INSTANCE_ROOT
-    && node->type == NODE_TEMPLATE);
-  
-  data.searched = node->data.template_node.solver_object;
-  data.result = NULL;
-  SANIM(node_search_tree(&instance->anim, &data, search, &found));
-  ASSERT(data.result);
-  *solver = data.result;
-}
