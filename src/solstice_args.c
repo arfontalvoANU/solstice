@@ -239,7 +239,7 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
   res_T res = RES_OK;
   ASSERT(args && argc && argv);
 
-  *args = SOLSTICE_ARGS_NULL;
+  *args = SOLSTICE_ARGS_DEFAULT;
 
   optind = 1;
   while((opt = getopt(argc, argv, "hn:o:qr:")) != -1) {

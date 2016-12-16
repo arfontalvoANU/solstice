@@ -48,13 +48,28 @@ include_directories(
   ${SolAnim_INCLUDE_DIR}
   ${SolSolver_INCLUDE_DIR}
   ${StarSP_INCLUDE_DIR}
-  ${Star3DUT_INCLUDE_DIR})
+  ${Star3DUT_INCLUDE_DIR}
+  ${CMAKE_CURRENT_BINARY_DIR})
 
 ################################################################################
 # Build subprojects
 ################################################################################
 add_subdirectory(parser)
 add_subdirectory(core)
+
+################################################################################
+# Generate files
+################################################################################
+set(SOLSTICE_ARGS_DEFAULT_NREALISATIONS "10000")
+set(SOLSTICE_ARGS_DEFAULT_CAMERA_POS "0,0,0")
+set(SOLSTICE_ARGS_DEFAULT_CAMERA_TGT "0,0,-1")
+set(SOLSTICE_ARGS_DEFAULT_CAMERA_UP "0,1,0")
+set(SOLSTICE_ARGS_DEFAULT_CAMERA_FOV "70")
+set(SOLSTICE_ARGS_DEFAULT_IMG_WIDTH  "800")
+set(SOLSTICE_ARGS_DEFAULT_IMG_HEIGHT "600")
+
+configure_file(${SOLSTICE_SOURCE_DIR}/solstice_args.h.in 
+  ${CMAKE_CURRENT_BINARY_DIR}/solstice_args.h @ONLY)
 
 ################################################################################
 # Configure and define targets
@@ -72,7 +87,7 @@ set(SOLSTICE_FILES_SRC
   solstice_object.c)
 set(SOLSTICE_FILES_INC
   solstice.h
-  solstice_args.h
+  solstice_args.h.in
   solstice_c.h)
 set(SOLSTICE_FILES_DOC COPYING README.md)
 
