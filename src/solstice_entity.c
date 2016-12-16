@@ -1,17 +1,17 @@
 /* Copyright (C) CNRS 2016
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program. If not, see <http://www.gnu.org/licenses/>. */
+ *
+ * This program is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program. If not, see <http://www.gnu.org/licenses/>. */
 
 #include "solstice.h"
 #include "solstice_c.h"
@@ -20,7 +20,10 @@
 #include <solstice/sanim.h>
 #include "core/solstice_core.h"
 
-res_T 
+/*******************************************************************************
+ * Helper function
+ ******************************************************************************/
+static res_T
 solstice_setup_entity
   (struct solstice* solstice,
    const struct solparser_entity* entity,
@@ -36,6 +39,7 @@ solstice_setup_entity
   res_T res = RES_OK;
   ASSERT(solstice && solstice->parser && solstice->score && entity);
 
+  /* TODO Split the cases un sub-functions! */
   switch (entity->type) {
   case SOLPARSER_ENTITY_EMPTY:
   {
@@ -161,11 +165,14 @@ solstice_setup_entity
 end:
   if (out_node) *out_node = root_node;
   return res;
-  
+
 error:
   goto end;
 }
 
+/*******************************************************************************
+ * Local functions
+ ******************************************************************************/
 res_T
 solstice_setup_entities
   (struct solstice* solstice)
@@ -174,7 +181,7 @@ solstice_setup_entities
   res_T res = RES_OK;
   ASSERT(solstice && solstice->parser && solstice->score);
 
-  /* release possible previous roots (incomplete, TODO) */
+  /* Release possible previous roots (incomplete, TODO) */
   score_scene_clear(solstice->score);
 
   /* (re) create the list of roots from entities */
@@ -189,7 +196,7 @@ solstice_setup_entities
 
     res = solstice_setup_entity(solstice, entity, 1, NULL);
     if (res != RES_OK) goto error;
-    
+
     solparser_entity_iterator_next(&it);
   }
 
@@ -198,3 +205,4 @@ end:
 error:
   goto end;
 }
+
