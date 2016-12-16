@@ -73,9 +73,14 @@ main(int argc, char** argv)
 
   cmd = cmd_create(0, "test", "-r", "img=1280x720", NULL);
   CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.rendering, 1);
+  CHECK(args.nrealisations, SOLSTICE_ARGS_DEFAULT.nrealisations);
+  CHECK(d3_eq(args.camera.pos, SOLSTICE_ARGS_DEFAULT.camera.pos), 1);
+  CHECK(d3_eq(args.camera.tgt, SOLSTICE_ARGS_DEFAULT.camera.tgt), 1);
+  CHECK(d3_eq(args.camera.up, SOLSTICE_ARGS_DEFAULT.camera.up), 1);
+  CHECK(args.camera.fov_x, SOLSTICE_ARGS_DEFAULT.camera.fov_x);
   CHECK(args.img.width, 1280);
   CHECK(args.img.height, 720);
-  CHECK(args.rendering, 1);
   CHECK(args.quiet, 0);
   CHECK(args.output_filename, NULL);
   solstice_args_release(&args);
@@ -83,11 +88,14 @@ main(int argc, char** argv)
 
   cmd = cmd_create(0, "test", "-q", "-r", "img=640x480:fov=70:pos=1,2,3", NULL);
   CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.rendering, 1);
+  CHECK(args.nrealisations, SOLSTICE_ARGS_DEFAULT.nrealisations);
+  CHECK(d3_eq(args.camera.pos, d3(tmp, 1, 2, 3)), 1);
+  CHECK(d3_eq(args.camera.tgt, SOLSTICE_ARGS_DEFAULT.camera.tgt), 1);
+  CHECK(d3_eq(args.camera.up, SOLSTICE_ARGS_DEFAULT.camera.up), 1);
   CHECK(args.img.width, 640);
   CHECK(args.img.height, 480);
-  CHECK(args.rendering, 1);
   CHECK(args.quiet, 1);
-  CHECK(d3_eq(args.camera.pos, d3(tmp, 1, 2, 3)), 1);
   CHECK(eq_eps(args.camera.fov_x, MDEG2RAD(70), 1.e-6), 1);
   CHECK(args.output_filename, NULL);
   solstice_args_release(&args);
@@ -95,8 +103,12 @@ main(int argc, char** argv)
 
   cmd = cmd_create(0, "test", "-r", "up=0,0,1:tgt=0,-10,0", NULL);
   CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.nrealisations, SOLSTICE_ARGS_DEFAULT.nrealisations);
+  CHECK(d3_eq(args.camera.pos, SOLSTICE_ARGS_DEFAULT.camera.pos), 1);
   CHECK(d3_eq(args.camera.tgt, d3(tmp, 0,-10, 0)), 1);
   CHECK(d3_eq(args.camera.up, d3(tmp, 0, 0, 1)), 1);
+  CHECK(args.img.width, SOLSTICE_ARGS_DEFAULT.img.width);
+  CHECK(args.img.height, SOLSTICE_ARGS_DEFAULT.img.height);
   CHECK(args.rendering, 1);
   CHECK(args.quiet, 0);
   CHECK(args.output_filename, NULL);
