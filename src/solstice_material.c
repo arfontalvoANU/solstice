@@ -122,7 +122,6 @@ create_material_mirror
     res = RES_MEM_ERR;
     goto error;
   }
-
   param->reflectivity = mirror->reflectivity;
   param->roughness = mirror->roughness;
 

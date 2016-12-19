@@ -14,18 +14,18 @@
 * along with this program. If not, see <http://www.gnu.org/licenses/>. */
 
 #include "solstice_core.h"
-#include "solstice_core_scene.h"
+#include "solstice_core_device.h"
 
 #include <solstice/ssol.h>
 
 res_T
 score_solve
-  (struct score_scene* scene,
+  (struct score_device* dev,
    struct ssp_rng* rng,
    const size_t realisations_count,
    FILE* output,
    struct ssol_estimator* estimator)
 {
-  ASSERT(scene && rng  && realisations_count && output && estimator);
-  return ssol_solve(scene->solver, rng, realisations_count, output, estimator);
+  ASSERT(dev && rng  && realisations_count && output && estimator);
+  return ssol_solve(dev->solver, rng, realisations_count, output, estimator);
 }

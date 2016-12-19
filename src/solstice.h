@@ -25,23 +25,38 @@ struct solparser;
 struct ssol_device;
 struct ssol_material;
 struct ssol_object;
+struct sanim_node;
+struct score_device;
+struct score_node;
 
 #define HTABLE_NAME material
 #define HTABLE_KEY size_t
 #define HTABLE_DATA struct ssol_material*
 #include <rsys/hash_table.h>
+#include <rsys/dynamic_array.h>
 
 #define HTABLE_NAME object
 #define HTABLE_KEY size_t
 #define HTABLE_DATA struct ssol_object*
 #include <rsys/hash_table.h>
 
+#define HTABLE_NAME anchor
+#define HTABLE_KEY size_t
+#define HTABLE_DATA struct score_node*
+#include <rsys/hash_table.h>
+
+#include "core/solstice_core_node.h"
+
 struct solstice {
   struct ssol_device* ssol;
   struct solparser* parser;
+  struct score_device* score;
 
   struct htable_material materials;
   struct htable_object objects;
+  struct htable_anchor anchors;
+  struct darray_nodes roots;
+  struct darray_nodes pivots;
 
   struct mem_allocator* allocator;
 };

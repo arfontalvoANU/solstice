@@ -34,6 +34,11 @@ find_package(SolSolver 0.1 REQUIRED)
 find_package(Star3DUT REQUIRED)
 find_package(StarSP 0.4 REQUIRED)
 
+if(MSVC)
+  find_package(MuslGetopt REQUIRED)
+  include_directories(${MuslGetopt_INCLUDE_DIR})
+endif()
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${RCMAKE_SOURCE_DIR})
 include(rcmake)
 include(rcmake_runtime)
@@ -43,13 +48,28 @@ include_directories(
   ${SolAnim_INCLUDE_DIR}
   ${SolSolver_INCLUDE_DIR}
   ${StarSP_INCLUDE_DIR}
-  ${Star3DUT_INCLUDE_DIR})
+  ${Star3DUT_INCLUDE_DIR}
+  ${CMAKE_CURRENT_BINARY_DIR})
 
 ################################################################################
 # Build subprojects
 ################################################################################
 add_subdirectory(parser)
 add_subdirectory(core)
+
+################################################################################
+# Generate files
+################################################################################
+set(SOLSTICE_ARGS_DEFAULT_NREALISATIONS "10000")
+set(SOLSTICE_ARGS_DEFAULT_CAMERA_POS "0,0,0")
+set(SOLSTICE_ARGS_DEFAULT_CAMERA_TGT "0,0,-1")
+set(SOLSTICE_ARGS_DEFAULT_CAMERA_UP "0,1,0")
+set(SOLSTICE_ARGS_DEFAULT_CAMERA_FOV "70")
+set(SOLSTICE_ARGS_DEFAULT_IMG_WIDTH  "800")
+set(SOLSTICE_ARGS_DEFAULT_IMG_HEIGHT "600")
+
+configure_file(${SOLSTICE_SOURCE_DIR}/solstice_args.h.in 
+  ${CMAKE_CURRENT_BINARY_DIR}/solstice_args.h @ONLY)
 
 ################################################################################
 # Configure and define targets
@@ -61,11 +81,13 @@ set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
 set(SOLSTICE_FILES_SRC
   solstice.c
+  solstice_args.c
   solstice_entity.c
   solstice_material.c
   solstice_object.c)
 set(SOLSTICE_FILES_INC
   solstice.h
+  solstice_args.h.in
   solstice_c.h)
 set(SOLSTICE_FILES_DOC COPYING README.md)
 
@@ -86,6 +108,26 @@ set_target_properties(solstice PROPERTIES
   VERSION ${VERSION}
   SOVERSION ${VERSION_MAJOR})
 rcmake_copy_runtime_libraries(solstice)
+
+################################################################################
+# Tests
+################################################################################
+if(NOT NO_TEST)
+  function(build_test _name)
+    add_executable(${_name}
+      ${SOLSTICE_SOURCE_DIR}/${_name}.c
+      ${SOLSTICE_SOURCE_DIR}/test_solstice_utils.h)
+    target_link_libraries(${_name} ${MATH_LIB} RSys sollib)
+  endfunction()
+
+  function(new_test _name)
+    build_test(${_name})
+    add_test(${_name} ${_name})
+  endfunction()
+
+  new_test(test_solstice_args)
+
+endif()
 
 ################################################################################
 # Define output & install directories

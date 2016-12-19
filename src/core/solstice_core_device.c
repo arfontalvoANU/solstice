@@ -48,6 +48,9 @@ device_release(ref_T* ref)
   ASSERT(ref);
   dev = CONTAINER_OF(ref, struct score_device, ref);
   ASSERT(dev && dev->allocator);
+  if (dev->solver) SSOL(scene_ref_put(dev->solver));
+  darray_nodes_release(&dev->instances);
+  darray_nodes_release(&dev->pivots);
   if (dev->ssol) ssol_device_ref_put(dev->ssol);
   MEM_RM(dev->allocator, dev);
 }
@@ -82,6 +85,12 @@ score_device_create
 
   res = ssol_device_create(logger, allocator, nthreads_hint, verbose, &dev->ssol);
   if (res != RES_OK) goto error;
+
+  res = ssol_scene_create(dev->ssol, &dev->solver);
+  if (res != RES_OK) goto error;
+
+  darray_nodes_init(dev->allocator, &dev->instances);
+  darray_nodes_init(dev->allocator, &dev->pivots);
 
 exit:
   if (out_dev) *out_dev = dev;

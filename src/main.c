@@ -13,48 +13,21 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "parser/solparser.h"
+#include "solstice_args.h"
 #include <rsys/rsys.h>
 
 int
 main(int argc, char** argv)
 {
-  FILE* file = NULL;
-  struct solparser* parser = NULL;
+  struct solstice_args args;
   res_T res;
   int err = 0;
-  int i;
 
-  if(argc < 2) {
-    fprintf(stderr, "Usage: %s FILE [FILE ...]\n", argv[0]);
-    err = 1;
-    goto error;
-  }
-
-  res = solparser_create(NULL, &parser);
+  res = solstice_args_init(&args, argc, argv);
   if(res != RES_OK) goto error;
 
-  FOR_EACH(i, 1, argc) {
-    file = fopen(argv[i], "rb");
-    if(!file) {
-      fprintf(stderr, "Could not open the file `%s'.\n", argv[i]);
-      goto error;
-    }
-
-    res = solparser_setup(parser, argv[i], file);
-    if(res != RES_OK) break;
-
-    do {
-      res = solparser_load(parser);
-    } while(res != RES_BAD_OP);
-
-    fclose(file);
-    file = NULL;
-  }
-
 exit:
-  if(parser) solparser_ref_put(parser);
-  if(file) fclose(file);
+  solstice_args_release(&args);
   return err;
 error:
   err = -1;
