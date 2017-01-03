@@ -142,6 +142,45 @@ error:
   goto exit;
 }
 
+static res_T
+load_data(struct solstice* solstice, const struct solstice_args* args)
+{
+  FILE* file = stdin;
+  const char* name = "stdin";
+  res_T res = RES_OK;
+  ASSERT(solstice && args);
+
+  if(args->input_filename) {
+    file = fopen(args->input_filename, "r");
+    if(!file) {
+      fprintf(stderr, "Could not open the file `%s'.\n", args->input_filename);
+      res = RES_IO_ERR;
+      goto error;
+    }
+    name = args->input_filename;
+  } else if(!args->quiet) {
+#ifndef OS_WINDOWS
+    fprintf(stderr,
+      "Enter the solar facility data. Type ^D (i.e. CTRL+d) to stop:\n");
+#else
+    fprintf(stderr,
+      "Enter the solar facility data. Type ^Z (i.e. CTRL+z) to stop:\n");
+#endif
+  }
+
+  res = solparser_setup(solstice->parser, name, file);
+  if(res != RES_OK) goto error;
+
+  res = solparser_load(solstice->parser);
+  if(res != RES_OK) goto error;
+
+exit:
+  if(file && file != stdin) fclose(file);
+  return res;
+error:
+  goto exit;
+}
+
 /*******************************************************************************
  * Solstice local functions
  ******************************************************************************/
@@ -179,6 +218,9 @@ solstice_init
     res = setup_framebuffer(solstice, args);
     if(res != RES_OK) goto error;
   }
+
+  res = load_data(solstice, args);
+  if(res != RES_OK) goto error;
 
 exit:
   return res;

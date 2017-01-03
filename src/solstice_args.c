@@ -266,6 +266,10 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
     }
   }
 
+  if(optind < argc) {
+    args->input_filename = argv[optind];
+  }
+
 exit:
   optind = 1;
   return res;

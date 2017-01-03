@@ -21,6 +21,7 @@
 struct solstice_args {
   const char* output_filename;
   unsigned long nrealisations; /* #realisations */
+  const char* input_filename; /* May be NULL <=> read data from stdin */
 
   struct {
     double pos[3];
@@ -42,8 +43,9 @@ struct solstice_args {
 static const struct solstice_args SOLSTICE_ARGS_NULL = SOLSTICE_ARGS_NULL__;
 
 #define SOLSTICE_ARGS_DEFAULT__ {                                              \
-  NULL, /* Output_filename */                                                  \
+  NULL, /* output_filename */                                                  \
   @SOLSTICE_ARGS_DEFAULT_NREALISATIONS@,                                       \
+  NULL, /* input_filename */                                                   \
                                                                                \
   { /* Camera */                                                               \
     { @SOLSTICE_ARGS_DEFAULT_CAMERA_POS@ },                                    \
