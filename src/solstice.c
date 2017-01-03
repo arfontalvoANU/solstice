@@ -14,6 +14,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>. */
 
 #include "solstice.h"
+#include "solstice_args.h"
 #include "parser/solparser.h"
 
 #include <solstice/ssol.h>
@@ -53,14 +54,105 @@ clear_objects(struct htable_object* objects)
   htable_object_clear(objects);
 }
 
+static res_T
+setup_camera(struct solstice* solstice, const struct solstice_args* args)
+{
+  struct ssol_camera* cam = NULL;
+  double proj_ratio = 0;
+  res_T res = RES_OK;
+  ASSERT(solstice && args);
+
+  res = ssol_camera_create(solstice->ssol, &cam);
+  if(res != RES_OK) {
+    fprintf(stderr, "Could not create the rendering camera.\n");
+    goto error;
+  }
+
+  proj_ratio = (double)args->img.width / (double)args->img.height;
+  res = ssol_camera_set_proj_ratio(cam, proj_ratio);
+  if(res != RES_OK) {
+    fprintf(stderr, "Invalid image ratio '%g'.\n", proj_ratio);
+    goto error;
+  }
+
+  res = ssol_camera_set_fov(cam, args->camera.fov_x);
+  if(res != RES_OK) {
+    fprintf(stderr,
+      "Invalid horizontal field of view '%g degrees' (%g radians).\n",
+      MRAD2DEG(args->camera.fov_x), args->camera.fov_x);
+    goto error;
+  }
+
+  res = ssol_camera_look_at
+    (cam, args->camera.pos, args->camera.tgt, args->camera.up);
+  if(res != RES_OK) {
+    fprintf(stderr,
+"Invalid camera point of view:\n"
+"  position = %g %g %g\n"
+"  target = %g %g %g\n"
+"  up = %g %g %g\n",
+      SPLIT3(args->camera.pos),
+      SPLIT3(args->camera.tgt),
+      SPLIT3(args->camera.up));
+    goto error;
+  }
+
+exit:
+  solstice->camera = cam;
+  return res;
+error:
+  if(cam) {
+    SSOL(camera_ref_put(cam));
+    cam = NULL;
+  }
+  goto exit;
+}
+
+static res_T
+setup_framebuffer(struct solstice* solstice, const struct solstice_args* args)
+{
+  struct ssol_image* fbuf = NULL;
+  res_T res = RES_OK;
+  ASSERT(solstice && args);
+
+  res = ssol_image_create(solstice->ssol, &fbuf);
+  if(res != RES_OK) {
+    fprintf(stderr, "Could not create the rendering framebuffer.\n");
+    goto error;
+  }
+
+  res = ssol_image_setup
+    (fbuf, args->img.width, args->img.height, SSOL_PIXEL_DOUBLE3);
+  if(res != RES_OK) {
+    fprintf(stderr,
+      "Could not set the framebuffer definition to %lux%lu.\n",
+      args->img.width, args->img.height);
+    goto error;
+  }
+
+exit:
+  solstice->framebuffer = fbuf;
+  return res;
+
+error:
+  if(fbuf) {
+    SSOL(image_ref_put(fbuf));
+    fbuf = NULL;
+  }
+  goto exit;
+}
+
 /*******************************************************************************
  * Solstice local functions
  ******************************************************************************/
 res_T
-solstice_init(struct mem_allocator* allocator, struct solstice* solstice)
+solstice_init
+  (struct mem_allocator* allocator,
+   const struct solstice_args* args,
+   struct solstice* solstice)
 {
   res_T res = RES_OK;
-  ASSERT(solstice);
+  ASSERT(solstice && args);
 
   memset(solstice, 0, sizeof(struct solstice));
   htable_material_init(allocator, &solstice->materials);
@@ -81,6 +173,13 @@ solstice_init(struct mem_allocator* allocator, struct solstice* solstice)
     goto error;
   }
 
+  if(args->rendering) {
+    res = setup_camera(solstice, args);
+    if(res != RES_OK) goto error;
+    res = setup_framebuffer(solstice, args);
+    if(res != RES_OK) goto error;
+  }
+
 exit:
   return res;
 error:
@@ -96,6 +195,8 @@ solstice_release(struct solstice* solstice)
   clear_objects(&solstice->objects);
   if(solstice->ssol) SSOL(device_ref_put(solstice->ssol));
   if(solstice->parser) solparser_ref_put(solstice->parser);
+  if(solstice->camera) SSOL(camera_ref_put(solstice->camera));
+  if(solstice->framebuffer) SSOL(image_ref_put(solstice->framebuffer));
   htable_material_release(&solstice->materials);
   htable_object_release(&solstice->objects);
 }

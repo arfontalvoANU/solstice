@@ -26,7 +26,7 @@ struct solstice_args {
     double pos[3];
     double tgt[3];
     double up[3];
-    double fov_x;
+    double fov_x; /* In radians */
   } camera;
 
   struct {
@@ -60,7 +60,7 @@ static const struct solstice_args SOLSTICE_ARGS_NULL = SOLSTICE_ARGS_NULL__;
   0, /* Rendering */                                                           \
   0 /* Quiet */                                                                \
 }
-static const struct solstice_args SOLSTICE_ARGS_DEFAULT = 
+static const struct solstice_args SOLSTICE_ARGS_DEFAULT =
   SOLSTICE_ARGS_DEFAULT__;
 
 extern LOCAL_SYM res_T

@@ -22,6 +22,7 @@
 #include <rsys/mem_allocator.h>
 
 struct solparser;
+struct solstice_args;
 struct ssol_device;
 struct ssol_material;
 struct ssol_object;
@@ -58,12 +59,17 @@ struct solstice {
   struct darray_nodes roots;
   struct darray_nodes pivots;
 
+  /* Rendering */
+  struct ssol_camera* camera;
+  struct ssol_image* framebuffer;
+
   struct mem_allocator* allocator;
 };
 
 extern LOCAL_SYM res_T
 solstice_init
   (struct mem_allocator* allocator, /* May be NULL <=> use default allocator */
+   const struct solstice_args* args,
    struct solstice* solstice);
 
 extern LOCAL_SYM void

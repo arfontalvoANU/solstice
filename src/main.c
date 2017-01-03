@@ -13,6 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>. */
 
+#include "solstice.h"
 #include "solstice_args.h"
 #include <rsys/rsys.h>
 
@@ -20,13 +21,20 @@ int
 main(int argc, char** argv)
 {
   struct solstice_args args;
+  struct solstice solstice;
   res_T res;
+  int solstice_is_init = 0;
   int err = 0;
 
   res = solstice_args_init(&args, argc, argv);
   if(res != RES_OK) goto error;
 
+  res = solstice_init(NULL, &args, &solstice);
+  if(res != RES_OK) goto error;
+  solstice_is_init = 1;
+
 exit:
+  if(solstice_is_init) solstice_release(&solstice);
   solstice_args_release(&args);
   return err;
 error:
