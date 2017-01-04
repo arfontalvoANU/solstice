@@ -244,6 +244,8 @@ solstice_get_ssol_material
     }
   }
 
+  SSOL(material_ref_get(ssol_mtl));
+
 exit:
   *out_ssol_mtl = ssol_mtl;
   return res;

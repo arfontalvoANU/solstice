@@ -460,12 +460,17 @@ solstice_instantiate_geometry
       res = create_shaded_shape(solstice, obj_id, &front, &back, &shape);
       if(res != RES_OK) goto error;
 
+
       res = ssol_object_add_shaded_shape(ssol_obj, shape, front, back);
       if(res != RES_OK) {
         fprintf(stderr,
           "Could not add a shaded shape to a Solstice Solver object.\n");
         goto error;
       }
+
+      SSOL(shape_ref_put(shape));
+      SSOL(material_ref_put(front));
+      SSOL(material_ref_put(back));
     }
   }
 

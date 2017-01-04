@@ -162,6 +162,7 @@ solstice_setup_entity
   }
 
 end:
+  if (instance) SSOL(instance_ref_put(instance));
   if (out_node) *out_node = root_node;
   return res;
 
