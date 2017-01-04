@@ -56,13 +56,13 @@ solstice_setup_entity
     struct score_node* geometry_node = NULL;
     res = score_node_geometry_create(solstice->score, &geometry_node);
     if (res != RES_OK) goto error;
-    score_node_set_translation(geometry_node, entity->translation);
-    score_node_set_rotations(geometry_node, entity->rotation);
     res = solstice_instantiate_geometry
       (solstice, entity->data.geometry, &instance);
     if (res != RES_OK) goto error;
     res = score_node_geometry_setup(geometry_node, instance);
     if (res != RES_OK) goto error;
+    score_node_set_translation(geometry_node, entity->translation);
+    score_node_set_rotations(geometry_node, entity->rotation);
     atchmnt_node = root_node = geometry_node;
     break;
   }

@@ -23,10 +23,14 @@
 #include <solstice/ssol.h>
 #include <solstice/sanim.h>
 
+/*
+ * NOTE: There is a weakness in the Solstice-Anim API that forbids the
+ * initialization of  he pivot node on its creation contraty to the common node
+ */
+
 /*******************************************************************************
  * Helper functions
  ******************************************************************************/
-
 static void
 node_release(ref_T* ref)
 {
@@ -36,15 +40,13 @@ node_release(ref_T* ref)
   dev = node->device;
   ASSERT(dev && dev->allocator);
   switch (node->type) {
-  case NODE_TRACKING_TARGET:
-    break;
-  case NODE_GEOMETRY:
-    if (node->data.geometry_node.solver_instance)
-      SSOL(instance_ref_put(node->data.geometry_node.solver_instance));
-    break;
-  case NODE_PIVOT:
-    break;
-  default: FATAL("Unreachable code.\n"); break;
+    case NODE_GEOMETRY:
+      if (node->data.geometry_node.solver_instance)
+        SSOL(instance_ref_put(node->data.geometry_node.solver_instance));
+      break;
+    case NODE_TRACKING_TARGET: /* Do nothing */ break;
+    case NODE_PIVOT: /* Do nothing */ break;
+    default: FATAL("Unreachable code.\n"); break;
   }
   node_ref_put_children(&node->anim);
   SANIM(node_release(&node->anim));
@@ -57,6 +59,7 @@ struct data {
   struct ssol_instance* result;
 };
 
+
 /*******************************************************************************
  * Local functions
  ******************************************************************************/
@@ -64,7 +67,7 @@ res_T
 node_create
   (struct score_device* dev,
    struct score_node** out_node,
-   enum node_type type)
+   const enum node_type type)
 {
   struct score_node* node = NULL;
   res_T res = RES_OK;
@@ -81,6 +84,7 @@ node_create
   node->device = dev;
   ref_init(&node->ref);
   node->type = type;
+  node->anim = SANIM_NODE_NULL;
 
 exit:
   if (out_node) *out_node = node;
@@ -115,79 +119,92 @@ node_ref_put_children(struct sanim_node* node)
  * Exported score_node functions
  ******************************************************************************/
 res_T
-score_node_geometry_create
-  (struct score_device* dev,
-   struct score_node** geom)
+score_node_geometry_create(struct score_device* dev, struct score_node** geom)
 {
-  struct sanim_node* anim;
+  struct score_node* node = NULL;
   res_T res = RES_OK;
-  res = node_create(dev, geom, NODE_GEOMETRY);
+  ASSERT(dev && geom);
+
+  res = node_create(dev, &node, NODE_GEOMETRY);
   if (res != RES_OK) goto error;
-  anim = &(*geom)->anim;
-  res = sanim_node_initialize((*geom)->device->allocator, anim);
-  if (res != RES_OK) goto error;
+
 exit:
+  *geom = node;
   return res;
 error:
-  if (geom && *geom) {
-    score_node_ref_put(*geom);
-    *geom = NULL;
+  if (node) {
+    score_node_ref_put(node);
+    node = NULL;
   }
   goto exit;
 }
 
 res_T
-score_node_pivot_create
-  (struct score_device* dev,
-   struct score_node** node)
+score_node_pivot_create(struct score_device* dev, struct score_node** pivot)
 {
+  struct score_node* node = NULL;
   res_T res = RES_OK;
-  res = node_create(dev, node, NODE_PIVOT);
+  ASSERT(dev && pivot);
+
+  res = node_create(dev, &node, NODE_PIVOT);
   if (res != RES_OK) goto error;
+
 exit:
+  *pivot = node;
   return res;
 error:
-  if (node && *node) {
-    score_node_ref_put(*node);
-    *node = NULL;
+  if (node) {
+    score_node_ref_put(node);
+    node = NULL;
   }
   goto exit;
 }
 
 res_T
-score_node_empty_create
-  (struct score_device* dev,
-   struct score_node** node)
+score_node_empty_create(struct score_device* dev, struct score_node** empty)
 {
+  struct score_node* node = NULL;
   res_T res = RES_OK;
-  res = node_create(dev, node, NODE_EMPTY);
+  ASSERT(dev && empty);
+
+  res = node_create(dev, &node, NODE_EMPTY);
   if (res != RES_OK) goto error;
+
+  res = sanim_node_initialize(node->device->allocator, &node->anim);
+  if (res != RES_OK) goto error;
+
 exit:
+  *empty = node;
   return res;
 error:
-  if (node && *node) {
-    score_node_ref_put(*node);
-    *node = NULL;
+  if (node) {
+    score_node_ref_put(node);
+    node = NULL;
   }
   goto exit;
 }
 
 res_T
 score_node_tracking_target_create
-  (struct score_device* dev,
-   struct score_node** node)
+  (struct score_device* dev, struct score_node** tracking)
 {
+  struct score_node* node = NULL;
   res_T res = RES_OK;
-  res = node_create(dev, node, NODE_TRACKING_TARGET);
+  ASSERT(dev && tracking);
+
+  res = node_create(dev, &node, NODE_TRACKING_TARGET);
   if (res != RES_OK) goto error;
-  res = sanim_node_initialize((*node)->device->allocator, &(*node)->anim);
+
+  res = sanim_node_initialize(node->device->allocator, &node->anim);
   if (res != RES_OK) goto error;
+
 exit:
+  *tracking = node;
   return res;
 error:
-  if (node && *node) {
-    score_node_ref_put(*node);
-    *node = NULL;
+  if (node) {
+    score_node_ref_put(node);
+    node = NULL;
   }
   goto exit;
 }
@@ -197,9 +214,16 @@ score_node_geometry_setup
   (struct score_node* node,
    struct ssol_instance* instance)
 {
+  int is_init = 0;
   res_T res = RES_OK;
   ASSERT(node && instance && node->type == NODE_GEOMETRY);
-  /* TODO: deal with multiple setups */
+
+  SANIM(node_is_initialized(&node->anim, &is_init));
+  if(is_init) {
+    SANIM(node_release(&node->anim));
+    node->anim = SANIM_NODE_NULL;
+  }
+
   res = sanim_node_initialize(node->device->allocator, &node->anim);
   if (res != RES_OK) goto error;
   node->data.geometry_node.solver_instance = instance;
@@ -222,12 +246,20 @@ score_node_pivot_setup
    const struct sanim_pivot* pivot,
    const struct sanim_tracking* tracking)
 {
+  int is_init = 0;
   res_T res = RES_OK;
   ASSERT(node && pivot && tracking && node->type == NODE_PIVOT);
-  /* TODO: deal with multiple setups */
-  res = sanim_node_initialize_pivot(
-    node->device->allocator, pivot, tracking, &node->anim);
+
+  SANIM(node_is_initialized(&node->anim, &is_init));
+  if(is_init) {
+    SANIM(node_release(&node->anim));
+    node->anim = SANIM_NODE_NULL;
+  }
+
+  res = sanim_node_initialize_pivot
+    (node->device->allocator, pivot, tracking, &node->anim);
   if (res != RES_OK) goto error;
+
 exit:
   return res;
 error:
