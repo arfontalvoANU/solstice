@@ -33,8 +33,7 @@ include_directories(
 ################################################################################
 set(CORE_FILES_SRC
   solstice_core_device.c
-  solstice_core_node.c
-  solstice_core_solver.c)
+  solstice_core_node.c)
 
 set(CORE_FILES_INC
   solstice_core.h

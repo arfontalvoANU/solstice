@@ -24,13 +24,12 @@ struct logger;
 struct mem_allocator;
 struct sanim_pivot;
 struct sanim_tracking;
-struct ssol_vertex_data;
-struct ssol_object;
-struct ssol_instance;
-struct ssol_sun;
 struct ssol_atmosphere;
 struct ssol_estimator;
-struct ssol_device;
+struct ssol_instance;
+struct ssol_object;
+struct ssol_sun;
+struct ssol_vertex_data;
 struct ssp_rng;
 
 struct score_device;
@@ -54,10 +53,6 @@ score_device_ref_get
 
 extern LOCAL_SYM void
 score_device_ref_put
-  (struct score_device* dev);
-
-extern LOCAL_SYM struct ssol_device*
-score_device_get_solver_device
   (struct score_device* dev);
 
 /*******************************************************************************
@@ -160,14 +155,6 @@ extern LOCAL_SYM res_T
 score_update_simulation
   (struct score_device* dev,
    const double sun_dir[3]);
-
-extern LOCAL_SYM res_T
-score_solve
-  (struct score_device* dev,
-   struct ssp_rng* rng,
-   const size_t realisations_count,
-   FILE* output,
-   struct ssol_estimator* estimator);
 
 #endif /* SOLSTICE_CORE_H */
 
