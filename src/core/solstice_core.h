@@ -43,7 +43,6 @@ extern LOCAL_SYM res_T
 score_device_create
   (struct logger* logger, /* May be NULL <=> use default logger */
    struct mem_allocator* allocator, /* May be NULL <=> use default allocator */
-   const unsigned nthreads_hint, /* Hint on the number of threads to use */
    const int verbose, /* Make the library more verbose */
    struct score_device** dev);
 

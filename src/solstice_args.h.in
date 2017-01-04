@@ -1,4 +1,4 @@
-/* Copyright (C) CNRS 2016
+/* Copyright (C) CNRS 2016-2017
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@ struct solstice_args {
 
   int rendering;
   int quiet;
+  int quit; /* Quit the application */
 };
 
 #define SOLSTICE_ARGS_NULL__ {0}
@@ -60,7 +61,8 @@ static const struct solstice_args SOLSTICE_ARGS_NULL = SOLSTICE_ARGS_NULL__;
   },                                                                           \
                                                                                \
   0, /* Rendering */                                                           \
-  0 /* Quiet */                                                                \
+  0, /* Quiet */                                                               \
+  0 /* Quit */                                                                 \
 }
 static const struct solstice_args SOLSTICE_ARGS_DEFAULT =
   SOLSTICE_ARGS_DEFAULT__;

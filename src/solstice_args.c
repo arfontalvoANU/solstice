@@ -247,6 +247,7 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
       case 'h':
         print_help(argv[0]);
         solstice_args_release(args);
+        args->quit = 1;
         goto exit;
       case 'n':
         res = cstr_to_ulong(optarg, &args->nrealisations);

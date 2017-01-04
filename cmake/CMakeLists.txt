@@ -103,8 +103,8 @@ endif()
 
 add_library(sollib STATIC ${SOLSTICE_FILES_SRC} ${SOLSTICE_FILES_INC})
 add_executable(solstice ${SOLSTICE_SOURCE_DIR}/main.c)
-target_link_libraries(solstice
-  LibYAML RSys ${MATH_LIB} sollib solparser SolAnim SolSolver)
+target_link_libraries(solstice ${MATH_LIB} 
+  LibYAML RSys sollib solparser solstice-core SolAnim SolSolver Star3DUT)
 set_target_properties(solstice PROPERTIES
   VERSION ${VERSION}
   SOVERSION ${VERSION_MAJOR})

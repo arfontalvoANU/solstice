@@ -30,10 +30,14 @@ main(int argc, char** argv)
 
   res = solstice_args_init(&args, argc, argv);
   if(res != RES_OK) goto error;
+  if(args.quit) goto exit;
 
   res = solstice_init(NULL, &args, &solstice);
   if(res != RES_OK) goto error;
   solstice_is_init = 1;
+
+  res = solstice_run(&solstice);
+  if(res != RES_OK) goto error;
 
 exit:
   if(solstice_is_init) solstice_release(&solstice);

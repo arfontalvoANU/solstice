@@ -65,6 +65,8 @@ struct solstice {
   struct ssol_camera* camera;
   struct ssol_image* framebuffer;
 
+  FILE* output; /* Output stream */
+
   struct mem_allocator* allocator;
 };
 

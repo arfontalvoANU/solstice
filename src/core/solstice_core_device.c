@@ -60,7 +60,6 @@ res_T
 score_device_create
   (struct logger* logger,
    struct mem_allocator* mem_allocator,
-   const unsigned nthreads_hint,
    const int verbose,
    struct score_device** out_dev)
 {
@@ -68,7 +67,7 @@ score_device_create
   struct mem_allocator* allocator;
   res_T res = RES_OK;
 
-  ASSERT(nthreads_hint && out_dev);
+  ASSERT(out_dev);
 
   allocator = mem_allocator ? mem_allocator : &mem_default_allocator;
   dev = MEM_CALLOC(allocator, 1, sizeof(struct score_device));

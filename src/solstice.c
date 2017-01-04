@@ -17,6 +17,7 @@
 #include "solstice_c.h"
 #include "solstice_args.h"
 #include "parser/solparser.h"
+#include "core/solstice_core.h"
 
 #include <solstice/ssol.h>
 
@@ -175,6 +176,12 @@ load_data(struct solstice* solstice, const struct solstice_args* args)
   res = solparser_load(solstice->parser);
   if(res != RES_OK) goto error;
 
+  res = solstice_setup_entities(solstice);
+  if(res != RES_OK) {
+    fprintf(stderr, "Could not setup the Solstice entities.\n");
+    goto error;
+  }
+
 exit:
   if(file && file != stdin) fclose(file);
   return res;
@@ -219,11 +226,29 @@ solstice_init
     goto error;
   }
 
+  res = score_device_create(NULL, allocator, 1/*verbose*/, &solstice->score);
+  if(res != RES_OK) {
+    fprintf(stderr, "Could not create the Solstice Core device.\n");
+    goto error;
+  }
+
   if(args->rendering) {
     res = setup_camera(solstice, args);
     if(res != RES_OK) goto error;
     res = setup_framebuffer(solstice, args);
     if(res != RES_OK) goto error;
+  }
+
+  if(!args->output_filename) {
+    solstice->output = stdout;
+  } else {
+    solstice->output = fopen(args->output_filename, "w+");
+    if(!solstice->output) {
+      fprintf(stderr, "Could not open the output file `%s'.\n",
+        args->output_filename);
+      res = RES_IO_ERR;
+      goto error;
+    }
   }
 
   res = load_data(solstice, args);
@@ -245,8 +270,10 @@ solstice_release(struct solstice* solstice)
   if(solstice->ssol) SSOL(device_ref_put(solstice->ssol));
   if(solstice->scene) SSOL(scene_ref_put(solstice->scene));
   if(solstice->parser) solparser_ref_put(solstice->parser);
+  if(solstice->score) score_device_ref_put(solstice->score);
   if(solstice->camera) SSOL(camera_ref_put(solstice->camera));
   if(solstice->framebuffer) SSOL(image_ref_put(solstice->framebuffer));
+  if(solstice->output && solstice->output != stdout) fclose(solstice->output);
   htable_material_release(&solstice->materials);
   htable_object_release(&solstice->objects);
 }

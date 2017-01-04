@@ -181,7 +181,7 @@ solstice_setup_entities
   ASSERT(solstice && solstice->parser && solstice->score);
 
   /* Release possible previous roots (incomplete, TODO) */
-  score_scene_clear(solstice->score);
+  /*score_scene_clear(solstice->score);*/
 
   /* (re) create the list of roots from entities */
   solparser_entity_iterator_begin(solstice->parser, &it);
