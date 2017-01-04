@@ -429,6 +429,8 @@ solstice_instantiate_geometry
   struct ssol_object** pssol_obj = NULL;
   struct ssol_object* ssol_obj = NULL;
   struct ssol_object* ssol_obj_new = NULL;
+  int is_attached_to_scn = 0;
+  int is_registered = 0;
   res_T res = RES_OK;
   ASSERT(solstice && out_inst);
 
@@ -473,16 +475,27 @@ solstice_instantiate_geometry
     goto error;
   }
 
+  res = ssol_scene_attach_instance(solstice->scene, inst);
+  if(res != RES_OK) {
+    fprintf(stderr,
+      "Could not attach the instance against the Solstice Solver scene.\n");
+    goto error;
+  }
+  is_attached_to_scn = 1;
+
   res = htable_object_set(&solstice->objects, &geom_id.i, &ssol_obj);
   if(res != RES_OK) {
     fprintf(stderr, "Could not register a Solstice Solver object.\n");
     goto error;
   }
+  is_registered = 1;
 
 exit:
   *out_inst = inst;
   return res;
 error:
+  if(is_attached_to_scn) SSOL(scene_detach_instance(solstice->scene, inst));
+  if(is_registered) htable_object_erase(&solstice->objects, &geom_id.i);
   if(inst) SSOL(instance_ref_put(inst)), inst = NULL;
   if(ssol_obj_new) SSOL(object_ref_put(ssol_obj_new));
   goto exit;

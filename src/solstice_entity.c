@@ -1,17 +1,17 @@
 /* Copyright (C) CNRS 2016-2017
  *
- * This program is free software: you can redistribute it and/or modify it under
- * the terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License along with
- * this program. If not, see <http://www.gnu.org/licenses/>. */
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>. */
 
 #include "solstice.h"
 #include "solstice_c.h"
@@ -58,9 +58,8 @@ solstice_setup_entity
     if (res != RES_OK) goto error;
     score_node_set_translation(geometry_node, entity->translation);
     score_node_set_rotations(geometry_node, entity->rotation);
-    res = solstice_instantiate_geometry(
-      /* TODO: attach instance to solver */
-      solstice, entity->data.geometry, &instance);
+    res = solstice_instantiate_geometry
+      (solstice, entity->data.geometry, &instance);
     if (res != RES_OK) goto error;
     res = score_node_geometry_setup(geometry_node, instance);
     if (res != RES_OK) goto error;

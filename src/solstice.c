@@ -206,6 +206,12 @@ solstice_init
     goto error;
   }
 
+  res = ssol_scene_create(solstice->ssol, &solstice->scene);
+  if(res != RES_OK) {
+    fprintf(stderr, "Could not create the Solstice Solver scene.\n");
+    goto error;
+  }
+
   res = solparser_create(allocator, &solstice->parser);
   if(res != RES_OK) {
     fprintf(stderr, "Could not create the Solstice Parser.\n");
@@ -236,6 +242,7 @@ solstice_release(struct solstice* solstice)
   clear_materials(&solstice->materials);
   clear_objects(&solstice->objects);
   if(solstice->ssol) SSOL(device_ref_put(solstice->ssol));
+  if(solstice->scene) SSOL(scene_ref_put(solstice->scene));
   if(solstice->parser) solparser_ref_put(solstice->parser);
   if(solstice->camera) SSOL(camera_ref_put(solstice->camera));
   if(solstice->framebuffer) SSOL(image_ref_put(solstice->framebuffer));

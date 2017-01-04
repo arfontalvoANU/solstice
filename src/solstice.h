@@ -50,6 +50,8 @@ struct score_node;
 
 struct solstice {
   struct ssol_device* ssol;
+  struct ssol_scene* scene;
+
   struct solparser* parser;
   struct score_device* score;
 
