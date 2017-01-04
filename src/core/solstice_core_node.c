@@ -204,7 +204,7 @@ score_node_geometry_setup
   res = sanim_node_initialize(node->device->allocator, &node->anim);
   if (res != RES_OK) goto error;
   node->data.geometry_node.solver_instance = instance;
-  SSOL(instance_ref_put(instance));
+  SSOL(instance_ref_get(instance));
 exit:
   return res;
 error:
