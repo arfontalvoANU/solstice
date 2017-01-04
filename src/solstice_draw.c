@@ -13,33 +13,31 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef SOLSTICE_C_H
-#define SOLSTICE_C_H
+#include "solstice_c.h"
 
-#include "solstice.h"
-#include "parser/solparser.h"
+#include <solstice/ssol.h>
 
-struct ssol_instance;
+/*******************************************************************************
+ * Local functions
+ ******************************************************************************/
+res_T
+solstice_draw(struct solstice* solstice)
+{
+  struct ssol_image_layout layout;
+  res_T res = RES_OK;
+  ASSERT(solstice);
 
-extern LOCAL_SYM res_T
-solstice_draw
-  (struct solstice* solstice);
+  SSOL(image_get_layout(solstice->framebuffer, &layout));
 
-extern LOCAL_SYM res_T
-solstice_setup_entities
-  (struct solstice* solstice);
+  res = ssol_draw(solstice->scene, solstice->camera, layout.width,
+    layout.height, ssol_image_write, solstice->framebuffer);
+  if(res != RES_OK) {
+    fprintf(stderr, "Rendering error\n");
+    goto error;
+  }
 
-extern LOCAL_SYM res_T
-solstice_get_ssol_material
-  (struct solstice* solstice,
-   const struct solparser_material_id mtl_id,
-   struct ssol_material** mtl);
-
-extern LOCAL_SYM res_T
-solstice_instantiate_geometry
-  (struct solstice* solstice,
-   const struct solparser_geometry_id geom_id,
-   struct ssol_instance** inst);
-
-#endif /* SOLSTICE_C_H */
-
+exit:
+  return res;
+error:
+  goto exit;
+}

@@ -14,6 +14,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>. */
 
 #include "solstice.h"
+#include "solstice_c.h"
 #include "solstice_args.h"
 #include "parser/solparser.h"
 
@@ -250,3 +251,14 @@ solstice_release(struct solstice* solstice)
   htable_object_release(&solstice->objects);
 }
 
+res_T
+solstice_run(struct solstice* solstice)
+{
+  ASSERT(solstice);
+  if(solstice->framebuffer) { /* Rendering */
+    return solstice_draw(solstice);
+  } else { /* Solstice integration */
+    /* TODO */
+    return RES_OK;
+  }
+}

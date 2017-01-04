@@ -78,5 +78,9 @@ extern LOCAL_SYM void
 solstice_release
   (struct solstice* solstice);
 
+extern LOCAL_SYM res_T
+solstice_run
+  (struct solstice* solstice);
+
 #endif /* SOLSTICE_H */
 
