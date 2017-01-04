@@ -15,6 +15,7 @@
 
 #include "solstice.h"
 #include "solstice_args.h"
+
 #include <rsys/rsys.h>
 
 int
@@ -22,6 +23,7 @@ main(int argc, char** argv)
 {
   struct solstice_args args;
   struct solstice solstice;
+  size_t memsz = 0;
   res_T res;
   int solstice_is_init = 0;
   int err = 0;
@@ -36,6 +38,9 @@ main(int argc, char** argv)
 exit:
   if(solstice_is_init) solstice_release(&solstice);
   solstice_args_release(&args);
+  if((memsz = mem_allocated_size()) != 0) {
+    fprintf(stderr, "Memory leaks: %lu Bytes\n", (unsigned long)memsz);
+  }
   return err;
 error:
   err = -1;
