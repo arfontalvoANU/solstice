@@ -45,6 +45,7 @@ include(rcmake_runtime)
 
 include_directories(
   ${RSys_INCLUDE_DIR}
+  ${MuslGetopt_INCLUDE_DIR}
   ${SolAnim_INCLUDE_DIR}
   ${SolSolver_INCLUDE_DIR}
   ${StarSP_INCLUDE_DIR}
@@ -101,9 +102,13 @@ if(CMAKE_COMPILER_IS_GNUCC)
   set(MATH_LIB m)
 endif()
 
+if(MSVC)
+  set(GETOPT_LIB MuslGetopt)
+endif()
+
 add_library(sollib STATIC ${SOLSTICE_FILES_SRC} ${SOLSTICE_FILES_INC})
 add_executable(solstice ${SOLSTICE_SOURCE_DIR}/main.c)
-target_link_libraries(solstice ${MATH_LIB} 
+target_link_libraries(solstice ${MATH_LIB} ${GETOPT_LIB}
   LibYAML RSys sollib solparser solstice-core SolAnim SolSolver Star3DUT)
 set_target_properties(solstice PROPERTIES
   VERSION ${VERSION}
@@ -118,7 +123,7 @@ if(NOT NO_TEST)
     add_executable(${_name}
       ${SOLSTICE_SOURCE_DIR}/${_name}.c
       ${SOLSTICE_SOURCE_DIR}/test_solstice_utils.h)
-    target_link_libraries(${_name} ${MATH_LIB} RSys sollib)
+    target_link_libraries(${_name} ${MATH_LIB} ${GETOPT_LIB} RSys sollib)
   endfunction()
 
   function(new_test _name)
