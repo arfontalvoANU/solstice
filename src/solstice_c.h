@@ -30,7 +30,7 @@ solstice_setup_entities
   (struct solstice* solstice);
 
 extern LOCAL_SYM res_T
-solstice_get_ssol_material
+solstice_create_ssol_material
   (struct solstice* solstice,
    const struct solparser_material_id mtl_id,
    struct ssol_material** mtl);

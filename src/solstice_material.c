@@ -203,7 +203,7 @@ error:
  * Local functions
  ******************************************************************************/
 res_T
-solstice_get_ssol_material
+solstice_create_ssol_material
   (struct solstice* solstice,
    const struct solparser_material_id mtl_id,
    struct ssol_material** out_ssol_mtl)
@@ -237,6 +237,7 @@ solstice_get_ssol_material
     }
     if(res != RES_OK) goto error;
 
+    /* Cache the created material for future use. */
     res = htable_material_set(&solstice->materials, &mtl_id.i, &ssol_mtl);
     if(res != RES_OK) {
       fprintf(stderr, "Could not register the material into solstice.\n");
@@ -244,6 +245,8 @@ solstice_get_ssol_material
     }
   }
 
+  /* Get an additional reference onto the material in order to give to the
+   * caller an ownership onto the returned material. */
   SSOL(material_ref_get(ssol_mtl));
 
 exit:

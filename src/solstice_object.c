@@ -374,8 +374,8 @@ create_shaded_shape
   obj = solparser_get_object(solstice->parser, obj_id);
 
   mtl2 = solparser_get_material_double_sided(solstice->parser, obj->mtl2);
-  solstice_get_ssol_material(solstice, mtl2->front, ssol_front);
-  solstice_get_ssol_material(solstice, mtl2->back, ssol_back);
+  solstice_create_ssol_material(solstice, mtl2->front, ssol_front);
+  solstice_create_ssol_material(solstice, mtl2->back, ssol_back);
 
   /* Define the shape transformation */
   d33_rotation(transform, obj->rotation[0], obj->rotation[1], obj->rotation[2]);
@@ -468,6 +468,8 @@ solstice_instantiate_geometry
         goto error;
       }
 
+      /* Release the shape and its double sided material since they are now own
+       * by the object */
       SSOL(shape_ref_put(shape));
       SSOL(material_ref_put(front));
       SSOL(material_ref_put(back));
