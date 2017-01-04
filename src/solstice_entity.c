@@ -185,7 +185,7 @@ solstice_setup_entities
 
   /* (re) create the list of roots from entities */
   solparser_entity_iterator_begin(solstice->parser, &it);
-  solparser_entity_iterator_end(solstice->parser, &it);
+  solparser_entity_iterator_end(solstice->parser, &it_end);
   while (!solparser_entity_iterator_eq(&it, &it_end)) {
     struct solparser_entity_id entity_id;
     const struct solparser_entity* entity;
