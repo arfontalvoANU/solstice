@@ -23,11 +23,15 @@ struct mirror_param {
   double roughness;
 };
 
+struct matte_param {
+  double reflectivity;
+};
+
 /*******************************************************************************
  * Helper functions
  ******************************************************************************/
 static void
-mirror_get_normal
+mtl_get_normal
   (struct ssol_device* dev,
    struct ssol_param_buffer* buf,
    const double wavelength,
@@ -42,6 +46,23 @@ mirror_get_normal
   val[0] = Ns[0];
   val[1] = Ns[1];
   val[2] = Ns[2];
+}
+
+static void
+matte_get_reflectivity
+  (struct ssol_device* dev,
+   struct ssol_param_buffer* buf,
+   const double wavelength,
+   const double P[3],
+   const double Ng[3],
+   const double Ns[3],
+   const double uv[2],
+   const double w[3],
+   double* val)
+{
+  const struct matte_param* param = ssol_param_buffer_get(buf);
+  (void)dev, (void)wavelength, (void)P, (void)Ng, (void)Ns, (void)uv, (void)w;
+  *val = param->reflectivity;
 }
 
 static void
@@ -84,9 +105,47 @@ create_material_matte
    const struct solparser_material_matte* matte,
    struct ssol_material** out_mtl)
 {
-  (void)solstice, (void)matte, (void)out_mtl;
-  /* TODO when the matte material will be available in Solstice Solver */
-  return RES_BAD_ARG;
+  struct ssol_matte_shader shader = SSOL_MATTE_SHADER_NULL;
+  struct ssol_material* mtl = NULL;
+  struct ssol_param_buffer* pbuf = NULL;
+  struct matte_param* param;
+  res_T res = RES_OK;
+  ASSERT(solstice && matte && out_mtl);
+
+  res = ssol_material_create_matte(solstice->ssol, &mtl);
+  if(res != RES_OK) {
+    fprintf(stderr, "Could not create the Solstice Solver matte material.\n");
+    goto error;
+  }
+
+  res = ssol_param_buffer_create
+    (solstice->ssol, sizeof(struct matte_param), &pbuf);
+  if(res != RES_OK) {
+    fprintf(stderr, "Could not create the Solstice Solver parameter buffer.\n");
+    goto error;
+  }
+
+  param = ssol_param_buffer_allocate
+    (pbuf, sizeof(struct matte_param), ALIGNOF(struct matte_param));
+  if(!param) {
+    fprintf(stderr, "Could not allocate the matte parameter.\n");
+    res = RES_MEM_ERR;
+    goto error;
+  }
+  param->reflectivity = matte->reflectivity;
+
+  shader.normal = mtl_get_normal;
+  shader.reflectivity = matte_get_reflectivity;
+  SSOL(matte_set_shader(mtl, &shader));
+  SSOL(material_set_param_buffer(mtl, pbuf));
+
+exit:
+  if(pbuf) SSOL(param_buffer_ref_put(pbuf));
+  *out_mtl = mtl;
+  return res;
+error:
+  if(mtl) SSOL(material_ref_put(mtl)), mtl = NULL;
+  goto exit;
 }
 
 static res_T
@@ -125,7 +184,7 @@ create_material_mirror
   param->reflectivity = mirror->reflectivity;
   param->roughness = mirror->roughness;
 
-  shader.normal = mirror_get_normal;
+  shader.normal = mtl_get_normal;
   shader.reflectivity = mirror_get_reflectivity;
   shader.roughness = mirror_get_roughness;
   SSOL(mirror_set_shader(mtl, &shader));
@@ -136,7 +195,7 @@ exit:
   *out_mtl = mtl;
   return res;
 error:
-  if(mtl) SSOL(material_ref_put(mtl));
+  if(mtl) SSOL(material_ref_put(mtl)), mtl = NULL;
   goto exit;
 }
 
