@@ -56,6 +56,18 @@ clear_objects(struct htable_object* objects)
   htable_object_clear(objects);
 }
 
+static void
+clear_nodes(struct darray_nodes* nodes)
+{
+  size_t i, n;
+  ASSERT(nodes);
+  n = darray_nodes_size_get(nodes);
+  FOR_EACH(i, 0, n) {
+    score_node_ref_put(darray_nodes_data_get(nodes)[i]);
+  }
+  darray_nodes_clear(nodes);
+}
+
 static res_T
 setup_camera(struct solstice* solstice, const struct solstice_args* args)
 {
@@ -204,6 +216,8 @@ solstice_init
   memset(solstice, 0, sizeof(struct solstice));
   htable_material_init(allocator, &solstice->materials);
   htable_object_init(allocator, &solstice->objects);
+  darray_nodes_init(allocator, &solstice->roots);
+  darray_nodes_init(allocator, &solstice->pivots);
 
   solstice->allocator = allocator ? allocator : &mem_default_allocator;
 
@@ -267,6 +281,8 @@ solstice_release(struct solstice* solstice)
   ASSERT(solstice);
   clear_materials(&solstice->materials);
   clear_objects(&solstice->objects);
+  clear_nodes(&solstice->roots);
+  clear_nodes(&solstice->pivots);
   if(solstice->ssol) SSOL(device_ref_put(solstice->ssol));
   if(solstice->scene) SSOL(scene_ref_put(solstice->scene));
   if(solstice->parser) solparser_ref_put(solstice->parser);
@@ -276,6 +292,8 @@ solstice_release(struct solstice* solstice)
   if(solstice->output && solstice->output != stdout) fclose(solstice->output);
   htable_material_release(&solstice->materials);
   htable_object_release(&solstice->objects);
+  darray_nodes_release(&solstice->roots);
+  darray_nodes_release(&solstice->pivots);
 }
 
 res_T
