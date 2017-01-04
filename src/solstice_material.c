@@ -173,6 +173,7 @@ solstice_get_ssol_material
       case SOLPARSER_MATERIAL_MATTE:
         matte = solparser_get_material_matte(solstice->parser, mtl->data.matte);
         res = create_material_matte(solstice, matte, &ssol_mtl);
+        break;
       default: FATAL("Unreachable code.\n"); break;
     }
     if(res != RES_OK) goto error;
