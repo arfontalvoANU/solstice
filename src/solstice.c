@@ -299,11 +299,19 @@ solstice_release(struct solstice* solstice)
 res_T
 solstice_run(struct solstice* solstice)
 {
+  res_T res = RES_OK;
   ASSERT(solstice);
+
   if(solstice->framebuffer) { /* Rendering */
-    return solstice_draw(solstice);
+    res = solstice_draw(solstice);
   } else { /* Solstice integration */
-    /* TODO */
-    return RES_OK;
+    res = RES_BAD_OP; /* TODO */
   }
+  if(res != RES_OK) goto error;
+
+exit:
+  return res;
+error:
+  goto exit;
 }
+

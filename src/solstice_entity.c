@@ -24,74 +24,113 @@
  * Helper function
  ******************************************************************************/
 static res_T
-solstice_setup_entity
+update_instance_transform
+  (const struct sanim_node* n, const double transform[12], void* data)
+{
+  struct score_node* node;
+  ASSERT(n && transform);
+  (void)data;
+
+  node = CONTAINER_OF(n, struct score_node, anim);
+  if(node->type != NODE_GEOMETRY) return RES_OK;
+  return ssol_instance_set_transform
+    (node->data.geometry_node.solver_instance, transform);
+}
+
+static struct score_node*
+setup_entity_empty
+  (struct solstice* solstice, const struct solparser_entity* entity)
+{
+  struct score_node* empty_node = NULL;
+  res_T res = RES_OK;
+  ASSERT(solstice && entity);
+
+  res = score_node_empty_create(solstice->score, &empty_node);
+  if(res != RES_OK) goto error;
+
+  score_node_set_translation(empty_node, entity->translation);
+  score_node_set_rotations(empty_node, entity->rotation);
+
+exit:
+  return empty_node;
+error:
+  if(empty_node) {
+    score_node_ref_put(empty_node);
+    empty_node = NULL;
+  }
+  goto exit;
+}
+
+static struct score_node*
+setup_entity_geometry
+  (struct solstice* solstice, const struct solparser_entity* entity)
+{
+  struct score_node* geometry_node = NULL;
+  struct ssol_instance* instance = NULL;
+  res_T res = RES_OK;
+  ASSERT(solstice && entity);
+
+  res = score_node_geometry_create(solstice->score, &geometry_node);
+  if(res != RES_OK) goto error;
+
+  res = solstice_instantiate_geometry
+    (solstice, entity->data.geometry, &instance);
+  if(res != RES_OK) goto error;
+
+  res = score_node_geometry_setup(geometry_node, instance);
+  if(res != RES_OK) goto error;
+
+  score_node_set_translation(geometry_node, entity->translation);
+  score_node_set_rotations(geometry_node, entity->rotation);
+
+exit:
+  if(instance) SSOL(instance_ref_put(instance));
+  return geometry_node;
+error:
+  if(geometry_node) {
+    score_node_ref_put(geometry_node);
+    geometry_node = NULL;
+  }
+  goto exit;
+}
+
+static struct score_node*
+setup_entity_pivot
   (struct solstice* solstice,
    const struct solparser_entity* entity,
-   const char is_root,
-   struct score_node** out_node)
+   struct score_node** atchmnt_node)
 {
-  struct score_node* root_node = NULL;
-  struct score_node* atchmnt_node = NULL;
-  struct ssol_instance* instance = NULL;
-  const struct solparser_anchor_id* anchors = NULL;
-  const struct solparser_entity_id* children = NULL;
-  size_t count, i;
+  /* TODO: remove pivot positionning? */
+  struct score_node* entity_node = NULL;
+  struct score_node* pivot_node = NULL;
+  const struct solparser_pivot* parser_pivot = NULL;
+  struct sanim_pivot anim_pivot = SANIM_PIVOT_NULL;
+  struct sanim_tracking anim_tracking = SANIM_TRACKING_NULL;
   res_T res = RES_OK;
-  ASSERT(solstice && solstice->parser && solstice->score && entity);
+  ASSERT(solstice && entity && atchmnt_node);
 
-  /* TODO Split the cases un sub-functions! */
-  switch (entity->type) {
-  case SOLPARSER_ENTITY_EMPTY:
-  {
-    struct score_node* empty_node = NULL;
-    res = score_node_empty_create(solstice->score, &empty_node);
-    if (res != RES_OK) goto error;
-    score_node_set_translation(empty_node, entity->translation);
-    score_node_set_rotations(empty_node, entity->rotation);
-    atchmnt_node = root_node = empty_node;
-    break;
-  }
-  case SOLPARSER_ENTITY_GEOMETRY:
-  {
-    struct score_node* geometry_node = NULL;
-    res = score_node_geometry_create(solstice->score, &geometry_node);
-    if (res != RES_OK) goto error;
-    res = solstice_instantiate_geometry
-      (solstice, entity->data.geometry, &instance);
-    if (res != RES_OK) goto error;
-    res = score_node_geometry_setup(geometry_node, instance);
-    if (res != RES_OK) goto error;
-    score_node_set_translation(geometry_node, entity->translation);
-    score_node_set_rotations(geometry_node, entity->rotation);
-    atchmnt_node = root_node = geometry_node;
-    break;
-  }
-  case SOLPARSER_ENTITY_PIVOT:
-  {
-    /* Each entity introduces a new coordinate system
-     * and each object or pivot has some positionning in this system.
-     * This behaviour is implemented through 2 levels of sanim_node. */
-    /* TODO: remove pivot positionning? */
-    struct score_node* entity_node = NULL;
-    struct score_node* pivot_node = NULL;
-    const struct solparser_pivot* parser_pivot = NULL;
-    struct sanim_pivot anim_pivot = SANIM_PIVOT_NULL;
-    struct sanim_tracking anim_tracking = SANIM_TRACKING_NULL;
-    res = score_node_empty_create(solstice->score, &entity_node);
-    if (res != RES_OK) goto error;
-    score_node_set_translation(entity_node, entity->translation);
-    score_node_set_rotations(entity_node, entity->rotation);
-    res = score_node_pivot_create(solstice->score, &pivot_node);
-    if (res != RES_OK) goto error;
-    parser_pivot = solparser_get_pivot(solstice->parser, entity->data.pivot);
-    ASSERT(parser_pivot);
-    score_node_set_translation(pivot_node, parser_pivot->translation);
-    score_node_set_rotations(pivot_node, parser_pivot->rotation);
-    /* TODO: 2-axis pivots */
-    anim_pivot.type = PIVOT_SINGLE_AXIS;
-    d3_set(anim_pivot.data.pivot1.ref_normal, parser_pivot->normal);
-    d3_set(anim_pivot.data.pivot1.ref_point, parser_pivot->point);
-    switch (parser_pivot->target_type) {
+  /*
+   * Each entity introduces a new coordinate system and each object or pivot
+   * has some positionning in this system. This behaviour is implemented
+   * through 2 levels of sanim_node.
+   */
+
+  res = score_node_empty_create(solstice->score, &entity_node);
+  if(res != RES_OK) goto error;
+  score_node_set_translation(entity_node, entity->translation);
+  score_node_set_rotations(entity_node, entity->rotation);
+
+  parser_pivot = solparser_get_pivot(solstice->parser, entity->data.pivot);
+  res = score_node_pivot_create(solstice->score, &pivot_node);
+  if(res != RES_OK) goto error;
+  score_node_set_translation(pivot_node, parser_pivot->translation);
+  score_node_set_rotations(pivot_node, parser_pivot->rotation);
+
+  /* TODO: 2-axis pivots */
+  anim_pivot.type = PIVOT_SINGLE_AXIS;
+  d3_set(anim_pivot.data.pivot1.ref_normal, parser_pivot->normal);
+  d3_set(anim_pivot.data.pivot1.ref_point, parser_pivot->point);
+  switch (parser_pivot->target_type) {
     case SOLPARSER_TARGET_ANCHOR:
     {
       struct score_node** ptgt = NULL;
@@ -114,70 +153,117 @@ solstice_setup_entity
       anim_tracking.policy = TRACKING_SUN;
       break;
     default: FATAL("Unreachable code.\n"); break;
-    }
-    res = score_node_pivot_setup(pivot_node, &anim_pivot, &anim_tracking);
-    if (res != RES_OK) goto error;
-    res = darray_nodes_push_back(&solstice->pivots, &pivot_node);
-    if (res != RES_OK) goto error;
-    root_node = entity_node;
-    atchmnt_node = pivot_node;
-    break;
-  }
-  default: FATAL("Unreachable code.\n"); break;
   }
 
-  ASSERT(root_node && atchmnt_node);
-  if (is_root) darray_nodes_push_back(&solstice->roots, &root_node);
+  res = score_node_pivot_setup(pivot_node, &anim_pivot, &anim_tracking);
+  if(res != RES_OK) goto error;
 
-  /* register anchors */
-  count = darray_anchor_id_size_get(&entity->anchors);
-  anchors = darray_anchor_id_cdata_get(&entity->anchors);
-  for (i = 0; i < count; i++) {
-    struct score_node* tgt;
+  res = darray_nodes_push_back(&solstice->pivots, &pivot_node);
+  if(res != RES_OK) goto error;
+
+exit:
+  *atchmnt_node = pivot_node;
+  return entity_node;
+error:
+  if(pivot_node) {
+    score_node_ref_put(pivot_node);
+    pivot_node = NULL;
+  }
+  if(entity_node) {
+    score_node_ref_put(entity_node);
+    entity_node = NULL;
+  }
+  goto exit;
+}
+
+static struct score_node*
+setup_entity(struct solstice* solstice, const struct solparser_entity* entity)
+{
+  struct score_node* root_node = NULL;
+  struct score_node* atchmnt_node = NULL;
+  struct score_node* tgt = NULL;
+  struct score_node* child_root = NULL;
+  size_t i;
+  res_T res = RES_OK;
+  ASSERT(solstice && solstice->parser && solstice->score && entity);
+
+  switch(entity->type) {
+    case SOLPARSER_ENTITY_EMPTY:
+      atchmnt_node = root_node = setup_entity_empty(solstice, entity);
+      break;
+    case SOLPARSER_ENTITY_GEOMETRY:
+      atchmnt_node = root_node = setup_entity_geometry(solstice, entity);
+      break;
+    case SOLPARSER_ENTITY_PIVOT:
+      root_node = setup_entity_pivot(solstice, entity, &atchmnt_node);
+      break;
+    default: FATAL("Unreachable code.\n"); break;
+  }
+
+  if(!root_node || !atchmnt_node) {
+    fprintf(stderr, "Could not setup the entity node.\n");
+    goto error;
+  }
+
+  /* Register anchors */
+  FOR_EACH(i, 0, solparser_entity_get_anchors_count(entity)) {
+    struct solparser_anchor_id id;
     const struct solparser_anchor* anchor = NULL;
+
     res = score_node_tracking_target_create(solstice->score, &tgt);
-    if (res != RES_OK) goto error;
-    anchor = solparser_get_anchor(solstice->parser, anchors[i]);
-    ASSERT(anchor);
-    res = htable_anchor_set(&solstice->anchors, &anchors[i].i, &tgt);
-    if (res != RES_OK) goto error;
+    if(res != RES_OK) goto error;
+
+    id = solparser_entity_get_anchor(entity, i);
+    anchor = solparser_get_anchor(solstice->parser, id);
+
+    res = htable_anchor_set(&solstice->anchors, &id.i, &tgt);
+    if(res != RES_OK) goto error;
+
     score_node_set_translation(tgt, anchor->position);
     res = score_node_add_child(atchmnt_node, tgt);
-    if (res != RES_OK) goto error;
+    if(res != RES_OK) goto error;
+
+    tgt = NULL;
   }
 
-  /* TODO: setup children */
-  count = solparser_entity_get_children_count(entity);
-  children = darray_child_id_cdata_get(&entity->children);
-  for (i = 0; i < count; i++) {
+  /* Setup children */
+  FOR_EACH(i, 0, solparser_entity_get_children_count(entity)) {
+    struct solparser_entity_id id;
     const struct solparser_entity* child;
-    struct score_node* child_root = NULL;
-    child = solparser_get_entity(solstice->parser, children[i]);
-    ASSERT(child);
-    res = solstice_setup_entity(solstice, child, 0, &child_root);
-    if (res != RES_OK) goto error;
-    ASSERT(child_root);
+
+    id = solparser_entity_get_child(entity, i);
+    child = solparser_get_entity(solstice->parser, id);
+
+    child_root = setup_entity(solstice, child);
+    if(!child_root) goto error;
+
     res = score_node_add_child(atchmnt_node, child_root);
-    if (res != RES_OK) goto error;
+    if(res != RES_OK) goto error;
+
+    child_root = NULL;
   }
 
-end:
-  if (instance) SSOL(instance_ref_put(instance));
-  if (out_node) *out_node = root_node;
-  return res;
-
+exit:
+  return root_node;
 error:
-  goto end;
+  if(tgt) score_node_ref_put(tgt);
+  if(child_root) score_node_ref_put(child_root);
+  if(atchmnt_node && atchmnt_node!=root_node) score_node_ref_put(atchmnt_node);
+  if(root_node) score_node_ref_put(root_node);
+  atchmnt_node = NULL;
+  root_node = NULL;
+  goto exit;
 }
 
 /*******************************************************************************
  * Local functions
  ******************************************************************************/
 res_T
-solstice_setup_entities
-  (struct solstice* solstice)
+solstice_setup_entities(struct solstice* solstice)
 {
   struct solparser_entity_iterator it, it_end;
+  struct score_node* root = NULL;
+  const double dummy_sun_dir[3] = {0, 0, 1}; /* Use the user defined dir */
   res_T res = RES_OK;
   ASSERT(solstice && solstice->parser && solstice->score);
 
@@ -187,22 +273,39 @@ solstice_setup_entities
   /* (re) create the list of roots from entities */
   solparser_entity_iterator_begin(solstice->parser, &it);
   solparser_entity_iterator_end(solstice->parser, &it_end);
-  while (!solparser_entity_iterator_eq(&it, &it_end)) {
+  while(!solparser_entity_iterator_eq(&it, &it_end)) {
     struct solparser_entity_id entity_id;
     const struct solparser_entity* entity;
 
     entity_id = solparser_entity_iterator_get(&it);
     entity = solparser_get_entity(solstice->parser, entity_id);
 
-    res = solstice_setup_entity(solstice, entity, 1, NULL);
-    if (res != RES_OK) goto error;
+    root = setup_entity(solstice, entity);
+    if(!root) goto error;
+
+    /* Initialialised the world space position of the entity geometry */
+    res = sanim_node_visit_tree
+      (&root->anim, dummy_sun_dir, NULL, update_instance_transform);
+    if(res != RES_OK) {
+      fprintf(stderr,
+        "Could not setup the transformation of the entity geometries.\n");
+      goto error;
+    }
+
+    res = darray_nodes_push_back(&solstice->roots, &root);
+    if(res != RES_OK) {
+      fprintf(stderr, "Could not register a root entity.\n");
+      goto error;
+    }
 
     solparser_entity_iterator_next(&it);
+    root = NULL;
   }
 
-end:
+exit:
   return res;
 error:
-  goto end;
+  if(root) score_node_ref_put(root);
+  goto exit;
 }
 

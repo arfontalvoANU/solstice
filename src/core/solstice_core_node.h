@@ -54,7 +54,8 @@ struct score_node {
   struct score_device* device;
   struct sanim_node anim;
   union {
-    /* only types of nodes with specific data */
+    /* only types of nodes with specific data.
+     * TODO remove the useless union (?) */
     struct geometry_node_data geometry_node;
   } data;
   ref_T ref;

@@ -25,7 +25,7 @@
 
 /*
  * NOTE: There is a weakness in the Solstice-Anim API that forbids the
- * initialization of  he pivot node on its creation contraty to the common node
+ * initialization of the pivot node on its creation contraty to the common node.
  */
 
 /*******************************************************************************
@@ -58,7 +58,6 @@ struct data {
   const struct ssol_object* searched;
   struct ssol_instance* result;
 };
-
 
 /*******************************************************************************
  * Local functions
@@ -211,8 +210,7 @@ error:
 
 res_T
 score_node_geometry_setup
-  (struct score_node* node,
-   struct ssol_instance* instance)
+  (struct score_node* node, struct ssol_instance* instance)
 {
   int is_init = 0;
   res_T res = RES_OK;
@@ -228,14 +226,17 @@ score_node_geometry_setup
   if (res != RES_OK) goto error;
   node->data.geometry_node.solver_instance = instance;
   SSOL(instance_ref_get(instance));
+
 exit:
   return res;
 error:
   if (node->data.geometry_node.solver_instance) {
     SSOL(instance_ref_put(node->data.geometry_node.solver_instance));
+    node->data.geometry_node.solver_instance = NULL;
   }
   if (node->anim.data) {
     SANIM(node_release(&node->anim));
+    node->anim = SANIM_NODE_NULL;
   }
   goto exit;
 }
@@ -265,6 +266,7 @@ exit:
 error:
   if (node->anim.data) {
     SANIM(node_release(&node->anim));
+    node->anim = SANIM_NODE_NULL;
   }
   goto exit;
 }
@@ -279,9 +281,7 @@ score_node_track_me
 }
 
 res_T
-score_node_add_child
-  (struct score_node* father,
-   struct score_node* child)
+score_node_add_child(struct score_node* father, struct score_node* child)
 {
   res_T res = RES_OK;
   ASSERT(father && child

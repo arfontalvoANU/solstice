@@ -139,8 +139,8 @@ score_node_sample
    const int sample);
 
 /*******************************************************************************
-* Miscellaneous functions
-******************************************************************************/
+ * Miscellaneous functions
+ ******************************************************************************/
 extern LOCAL_SYM void
 score_scene_clear
   (struct score_device* dev);
