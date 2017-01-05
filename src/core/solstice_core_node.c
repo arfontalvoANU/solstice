@@ -46,6 +46,7 @@ node_release(ref_T* ref)
       break;
     case NODE_TRACKING_TARGET: /* Do nothing */ break;
     case NODE_PIVOT: /* Do nothing */ break;
+    case NODE_EMPTY: /* Do nothing */ break;
     default: FATAL("Unreachable code.\n"); break;
   }
   node_ref_put_children(&node->anim);
