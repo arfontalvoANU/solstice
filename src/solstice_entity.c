@@ -240,6 +240,7 @@ setup_entity(struct solstice* solstice, const struct solparser_entity* entity)
     res = score_node_add_child(atchmnt_node, child_root);
     if(res != RES_OK) goto error;
 
+    score_node_ref_put(child_root);
     child_root = NULL;
   }
 
