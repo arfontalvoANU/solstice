@@ -138,6 +138,7 @@ test_rendering(void)
   cmd = cmd_create(0, "test", "-r", "pos=0,10,1:::::", NULL);
   CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
   CHECK(d3_eq(args.camera.pos, d3(tmp, 0, 10, 1)), 1);
+  solstice_args_release(&args);
   cmd_delete(cmd);
 
   cmd = cmd_create(0, "test", "-r", "img=32X32", NULL);
@@ -157,11 +158,61 @@ test_rendering(void)
   cmd_delete(cmd);
 }
 
+static void
+test_sun_dirs(void)
+{
+  struct solstice_args args = SOLSTICE_ARGS_NULL;
+  char** cmd = NULL;
+
+  cmd = cmd_create(0, "test", "-D", "0,1", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.nsun_dirs, 1);
+  CHECK(args.sun_dirs[0].azimuth, 0);
+  CHECK(args.sun_dirs[0].elevation, 1);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "1.2,3.4:3.14,0.123:", RES_OK);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.nsun_dirs, 2);
+  CHECK(args.sun_dirs[0].azimuth, 1.2);
+  CHECK(args.sun_dirs[0].elevation, 3.4);
+  CHECK(args.sun_dirs[1].azimuth, 3.14);
+  CHECK(args.sun_dirs[1].elevation, 0.123);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "1.2,3.4:3.14,0.123:2.01,23.1", RES_OK);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.nsun_dirs, 3);
+  CHECK(args.sun_dirs[0].azimuth, 1.2);
+  CHECK(args.sun_dirs[0].elevation, 3.4);
+  CHECK(args.sun_dirs[1].azimuth, 3.14);
+  CHECK(args.sun_dirs[1].elevation, 0.123);
+  CHECK(args.sun_dirs[2].azimuth, 2.01);
+  CHECK(args.sun_dirs[2].elevation, 23.1);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "1.2,3.4,5", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "1.2,3.4:1", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "1.2,3.4:5.2,A", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+}
+
 int
 main(int argc, char** argv)
 {
   (void)argc, (void)argv;
   test_rendering();
+  test_sun_dirs();
 
   CHECK(mem_allocated_size(), 0);
   return 0;

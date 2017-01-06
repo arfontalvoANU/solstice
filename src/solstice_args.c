@@ -108,7 +108,7 @@ parse_sun_dir_list(const char* str, struct solstice_args* args)
   }
   strncpy(buf, str, sizeof(buf));
 
-  tk = strtok_r(buf, ",", &ctx);
+  tk = strtok_r(buf, ":", &ctx);
   while(tk) {
     struct solstice_args_polar polar;
     double tmp[2];
@@ -123,7 +123,7 @@ parse_sun_dir_list(const char* str, struct solstice_args* args)
     polar.elevation = tmp[1];
     sa_push(args->sun_dirs, polar);
 
-    tk = strtok_r(NULL, ",", &ctx);
+    tk = strtok_r(NULL, ":", &ctx);
   }
 
   args->nsun_dirs += sa_size(args->sun_dirs);
