@@ -18,10 +18,19 @@
 
 #include <rsys/math.h>
 
+struct solstice_args_polar {
+  double azimuth; /* In radians */
+  double elevation; /* In radians */
+};
+
 struct solstice_args {
   const char* output_filename;
   unsigned long nrealisations; /* #realisations */
   const char* input_filename; /* May be NULL <=> read data from stdin */
+
+  /* List of sun directions */
+  struct solstice_args_polar* sun_dirs;
+  size_t nsun_dirs;
 
   struct {
     double pos[3];
@@ -47,6 +56,9 @@ static const struct solstice_args SOLSTICE_ARGS_NULL = SOLSTICE_ARGS_NULL__;
   NULL, /* output_filename */                                                  \
   @SOLSTICE_ARGS_DEFAULT_NREALISATIONS@,                                       \
   NULL, /* input_filename */                                                   \
+                                                                               \
+  NULL, /* sun_dirs */                                                         \
+  0, /* # nsun_dirs */                                                         \
                                                                                \
   { /* Camera */                                                               \
     { @SOLSTICE_ARGS_DEFAULT_CAMERA_POS@ },                                    \

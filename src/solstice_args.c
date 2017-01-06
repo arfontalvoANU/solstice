@@ -19,6 +19,7 @@
 
 #include <rsys/cstr.h>
 #include <rsys/double3.h>
+#include <rsys/stretchy_array.h>
 
 #ifdef COMPILER_CL
   #include <getopt.h>
@@ -65,13 +66,14 @@ parse_fov(const char* str, double* out_fov)
 
 
 static res_T
-parse_double3(const char* str, double dbl3[3])
+parse_doubleN(const char* str, double dbl[], const size_t N)
 {
   char buf[64];
   char* tk;
   char* ctx;
+  size_t i;
   res_T res = RES_OK;
-  ASSERT(str && dbl3);
+  ASSERT(str && dbl);
 
   if(strlen(str) >= sizeof(buf) - 1/*NULL char*/) {
     fprintf(stderr,
@@ -80,19 +82,61 @@ parse_double3(const char* str, double dbl3[3])
   }
   strncpy(buf, str, sizeof(buf));
 
-  tk = strtok_r(buf, ",", &ctx);
-  res = cstr_to_double(tk, dbl3+0);
-  if(res != RES_OK) return res;
-
-  tk = strtok_r(NULL, ",", &ctx);
-  res = cstr_to_double(tk, dbl3+1);
-  if(res != RES_OK) return res;
-
-  tk = strtok_r(NULL, "", &ctx);
-  res = cstr_to_double(tk, dbl3+2);
-  if(res != RES_OK) return res;
+  FOR_EACH(i, 0, N) {
+    tk = strtok_r(i == 0 ? buf : NULL, i == N-1 ? "" : ",", &ctx);
+    res = cstr_to_double(tk, dbl+i);
+    if(res != RES_OK) return res;
+  }
 
   return RES_OK;
+}
+
+static res_T
+parse_sun_dir_list(const char* str, struct solstice_args* args)
+{
+  char buf[512];
+  char* tk;
+  char* ctx;
+  res_T res = RES_OK;
+  ASSERT(str && args);
+
+  if(strlen(str) >= sizeof(buf) - 1/*NULL char*/) {
+    fprintf(stderr,
+      "Could not duplicate the list of sun directions `%s'.\n", str);
+    res = RES_MEM_ERR;
+    goto error;
+  }
+  strncpy(buf, str, sizeof(buf));
+
+  tk = strtok_r(buf, ",", &ctx);
+  while(tk) {
+    struct solstice_args_polar polar;
+    double tmp[2];
+
+    res = parse_doubleN(tk, tmp, 2);
+    if(res != RES_OK) {
+      fprintf(stderr, "Invalid sun direction `%s'.\n", tk);
+      goto error;
+    }
+
+    polar.azimuth = tmp[0];
+    polar.elevation = tmp[1];
+    sa_push(args->sun_dirs, polar);
+
+    tk = strtok_r(NULL, ",", &ctx);
+  }
+
+  args->nsun_dirs += sa_size(args->sun_dirs);
+
+exit:
+  return res;
+error:
+  if(args->sun_dirs) {
+    sa_release(args->sun_dirs);
+    args->sun_dirs = NULL;
+    args->nsun_dirs = 0;
+  }
+  goto exit;
 }
 
 static res_T
@@ -159,19 +203,19 @@ parse_rendering_option(const char* str, struct solstice_args* args)
     res = parse_image_definition(val, &args->img.width, &args->img.height);
     if(res != RES_OK) goto error;
   } else if(!strcmp(key, "pos")) {
-    res = parse_double3(val, args->camera.pos);
+    res = parse_doubleN(val, args->camera.pos, 3);
     if(res != RES_OK) {
       fprintf(stderr, "Invalid camera position `%s'.\n", val);
       goto error;
     }
   } else if(!strcmp(key, "tgt")) {
-    res = parse_double3(val, args->camera.tgt);
+    res = parse_doubleN(val, args->camera.tgt, 3);
     if(res != RES_OK) {
       fprintf(stderr, "Invalid camera target `%s'.\n", val);
       goto error;
     }
   } else if(!strcmp(key, "up")) {
-    res = parse_double3(val, args->camera.up);
+    res = parse_doubleN(val, args->camera.up, 3);
     if(res != RES_OK) {
       fprintf(stderr, "Invalid camera up vector `%s'.\n", val);
       goto error;
@@ -242,8 +286,11 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
   *args = SOLSTICE_ARGS_DEFAULT;
 
   optind = 1;
-  while((opt = getopt(argc, argv, "hn:o:qr:")) != -1) {
+  while((opt = getopt(argc, argv, "D:hn:o:qr:")) != -1) {
     switch(opt) {
+      case 'D':
+        res = parse_sun_dir_list(optarg, args);
+        break;
       case 'h':
         print_help(argv[0]);
         solstice_args_release(args);
@@ -283,6 +330,7 @@ void
 solstice_args_release(struct solstice_args* args)
 {
   ASSERT(args);
+  sa_release(args->sun_dirs);
   *args = SOLSTICE_ARGS_NULL;
 }
 

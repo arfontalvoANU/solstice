@@ -10,6 +10,8 @@ solstice
 
 solstice -r img=1280x720:pos=0,100,0:tgt=0,0,0:up=0,1,0:fov=70
 
+-d and -D are exclusive
+
 <date-list> ::=
   <date> [ ... ]
 
@@ -17,10 +19,10 @@ solstice -r img=1280x720:pos=0,100,0:tgt=0,0,0:up=0,1,0:fov=70
   year:month:day:minutes:seconds:timezone # <=> UNIX format
 
 <sun-dir-list> ::=
-  <sun-dir> [ ... ]
+  <sun-dir>:[ ... ]
 
 <sun-dir> ::=
-  REAL:REAL # azimuth:elevation
+  REAL,REAL # azimuth:elevation
 
 <pos-on-earth> ::=
   REAL:REAL:REAL # longititude:latitude:altitude
