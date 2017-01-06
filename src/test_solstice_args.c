@@ -63,13 +63,12 @@ cmd_size(char** cmd)
   return (int)sa_size(cmd);
 }
 
-int
-main(int argc, char** argv)
+static void
+test_rendering(void)
 {
   struct solstice_args args = SOLSTICE_ARGS_NULL;
   char** cmd = NULL;
   double tmp[3];
-  (void)argc, (void)argv;
 
   cmd = cmd_create(0, "test", "-r", "img=1280x720", NULL);
   CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
@@ -123,6 +122,46 @@ main(int argc, char** argv)
   CHECK(strcmp(args.output_filename, "my_output"),  0);
   solstice_args_release(&args);
   cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-r", "up=0,1", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-r", "tgt=0:1", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-r", "pos=0,10,1a", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-r", "pos=0,10,1:::::", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(d3_eq(args.camera.pos, d3(tmp, 0, 10, 1)), 1);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-r", "img=32X32", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-r", "img=32x32@12", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-r", "tgt=1,1,1:img=32x32:12", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-r", "fov=123a", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+}
+
+int
+main(int argc, char** argv)
+{
+  (void)argc, (void)argv;
+  test_rendering();
 
   CHECK(mem_allocated_size(), 0);
   return 0;
