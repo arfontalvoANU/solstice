@@ -18,6 +18,7 @@
 
 #include "parser/solparser_material.h"
 
+#include <rsys/dynamic_array_double.h>
 #include <rsys/hash_table.h>
 #include <rsys/mem_allocator.h>
 
@@ -64,6 +65,8 @@ struct solstice {
   /* Rendering */
   struct ssol_camera* camera;
   struct ssol_image* framebuffer;
+
+  struct darray_double sun_dirs; /* List of double3 */
 
   FILE* output; /* Output stream */
 

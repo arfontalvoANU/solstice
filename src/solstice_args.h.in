@@ -18,7 +18,7 @@
 
 #include <rsys/math.h>
 
-struct solstice_args_polar {
+struct solstice_args_spherical {
   double azimuth; /* In radians */
   double elevation; /* In radians */
 };
@@ -29,7 +29,7 @@ struct solstice_args {
   const char* input_filename; /* May be NULL <=> read data from stdin */
 
   /* List of sun directions */
-  struct solstice_args_polar* sun_dirs;
+  struct solstice_args_spherical* sun_dirs;
   size_t nsun_dirs;
 
   struct {

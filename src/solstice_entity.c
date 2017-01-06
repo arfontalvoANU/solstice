@@ -310,3 +310,30 @@ error:
   goto exit;
 }
 
+res_T
+solstice_update_entities(struct solstice* solstice, const double sun_dir[3])
+{
+  size_t i, n;
+  res_T res = RES_OK;
+  ASSERT(solstice && sun_dir);
+
+  n = darray_nodes_size_get(&solstice->pivots);
+  FOR_EACH(i, 0, n) {
+    struct score_node* pivot = darray_nodes_data_get(&solstice->pivots)[i];
+
+    /* Initialialised the world space position of the entity geometry */
+    res = sanim_node_visit_tree
+      (&pivot->anim, sun_dir, NULL, update_instance_transform);
+    if(res != RES_OK) {
+      fprintf(stderr,
+        "Could not update the transformation of the entity geometries.\n");
+      goto error;
+    }
+  }
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+

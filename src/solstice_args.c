@@ -110,7 +110,7 @@ parse_sun_dir_list(const char* str, struct solstice_args* args)
 
   tk = strtok_r(buf, ":", &ctx);
   while(tk) {
-    struct solstice_args_polar polar;
+    struct solstice_args_spherical spherical;
     double tmp[2];
 
     res = parse_doubleN(tk, tmp, 2);
@@ -119,9 +119,9 @@ parse_sun_dir_list(const char* str, struct solstice_args* args)
       goto error;
     }
 
-    polar.azimuth = tmp[0];
-    polar.elevation = tmp[1];
-    sa_push(args->sun_dirs, polar);
+    spherical.azimuth = tmp[0];
+    spherical.elevation = tmp[1];
+    sa_push(args->sun_dirs, spherical);
 
     tk = strtok_r(NULL, ":", &ctx);
   }

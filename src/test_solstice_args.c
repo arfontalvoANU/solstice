@@ -213,7 +213,6 @@ main(int argc, char** argv)
   (void)argc, (void)argv;
   test_rendering();
   test_sun_dirs();
-
   CHECK(mem_allocated_size(), 0);
   return 0;
 }

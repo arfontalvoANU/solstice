@@ -30,6 +30,11 @@ solstice_setup_entities
   (struct solstice* solstice);
 
 extern LOCAL_SYM res_T
+solstice_update_entities
+  (struct solstice* solstice,
+   const double sun_dir[3]);
+
+extern LOCAL_SYM res_T
 solstice_create_ssol_material
   (struct solstice* solstice,
    const struct solparser_material_id mtl_id,
