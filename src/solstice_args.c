@@ -119,8 +119,8 @@ parse_sun_dir_list(const char* str, struct solstice_args* args)
       goto error;
     }
 
-    spherical.azimuth = tmp[0];
-    spherical.elevation = tmp[1];
+    spherical.azimuth = MDEG2RAD(tmp[0]);
+    spherical.elevation = MDEG2RAD(tmp[1]);
     sa_push(args->sun_dirs, spherical);
 
     tk = strtok_r(NULL, ":", &ctx);
@@ -244,12 +244,8 @@ parse_rendering_options(const char* str, struct solstice_args* args)
   (void)str, (void)args;
 
   /* Setup default values of the rendering parameters */
-  d3(args->camera.pos, 0, 0, 0);
-  d3(args->camera.tgt, 0, 0, -1);
-  d3(args->camera.up, 0, 1, 0);
-  args->camera.fov_x = MDEG2RAD(70);
-  args->img.width = 800;
-  args->img.height = 600;
+  args->camera = SOLSTICE_ARGS_DEFAULT.camera;
+  args->img = SOLSTICE_ARGS_DEFAULT.img;
 
   if(!str) goto exit;
 

@@ -375,9 +375,12 @@ solstice_run(struct solstice* solstice)
 
       res = solstice_update_entities(solstice, sun_dir);
       if(res != RES_OK) goto error;
-      fprintf(solstice->output, "# Sun direction: %g %g %g\n", SPLIT3(sun_dir));
+
       res = solstice_draw(solstice);
       if(res != RES_OK) goto error;
+
+      fprintf(solstice->output,
+        "# Sun direction: %g %g %g\n", SPLIT3(sun_dir));
     }
   }
 
