@@ -64,7 +64,7 @@ static const struct solstice_args SOLSTICE_ARGS_NULL = SOLSTICE_ARGS_NULL__;
     { @SOLSTICE_ARGS_DEFAULT_CAMERA_POS@ },                                    \
     { @SOLSTICE_ARGS_DEFAULT_CAMERA_TGT@ },                                    \
     { @SOLSTICE_ARGS_DEFAULT_CAMERA_UP@ },                                     \
-    MDEG2RAD(@SOLSTICE_ARGS_DEFAULT_CAMERA_FOV@)                               \
+    @SOLSTICE_ARGS_DEFAULT_CAMERA_FOV@                                         \
   },                                                                           \
                                                                                \
   { /* Image */                                                                \

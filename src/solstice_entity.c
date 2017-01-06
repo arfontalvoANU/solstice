@@ -123,8 +123,6 @@ setup_entity_pivot
   parser_pivot = solparser_get_pivot(solstice->parser, entity->data.pivot);
   res = score_node_pivot_create(solstice->score, &pivot_node);
   if(res != RES_OK) goto error;
-  score_node_set_translation(pivot_node, parser_pivot->translation);
-  score_node_set_rotations(pivot_node, parser_pivot->rotation);
 
   /* TODO: 2-axis pivots */
   anim_pivot.type = PIVOT_SINGLE_AXIS;
@@ -157,6 +155,8 @@ setup_entity_pivot
 
   res = score_node_pivot_setup(pivot_node, &anim_pivot, &anim_tracking);
   if(res != RES_OK) goto error;
+  score_node_set_translation(pivot_node, parser_pivot->translation);
+  score_node_set_rotations(pivot_node, parser_pivot->rotation);
 
   res = darray_nodes_push_back(&solstice->pivots, &pivot_node);
   if(res != RES_OK) goto error;
@@ -317,13 +317,13 @@ solstice_update_entities(struct solstice* solstice, const double sun_dir[3])
   res_T res = RES_OK;
   ASSERT(solstice && sun_dir);
 
-  n = darray_nodes_size_get(&solstice->pivots);
+  n = darray_nodes_size_get(&solstice->roots);
   FOR_EACH(i, 0, n) {
-    struct score_node* pivot = darray_nodes_data_get(&solstice->pivots)[i];
+    struct score_node* node = darray_nodes_data_get(&solstice->roots)[i];
 
     /* Initialialised the world space position of the entity geometry */
     res = sanim_node_visit_tree
-      (&pivot->anim, sun_dir, NULL, update_instance_transform);
+      (&node->anim, sun_dir, NULL, update_instance_transform);
     if(res != RES_OK) {
       fprintf(stderr,
         "Could not update the transformation of the entity geometries.\n");
