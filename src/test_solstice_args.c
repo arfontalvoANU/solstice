@@ -168,29 +168,29 @@ test_sun_dirs(void)
   CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
   CHECK(args.nsun_dirs, 1);
   CHECK(args.sun_dirs[0].azimuth, 0);
-  CHECK(args.sun_dirs[0].elevation, MDEG2RAD(1));
+  CHECK(eq_eps(args.sun_dirs[0].elevation, MDEG2RAD(1), 1.e-6), 1);
   solstice_args_release(&args);
   cmd_delete(cmd);
 
   cmd = cmd_create(0, "test", "-D", "1.2,3.4:3.14,0.123:", RES_OK);
   CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
   CHECK(args.nsun_dirs, 2);
-  CHECK(args.sun_dirs[0].azimuth, MDEG2RAD(1.2));
-  CHECK(args.sun_dirs[0].elevation, MDEG2RAD(3.4));
-  CHECK(args.sun_dirs[1].azimuth, MDEG2RAD(3.14));
-  CHECK(args.sun_dirs[1].elevation, MDEG2RAD(0.123));
+  CHECK(eq_eps(args.sun_dirs[0].azimuth, MDEG2RAD(1.2), 1.e-6), 1);
+  CHECK(eq_eps(args.sun_dirs[0].elevation, MDEG2RAD(3.4), 1.e-6), 1);
+  CHECK(eq_eps(args.sun_dirs[1].azimuth, MDEG2RAD(3.14), 1.e-6), 1);
+  CHECK(eq_eps(args.sun_dirs[1].elevation, MDEG2RAD(0.123), 1.e-6), 1);
   solstice_args_release(&args);
   cmd_delete(cmd);
 
   cmd = cmd_create(0, "test", "-D", "1.2,3.4:3.14,0.123:2.01,23.1", RES_OK);
   CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
   CHECK(args.nsun_dirs, 3);
-  CHECK(args.sun_dirs[0].azimuth, MDEG2RAD(1.2));
-  CHECK(args.sun_dirs[0].elevation, MDEG2RAD(3.4));
-  CHECK(args.sun_dirs[1].azimuth, MDEG2RAD(3.14));
-  CHECK(args.sun_dirs[1].elevation, MDEG2RAD(0.123));
-  CHECK(args.sun_dirs[2].azimuth, MDEG2RAD(2.01));
-  CHECK(args.sun_dirs[2].elevation, MDEG2RAD(23.1));
+  CHECK(eq_eps(args.sun_dirs[0].azimuth, MDEG2RAD(1.2), 1.e-6), 1);
+  CHECK(eq_eps(args.sun_dirs[0].elevation, MDEG2RAD(3.4), 1.e-6), 1);
+  CHECK(eq_eps(args.sun_dirs[1].azimuth, MDEG2RAD(3.14), 1.e-6), 1);
+  CHECK(eq_eps(args.sun_dirs[1].elevation, MDEG2RAD(0.123), 1.e-6), 1);
+  CHECK(eq_eps(args.sun_dirs[2].azimuth, MDEG2RAD(2.01), 1.e-6), 1);
+  CHECK(eq_eps(args.sun_dirs[2].elevation, MDEG2RAD(23.1), 1.e-6), 1);
   solstice_args_release(&args);
   cmd_delete(cmd);
 
