@@ -267,7 +267,7 @@ solstice_setup_entities(struct solstice* solstice)
 {
   struct solparser_entity_iterator it, it_end;
   struct score_node* root = NULL;
-  const double dummy_sun_dir[3] = {0, 0, 1}; /* Use the user defined dir */
+  const double dummy_sun_dir[3] = {0, 0, -1};
   res_T res = RES_OK;
   ASSERT(solstice && solstice->parser && solstice->score);
 
