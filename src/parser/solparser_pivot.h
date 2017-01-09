@@ -78,9 +78,11 @@ struct solparser_pivot {
   } target;
 };
 
-#define SOLPARSER_PIVOT_NULL__ { {0,0,0}, {0,0,0}, SOLPARSER_TARGET_TYPES_COUNT__, {0,0,0} };
-
-static const struct solparser_pivot SOLPARSER_PIVOT_NULL = SOLPARSER_PIVOT_NULL__;
+#define SOLPARSER_PIVOT_NULL__ {                                               \
+  {0,0,0}, {0,0,0}, SOLPARSER_TARGET_TYPES_COUNT__, {{0,0,0}}                  \
+}
+static const struct solparser_pivot SOLPARSER_PIVOT_NULL = 
+  SOLPARSER_PIVOT_NULL__;
 
 struct solparser_pivot_id { size_t i; };
 
