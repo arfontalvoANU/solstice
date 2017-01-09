@@ -97,28 +97,14 @@ error:
 static struct score_node*
 setup_entity_pivot
   (struct solstice* solstice,
-   const struct solparser_entity* entity,
-   struct score_node** atchmnt_node)
+   const struct solparser_entity* entity)
 {
-  /* TODO: remove pivot positionning? */
-  struct score_node* entity_node = NULL;
   struct score_node* pivot_node = NULL;
   const struct solparser_pivot* parser_pivot = NULL;
   struct sanim_pivot anim_pivot = SANIM_PIVOT_NULL;
   struct sanim_tracking anim_tracking = SANIM_TRACKING_NULL;
   res_T res = RES_OK;
-  ASSERT(solstice && entity && atchmnt_node);
-
-  /*
-   * Each entity introduces a new coordinate system and each object or pivot
-   * has some positionning in this system. This behaviour is implemented
-   * through 2 levels of sanim_node.
-   */
-
-  res = score_node_empty_create(solstice->score, &entity_node);
-  if(res != RES_OK) goto error;
-  score_node_set_translation(entity_node, entity->translation);
-  score_node_set_rotations(entity_node, entity->rotation);
+  ASSERT(solstice && entity);
 
   parser_pivot = solparser_get_pivot(solstice->parser, entity->data.pivot);
   res = score_node_pivot_create(solstice->score, &pivot_node);
@@ -155,26 +141,18 @@ setup_entity_pivot
 
   res = score_node_pivot_setup(pivot_node, &anim_pivot, &anim_tracking);
   if(res != RES_OK) goto error;
-  score_node_set_translation(pivot_node, parser_pivot->translation);
-  score_node_set_rotations(pivot_node, parser_pivot->rotation);
+  score_node_set_translation(pivot_node, entity->translation);
+  score_node_set_rotations(pivot_node, entity->rotation);
 
   res = darray_nodes_push_back(&solstice->pivots, &pivot_node);
   if(res != RES_OK) goto error;
 
-  res = score_node_add_child(entity_node, pivot_node);
-  if (res != RES_OK) goto error;
-
 exit:
-  *atchmnt_node = pivot_node;
-  return entity_node;
+  return pivot_node;
 error:
   if(pivot_node) {
     score_node_ref_put(pivot_node);
     pivot_node = NULL;
-  }
-  if(entity_node) {
-    score_node_ref_put(entity_node);
-    entity_node = NULL;
   }
   goto exit;
 }
@@ -182,8 +160,7 @@ error:
 static struct score_node*
 setup_entity(struct solstice* solstice, const struct solparser_entity* entity)
 {
-  struct score_node* root_node = NULL;
-  struct score_node* atchmnt_node = NULL;
+  struct score_node* entity_node = NULL;
   struct score_node* tgt = NULL;
   struct score_node* child_root = NULL;
   size_t i;
@@ -192,18 +169,18 @@ setup_entity(struct solstice* solstice, const struct solparser_entity* entity)
 
   switch(entity->type) {
     case SOLPARSER_ENTITY_EMPTY:
-      atchmnt_node = root_node = setup_entity_empty(solstice, entity);
+      entity_node = setup_entity_empty(solstice, entity);
       break;
     case SOLPARSER_ENTITY_GEOMETRY:
-      atchmnt_node = root_node = setup_entity_geometry(solstice, entity);
+      entity_node = setup_entity_geometry(solstice, entity);
       break;
     case SOLPARSER_ENTITY_PIVOT:
-      root_node = setup_entity_pivot(solstice, entity, &atchmnt_node);
+      entity_node = setup_entity_pivot(solstice, entity);
       break;
     default: FATAL("Unreachable code.\n"); break;
   }
 
-  if(!root_node || !atchmnt_node) {
+  if(!entity_node) {
     fprintf(stderr, "Could not setup the entity node.\n");
     goto error;
   }
@@ -223,7 +200,7 @@ setup_entity(struct solstice* solstice, const struct solparser_entity* entity)
     if(res != RES_OK) goto error;
 
     score_node_set_translation(tgt, anchor->position);
-    res = score_node_add_child(atchmnt_node, tgt);
+    res = score_node_add_child(entity_node, tgt);
     if(res != RES_OK) goto error;
 
     tgt = NULL;
@@ -240,7 +217,7 @@ setup_entity(struct solstice* solstice, const struct solparser_entity* entity)
     child_root = setup_entity(solstice, child);
     if(!child_root) goto error;
 
-    res = score_node_add_child(atchmnt_node, child_root);
+    res = score_node_add_child(entity_node, child_root);
     if(res != RES_OK) goto error;
 
     score_node_ref_put(child_root);
@@ -248,14 +225,12 @@ setup_entity(struct solstice* solstice, const struct solparser_entity* entity)
   }
 
 exit:
-  return root_node;
+  return entity_node;
 error:
   if(tgt) score_node_ref_put(tgt);
   if(child_root) score_node_ref_put(child_root);
-  if(atchmnt_node && atchmnt_node!=root_node) score_node_ref_put(atchmnt_node);
-  if(root_node) score_node_ref_put(root_node);
-  atchmnt_node = NULL;
-  root_node = NULL;
+  if(entity_node) score_node_ref_put(entity_node);
+  entity_node = NULL;
   goto exit;
 }
 

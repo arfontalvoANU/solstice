@@ -2509,7 +2509,7 @@ parse_pivot
    const yaml_node_t* pivot,
    struct solparser_pivot_id* out_isolpivot)
 {
-  enum { NORMAL, POINT, TARGET, TRANSFORM };
+  enum { NORMAL, POINT, TARGET };
   struct solparser_pivot* solpivot = NULL;
   size_t isolpivot = SIZE_MAX;
   int mask = 0; /* Register the parsed attributes */
@@ -2563,10 +2563,6 @@ parse_pivot
     } else if(!strcmp((char*)key->data.scalar.value, "target")) {
       SETUP_MASK(TARGET, "target");
       res = parse_target(parser, doc, val, solpivot);
-    } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
-      SETUP_MASK(TRANSFORM, "transform");
-      res = parse_transform
-        (parser, doc, val, solpivot->translation, solpivot->rotation);
     } else {
       log_err(parser, key, "unknown pivot parameter `%s'.\n",
         key->data.scalar.value);

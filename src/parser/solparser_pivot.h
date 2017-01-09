@@ -70,8 +70,6 @@ solparser_anchor_copy_and_release
 struct solparser_pivot {
   double point[3];
   double normal[3];
-  double rotation[3];
-  double translation[3];
   enum solparser_target_type target_type;
   union {
     double position[3]; /* World space position */
@@ -80,7 +78,7 @@ struct solparser_pivot {
   } target;
 };
 
-#define SOLPARSER_PIVOT_NULL__ { {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, SOLPARSER_TARGET_TYPES_COUNT__, {0,0,0} };
+#define SOLPARSER_PIVOT_NULL__ { {0,0,0}, {0,0,0}, SOLPARSER_TARGET_TYPES_COUNT__, {0,0,0} };
 
 static const struct solparser_pivot SOLPARSER_PIVOT_NULL = SOLPARSER_PIVOT_NULL__;
 
@@ -90,6 +88,7 @@ static INLINE void
 solparser_pivot_init
   (struct mem_allocator* allocator, struct solparser_pivot* pivot)
 {
+  (void) allocator;
   ASSERT(pivot);
   *pivot = SOLPARSER_PIVOT_NULL;
 }
