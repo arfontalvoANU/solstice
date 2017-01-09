@@ -161,6 +161,9 @@ setup_entity_pivot
   res = darray_nodes_push_back(&solstice->pivots, &pivot_node);
   if(res != RES_OK) goto error;
 
+  res = score_node_add_child(entity_node, pivot_node);
+  if (res != RES_OK) goto error;
+
 exit:
   *atchmnt_node = pivot_node;
   return entity_node;
