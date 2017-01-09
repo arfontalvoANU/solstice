@@ -22,7 +22,9 @@ enum solparser_target_type {
   SOLPARSER_TARGET_ANCHOR,
   SOLPARSER_TARGET_DIRECTION,
   SOLPARSER_TARGET_POSITION,
-  SOLPARSER_TARGET_SUN
+  SOLPARSER_TARGET_SUN,
+
+  SOLPARSER_TARGET_TYPES_COUNT__
 };
 
 struct solparser_anchor_id { size_t i; };
@@ -78,7 +80,19 @@ struct solparser_pivot {
   } target;
 };
 
+#define SOLPARSER_PIVOT_NULL__ { {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, SOLPARSER_TARGET_TYPES_COUNT__, {0,0,0} };
+
+static const struct solparser_pivot SOLPARSER_PIVOT_NULL = SOLPARSER_PIVOT_NULL__;
+
 struct solparser_pivot_id { size_t i; };
+
+static INLINE void
+solparser_pivot_init
+  (struct mem_allocator* allocator, struct solparser_pivot* pivot)
+{
+  ASSERT(pivot);
+  *pivot = SOLPARSER_PIVOT_NULL;
+}
 
 #endif /* SOLPARSER_PIVOT_H */
 

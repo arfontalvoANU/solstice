@@ -138,6 +138,7 @@
 /* Declare the array of pivots */
 #define DARRAY_NAME pivot
 #define DARRAY_DATA struct solparser_pivot
+#define DARRAY_FUNCTOR_INIT solparser_pivot_init
 #include <rsys/dynamic_array.h>
 
 /* Declare the hash table that maps the address of a YAML node to the id of its
@@ -2574,7 +2575,6 @@ parse_pivot
     if(res != RES_OK) goto error;
     #undef SETUP_MASK
   }
-
   #define CHECK_PARAM(Flag, Name)                                              \
     if(!(mask & BIT(Flag))) {                                                  \
       log_err(parser, pivot, "the pivot parameter `"Name"' is missing.\n");    \
