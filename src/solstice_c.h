@@ -19,6 +19,26 @@
 #include "solstice.h"
 #include "parser/solparser.h"
 
+#include <rsys/ref_count.h>
+#include <solstice/sanim.h>
+
+enum solstice_node_type {
+  SOLSTICE_NODE_GEOMETRY,
+  SOLSTICE_NODE_TARGET,
+  SOLSTICE_NODE_PIVOT,
+  SOLSTICE_NODE_EMPTY,
+  SOLSTICE_NODE_TYPES_COUNT__
+};
+
+struct solstice_node {
+  struct sanim_node anim;
+  enum solstice_node_type type;
+  struct ssol_instance* instance; /* Available for geometry nodes */
+
+  ref_T ref;
+  struct mem_allocator* allocator;
+};
+
 struct ssol_instance;
 
 extern LOCAL_SYM res_T
@@ -45,6 +65,65 @@ solstice_instantiate_geometry
   (struct solstice* solstice,
    const struct solparser_geometry_id geom_id,
    struct ssol_instance** inst);
+
+extern LOCAL_SYM res_T
+solstice_node_geometry_create
+  (struct mem_allocator* allocator,
+   struct ssol_instance* instance,
+   struct solstice_node** node);
+
+extern LOCAL_SYM res_T
+solstice_node_empty_create
+  (struct mem_allocator* allocator,
+   struct solstice_node** node);
+
+extern LOCAL_SYM res_T
+solstice_node_pivot_create
+  (struct mem_allocator* allocator,
+   const struct sanim_pivot* pivot,
+   const struct sanim_tracking* tracking,
+   struct solstice_node** node);
+
+extern LOCAL_SYM res_T
+solstice_node_target_create
+  (struct mem_allocator* allocator,
+   struct solstice_node** node);
+
+extern LOCAL_SYM void
+solstice_node_ref_get
+  (struct solstice_node* node);
+
+extern LOCAL_SYM void
+solstice_node_ref_put
+  (struct solstice_node* node);
+
+extern LOCAL_SYM void
+solstice_node_target_get_tracking
+  (const struct solstice_node* node,
+   struct sanim_tracking* tracking);
+
+extern LOCAL_SYM res_T
+solstice_node_add_child
+  (struct solstice_node* node,
+   struct solstice_node* child);
+
+static INLINE void
+solstice_node_set_translation
+  (struct solstice_node* node,
+   const double translation[3])
+{
+  ASSERT(node && translation);
+  SANIM(node_set_translation(&node->anim, translation));
+}
+
+static INLINE void
+solstice_node_set_rotations
+  (struct solstice_node* node,
+   const double rotations[3])
+{
+  ASSERT(node && rotations && node->type != SOLSTICE_NODE_TARGET);
+  SANIM(node_set_rotations(&node->anim, rotations));
+}
 
 #endif /* SOLSTICE_C_H */
 

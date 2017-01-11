@@ -460,7 +460,6 @@ solstice_instantiate_geometry
       res = create_shaded_shape(solstice, obj_id, &front, &back, &shape);
       if(res != RES_OK) goto error;
 
-
       res = ssol_object_add_shaded_shape(ssol_obj, shape, front, back);
       if(res != RES_OK) {
         fprintf(stderr,

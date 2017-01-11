@@ -17,7 +17,6 @@
 #include "solstice_c.h"
 #include "solstice_args.h"
 #include "parser/solparser.h"
-#include "core/solstice_core.h"
 
 #include <solstice/ssol.h>
 
@@ -63,7 +62,7 @@ clear_nodes(struct darray_nodes* nodes)
   ASSERT(nodes);
   n = darray_nodes_size_get(nodes);
   FOR_EACH(i, 0, n) {
-    score_node_ref_put(darray_nodes_data_get(nodes)[i]);
+    solstice_node_ref_put(darray_nodes_data_get(nodes)[i]);
   }
   darray_nodes_clear(nodes);
 }
@@ -289,12 +288,6 @@ solstice_init
     goto error;
   }
 
-  res = score_device_create(NULL, allocator, 1/*verbose*/, &solstice->score);
-  if(res != RES_OK) {
-    fprintf(stderr, "Could not create the Solstice Core device.\n");
-    goto error;
-  }
-
   if(args->rendering) {
     res = setup_camera(solstice, args);
     if(res != RES_OK) goto error;
@@ -338,7 +331,6 @@ solstice_release(struct solstice* solstice)
   if(solstice->ssol) SSOL(device_ref_put(solstice->ssol));
   if(solstice->scene) SSOL(scene_ref_put(solstice->scene));
   if(solstice->parser) solparser_ref_put(solstice->parser);
-  if(solstice->score) score_device_ref_put(solstice->score);
   if(solstice->camera) SSOL(camera_ref_put(solstice->camera));
   if(solstice->framebuffer) SSOL(image_ref_put(solstice->framebuffer));
   if(solstice->output && solstice->output != stdout) fclose(solstice->output);

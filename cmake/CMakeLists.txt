@@ -56,7 +56,6 @@ include_directories(
 # Build subprojects
 ################################################################################
 add_subdirectory(parser)
-add_subdirectory(core)
 
 ################################################################################
 # Generate files
@@ -69,7 +68,7 @@ set(SOLSTICE_ARGS_DEFAULT_CAMERA_FOV "1.22173047639603070383") # In radians
 set(SOLSTICE_ARGS_DEFAULT_IMG_WIDTH  "800")
 set(SOLSTICE_ARGS_DEFAULT_IMG_HEIGHT "600")
 
-configure_file(${SOLSTICE_SOURCE_DIR}/solstice_args.h.in 
+configure_file(${SOLSTICE_SOURCE_DIR}/solstice_args.h.in
   ${CMAKE_CURRENT_BINARY_DIR}/solstice_args.h @ONLY)
 
 ################################################################################
@@ -86,6 +85,7 @@ set(SOLSTICE_FILES_SRC
   solstice_draw.c
   solstice_entity.c
   solstice_material.c
+  solstice_node.c
   solstice_object.c)
 set(SOLSTICE_FILES_INC
   solstice.h
@@ -109,7 +109,7 @@ endif()
 add_library(sollib STATIC ${SOLSTICE_FILES_SRC} ${SOLSTICE_FILES_INC})
 add_executable(solstice ${SOLSTICE_SOURCE_DIR}/main.c)
 target_link_libraries(solstice ${MATH_LIB} ${GETOPT_LIB}
-  LibYAML RSys sollib solparser solstice-core SolAnim SolSolver Star3DUT)
+  LibYAML RSys sollib solparser SolAnim SolSolver Star3DUT)
 set_target_properties(solstice PROPERTIES
   VERSION ${VERSION}
   SOVERSION ${VERSION_MAJOR})
