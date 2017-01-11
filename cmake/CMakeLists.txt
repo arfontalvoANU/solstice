@@ -56,6 +56,7 @@ include_directories(
 # Build subprojects
 ################################################################################
 add_subdirectory(parser)
+add_subdirectory(receivers)
 
 ################################################################################
 # Generate files

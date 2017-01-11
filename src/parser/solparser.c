@@ -2898,7 +2898,7 @@ solparser_create
   mem_allocator = allocator ? allocator : &mem_default_allocator;
   parser = MEM_CALLOC(mem_allocator, 1, sizeof(struct solparser));
   if(!parser) {
-    fprintf(stderr, "Could not allocat the Solstice parser.\n");
+    fprintf(stderr, "Could not allocate the Solstice parser.\n");
     res = RES_MEM_ERR;
     goto error;
   }
@@ -2973,7 +2973,7 @@ solparser_setup
    FILE* stream)
 {
   res_T res = RES_OK;
-  ASSERT(parser && stream );
+  ASSERT(parser && stream);
 
   if(parser->parser_is_init) {
     yaml_parser_delete(&parser->parser);
