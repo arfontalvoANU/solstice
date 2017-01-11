@@ -298,6 +298,7 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
         break;
       case 'o': args->output_filename = optarg; break;
       case 'q': args->quiet = 1; break;
+      case 'R': args->receivers_filename = optarg; break;
       case 'r': res = parse_rendering_options(optarg, args); break;
       default: res = RES_BAD_ARG; break;
     }

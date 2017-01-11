@@ -248,6 +248,87 @@ error:
   goto exit;
 }
 
+static res_T
+parse_receiver_file(struct solstice* solstice, const char* filename)
+{
+  char line[256];
+  FILE* file = NULL;
+  unsigned long iline = 0;
+  res_T res = RES_OK;
+  ASSERT(solstice && filename);
+
+  file = fopen(filename, "r");
+  if(!file) {
+    fprintf(stderr, "Could not open the file `%s'.\n", filename);
+    res = RES_IO_ERR;
+    goto error;
+  }
+
+  while(fgets(line, sizeof(line)/sizeof(char), file)) {
+    const struct solparser_entity* entity;
+    struct solstice_node* node = NULL;
+    char* str;
+    char* p;
+    size_t last_char;
+    size_t first_char;
+
+    ++iline;
+
+    if(!strrchr(line, '\n')) {
+      fprintf(stderr,
+        "%s:%lu: insufficient memory. Could not parse the receiver name.\n",
+        filename, iline);
+      return RES_MEM_ERR;
+    }
+
+    /* Remove the new line character(s) */
+    last_char = strlen(line);
+    while(last_char-- && (line[last_char] == '\n' || line[last_char]=='\r'));
+    line[last_char+1] = '\0';
+
+    /* Strip beginning white spaces */
+    first_char = 0;
+    while(first_char < last_char
+       && (line[first_char]==' ' || line[first_char]=='\t')) {
+      ++first_char;
+    }
+    str = line + first_char;
+
+    /* Discard comments */
+    if((p = strchr(str, '#'))) *p = '\0';
+
+    /* Strip ending white spaces */
+    last_char = strlen(str);
+    while(last_char-- && (line[last_char] == ' ' || line[last_char] == '\t'));
+    str[last_char+1] = '\0';
+
+    /* Discard empty lines */
+    if(str[0] == '\0') continue;
+
+    /* Retrieve the entity */
+    entity = solparser_find_entity(solstice->parser, str);
+    if(!entity) {
+      fprintf(stderr, "%s:%lu: invalid entity `%s'.\n",
+        filename, iline, str);
+    }
+
+    /* Register the entity as a receiver */
+    res = htable_entity_set(&solstice->receivers, &entity, &node);
+    if(res != RES_OK) {
+      fprintf(stderr,
+        "%s:%lu could not register the entity `%s' as a receiver.\n",
+        filename, iline, str);
+      goto error;
+    }
+  }
+
+exit:
+  if(file) fclose(file);
+  return res;
+error:
+  goto exit;
+}
+
 /*******************************************************************************
  * Solstice local functions
  ******************************************************************************/
@@ -263,6 +344,8 @@ solstice_init
   memset(solstice, 0, sizeof(struct solstice));
   htable_material_init(allocator, &solstice->materials);
   htable_object_init(allocator, &solstice->objects);
+  htable_anchor_init(allocator, &solstice->anchors);
+  htable_entity_init(allocator, &solstice->receivers);
   darray_nodes_init(allocator, &solstice->roots);
   darray_nodes_init(allocator, &solstice->pivots);
   darray_double_init(allocator, &solstice->sun_dirs);
@@ -336,6 +419,8 @@ solstice_release(struct solstice* solstice)
   if(solstice->output && solstice->output != stdout) fclose(solstice->output);
   htable_material_release(&solstice->materials);
   htable_object_release(&solstice->objects);
+  htable_anchor_release(&solstice->anchors);
+  htable_entity_release(&solstice->receivers);
   darray_nodes_release(&solstice->roots);
   darray_nodes_release(&solstice->pivots);
   darray_double_release(&solstice->sun_dirs);

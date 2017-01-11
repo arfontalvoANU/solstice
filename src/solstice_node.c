@@ -221,6 +221,13 @@ solstice_node_ref_put(struct solstice_node* node)
   ref_put(&node->ref, node_release);
 }
 
+res_T
+solstice_node_geometry_set_receiver(struct solstice_node* node, const int mask)
+{
+  ASSERT(node && node->type == SOLSTICE_NODE_GEOMETRY);
+  return ssol_instance_set_receiver(node->instance, mask);
+}
+
 void
 solstice_node_target_get_tracking
   (const struct solstice_node* node,

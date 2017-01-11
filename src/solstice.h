@@ -50,6 +50,11 @@ struct sanim_node;
 #define HTABLE_DATA struct solstice_node*
 #include <rsys/hash_table.h>
 
+#define HTABLE_NAME entity
+#define HTABLE_KEY const struct solparser_entity*
+#define HTABLE_DATA struct solstice_node*
+#include <rsys/hash_table.h>
+
 struct solstice {
   struct ssol_device* ssol;
   struct ssol_scene* scene;
@@ -59,6 +64,7 @@ struct solstice {
   struct htable_material materials;
   struct htable_object objects;
   struct htable_anchor anchors;
+  struct htable_entity receivers;
   struct darray_nodes roots;
   struct darray_nodes pivots;
 

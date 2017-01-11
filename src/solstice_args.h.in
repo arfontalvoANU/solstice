@@ -25,8 +25,9 @@ struct solstice_args_spherical {
 
 struct solstice_args {
   const char* output_filename;
-  unsigned long nrealisations; /* #realisations */
   const char* input_filename; /* May be NULL <=> read data from stdin */
+  const char* receivers_filename;
+  unsigned long nrealisations; /* #realisations */
 
   /* List of sun directions */
   struct solstice_args_spherical* sun_dirs;
@@ -54,8 +55,9 @@ static const struct solstice_args SOLSTICE_ARGS_NULL = SOLSTICE_ARGS_NULL__;
 
 #define SOLSTICE_ARGS_DEFAULT__ {                                              \
   NULL, /* output_filename */                                                  \
-  @SOLSTICE_ARGS_DEFAULT_NREALISATIONS@,                                       \
   NULL, /* input_filename */                                                   \
+  NULL, /* receivers_filename */                                               \
+  @SOLSTICE_ARGS_DEFAULT_NREALISATIONS@,                                       \
                                                                                \
   NULL, /* sun_dirs */                                                         \
   0, /* # nsun_dirs */                                                         \

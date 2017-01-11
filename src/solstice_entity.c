@@ -150,6 +150,7 @@ create_node(struct solstice* solstice, const struct solparser_entity* entity)
   struct solstice_node* node = NULL;
   struct solstice_node* tgt = NULL;
   struct solstice_node* child = NULL;
+  struct solstice_node** pnode = NULL;
   size_t i;
   res_T res = RES_OK;
   ASSERT(solstice && entity);
@@ -170,6 +171,24 @@ create_node(struct solstice* solstice, const struct solparser_entity* entity)
   if(!node) {
     fprintf(stderr, "Could not setup the entity node.\n");
     goto error;
+  }
+
+  /* Setup the entity receiver flags */
+  pnode = htable_entity_find(&solstice->receivers, &entity);
+  if(pnode) {
+    if(node->type != SOLSTICE_NODE_GEOMETRY) {
+      fprintf(stderr,
+        "The entity `%s' is not a geometry. It cannot be a receiver.\n",
+        str_cget(&entity->name));
+    } else {
+      *pnode = node;
+      res = solstice_node_geometry_set_receiver(node, SSOL_FRONT|SSOL_BACK);
+      if(res != RES_OK) {
+        fprintf(stderr, "Could not define the entity `%s' as a receiver.\n",
+          str_cget(&entity->name));
+        goto error;
+      }
+    }
   }
 
   /* Setup the entity transform */

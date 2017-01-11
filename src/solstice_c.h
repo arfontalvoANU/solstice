@@ -97,6 +97,11 @@ extern LOCAL_SYM void
 solstice_node_ref_put
   (struct solstice_node* node);
 
+extern LOCAL_SYM res_T
+solstice_node_geometry_set_receiver
+  (struct solstice_node* node,
+   const int mask); /* Combination of ssol_side_flag */
+
 extern LOCAL_SYM void
 solstice_node_target_get_tracking
   (const struct solstice_node* node,
