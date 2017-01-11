@@ -1,0 +1,18 @@
+- { name: "entity.mirror", side: BACK }
+- { name: "entity2.mirror0, side: FRONT }
+- { name: "entity2.mirror1, side: FRONT_AND_BACK }
+
+--------------------------------------------------------------------------------
+2/ Grammar
+--------------------------------------------------------------------------------
+<receivers> ::=
+  - <receiver>
+[ - <receiver> ... ]
+
+<receiver> ::=
+  name: <entity-identifier>
+  side: <BACK|FRONT|FRONT_AND_BACK>
+
+<entity-identifier>
+  STRING[.STRING ... ]
+
