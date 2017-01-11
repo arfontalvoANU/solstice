@@ -49,6 +49,7 @@ if(CMAKE_COMPILER_IS_GNUCC)
 endif()
 
 add_library(solparser STATIC ${SOLPARSER_FILES_SRC} ${SOLPARSER_FILES_INC})
+target_link_libraries(solparser ${MATH_LIB})
 
 ################################################################################
 # Tests
