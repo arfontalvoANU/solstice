@@ -558,6 +558,11 @@ parse_transform
     } else if(!strcmp((char*)key->data.scalar.value, "rotation")) {
       SETUP_MASK(ROTATION, "rotation");
       res = parse_real3(parser, doc, val, -DBL_MAX, DBL_MAX, rotation);
+      if(res == RES_OK) {
+        rotation[0] = MDEG2RAD(rotation[0]);
+        rotation[1] = MDEG2RAD(rotation[1]);
+        rotation[2] = MDEG2RAD(rotation[2]);
+      }
     } else {
       log_err(parser, key, "unknown transform parameter `%s'.\n",
         key->data.scalar.value);
