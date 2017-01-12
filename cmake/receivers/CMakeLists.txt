@@ -40,7 +40,7 @@ if(CMAKE_COMPILER_IS_GNUCC)
 endif()
 
 add_library(solreceivers STATIC ${SOLRECEIVERS_FILES_SRC} ${SOLRECEIVERS_FILES_INC})
-target_link_libraries(solreceivers ${MATH_LIB})
+target_link_libraries(solreceivers LibYAML ${MATH_LIB})
 
 ################################################################################
 # Tests
@@ -50,13 +50,15 @@ if(NOT NO_TEST)
     add_executable(${_name}
       ${SOLRECEIVERS_SOURCE_DIR}/${_name}.c
       ${SOLRECEIVERS_SOURCE_DIR}/../test_solstice_utils.h)
-    target_link_libraries(${_name} LibYAML ${MATH_LIB} RSys solparser)
+    target_link_libraries(${_name} LibYAML ${MATH_LIB} RSys solreceivers)
   endfunction()
 
   function(new_test _name)
     build_test(${_name})
     add_test(${_name} ${_name})
   endfunction()
+
+  build_test(test_solreceivers)
 
 endif()
 

@@ -44,7 +44,7 @@ log_err
    ...)
 {
   va_list vargs_list;
-  ASSERT(parser && node && fmt);
+  ASSERT(receivers && node && fmt);
 
   fprintf(stderr, "%s:%lu:%lu: ",
     str_cget(&receivers->stream_name),
