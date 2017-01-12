@@ -18,6 +18,12 @@
 
 #include <rsys/rsys.h>
 
+enum solreceiver_side {
+  SOLRECEIVER_FRONT,
+  SOLRECEIVER_BACK,
+  SOLRECEIVER_FRONT_AND_BACK
+};
+
 struct mem_allocator;
 struct solreceivers;
 
