@@ -2827,12 +2827,14 @@ parse_item
    yaml_document_t* doc,
    const yaml_node_t* item)
 {
+  /* Temporary dummy variables */
+  struct solparser_material_double_sided_id mtl2;
+  struct solparser_entity_id entity;
+  struct solparser_geometry_id geometry;
+  struct solparser_sun* sun;
+
   yaml_node_t* key;
   yaml_node_t* val;
-  struct solparser_material_double_sided_id mtl2; /* TODO */
-  struct solparser_entity_id entity; /* TODO */
-  struct solparser_geometry_id geometry; /* TODO */
-  struct solparser_sun* sun; /* TODO */
   intptr_t n;
   res_T res = RES_OK;
   ASSERT(doc && item);
