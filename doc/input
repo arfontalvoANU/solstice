@@ -242,7 +242,7 @@
     <spectrum>
 [   <radial-angular-distribution> ]
 
-<radia-angular-distribution> ::=
+<radial-angular-distribution> ::=
     <pillbox> | <buie>
 
 <buie> ::=
