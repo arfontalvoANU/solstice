@@ -1298,7 +1298,7 @@ parse_cuboid
         goto error;
       }
       mask |= BIT(SIZE);
-      res = parse_real3(parser, doc, val, 0, DBL_MAX, shape->size);
+      res = parse_real3(parser, doc, val, nextafter(0, 1), DBL_MAX, shape->size);
     } else {
       log_err(parser, key, "unknown cuboid parameter `%s'.\n",
         key->data.scalar.value);
