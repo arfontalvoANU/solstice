@@ -3060,7 +3060,7 @@ solparser_load(struct solparser* parser)
   }
 
   if(!parser->sun_key) {
-    log_err(parser, root, "%s: no sun definition in the document.\n");
+    log_err(parser, root, "no sun definition in the document.\n");
     res = RES_BAD_ARG;
     goto error;
   }
