@@ -364,9 +364,23 @@ parse_real
     goto error;
   }
 
-  if(*dst < lower_bound || *dst > upper_bound) {
-    log_err(parser, real, "%g is not in [%g, %g].\n",
-      *dst, lower_bound, upper_bound);
+  if (*dst < lower_bound || *dst > upper_bound) {
+    double l = nextafter(lower_bound, -DBL_MAX);
+    double u = nextafter(upper_bound, DBL_MAX);
+    int l_excluded = (l == (double) (int) l);
+    int u_excluded = (u == (double) (int) u);
+    if (l_excluded && u_excluded)
+      log_err(parser, real, "%g is not in ]%g, %g[.\n",
+        *dst, l, u);
+    else if (l_excluded)
+      log_err(parser, real, "%g is not in ]%g, %g].\n",
+        *dst, l, upper_bound);
+    else if (u_excluded)
+      log_err(parser, real, "%g is not in [%g, %g[.\n",
+        *dst, lower_bound, u);
+    else
+      log_err(parser, real, "%g is not in [%g, %g].\n",
+        *dst, lower_bound, upper_bound);
     res = RES_BAD_ARG;
     goto error;
   }
