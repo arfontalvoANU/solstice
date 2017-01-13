@@ -271,7 +271,10 @@ solstice_setup_entities(struct solstice* solstice)
     entity = solparser_get_entity(solstice->parser, entity_id);
 
     root = create_node(solstice, entity);
-    if(!root) goto error;
+    if(!root) {
+      res = RES_BAD_ARG;
+      goto error;
+    }
 
     /* Initialialised the world space position of the entity geometry */
     res = sanim_node_visit_tree

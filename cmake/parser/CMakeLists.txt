@@ -49,7 +49,7 @@ if(CMAKE_COMPILER_IS_GNUCC)
 endif()
 
 add_library(solparser STATIC ${SOLPARSER_FILES_SRC} ${SOLPARSER_FILES_INC})
-target_link_libraries(solparser ${MATH_LIB})
+target_link_libraries(solparser LibYAML ${MATH_LIB})
 
 ################################################################################
 # Tests
@@ -76,13 +76,12 @@ if(NOT NO_TEST)
     ${SOLPARSER_SOURCE_DIR}/yaml/test_ok_2.yaml)
   add_test(test_solparser_ok_2 test_solparser
     ${SOLPARSER_SOURCE_DIR}/yaml/test_ok_3.yaml)
-# TODO rewrite them wrt the update of the  input specification
-#  add_test(test_solstice_parser_ko_0 test_solstice_parser -e
-#    ${SOLSTICE_SOURCE_DIR}/yaml/test_ko_0.yaml)
-#  add_test(test_solstice_parser_ko_1 test_solstice_parser -e
-#    ${SOLSTICE_SOURCE_DIR}/yaml/test_ko_1.yaml)
-#  add_test(test_solstice_parser_ko_2 test_solstice_parser -e
-#    ${SOLSTICE_SOURCE_DIR}/yaml/test_ko_2.yaml)
+  add_test(test_solstice_parser_ko_0 test_solparser -e
+    ${SOLPARSER_SOURCE_DIR}/yaml/test_ko_0.yaml)
+  add_test(test_solstice_parser_ko_1 test_solparser -e
+    ${SOLPARSER_SOURCE_DIR}/yaml/test_ko_1.yaml)
+  add_test(test_solstice_parser_ko_2 test_solparser -e
+    ${SOLPARSER_SOURCE_DIR}/yaml/test_ko_2.yaml)
 
   new_test(test_solparser2)
   new_test(test_solparser3)

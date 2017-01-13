@@ -1,164 +1,318 @@
-instance:
-  object:
-    material: { matte: { reflectivity: -1 } }
-    cuboid: { size: [1, 2, 3] }
+# unknown item dummy
+- dummy:
+    geometry:
+      - cuboid: { size: [1, 2, 3] }
+        material: { matte: { reflectivity: -1 } }
 ---
-- instance:
-    object:
-      material: { matte: { reflectivity: -1 } }
-      cuboid: { size: [1, 2, 3] }
+# missing spectrum
+- sun: { dni: 1 }
 ---
-- instance:
-    object:
-      cuboid: { size: [1, 2, 3] }
+# missing dni
+- sun: { spectrum: [{wavelength: 1, data: 1}] }
 ---
-- instance:
-    object:
-      material: { matte: { reflectivity: 1 } }
+# missing wavelength
+- sun: { dni: 1, spectrum: [{data: 1}] }
 ---
-- instance:
-    object:
-      material: { matte: { reflectivity: 1 } }
-      cuboid: { size: [1, 2, 3] }
-      sphere: { radius: 1 }
+# missing data
+- sun: { dni: 1, spectrum: [{wavelength: 1}] }
 ---
-- instance:
-    object:
-      transform:
-      material: { matte: { reflectivity: 1 } }
-      cuboid: { size: [1, 2, 3] }
+# unknown dummy parameter
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}], dummy: { aperture: 1} }
 ---
-- instance:
-    object:
-      material: { matte: }
-      cuboid: { size: [1, 2, 3] }
+# missing pillbox definition
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}], pillbox: }
 ---
-- instance:
-    object:
-      material:
-      cuboid: { size: [1, 2, 3] }
+# missing aperture value
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}], pillbox: { aperture: } }
 ---
-- instance:
-    object:
-      material: { matte: { reflectivity: 1 } }
-      cuboid: { size: { x: 0, y: 1, z: 2} }
+# -1 invalid
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}], pillbox: { aperture: -1} }
 ---
-- instance:
-    object:
-      material: { matte: { reflectivity: 1 } }
-      cuboid: { size: }
+# unknown aperture parameter
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}], buie: { aperture: 1} }
 ---
-- instance:
-    object:
-      material: { matte: { reflectivity: 1 } }
-      cuboid:
+# 1 invalid
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}], buie: { csr: 1} }
 ---
-- instance:
-    object:
-      material: { matte: { reflectivity: 1 } }
-      cuboid: { size: [ 0, 1 ] }
+# -1 invalid
+- sun: { dni: -1, spectrum: [{wavelength: 1, data: 1}] }
 ---
-- instance:
-    object:
-      material: { matte: { reflectivity: 1 } }
-      cuboid: { size: [ 0, 1, 3, 4 ] }
+# -1 invalid
+- sun: { dni: 1, spectrum: [{wavelength: -1, data: 1}] }
 ---
-- instance:
-    object:
-      material: { matte: { reflectivity: 1 } }
-      cuboid: { size: [ 0, 1, 3 ] }
-    object:
-      material: { matte: { reflectivity: 1 } }
-      cuboid: { size: [ 0, 1, 3 ] }
+# -1 invalid
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: -1}] }
 ---
-- instance:
-    transform: { translation: [ 1, 2, 0 ] }
-    transform: { translation: [ 3, 4, 4 ] }
-    object:
-      material: { matte: { reflectivity: 1 } }
-      cuboid: { size: [1, 2, 3] }
+- entity:
+      # missing transform parameters
+    transform:
+---
+- entity:
+    transform:
+      # missing rotation parameters
+      rotation: 
+---
+- entity:
+    transform:
+      # missing translation parameters
+      translation: 
+---
+- entity:
+    transform:
+      # 2x translation
+      translation: [ -4, 5.2, -6.5 ]
+      translation: [ -4, 5.2, -6.5 ]
+---
+- entity:
+    transform:
+      # translation should have 3 parameters
+      translation: [ -4, 5.2 ]
+---
+- entity:
+    transform:
+      # translation should have 3 parameters
+      translation: [ -4, 5.2,0 ,1 ]
+---
+- entity:
+    transform:
+      # 2x rotation
+      rotation: [ -4, 5.2, -6.5 ]
+      rotation: [ -4, 5.2, -6.5 ]
+---
+- entity:
+    transform:
+      # rotation should have 3 parameters
+      rotation: [ -4, 5.2 ]
+---
+- entity:
+    transform:
+      # rotation should have 3 parameters
+      rotation: [ -4, 5.2,0 ,1 ]
+---
+- entity:
+    # 2x transform
+    transform:
+      rotation: [ -4, 5.2, 1 ]
+    transform:
+      rotation: [ -4, 5.2, 1 ]
+---
+- entity:
+    # missing object(s)
+    geometry:
+---
+- entity:
+    geometry:
+      # missing transform parameters
+      - transform:
+---
+- entity:
+    geometry:
+      - transform:
+          # missing rotation parameters
+          rotation: 
+---
+- entity:
+    geometry:
+      - transform:
+          # missing translation parameters
+          translation: 
+---
 
+- entity:
+    geometry:
+      - transform:
+          # 2x translation
+          translation: [ -4, 5.2, -6.5 ]
+          translation: [ -4, 5.2, -6.5 ]
 ---
-- instance:
-    transform: { translation: [ 3, 4, 4 ] }
+- entity:
+    geometry:
+      - transform:
+          # translation should have 3 parameters
+          translation: [ -4, 5.2 ]
 ---
-- instance:
-    object:
-      material: { matte: { reflectivity: } }
-      cuboid: { size: [ 0, 1, 3 ] }
+- entity:
+    geometry:
+      - transform:
+          # translation should have 3 parameters
+          translation: [ -4, 5.2,0 ,1 ]
 ---
-- instance:
-    object:
-      material: { matte: { reflectivity: 1, dummy: "none" } }
-      cuboid: { size: [1, 2, 3] }
+- entity:
+    geometry:
+      - transform:
+          # 2x rotation
+          rotation: [ -4, 5.2, -6.5 ]
+          rotation: [ -4, 5.2, -6.5 ]
 ---
-- instance:
-    object:
-      material:
-        matte: { reflectivity: 1 }
-        dummy: 123
-      cuboid: { size: [1, 2, 3] }
+- entity:
+    geometry:
+      - transform:
+          # rotation should have 3 parameters
+          rotation: [ -4, 5.2 ]
 ---
-- instance:
-    object:
-      material: { matte: { reflectivity: 1 } }
-      cuboid: { size: [1, 2, 3], dummy: 3.14 }
+- entity:
+    geometry:
+      - transform:
+          # rotation should have 3 parameters
+          rotation: [ -4, 5.2,0 ,1 ]
 ---
-- instance:
-    object:
-      material: { matte: { reflectivity: 1 } }
-      cuboid: { size: [1, 2, 3] }
-      dummy: 1
+- entity:
+    geometry:
+      # missing shape & material
+      - transform:
+          rotation: [ -4, 5.2, 1 ]
 ---
-- instance:
-    object:
-      material: { matte: { reflectivity: 1 } }
-      cuboid: { size: [1, 2, 3] }
+- entity:
+    geometry:
+      # missing size parameters
+      - cuboid: { size: }
+---
+- entity:
+    geometry:
+      # size should have 3 parameters
+      - cuboid: { size: [1, 2] }
+---
+- entity:
+    geometry:
+      # size should have 3 parameters
+      - cuboid: { size: [1, 2, 3, 4] }
+---
+- entity:
+    geometry:
+      # -1 invalid
+      - cuboid: { size: [-1, 2, 3] }
+---
+- entity:
+    geometry:
+      # 0 invalid
+      - cuboid: { size: [0, 2, 3] }
+---
+- entity:
+    geometry:
+      - cuboid: { size: [1, 2, 3] }
+        # missing material
+---
+- entity:
+    geometry:
+        # missing material definition
+      - material: 
+---
+- entity:
+    geometry:
+        # missing matte parameters
+      - material: { matte: }
+---
+- entity:
+    geometry:
+        # missing reflectivity value
+      - material: { matte: { reflectivity: } }
+---
+- entity:
+    geometry:
+      - cuboid: { size: [1, 2, 3] }
+        # -1 invalid
+        material: { matte: { reflectivity: -1 } }
+---
+- entity:
+    geometry:
+      - material: { matte: { reflectivity: 1 } }
+        # missing shape definition
+---
+- entity:
+    # missing entity name
+    geometry:
+      - cuboid: { size: [1, 2, 3] }
+        material: { matte: { reflectivity: 1 } }
+---
+# missing sun
+- entity:
+    name: foo
+    geometry:
+      - cuboid: { size: [1, 2, 3] }
+        transform:
+          rotation: [ 0, 1, 2 ]
+          translation: [ -4, 5.2, -6.5 ]
+        material: { matte: { reflectivity: 1 } }
+---
+- entity:
+    geometry:
+      # unknown dummy parameter
+      - material: { matte: { reflectivity: 1, dummy: "none" } }
+---
+- entity:
+    geometry:
+      - material:
+          # unknown dummy parameter
+          matte: { reflectivity: 1 }
+          dummy: 123
+---
+- entity:
+    geometry:
+      # unknown dummy parameter
+      - cuboid: { size: [1, 2, 3], dummy: 3.14 }
+---
+- entity:
+    geometry:
+      - material: { matte: { reflectivity: 1 } }
+        cuboid: { size: [1, 2, 3] }
+        # unknown dummy parameter
+        dummy: 1
+---
+- entity:
+    geometry:
+      - material: { matte: { reflectivity: 1 } }
+        cuboid: { size: [1, 2, 3] }
+    # unknown dummy parameter
     dummy: 1
 ---
 - material: &front { matte: { reflectivity: 1 } }
 - material: &back  { matte: { reflectivity: 0.5 } }
-- object: &cuboid
-    cuboid: { size: [1, 2, 3] }
-    material:
-      front: *front
-      back: *back
-      front: *front
-- instance: { object: *cuboid }
+- geometry: &cuboid
+    - cuboid: { size: [1, 2, 3] }
+      material:
+        # missing back description
+        front: *front
+- entity: { geometry: *cuboid }
 ---
 - material: &front { matte: { reflectivity: 1 } }
 - material: &back  { matte: { reflectivity: 0.5 } }
-- object: &cuboid
-    cuboid: { size: [1, 2, 3] }
-    material:
-      front: *front
-- instance: { object: *cuboid }
+- geometry: &cuboid
+    - cuboid: { size: [1, 2, 3] }
+      material:
+        # missing front description
+        back: *back
+- entity: { geometry: *cuboid }
 ---
 - material: &front { matte: { reflectivity: 1 } }
 - material: &back  { matte: { reflectivity: 0.5 } }
-- object: &cuboid
-    cuboid: { size: [1, 2, 3] }
-    material:
-      back: *back
-- instance: { object: *cuboid }
+- geometry: &cuboid
+    - cuboid: { size: [1, 2, 3] }
+      material:
+        front: *front
+        back: *back
+        # 2x front
+        front: *front
+- entity: { geometry: *cuboid }
 ---
-- object: &cuboid
-    cuboid: { size: [1, 2, 3] }
-    material:
-      front:
-        matte: { reflectivity: 1 }
-        dummy: 1
-      back:
-        material: { matte: { reflectivity: 0.1 } }
-- instance: { object: *cuboid }
+- geometry: &cuboid
+    - cuboid: { size: [1, 2, 3] }
+      material:
+        front:
+          matte: { reflectivity: 1 }
+          # unknown dummy parameter
+          dummy: 1
+        back:
+          material: { matte: { reflectivity: 0.1 } }
+- entity: { geometry: *cuboid }
 ---
-- object: &cuboid
-    cuboid: { size: [1, 2, 3] }
-    material:
-      front:
-        matte: { reflectivity: 1 }
-      back:
-        matte: { reflectivity: 0.1 }
-        dummy: 1234
-- instance: { object: *cuboid }
+- geometry: &cuboid
+    - cuboid: { size: [1, 2, 3] }
+      material:
+        front:
+          matte: { reflectivity: 1 }
+        back:
+          matte: { reflectivity: 0.1 }
+          # unknown dummy parameter
+          dummy: 1234
+- entity: { geometry: *cuboid }
 

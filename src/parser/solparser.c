@@ -364,9 +364,23 @@ parse_real
     goto error;
   }
 
-  if(*dst < lower_bound || *dst > upper_bound) {
-    log_err(parser, real, "%g is not in [%g, %g].\n",
-      *dst, lower_bound, upper_bound);
+  if (*dst < lower_bound || *dst > upper_bound) {
+    double l = nextafter(lower_bound, -DBL_MAX);
+    double u = nextafter(upper_bound, DBL_MAX);
+    int l_excluded = (l == (double) (int) l);
+    int u_excluded = (u == (double) (int) u);
+    if (l_excluded && u_excluded)
+      log_err(parser, real, "%g is not in ]%g, %g[.\n",
+        *dst, l, u);
+    else if (l_excluded)
+      log_err(parser, real, "%g is not in ]%g, %g].\n",
+        *dst, l, upper_bound);
+    else if (u_excluded)
+      log_err(parser, real, "%g is not in [%g, %g[.\n",
+        *dst, lower_bound, u);
+    else
+      log_err(parser, real, "%g is not in [%g, %g].\n",
+        *dst, lower_bound, upper_bound);
     res = RES_BAD_ARG;
     goto error;
   }
@@ -558,6 +572,11 @@ parse_transform
     } else if(!strcmp((char*)key->data.scalar.value, "rotation")) {
       SETUP_MASK(ROTATION, "rotation");
       res = parse_real3(parser, doc, val, -DBL_MAX, DBL_MAX, rotation);
+      if(res == RES_OK) {
+        rotation[0] = MDEG2RAD(rotation[0]);
+        rotation[1] = MDEG2RAD(rotation[1]);
+        rotation[2] = MDEG2RAD(rotation[2]);
+      }
     } else {
       log_err(parser, key, "unknown transform parameter `%s'.\n",
         key->data.scalar.value);
@@ -1298,7 +1317,7 @@ parse_cuboid
         goto error;
       }
       mask |= BIT(SIZE);
-      res = parse_real3(parser, doc, val, 0, DBL_MAX, shape->size);
+      res = parse_real3(parser, doc, val, nextafter(0, 1), DBL_MAX, shape->size);
     } else {
       log_err(parser, key, "unknown cuboid parameter `%s'.\n",
         key->data.scalar.value);
@@ -3062,7 +3081,7 @@ solparser_load(struct solparser* parser)
   }
 
   if(!parser->sun_key) {
-    log_err(parser, root, "%s: no sun definition in the document.\n");
+    log_err(parser, root, "no sun definition in the document.\n");
     res = RES_BAD_ARG;
     goto error;
   }
