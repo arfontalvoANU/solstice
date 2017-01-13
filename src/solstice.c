@@ -327,7 +327,7 @@ solstice_release(struct solstice* solstice)
   clear_materials(&solstice->materials);
   clear_objects(&solstice->objects);
   clear_nodes(&solstice->roots);
-  /* don't clear pivots, as they are cleared from some root */
+  /* Don't clear pivots, as they are cleared from some root */
   if(solstice->ssol) SSOL(device_ref_put(solstice->ssol));
   if(solstice->scene) SSOL(scene_ref_put(solstice->scene));
   if(solstice->parser) solparser_ref_put(solstice->parser);
