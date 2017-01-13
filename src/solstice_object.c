@@ -379,7 +379,7 @@ create_shaded_shape
 
   /* Define the shape transformation */
   d33_rotation(transform, obj->rotation[0], obj->rotation[1], obj->rotation[2]);
-  d33_muld3(transform+9, transform, obj->translation);
+  d3_set(transform+9, obj->translation);
 
   shape = solparser_get_shape(solstice->parser, obj->shape);
   switch(shape->type) {
