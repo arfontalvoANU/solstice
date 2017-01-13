@@ -1,0 +1,20 @@
+- side: FRONT_AND_BACK
+---
+- name: test
+  side: front
+---
+- name: test
+  side: back
+---
+- name: test
+  side: front_and_back
+---
+- name: test
+  name: hello
+---
+- name: test
+  side: FRONT
+  side: BACK
+---
+- name: test
+- 

@@ -1,0 +1,16 @@
+- name: "entity0"
+  side: FRONT_AND_BACK
+- name: entity 0 bis
+  side: BACK
+- { name: name, side: FRONT }
+- name: ok
+- {name: ok}
+- side: FRONT
+  name: hello
+- {side: BACK, name: "world" }
+---
+[
+  {name: test},
+  {side: FRONT_AND_BACK, name: "Hello world"},
+  {name: Hello world, side: BACK}
+]

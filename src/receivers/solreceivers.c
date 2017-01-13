@@ -409,3 +409,23 @@ error:
   goto exit;
 }
 
+size_t
+solreceivers_count(const struct solreceivers* receivers)
+{
+  ASSERT(receivers);
+  return darray_receiver_size_get(&receivers->receivers);
+}
+
+void
+solreceivers_get
+  (const struct solreceivers* receivers,
+   const size_t i,
+   struct solreceiver* receiver)
+{
+  const struct receiver* r;
+  ASSERT(receivers && receiver && i < solreceivers_count(receivers));
+  r = darray_receiver_cdata_get(&receivers->receivers) + i;
+  receiver->name = str_cget(&r->name);
+  receiver->side = r->side;
+}
+

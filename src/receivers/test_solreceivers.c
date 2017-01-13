@@ -16,6 +16,8 @@
 #include "solreceivers.h"
 #include "test_solstice_utils.h"
 
+#include <string.h>
+
 int
 main(int argc, char** argv)
 {
@@ -25,6 +27,22 @@ main(int argc, char** argv)
   int i;
   res_T load_res = RES_OK;
   (void)argc, (void)argv;
+
+  if(argc > 1) {
+    if(!strcmp(argv[1], "-e")) {
+      load_res = RES_BAD_ARG;
+      ifile = 2;
+    } else if(!strcmp(argv[1], "-h")) {
+      printf("Usage: %s [OPTIONS] [FILE ... ]\n", argv[0]);
+      printf(
+"Check the receiver API and that the submitted FILEs are valid. Use the `-e'\n"
+"option to check that the FILEs are invalid.\n\n");
+      printf("OPTIONS:\n");
+      printf("  -h print this help and exit.\n");
+      printf("  -e check that the submitted FILEs have errors.\n");
+      return 0;
+    }
+  }
 
   CHECK(mem_init_proxy_allocator(&allocator, &mem_default_allocator), RES_OK);
   solreceivers_create(&allocator, &receivers);

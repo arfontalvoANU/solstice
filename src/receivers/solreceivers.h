@@ -24,6 +24,11 @@ enum solreceiver_side {
   SOLRECEIVER_FRONT_AND_BACK
 };
 
+struct solreceiver {
+  const char* name;
+  enum solreceiver_side side;
+};
+
 struct mem_allocator;
 struct solreceivers;
 
@@ -53,6 +58,16 @@ solreceivers_setup_stream
 extern LOCAL_SYM res_T
 solreceivers_load
   (struct solreceivers* receivers);
+
+extern LOCAL_SYM size_t
+solreceivers_count
+  (const struct solreceivers* receivers);
+
+extern LOCAL_SYM void
+solreceivers_get
+  (const struct solreceivers* receivers,
+   const size_t i,
+   struct solreceiver* receiver);
 
 #endif /* SOLRECEIVERS_H */
 

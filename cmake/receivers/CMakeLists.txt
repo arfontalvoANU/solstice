@@ -59,6 +59,12 @@ if(NOT NO_TEST)
   endfunction()
 
   build_test(test_solreceivers)
+  add_test(test_solreceivers_ok test_solreceivers
+    ${SOLRECEIVERS_SOURCE_DIR}/yaml/test_ok.yaml)
+  add_test(test_solreceivers_ok test_solreceivers -e
+    ${SOLRECEIVERS_SOURCE_DIR}/yaml/test_ko.yaml)
+
+  new_test(test_solreceivers2)
 
 endif()
 
