@@ -426,9 +426,12 @@ solstice_instantiate_geometry
    struct ssol_instance** out_inst)
 {
   struct ssol_instance* inst = NULL;
+  struct ssol_material* front = NULL;
+  struct ssol_material* back = NULL;
   struct ssol_object** pssol_obj = NULL;
   struct ssol_object* ssol_obj = NULL;
   struct ssol_object* ssol_obj_new = NULL;
+  struct ssol_shape* shape = NULL;
   int is_attached_to_scn = 0;
   int is_registered = 0;
   res_T res = RES_OK;
@@ -452,9 +455,6 @@ solstice_instantiate_geometry
     nobjs = solparser_geometry_get_objects_count(geom);
     FOR_EACH(iobj, 0, nobjs) {
       struct solparser_object_id obj_id;
-      struct ssol_shape* shape = NULL;
-      struct ssol_material* front;
-      struct ssol_material* back;
 
       obj_id = solparser_geometry_get_object(geom, iobj);
       res = create_shaded_shape(solstice, obj_id, &front, &back, &shape);
@@ -472,6 +472,9 @@ solstice_instantiate_geometry
       SSOL(shape_ref_put(shape));
       SSOL(material_ref_put(front));
       SSOL(material_ref_put(back));
+      shape = NULL;
+      front = NULL;
+      back = NULL;
     }
   }
 
@@ -504,6 +507,9 @@ error:
   if(is_registered) htable_object_erase(&solstice->objects, &geom_id.i);
   if(inst) SSOL(instance_ref_put(inst)), inst = NULL;
   if(ssol_obj_new) SSOL(object_ref_put(ssol_obj_new));
+  if(shape) SSOL(shape_ref_put(shape));
+  if(front) SSOL(material_ref_put(front));
+  if(back) SSOL(material_ref_put(back));
   goto exit;
 }
 
