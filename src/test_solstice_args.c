@@ -205,6 +205,27 @@ test_sun_dirs(void)
   cmd = cmd_create(0, "test", "-D", "1.2,3.4:5.2,A", NULL);
   CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
   cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "-0.1,2", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "360,2", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "0,-1", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "0,91", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "0,90", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
 }
 
 int

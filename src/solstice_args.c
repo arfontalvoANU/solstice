@@ -119,6 +119,21 @@ parse_sun_dir_list(const char* str, struct solstice_args* args)
       goto error;
     }
 
+    if(tmp[0] < 0 || tmp[0] >= 360) {
+      fprintf(stderr,
+        "Invalid azimuth angle `%g'. Azimuth must be in [0, 360[ degrees.\n",
+        tmp[0]);
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    if(tmp[1] < 0 || tmp[1] > 90) {
+      fprintf(stderr,
+        "Invalid elevation angle `%g'. Elevation must be in [0, 90] degrees.\n",
+        tmp[1]);
+      res = RES_BAD_ARG;
+      goto error;
+    }
+
     spherical.azimuth = MDEG2RAD(tmp[0]);
     spherical.elevation = MDEG2RAD(tmp[1]);
     sa_push(args->sun_dirs, spherical);
