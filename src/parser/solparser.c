@@ -2715,7 +2715,8 @@ parse_pillbox
         goto error;
       }
       mask |= BIT(APERTURE);
-      res = parse_real(parser, val, nextafter(0, 1), PI/2.0, &sun->aperture);
+      res = parse_real(parser, val, nextafter(0, 1), 90, &sun->aperture);
+      sun->aperture = MDEG2RAD(sun->aperture);
     } else {
       log_err(parser, pillbox, "unknown pillbox parameter `%s'.\n",
         key->data.scalar.value);

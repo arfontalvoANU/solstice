@@ -251,7 +251,7 @@
 
 <pillbox> ::=
   pillbox:
-    aperture: REAL # in ]0, PI/2]
+    aperture: REAL # in ]0, 90]
 
 ----------------------------------------
 <transform> ::=
