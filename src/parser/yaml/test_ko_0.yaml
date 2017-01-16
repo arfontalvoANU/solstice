@@ -1,318 +1,1194 @@
-# unknown item dummy
-- dummy:
-    geometry:
-      - cuboid: { size: [1, 2, 3] }
-        material: { matte: { reflectivity: -1 } }
+#
+# <spectrum> ::=
+#   spectrum:
+#     - <spectrum-data>
+# [   - <spectrum-data> ... ]
+#
+# <spectrum-data> ::=
+#  wavelength: REAL in [0, INF)
+#  data: REAL in [0, INF)
+#
+
+# missing spectrum definition
+- sun: { spectrum: }
 ---
+# missing wavelength
+- sun: { spectrum: [{data: 1}] }
+---
+# missing data
+- sun: { spectrum: [{wavelength: 1}] } 
+---
+# 2x wavelength
+- sun: { spectrum: [{wavelength: 1, wavelength: 1}] }
+---
+# 2x data
+- sun: { spectrum: [{data: 1, data: 1}] }
+---
+# unknown dummy parameter
+- sun: { spectrum: [{dummy: 1}] }
+---
+# missing wavelength value
+- sun: { spectrum: [{wavelength: , data: 1}] }
+---
+# missing data value
+- sun: { spectrum: [{wavelength: 1, data: }] }
+---
+# wavelength should be a number
+- sun: { spectrum: [{wavelength: "dummy", data: 1}] }
+---
+# data should be a number
+- sun: { spectrum: [{wavelength: 1, data: "dummy"}] }
+---
+# -1 invalid
+- sun: { spectrum: [{wavelength: -1, data: 1}] }
+---
+# -1 invalid
+- sun: { spectrum: [{wavelength: 1, data: -1}] }
+---
+
+#
+# dni: REAL # Direct Normal Irradiance in ]0, INF)
+#
+
+# missing dni value
+- sun: { dni: }
+---
+# dni should be a number
+- sun: { dni: "dummy" }
+---
+# 0 invalid
+- sun: { dni: 0 }
+---
+# 2x dni
+- sun: { dni: 1, dni: 1 }
+---
+
+#
+# <pillbox> ::=
+#   pillbox:
+#     aperture: REAL # in ]0, 90]
+#
+
+# missing pillbox definition
+- sun: { pillbox: }
+---
+# missing aperture value
+- sun: { pillbox: { aperture: } }
+---
+# aperture should be a number
+- sun: { pillbox: { aperture: "dummy"} }
+---
+# 0 invalid
+- sun: { pillbox: { aperture: 0} }
+---
+# 91 invalid
+- sun: { pillbox: { aperture: 91} }
+---
+# 2x aperture
+- sun: { pillbox: { aperture: 1, aperture: 1} }
+---
+# unknown dummy parameter
+- sun: { pillbox: { dummy: 1} }
+---
+
+#
+# <buie> ::=
+#   buie:
+#     csr: REAL # in ]0, 1[
+#
+
+# missing buie definition
+- sun: { buie: }
+---
+# missing csr value
+- sun: { buie: { csr: } }
+---
+# csr should be a number
+- sun: { buie: { csr: "dummy"} }
+---
+# 0 invalid
+- sun: { buie: { csr: 0} }
+---
+# 1 invalid
+- sun: { buie: { csr: 1} }
+---
+# 2x csr
+- sun: { buie: { csr: 0.5, csr: 0.5 } }
+---
+# unknown dummy parameter
+- sun: { buie: { dummy: 1} }
+---
+
+#
+# <sun> ::=
+#   sun:
+#     dni: REAL # Direct Normal Irradiance in ]0, INF)
+#     <spectrum>
+# [   <radial-angular-distribution> ]
+#
+# <radial-angular-distribution> ::=
+#    <pillbox> | <buie>
+#
+
 # missing spectrum
 - sun: { dni: 1 }
 ---
 # missing dni
 - sun: { spectrum: [{wavelength: 1, data: 1}] }
 ---
-# missing wavelength
-- sun: { dni: 1, spectrum: [{data: 1}] }
----
-# missing data
-- sun: { dni: 1, spectrum: [{wavelength: 1}] }
----
 # unknown dummy parameter
-- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}], dummy: { aperture: 1} }
+- sun: { dummy: 1 }
 ---
-# missing pillbox definition
-- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}], pillbox: }
+# 2x dni
+- sun: { dni: 1, dni: 1 }
 ---
-# missing aperture value
-- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}], pillbox: { aperture: } }
+# 2x spectrum
+- sun: 
+    spectrum: [{wavelength: 1, data: 1}]
+    spectrum: [{wavelength: 1, data: 1}]
 ---
-# -1 invalid
-- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}], pillbox: { aperture: -1} }
----
-# unknown aperture parameter
-- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}], buie: { aperture: 1} }
----
-# 1 invalid
-- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}], buie: { csr: 1} }
----
-# -1 invalid
-- sun: { dni: -1, spectrum: [{wavelength: 1, data: 1}] }
----
-# -1 invalid
-- sun: { dni: 1, spectrum: [{wavelength: -1, data: 1}] }
----
-# -1 invalid
-- sun: { dni: 1, spectrum: [{wavelength: 1, data: -1}] }
----
-- entity:
-      # missing transform parameters
-    transform:
----
-- entity:
-    transform:
-      # missing rotation parameters
-      rotation: 
----
-- entity:
-    transform:
-      # missing translation parameters
-      translation: 
----
-- entity:
-    transform:
-      # 2x translation
-      translation: [ -4, 5.2, -6.5 ]
-      translation: [ -4, 5.2, -6.5 ]
----
-- entity:
-    transform:
-      # translation should have 3 parameters
-      translation: [ -4, 5.2 ]
----
-- entity:
-    transform:
-      # translation should have 3 parameters
-      translation: [ -4, 5.2,0 ,1 ]
----
-- entity:
-    transform:
-      # 2x rotation
-      rotation: [ -4, 5.2, -6.5 ]
-      rotation: [ -4, 5.2, -6.5 ]
----
-- entity:
-    transform:
-      # rotation should have 3 parameters
-      rotation: [ -4, 5.2 ]
----
-- entity:
-    transform:
-      # rotation should have 3 parameters
-      rotation: [ -4, 5.2,0 ,1 ]
----
-- entity:
-    # 2x transform
-    transform:
-      rotation: [ -4, 5.2, 1 ]
-    transform:
-      rotation: [ -4, 5.2, 1 ]
----
-- entity:
-    # missing object(s)
-    geometry:
----
-- entity:
-    geometry:
-      # missing transform parameters
-      - transform:
----
-- entity:
-    geometry:
-      - transform:
-          # missing rotation parameters
-          rotation: 
----
-- entity:
-    geometry:
-      - transform:
-          # missing translation parameters
-          translation: 
+# 2x radial-angular-distribution
+- sun:
+    pillbox: { aperture: 1}
+    buie: { csr: 0.5}
 ---
 
-- entity:
-    geometry:
-      - transform:
-          # 2x translation
-          translation: [ -4, 5.2, -6.5 ]
-          translation: [ -4, 5.2, -6.5 ]
+#
+# <mirror> ::=
+#   mirror:
+#     reflectivity: REAL # in [0, 1]
+#     roughness: REAL # in [0, 1]
+#
+
+# missing mirror definition
+- material: { mirror: }
 ---
-- entity:
-    geometry:
-      - transform:
-          # translation should have 3 parameters
-          translation: [ -4, 5.2 ]
+# unknown dummy attribute
+- material: { mirror: { dummy: 0 } }
 ---
-- entity:
-    geometry:
-      - transform:
-          # translation should have 3 parameters
-          translation: [ -4, 5.2,0 ,1 ]
+# missing reflectivity parameter
+- material: { mirror: { roughness: 0 } }
 ---
-- entity:
-    geometry:
-      - transform:
-          # 2x rotation
-          rotation: [ -4, 5.2, -6.5 ]
-          rotation: [ -4, 5.2, -6.5 ]
+# missing roughness parameter
+- material: { mirror: { reflectivity: 1 } }
 ---
-- entity:
-    geometry:
-      - transform:
-          # rotation should have 3 parameters
-          rotation: [ -4, 5.2 ]
+# roughness should be a number
+- material: { mirror: { roughness: "dummy" } }
 ---
-- entity:
-    geometry:
-      - transform:
-          # rotation should have 3 parameters
-          rotation: [ -4, 5.2,0 ,1 ]
+# reflectivity should be a number
+- material: { mirror: { reflectivity: "dummy" } }
 ---
-- entity:
-    geometry:
-      # missing shape & material
-      - transform:
-          rotation: [ -4, 5.2, 1 ]
+# -1 invalid
+- material: { mirror: { reflectivity: -1, roughness: 0 } }
 ---
-- entity:
-    geometry:
-      # missing size parameters
-      - cuboid: { size: }
+# 1.5 invalid
+- material: { mirror: { reflectivity: 1.5, roughness: 0 } }
 ---
-- entity:
-    geometry:
-      # size should have 3 parameters
-      - cuboid: { size: [1, 2] }
+# -1 invalid
+- material: { mirror: { reflectivity: 1, roughness: -1 } }
 ---
-- entity:
-    geometry:
-      # size should have 3 parameters
-      - cuboid: { size: [1, 2, 3, 4] }
+# 1.5 invalid
+- material: { mirror: { reflectivity: 1, roughness: 1.5 } }
 ---
-- entity:
-    geometry:
-      # -1 invalid
-      - cuboid: { size: [-1, 2, 3] }
+# 2x reflectivity
+- material: { mirror: { reflectivity: 1, reflectivity: 1 } }
 ---
-- entity:
-    geometry:
-      # 0 invalid
-      - cuboid: { size: [0, 2, 3] }
+# 2x roughness
+- material: { mirror: { roughness: 1, roughness: 1 } }
 ---
-- entity:
-    geometry:
-      - cuboid: { size: [1, 2, 3] }
-        # missing material
+
+#
+# <matte> ::=
+#   matte:
+#     reflectivity: REAL # in [0, 1]
+#
+
+# missing matte parameters
+- material: {  matte: }
 ---
-- entity:
-    geometry:
-        # missing material definition
-      - material: 
+# unknown dummy attribute
+- material: { matte: { dummy: 0 } }
 ---
-- entity:
-    geometry:
-        # missing matte parameters
-      - material: { matte: }
+# reflectivity should be a number
+- material: { matte: { reflectivity: "dummy" } }
 ---
-- entity:
-    geometry:
-        # missing reflectivity value
-      - material: { matte: { reflectivity: } }
+# -1 invalid
+- material: { matte: { reflectivity: -1 } }
 ---
-- entity:
-    geometry:
-      - cuboid: { size: [1, 2, 3] }
-        # -1 invalid
-        material: { matte: { reflectivity: -1 } }
+# 1.5 invalid
+- material: { matte: { reflectivity: 1.5 } }
 ---
-- entity:
-    geometry:
-      - material: { matte: { reflectivity: 1 } }
-        # missing shape definition
+# 2x reflectivity
+- material: { matte: { reflectivity: 1, reflectivity: 1 } }
 ---
+
+#
+# front: <material-descriptor>
+#
+
+# missing front definition
+- material: {  front: }
+---
+# dummy is not a material
+- material: {  front: "dummy" }
+---
+
+#
+# back: <material-descriptor>
+#
+
+# missing back parameters
+- material: {  back: }
+---
+# dummy is not a material
+- material: {  back: "dummy" }
+---
+
+#
+# <material> ::=
+#   <material-descriptor> | <double-sided-material>
+#
+# <double-sided-material> ::=
+#   front: <material-descriptor>
+#   back: <material-descriptor>
+#
+
+# missing material definition
+- material: 
+---
+# unknown dummy parameter
+- material: { dummy: 123 }
+---
+# missing back
+- material: { front: { matte: { reflectivity: 0.5 } } }
+---
+# missing front
+- material: { back: { matte: { reflectivity: 0.5 } } }
+---
+# 2x front
+- material:
+    front: &mat { matte: { reflectivity: 0.5 } }
+    front: *mat
+---
+# 2x back
+- material:
+    back: &mat { matte: { reflectivity: 0.5 } }
+    back: *mat
+---
+# 2x description
+- material:
+    front: &mat { matte: { reflectivity: 0.5 } }
+    back: *mat
+    matte: { reflectivity: 0.5 }
+---
+# 2x description
+- material:
+    matte: { reflectivity: 0.5 }
+    front: &mat { matte: { reflectivity: 0.5 } }
+    back: *mat
+---
+
+# <polyclip-list> ::=
+#   - <polyclip>
+# [ - <polyclip> ... ]
+#
+# <polyclip> ::=
+#   operation: <AND|SUB>
+#   vertices: <vertices-list>
+#
+# <vertices-list> ::=
+#   - <real2>
+#   - <real2>
+#   - <real2>
+# [ - <real2> ... ]
+#
+
+# missing clipping definition
+- geometry:
+    - plane:
+        clip:
+---
+# unknown dummy parameter
+- geometry:
+    - plane:
+        clip:
+          - dummy: 1
+---
+# missing operation name
+- geometry:
+    - plane:
+        clip:
+          - operation:
+---
+# missing vertices list
+- geometry:
+    - plane:
+        clip:
+          - vertices:
+---
+# unknown dummy operation
+- geometry:
+    - plane:
+        clip:
+          - operation: dummy
+---
+# missing vertices parameter
+- geometry:
+    - plane:
+        clip:
+          - operation: AND
+---
+# missing operation parameter
+- geometry:
+    - plane:
+        clip:
+          - vertices: [ [1, 2], [3, 4], [6, 7] ]
+---
+# vertices list < 3
+- geometry:
+    - plane:
+        clip:
+          - vertices: [ [1, 2], [3, 4] ]
+---
+# invalid number "dummy"
+- geometry:
+    - plane:
+        clip:
+          - operation: AND
+            vertices: [ ["dummy", 2], [3, 4], [6, 7] ]
+---
+# vertices should have 2 values
+- geometry:
+    - plane:
+        clip:
+          - operation: AND
+            vertices: [ [2], [3, 4], [6, 7] ]
+---
+# vertices should have 2 values
+- geometry:
+    - plane:
+        clip:
+          - operation: AND
+            vertices: [ [0, 1, 2], [3, 4], [6, 7] ]
+---
+
+#
+# <cuboid> ::=
+#   cuboid:
+#     size: <real3*+>
+#
+
+# missing cuboid definition
+- geometry: [ { cuboid: } ]
+---
+# unknown dummy parameter
+- geometry: [ { cuboid: { dummy: 1 } } ]
+---
+# missing size values
+- geometry: [ { cuboid: { size: } } ]
+---
+# size should be a number
+- geometry: [ { cuboid: { size: "dummy" } } ]
+---
+# invalid number "dummy"
+- geometry: [ { cuboid: { size: [1, "dummy", 2] } } ]
+---
+# size should have 3 values
+- geometry: [ { cuboid: { size: [1, 2] } } ]
+---
+# size should have 3 values
+- geometry: [ { cuboid: { size: [1, 2, 3, 4] } } ]
+---
+# -1 invalid
+- geometry: [ { cuboid: { size: [-1, 2, 3] } } ]
+---
+# 0 invalid
+- geometry: [ { cuboid: { size: [0, 2, 3] } } ]
+---
+# 2x size
+- geometry: [ { cuboid: { size: [1, 2, 3], size: [1, 2, 3] } } ]
+---
+
+#
+# <cylinder> ::=
+#   cylinder:
+#     height: REAL # in ]0, INF)
+#     radius: REAL # in ]0, INF)
+# [   slices: INTEGER ] # in [4, 4096]. Default 16
+#
+
+# missing cylinder definition
+- geometry: [ { cylinder: } ]
+---
+# missing height value
+- geometry: [ { cylinder: { height: } } ]
+---
+# missing radius value
+- geometry: [ { cylinder: { radius: } } ]
+---
+# unknown dummy parameter
+- geometry: [ { cylinder: { dummy: 1 } } ]
+---
+# missing radius
+- geometry: [ { cylinder: { height: 1 } } ]
+---
+# missing height
+- geometry: [ { cylinder: { radius: 1 } } ]
+---
+# height should be a number
+- geometry: [ { cylinder: { height: "dummy" } } ]
+---
+# radius should be a number
+- geometry: [ { cylinder: { radius: "dummy" } } ]
+---
+# slices should be a number
+- geometry: [ { cylinder: { slices: "dummy" } } ]
+---
+# -1 invalid
+- geometry: [ { cylinder: { radius: -1 } } ]
+---
+# -1 invalid
+- geometry: [ { cylinder: { height: -1 } } ]
+---
+# 0 invalid
+- geometry: [ { cylinder: { radius: 0 } } ]
+---
+# 0 invalid
+- geometry: [ { cylinder: { height: 0 } } ]
+---
+# 2x height
+- geometry: [ { cylinder: { height: 1, height: 1 } } ]
+---
+# 2x radius
+- geometry: [ { cylinder: { radius: 1, radius: 1 } } ]
+---
+# 2x slices
+- geometry: [ { cylinder: { slices: 10, slices: 10 } } ]
+---
+# 1 invalid
+- geometry: [ {  cylinder: { height: 1, radius: 1, slices: 1 } } ]
+---
+# 4097 invalid
+- geometry: [ {  cylinder: { height: 1, radius: 1, slices: 4097 } } ]
+---
+# 12.5 invalid
+- geometry: [ {  cylinder: { height: 1, radius: 1, slices: 12.5 } } ]
+---
+
+#
+# <obj> ::=
+#  obj:
+#     path: PATH
+#
+
+# missing obj definition
+- geometry: [ { obj: } ]
+---
+# missing path
+- geometry: [ { obj: { path: } } ]
+---
+# unknown dummy parameter
+- geometry: [ { obj: { dummy: 1 } } ]
+---
+# 2x path
+- geometry: [ { obj: { path: "file", path: "file" } } ]
+---
+
+#
+# <parabol> ::=
+#   parabol: # x^2 + y^2 - 4*focal*z = 0
+#     focal: REAL # in ]0, INF)
+#     clip: <polyclip-list>
+#
+
+# missing parabol definition
+- geometry: [ { parabol: } ]
+---
+# unknown dummy parameter
+- geometry: [ { parabol: { dummy: 1 } } ]
+---
+# missing focal value
+- geometry: [ { parabol: { focal: } } ]
+---
+# missing clip value
+- geometry: [ { parabol: { clip: } } ]
+---
+# focal should be a number
+- geometry: [ { parabol: { focal: "dummy" } } ]
+---
+# -1 invalid
+- geometry: [ { parabol: { focal: -1 } } ]
+---
+# 0 invalid
+- geometry: [ { parabol: { focal: 0 } } ]
+---
+# missing clip parameter
+- geometry: [ { parabol: { focal: 10 } } ]
+---
+# missing focal parameter
+- geometry:
+    - parabol:
+        clip:
+          - operation: AND
+            vertices: [ [1, 2], [3, 4], [6, 7] ]
+---
+# 2x focal
+- geometry: [ { parabol: { focal: 10, focal: 10 } } ]
+---
+# 2x clip
+- geometry:
+    - parabol:
+        clip:
+          - operation: AND
+            vertices: [ [1, 2], [3, 4], [6, 7] ]
+        clip:
+          - operation: AND
+            vertices: [ [1, 2], [3, 4], [6, 7] ]
+---
+
+#
+# <parabolic-cylinder> ::=
+#   parabolic-cylinder: # y^2 - 4*focal*z = 0
+#     focal: REAL # in ]0, INF)
+#     clip: <polyclip-list>
+#
+
+# missing parabolic-cylinder definition
+- geometry: [ { parabolic-cylinder: } ]
+---
+# unknown dummy parameter
+- geometry: [ { parabolic-cylinder: { dummy: 1 } } ]
+---
+# missing focal value
+- geometry: [ { parabolic-cylinder: { focal: } } ]
+---
+# missing clip value
+- geometry: [ { parabolic-cylinder: { clip: } } ]
+---
+# focal should be a number
+- geometry: [ { parabolic-cylinder: { focal: "dummy" } } ]
+---
+# -1 invalid
+- geometry: [ { parabolic-cylinder: { focal: -1 } } ]
+---
+# 0 invalid
+- geometry: [ { parabolic-cylinder: { focal: 0 } } ]
+---
+# missing clip parameter
+- geometry: [ { parabolic-cylinder: { focal: 10 } } ]
+---
+# missing focal parameter
+- geometry:
+    - parabolic-cylinder:
+        clip:
+          - operation: AND
+            vertices: [ [1, 2], [3, 4], [6, 7] ]
+---
+# 2x focal
+- geometry: [ { parabolic-cylinder: { focal: 10, focal: 10 } } ]
+---
+# 2x clip
+- geometry:
+    - parabolic-cylinder:
+        clip:
+          - operation: AND
+            vertices: [ [1, 2], [3, 4], [6, 7] ]
+        clip:
+          - operation: AND
+            vertices: [ [1, 2], [3, 4], [6, 7] ]
+---
+
+#
+# <plane> ::=
+#   plane:
+#     clip: <polyclip-list>
+#
+
+# missing plane definition
+- geometry: [ { plane: } ]
+---
+# unknown dummy parameter
+- geometry: [ { plane: { dummy: 1 } } ]
+---
+# 2x clip
+- geometry:
+    - plane:
+        clip:
+          - operation: AND
+            vertices: [ [1, 2], [3, 4], [6, 7] ]
+        clip:
+          - operation: AND
+            vertices: [ [1, 2], [3, 4], [6, 7] ]
+---
+
+#
+# <sphere> ::=
+#   sphere:
+#     radius: REAL # in ]0, INF)
+# [   slices: INTEGER ] # Default 16
+#
+
+# missing sphere definition
+- geometry: [ { sphere: } ]
+---
+# unknown dummy parameter
+- geometry: [ { sphere: { dummy: 1 } } ]
+---
+# missing radius parameter
+- geometry: [ { sphere: { slices: 10 } } ]
+---
+# radius should be a number
+- geometry: [ { sphere: { radius: "dummy" } } ]
+---
+# slices should be a number
+- geometry: [ { sphere: { slices: "dummy" } } ]
+---
+# -1 invalid
+- geometry: [ { sphere: { radius: -1 } } ]
+---
+# 0 invalid
+- geometry: [ { sphere: { radius: 0 } } ]
+---
+# 0 invalid
+- geometry: [ { sphere: { radius: 1, slices: 0 } } ]
+---
+# 4097 invalid
+- geometry: [ { sphere: { radius: 1, slices: 4097 } } ]
+---
+# 2x radius
+- geometry: [ { sphere: { radius: 1,  radius: 1 } } ]
+---
+# 2x slices
+- geometry: [ { sphere: { slices: 10,  slices: 10 } } ]
+---
+
+#
+# <stl> ::=
+#  stl:
+#     path: PATH
+#
+
+# missing stl definition
+- geometry: [ { stl: } ]
+---
+# missing path
+- geometry: [ { stl: { path: } } ]
+---
+# unknown dummy parameter
+- geometry: [ { stl: { dummy: 1 } } ]
+---
+# 2x path
+- geometry: [ { stl: { path: "file", path: "file" } } ]
+---
+
+#
+# <pivot> ::=
+#   pivot:
+#     point: <real3>
+#     normal: <real3>
+#     <target>
+#
+# <target> ::=
+#   target:
+#     anchor: <anchor-identifier>
+#   | direction: <real3>
+#   | position: <real3>
+#   | <sun>
+#
+
+# missing pivot definition
 - entity:
-    # missing entity name
+    pivot:
+---
+# unknown dummy parameter
+- entity:
+    pivot:
+      dummy: 1
+---
+# missing point definition
+- entity:
+    pivot:
+      point:
+---
+# missing normal definition
+- entity:
+    pivot:
+      normal:
+---
+# missing target definition
+- entity:
+    pivot:
+      target:
+---
+# point should be a number
+- entity:
+    pivot:
+      point: "dummy"
+---
+# point should have 3 values
+- entity:
+    pivot:
+      point: [ -4, 5.2 ]
+---
+# point should have 3 values
+- entity:
+    pivot:
+      point: [ -4, 5.2, 0, 1 ]
+---
+# normal should be a number
+- entity:
+    pivot:
+      normal: "dummy"
+---
+# normal should have 3 values
+- entity:
+    pivot:
+      normal: [ -4, 5.2 ]
+---
+# normal should have 3 values
+- entity:
+    pivot:
+      normal: [ -4, 5.2, 0, 1 ]
+---
+# target should be a <target>
+- entity:
+    pivot:
+      target: "dummy"
+---
+# missing anchor definition
+- entity:
+    pivot:
+      target:
+        anchor:
+---
+# missing direction definition
+- entity:
+    pivot:
+      target:
+        direction:
+---
+# missing position definition
+- entity:
+    pivot:
+      target:
+        position:
+---
+# undefined anchor
+- entity:
+    pivot:
+      target:
+        anchor: dummy
+---
+# direction should be a number
+- entity:
+    pivot:
+      target:
+        direction: "dummy"
+---
+# direction should have 3 values
+- entity:
+    pivot:
+      target:
+        direction: [ -4, 5.2 ]
+---
+# direction should have 3 values
+- entity:
+    pivot:
+      target:
+        direction: [ -4, 5.2, 0, 1 ]
+---
+# position should be a number
+- entity:
+    pivot:
+      target:
+        position: "dummy"
+---
+# position should have 3 values
+- entity:
+    pivot:
+      target:
+        position: [ -4, 5.2 ]
+---
+# position should have 3 values
+- entity:
+    pivot:
+      target:
+        position: [ -4, 5.2, 0, 1 ]
+---
+# sun should be a <sun>
+- entity:
+    pivot:
+      target: { sun: "dummy" }
+---
+# missing point
+- sun: &sun { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
+- entity:
+    pivot:
+      normal: [ -4, 5.2, 0 ]
+      target: { sun: *sun }
+---
+# missing normal
+- sun: &sun { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
+- entity:
+    pivot:
+      point: [ -4, 5.2, 0 ]
+      target: { sun: *sun }
+---
+# missing target
+- entity:
+    pivot:
+      point: [ -4, 5.2, 0 ]
+      normal: [ -4, 5.2, 0 ]
+---
+# 2x point
+- entity:
+    pivot:
+      point: [ -4, 5.2, 0 ]
+      point: [ -4, 5.2, 0 ]
+---
+# 2x normal
+- entity:
+    pivot:
+      normal: [ -4, 5.2, 0 ]
+      normal: [ -4, 5.2, 0 ]
+---
+# 2x target
+- sun: &sun { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
+- entity:
+    pivot:
+      target: { sun: *sun }
+      target: { sun: *sun }
+---
+
+#
+# <anchors> ::=
+#   anchors:
+#     - <anchor-data>
+# [   - <anchor-data> ... ]
+#
+# <anchor-data> ::=
+#   name: STRING
+#   position: <real3>
+#
+
+# missing anchors definition
+- entity:
+    anchors:
+---
+# missing position
+- entity:
+    anchors:
+      - name: "anchor"
+---
+# missing name
+- entity:
+    anchors:
+      - position: [ -4, 5.2, 0 ]
+---
+# 2 anchors with same name
+- entity:
+    anchors:
+      - name: "anchor"
+        position: [ -4, 5.2, 0 ]
+      - name: "anchor"
+        position: [ -4, 5.2, 0 ]
+---
+
+#
+# <entity> ::=
+#   entity:
+#     <entity-data>
+##
+# <entity-data> ::=
+#   name: STRING
+# [ <geometry> | <pivot> ]
+# [ <anchors> ]
+# [ <transform> ]
+# [ <children>  ]
+
+# missing entity definition
+- entity:
+---
+# unknown dummy parameter
+- entity: { dummy: 0 }
+---
+# missing name value
+- entity: { name: }
+---
+# missing geometry value
+- entity: { geometry: }
+---
+# missing pivot value
+- entity: { pivot: }
+---
+# missing anchors value
+- entity: { anchors: }
+---
+# missing transform value
+- entity: { transform: }
+---
+# missing children value
+- entity: { children: }
+---
+# missing entity name
+- entity:
     geometry:
-      - cuboid: { size: [1, 2, 3] }
+      - stl: { path: "file" }
         material: { matte: { reflectivity: 1 } }
 ---
-# missing sun
+# 2x name
+- entity: { name: "ent", name: "ent" }
+---
+# cannot define both geometry and pivot
+- sun: &sun { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
+- entity:
+    pivot:
+      point: [ -4, 5.2, 0 ]
+      normal: [ -4, 5.2, 0 ]
+      target: { sun: *sun }
+    geometry: [ { stl: { path: "file" } } ]
+---
+# 2x anchors
+- entity:
+    anchors:
+      - name: "anchor1"
+        position: [ -4, 5.2, 0 ]
+    anchors:
+      - name: "anchor2"
+        position: [ -4, 5.2, 0 ]
+---
+# 2x transform
+- entity:
+    transform: { rotation: [ -4, 5.2, 1 ] }
+    transform: { rotation: [ -4, 5.2, 1 ] }
+---
+# 2x children
+- entity:
+    children: 
+      - name: "child1"
+    children: 
+      - name: "child2"
+---
+# 2 entities with the same name
+- entity:
+    name: "foo"
+    geometry:
+      - stl: { path: "file" }
+        material: { matte: { reflectivity: 1 } }
+- entity:
+    name: "foo"
+    geometry:
+      - stl: { path: "file" }
+        material: { matte: { reflectivity: 1 } }
+---
+
+# <template> ::=
+#   template:
+#     <entity-data>
+#
+# <entity-data> ::=
+#   name: STRING
+# [ <geometry> | <pivot> ]
+# [ <anchors> ]
+# [ <transform> ]
+# [ <children>  ]
+
+# missing template definition
+- template: &temp
+- entity: *temp
+---
+# unknown dummy parameter
+- template: &temp { dummy: 0 }
+- entity: *temp
+---
+# missing name value
+- template: &temp { name: }
+- entity: *temp
+---
+# missing geometry value
+- template: &temp { geometry: }
+- entity: *temp
+---
+# missing pivot value
+- template: &temp { pivot: }
+- entity: *temp
+---
+# missing anchors value
+- template: &temp { anchors: }
+- entity: *temp
+---
+# missing transform value
+- template: &temp { transform: }
+- entity: *temp
+---
+# missing children value
+- template: &temp { children: }
+- entity: *temp
+---
+# missing template name
+- template: &temp
+    geometry:
+      - stl: { path: "file" }
+        material: { matte: { reflectivity: 1 } }
+- entity: *temp
+---
+# 2x name
+- template: &temp { name: "ent", name: "ent" }
+- entity: *temp
+---
+# cannot define both geometry and pivot
+- sun: &sun { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
+- template: &temp
+    pivot:
+      point: [ -4, 5.2, 0 ]
+      normal: [ -4, 5.2, 0 ]
+      target: { sun: *sun }
+    geometry: [ { stl: { path: "file" } } ]
+- entity: *temp
+---
+# 2x anchors
+- template: &temp
+    anchors:
+      - name: "anchor1"
+        position: [ -4, 5.2, 0 ]
+    anchors:
+      - name: "anchor2"
+        position: [ -4, 5.2, 0 ]
+- entity: *temp
+---
+# 2x transform
+- template: &temp
+    transform: { rotation: [ -4, 5.2, 1 ] }
+    transform: { rotation: [ -4, 5.2, 1 ] }
+- entity: *temp
+---
+# 2x children
+- template: &temp
+    children: 
+      - name: "child1"
+    children: 
+      - name: "child2"
+- entity: *temp
+---
+# 2 templates with the same name
+- template: &temp1
+    name: "foo"
+    geometry:
+      - stl: { path: "file" }
+        material: { matte: { reflectivity: 1 } }
+- template: &temp2
+    name: "foo"
+    geometry:
+      - stl: { path: "file" }
+        material: { matte: { reflectivity: 1 } }
+- entity: *temp1
+- entity: *temp2
+---
+
+#
+# <transform> ::=
+#   transform:
+#     translation: <real3>
+#     rotation: <real3>
+#
+
+# missing rotation parameters
+- entity: { transform: { rotation: } }
+---
+# missing translation parameters
+- entity: { transform: { translation: } }
+---
+# rotation should have 3 values
+- entity: { transform: { rotation: [ -4, 5.2 ] } }
+---
+# rotation should have 3 values
+- entity: { transform: { rotation: [ -4, 5.2, 0, 1 ] } }
+---
+# translation should have 3 values
+- entity: { transform: { translation: [ -4, 5.2 ] } }
+---
+# translation should have 3 values
+- entity: { transform: { translation: [ -4, 5.2, 0, 1 ] } }
+---
+# 2x rotation
+- entity:
+    transform:
+      rotation: [ -4, 5.2, -6.5 ]
+      rotation: [ -4, 5.2, -6.5 ]
+---
+# 2x translation
+- entity:
+    transform:
+      translation: [ -4, 5.2, -6.5 ]
+      translation: [ -4, 5.2, -6.5 ]
+---
+
+#
+# <geometry> ::=
+#   geometry:
+#     - <object>
+# [   - <object> ... ]
+#
+# <object> ::=
+#   <shape>
+#   <material>
+# [ <transform> ]
+#
+
+# missing geometry definition
+- geometry:
+---
+# unknown dummy parameter
+- geometry: 
+  - dummy: 1
+---
+# missing material definition
+- geometry:
+  - stl: { path: "file" }
+---
+# missing shape definition
+- geometry:
+  - material: { matte: { reflectivity: 1 } }
+---
+# 2x shape
+- geometry:
+  - stl: { path: "file" }
+    stl: { path: "file" }
+---
+# 2x material
+- geometry:
+  - material: { matte: { reflectivity: 1 } }
+    material: { matte: { reflectivity: 1 } }
+---
+# 2x transform
+- geometry:
+  - transform: { rotation: [ -4, 5.2, -6.5 ] }
+    transform: { rotation: [ -4, 5.2, -6.5 ] }
+---
+
+#
+# <solar-factory> ::=
+#   <sun>
+#   <items>
+#
+# <items> ::=
+#   - <item>
+# [ - <item> ... ]
+#
+# <item> ::=
+#     <geometry>
+#   | <material>
+#   | <entity>
+#   | <template>
+#
+
+# unknown item dummy
+- dummy: 1
+---
+# missing sun in document
 - entity:
     name: foo
     geometry:
       - cuboid: { size: [1, 2, 3] }
-        transform:
-          rotation: [ 0, 1, 2 ]
-          translation: [ -4, 5.2, -6.5 ]
         material: { matte: { reflectivity: 1 } }
----
-- entity:
-    geometry:
-      # unknown dummy parameter
-      - material: { matte: { reflectivity: 1, dummy: "none" } }
----
-- entity:
-    geometry:
-      - material:
-          # unknown dummy parameter
-          matte: { reflectivity: 1 }
-          dummy: 123
----
-- entity:
-    geometry:
-      # unknown dummy parameter
-      - cuboid: { size: [1, 2, 3], dummy: 3.14 }
----
-- entity:
-    geometry:
-      - material: { matte: { reflectivity: 1 } }
-        cuboid: { size: [1, 2, 3] }
-        # unknown dummy parameter
-        dummy: 1
----
-- entity:
-    geometry:
-      - material: { matte: { reflectivity: 1 } }
-        cuboid: { size: [1, 2, 3] }
-    # unknown dummy parameter
-    dummy: 1
----
-- material: &front { matte: { reflectivity: 1 } }
-- material: &back  { matte: { reflectivity: 0.5 } }
-- geometry: &cuboid
-    - cuboid: { size: [1, 2, 3] }
-      material:
-        # missing back description
-        front: *front
-- entity: { geometry: *cuboid }
----
-- material: &front { matte: { reflectivity: 1 } }
-- material: &back  { matte: { reflectivity: 0.5 } }
-- geometry: &cuboid
-    - cuboid: { size: [1, 2, 3] }
-      material:
-        # missing front description
-        back: *back
-- entity: { geometry: *cuboid }
----
-- material: &front { matte: { reflectivity: 1 } }
-- material: &back  { matte: { reflectivity: 0.5 } }
-- geometry: &cuboid
-    - cuboid: { size: [1, 2, 3] }
-      material:
-        front: *front
-        back: *back
-        # 2x front
-        front: *front
-- entity: { geometry: *cuboid }
----
-- geometry: &cuboid
-    - cuboid: { size: [1, 2, 3] }
-      material:
-        front:
-          matte: { reflectivity: 1 }
-          # unknown dummy parameter
-          dummy: 1
-        back:
-          material: { matte: { reflectivity: 0.1 } }
-- entity: { geometry: *cuboid }
----
-- geometry: &cuboid
-    - cuboid: { size: [1, 2, 3] }
-      material:
-        front:
-          matte: { reflectivity: 1 }
-        back:
-          matte: { reflectivity: 0.1 }
-          # unknown dummy parameter
-          dummy: 1234
-- entity: { geometry: *cuboid }
-
+    
