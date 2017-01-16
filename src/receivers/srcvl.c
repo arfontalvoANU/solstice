@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "solreceivers.h"
+#include "srcvl.h"
 
 #include <rsys/dynamic_array.h>
 #include <rsys/mem_allocator.h>
@@ -26,7 +26,7 @@
 
 struct receiver {
   struct str name;
-  enum solreceiver_side side;
+  enum srcvl_side side;
 };
 
 static INLINE void
@@ -34,7 +34,7 @@ receiver_init(struct mem_allocator* allocator, struct receiver* receiver)
 {
   ASSERT(receiver);
   str_init(allocator, &receiver->name);
-  receiver->side = SOLRECEIVER_FRONT_AND_BACK;
+  receiver->side = SRCVL_FRONT_AND_BACK;
 }
 
 static INLINE void
@@ -69,7 +69,7 @@ receiver_copy_and_release(struct receiver* dst, struct receiver* src)
 #define DARRAY_FUNCTOR_COPY_AND_RELEASE receiver_copy_and_release
 #include <rsys/dynamic_array.h>
 
-struct solreceivers {
+struct srcvl {
   yaml_parser_t parser;
   int parser_is_init;
   struct darray_receiver receivers;
@@ -85,16 +85,16 @@ struct solreceivers {
  ******************************************************************************/
 static INLINE void
 log_err
-  (const struct solreceivers* receivers,
+  (const struct srcvl* srcvl,
    const yaml_node_t* node,
    const char* fmt,
    ...)
 {
   va_list vargs_list;
-  ASSERT(receivers && node && fmt);
+  ASSERT(srcvl && node && fmt);
 
   fprintf(stderr, "%s:%lu:%lu: ",
-    str_cget(&receivers->stream_name),
+    str_cget(&srcvl->stream_name),
     (unsigned long)node->start_mark.line+1,
     (unsigned long)node->start_mark.column+1);
   va_start(vargs_list, fmt);
@@ -104,7 +104,7 @@ log_err
 
 static res_T
 parse_string
-  (struct solreceivers* receivers,
+  (struct srcvl* srcvl,
    yaml_node_t* string,
    struct str* str)
 {
@@ -113,13 +113,13 @@ parse_string
 
   if(string->type != YAML_SCALAR_NODE
   || !strlen((char*)string->data.scalar.value)) {
-    log_err(receivers, string, "expect a character string.\n");
+    log_err(srcvl, string, "expect a character string.\n");
     res = RES_BAD_ARG;
     goto error;
   }
   res = str_set(str, (char*)string->data.scalar.value);
   if(res !=  RES_OK) {
-    log_err(receivers, string, "could not register the string `%s'.\n",
+    log_err(srcvl, string, "could not register the string `%s'.\n",
       string->data.scalar.value);
     goto error;
   }
@@ -132,27 +132,27 @@ error:
 
 static res_T
 parse_side
-  (struct solreceivers* receivers,
+  (struct srcvl* srcvl,
    yaml_node_t* side,
-   enum solreceiver_side* out_side)
+   enum srcvl_side* out_side)
 {
   res_T res = RES_OK;
   ASSERT(side && out_side);
 
   if(side->type != YAML_SCALAR_NODE) {
-    log_err(receivers, side, "expect a character string.\n");
+    log_err(srcvl, side, "expect a character string.\n");
     res = RES_BAD_ARG;
     goto error;
   }
 
   if(!strcmp((char*)side->data.scalar.value, "FRONT")) {
-    *out_side = SOLRECEIVER_FRONT;
+    *out_side = SRCVL_FRONT;
   } else if(!strcmp((char*)side->data.scalar.value, "BACK")) {
-    *out_side = SOLRECEIVER_BACK;
+    *out_side = SRCVL_BACK;
   } else if(!strcmp((char*)side->data.scalar.value, "FRONT_AND_BACK")) {
-    *out_side = SOLRECEIVER_FRONT_AND_BACK;
+    *out_side = SRCVL_FRONT_AND_BACK;
   } else {
-    log_err(receivers, side, "unknown side valie `%s'.\n",
+    log_err(srcvl, side, "unknown side valie `%s'.\n",
       side->data.scalar.value);
     res = RES_BAD_ARG;
     goto error;
@@ -165,7 +165,7 @@ error:
 
 static res_T
 parse_receiver
-  (struct solreceivers* receivers,
+  (struct srcvl* srcvl,
    yaml_document_t* doc,
    const yaml_node_t* receiver)
 {
@@ -175,22 +175,22 @@ parse_receiver
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
-  ASSERT(receivers && doc && receiver);
+  ASSERT(srcvl && doc && receiver);
 
   if(receiver->type != YAML_MAPPING_NODE) {
-    log_err(receivers, receiver, "expect a receiver definition.\n");
+    log_err(srcvl, receiver, "expect a receiver definition.\n");
     res = RES_BAD_ARG;
     goto error;
   }
 
   /* Allocate the receiver */
-  isolreceiver = darray_receiver_size_get(&receivers->receivers);
-  res = darray_receiver_resize(&receivers->receivers, isolreceiver + 1);
+  isolreceiver = darray_receiver_size_get(&srcvl->receivers);
+  res = darray_receiver_resize(&srcvl->receivers, isolreceiver + 1);
   if(res != RES_OK) {
-    log_err(receivers, receiver, "could not allocate the receiver.\n");
+    log_err(srcvl, receiver, "could not allocate the receiver.\n");
     goto error;
   }
-  solreceiver = darray_receiver_data_get(&receivers->receivers) + isolreceiver;
+  solreceiver = darray_receiver_data_get(&srcvl->receivers) + isolreceiver;
 
   n = receiver->data.mapping.pairs.top - receiver->data.mapping.pairs.start;
   FOR_EACH(i, 0, n) {
@@ -200,13 +200,13 @@ parse_receiver
     key = yaml_document_get_node(doc, receiver->data.mapping.pairs.start[i].key);
     val = yaml_document_get_node(doc, receiver->data.mapping.pairs.start[i].value);
     if(key->type != YAML_SCALAR_NODE) {
-      log_err(receivers, key, "expect receiver parameters.\n");
+      log_err(srcvl, key, "expect receiver parameters.\n");
       res = RES_BAD_ARG;
       goto error;
     }
     #define SETUP_MASK(Flag, Name) {                                           \
       if(mask & BIT(Flag)) {                                                   \
-        log_err(receivers, key, "the receiver "Name" is already defined.\n");  \
+        log_err(srcvl, key, "the receiver "Name" is already defined.\n");  \
         res = RES_BAD_ARG;                                                     \
         goto error;                                                            \
       }                                                                        \
@@ -214,12 +214,12 @@ parse_receiver
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "name")) {
       SETUP_MASK(NAME, "name");
-      res = parse_string(receivers, val, &solreceiver->name);
+      res = parse_string(srcvl, val, &solreceiver->name);
     } else if(!strcmp((char*)key->data.scalar.value, "side")) {
       SETUP_MASK(SIDE, "side");
-      res = parse_side(receivers, val, &solreceiver->side);
+      res = parse_side(srcvl, val, &solreceiver->side);
     } else {
-      log_err(receivers, key, "unknown receiver parameter `%s'.\n",
+      log_err(srcvl, key, "unknown receiver parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
     }
@@ -228,7 +228,7 @@ parse_receiver
   }
 
   if(!(mask & BIT(NAME))) {
-    log_err(receivers, receiver, "the receiver name is missing.\n");
+    log_err(srcvl, receiver, "the receiver name is missing.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -236,119 +236,119 @@ parse_receiver
 exit:
   return res;
 error:
-  if(solreceiver) darray_receiver_pop_back(&receivers->receivers);
+  if(solreceiver) darray_receiver_pop_back(&srcvl->receivers);
   goto exit;
 }
 
 static void
-receivers_clear(struct solreceivers* receivers)
+receivers_clear(struct srcvl* srcvl)
 {
-  ASSERT(receivers);
-  darray_receiver_clear(&receivers->receivers);
+  ASSERT(srcvl);
+  darray_receiver_clear(&srcvl->receivers);
 }
 
 static void
 receivers_release(ref_T* ref)
 {
-  struct solreceivers* receivers;
+  struct srcvl* srcvl;
   ASSERT(ref);
-  receivers = CONTAINER_OF(ref, struct solreceivers, ref);
-  if(receivers->parser_is_init) yaml_parser_delete(&receivers->parser);
-  str_release(&receivers->stream_name);
-  darray_receiver_release(&receivers->receivers);
-  MEM_RM(receivers->allocator, receivers);
+  srcvl = CONTAINER_OF(ref, struct srcvl, ref);
+  if(srcvl->parser_is_init) yaml_parser_delete(&srcvl->parser);
+  str_release(&srcvl->stream_name);
+  darray_receiver_release(&srcvl->receivers);
+  MEM_RM(srcvl->allocator, srcvl);
 }
 
 /*******************************************************************************
  * Local functions
  ******************************************************************************/
 res_T
-solreceivers_create
-  (struct mem_allocator* allocater, struct solreceivers** out_receivers)
+srcvl_create
+  (struct mem_allocator* allocater, struct srcvl** out_receivers)
 {
-  struct solreceivers* receivers = NULL;
+  struct srcvl* srcvl = NULL;
   struct mem_allocator* mem_allocator;
   res_T res = RES_OK;
   ASSERT(out_receivers);
 
   mem_allocator = allocater ? allocater : &mem_default_allocator;
-  receivers = MEM_CALLOC(mem_allocator, 1, sizeof(struct solreceivers));
-  if(!receivers) {
-    fprintf(stderr, "Could not allocate the loader of the receivers.\n");
+  srcvl = MEM_CALLOC(mem_allocator, 1, sizeof(struct srcvl));
+  if(!srcvl) {
+    fprintf(stderr, "Could not allocate the loader of the srcvl.\n");
     res = RES_MEM_ERR;
     goto error;
   }
-  receivers->allocator = mem_allocator;
-  ref_init(&receivers->ref);
-  str_init(mem_allocator, &receivers->stream_name);
-  darray_receiver_init(mem_allocator, &receivers->receivers);
+  srcvl->allocator = mem_allocator;
+  ref_init(&srcvl->ref);
+  str_init(mem_allocator, &srcvl->stream_name);
+  darray_receiver_init(mem_allocator, &srcvl->receivers);
 
 exit:
-  *out_receivers = receivers;
+  *out_receivers = srcvl;
   return res;
 error:
-  if(receivers) {
-    solreceivers_ref_put(receivers);
-    receivers = NULL;
+  if(srcvl) {
+    srcvl_ref_put(srcvl);
+    srcvl = NULL;
   }
   goto exit;
 }
 
 void
-solreceivers_ref_get(struct solreceivers* receivers)
+srcvl_ref_get(struct srcvl* srcvl)
 {
-  ASSERT(receivers);
-  ref_get(&receivers->ref);
+  ASSERT(srcvl);
+  ref_get(&srcvl->ref);
 }
 
 void
-solreceivers_ref_put(struct solreceivers* receivers)
+srcvl_ref_put(struct srcvl* srcvl)
 {
-  ASSERT(receivers);
-  ref_put(&receivers->ref, receivers_release);
+  ASSERT(srcvl);
+  ref_put(&srcvl->ref, receivers_release);
 }
 
 res_T
-solreceivers_setup_stream
-  (struct solreceivers* receivers,
+srcvl_setup_stream
+  (struct srcvl* srcvl,
    const char* stream_name,
    FILE* stream)
 {
   res_T res = RES_OK;
-  ASSERT(receivers && stream);
+  ASSERT(srcvl && stream);
 
-  if(receivers->parser_is_init) {
-    yaml_parser_delete(&receivers->parser);
-    receivers->parser_is_init = 0;
+  if(srcvl->parser_is_init) {
+    yaml_parser_delete(&srcvl->parser);
+    srcvl->parser_is_init = 0;
   }
 
-  res = str_set(&receivers->stream_name, stream_name ? stream_name:"<stream>");
+  res = str_set(&srcvl->stream_name, stream_name ? stream_name:"<stream>");
   if(res != RES_OK) {
     fprintf(stderr, "Could not register the filename of the receiver stream.\n");
     goto error;
   }
-  if(!yaml_parser_initialize(&receivers->parser)) {
+  if(!yaml_parser_initialize(&srcvl->parser)) {
     fprintf(stderr,
       "Could not initialise the YAML parser of the receiver stream.\n");
     res = RES_UNKNOWN_ERR;
     goto error;
   }
-  receivers->parser_is_init = 1;
-  yaml_parser_set_input_file(&receivers->parser, stream);
+  srcvl->parser_is_init = 1;
+  yaml_parser_set_input_file(&srcvl->parser, stream);
 
 exit:
   return res;
 error:
-  str_clear(&receivers->stream_name);
-  if(receivers->parser_is_init) {
-    yaml_parser_delete(&receivers->parser);
-    receivers->parser_is_init = 0;
+  str_clear(&srcvl->stream_name);
+  if(srcvl->parser_is_init) {
+    yaml_parser_delete(&srcvl->parser);
+    srcvl->parser_is_init = 0;
   }
   goto exit;
 }
 
 res_T
-solreceivers_load(struct solreceivers* receivers)
+srcvl_load(struct srcvl* srcvl)
 {
   yaml_document_t doc;
   yaml_node_t* root;
@@ -356,24 +356,24 @@ solreceivers_load(struct solreceivers* receivers)
   intptr_t i, n;
   int doc_is_init = 0;
   res_T res = RES_OK;
-  ASSERT(receivers);
+  ASSERT(srcvl);
 
-  stream_name = str_cget(&receivers->stream_name);
-  receivers_clear(receivers); /* Clean up previously loaded data */
+  stream_name = str_cget(&srcvl->stream_name);
+  receivers_clear(srcvl); /* Clean up previously loaded data */
 
-  if(!receivers->parser_is_init) {
+  if(!srcvl->parser_is_init) {
     res = RES_BAD_OP;
     goto error;
   }
 
-  if(!yaml_parser_load(&receivers->parser, &doc)) {
+  if(!yaml_parser_load(&srcvl->parser, &doc)) {
     fprintf(stderr, "%s:%lu:%lu: %s.\n",
       stream_name,
-      (unsigned long)receivers->parser.problem_mark.line+1,
-      (unsigned long)receivers->parser.problem_mark.column+1,
-      receivers->parser.problem);
-    yaml_parser_delete(&receivers->parser);
-    receivers->parser_is_init = 0;
+      (unsigned long)srcvl->parser.problem_mark.line+1,
+      (unsigned long)srcvl->parser.problem_mark.column+1,
+      srcvl->parser.problem);
+    yaml_parser_delete(&srcvl->parser);
+    srcvl->parser_is_init = 0;
     res = RES_BAD_OP;
     goto error;
   }
@@ -381,14 +381,14 @@ solreceivers_load(struct solreceivers* receivers)
 
   root = yaml_document_get_root_node(&doc);
   if(!root) {
-    yaml_parser_delete(&receivers->parser);
-    receivers->parser_is_init = 0;
+    yaml_parser_delete(&srcvl->parser);
+    srcvl->parser_is_init = 0;
     res = RES_BAD_OP;
     goto error;
   }
 
   if(root->type != YAML_SEQUENCE_NODE) {
-    log_err(receivers, root, "expect a list of receivers.\n");
+    log_err(srcvl, root, "expect a list of srcvl.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -398,33 +398,33 @@ solreceivers_load(struct solreceivers* receivers)
     yaml_node_t* receiver;
 
     receiver = yaml_document_get_node(&doc, root->data.sequence.items.start[i]);
-    res = parse_receiver(receivers, &doc, receiver);
+    res = parse_receiver(srcvl, &doc, receiver);
     if(res != RES_OK) goto error;
   }
 exit:
   if(doc_is_init) yaml_document_delete(&doc);
   return res;
 error:
-  receivers_clear(receivers);
+  receivers_clear(srcvl);
   goto exit;
 }
 
 size_t
-solreceivers_count(const struct solreceivers* receivers)
+srcvl_count(const struct srcvl* srcvl)
 {
-  ASSERT(receivers);
-  return darray_receiver_size_get(&receivers->receivers);
+  ASSERT(srcvl);
+  return darray_receiver_size_get(&srcvl->receivers);
 }
 
 void
-solreceivers_get
-  (const struct solreceivers* receivers,
+srcvl_get
+  (const struct srcvl* srcvl,
    const size_t i,
-   struct solreceiver* receiver)
+   struct srcvl_receiver* receiver)
 {
   const struct receiver* r;
-  ASSERT(receivers && receiver && i < solreceivers_count(receivers));
-  r = darray_receiver_cdata_get(&receivers->receivers) + i;
+  ASSERT(srcvl && receiver && i < srcvl_count(srcvl));
+  r = darray_receiver_cdata_get(&srcvl->receivers) + i;
   receiver->name = str_cget(&r->name);
   receiver->side = r->side;
 }

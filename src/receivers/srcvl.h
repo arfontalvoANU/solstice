@@ -13,61 +13,61 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef SOLRECEIVERS_H
-#define SOLRECEIVERS_H
+#ifndef SRCVL_H /* Solstice ReCeiVers Loader */
+#define SRCVL_H
 
 #include <rsys/rsys.h>
 
-enum solreceiver_side {
-  SOLRECEIVER_FRONT,
-  SOLRECEIVER_BACK,
-  SOLRECEIVER_FRONT_AND_BACK
+enum srcvl_side {
+  SRCVL_FRONT,
+  SRCVL_BACK,
+  SRCVL_FRONT_AND_BACK
 };
 
-struct solreceiver {
+struct srcvl_receiver {
   const char* name;
-  enum solreceiver_side side;
+  enum srcvl_side side;
 };
 
 struct mem_allocator;
-struct solreceivers;
+struct srcvl;
 
 /*******************************************************************************
  * Solstice Receiver API
  ******************************************************************************/
 extern LOCAL_SYM res_T
-solreceivers_create
+srcvl_create
   (struct mem_allocator* allocator, /* May be NULL <=> use default allocator */
-   struct solreceivers** receivers);
+   struct srcvl** rcvl);
 
 extern LOCAL_SYM void
-solreceivers_ref_get
-  (struct solreceivers* receivers);
+srcvl_ref_get
+  (struct srcvl* rcvl);
 
 extern LOCAL_SYM void
-solreceivers_ref_put
-  (struct solreceivers* receivers);
+srcvl_ref_put
+  (struct srcvl* rcvl);
 
 extern LOCAL_SYM res_T
-solreceivers_setup_stream
-  (struct solreceivers* receivers,
+srcvl_setup_stream
+  (struct srcvl* rcvl,
    const char* stream_name, /* May be NULL */
    FILE* stream);
 
 /* Return RES_BAD_OP if there is no more YAML document to parse */
 extern LOCAL_SYM res_T
-solreceivers_load
-  (struct solreceivers* receivers);
+srcvl_load
+  (struct srcvl* rcvl);
 
 extern LOCAL_SYM size_t
-solreceivers_count
-  (const struct solreceivers* receivers);
+srcvl_count
+  (const struct srcvl* rcvl);
 
 extern LOCAL_SYM void
-solreceivers_get
-  (const struct solreceivers* receivers,
+srcvl_get
+  (const struct srcvl* rcvl,
    const size_t i,
-   struct solreceiver* receiver);
+   struct srcvl_receiver* receiver);
 
-#endif /* SOLRECEIVERS_H */
+#endif /* SRCVL_H */
 

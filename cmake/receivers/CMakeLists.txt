@@ -14,9 +14,9 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 cmake_minimum_required(VERSION 2.8)
-project(solstice-receivers C)
+project(srcvl C)
 
-set(SOLRECEIVERS_SOURCE_DIR ${PROJECT_SOURCE_DIR}/../../src/receivers)
+set(SRCVL_SOURCE_DIR ${PROJECT_SOURCE_DIR}/../../src/receivers)
 
 ################################################################################
 # Define include directories
@@ -24,23 +24,23 @@ set(SOLRECEIVERS_SOURCE_DIR ${PROJECT_SOURCE_DIR}/../../src/receivers)
 include_directories(
   ${LibYAML_INCLUDE_DIR}
   ${RSys_INCLUDE_DIR}
-  ${SOLRECEIVERS_SOURCE_DIR}/../)
+  ${SRCVL_SOURCE_DIR}/../)
 
 ################################################################################
 # Configure and define targets
 ################################################################################
-set(SOLRECEIVERS_FILES_SRC solreceivers.c)
-set(SOLRECEIVERS_FILES_INC solreceivers.h)
+set(SRCVL_FILES_SRC srcvl.c)
+set(SRCVL_FILES_INC srcvl.h)
 
-rcmake_prepend_path(SOLRECEIVERS_FILES_SRC ${SOLRECEIVERS_SOURCE_DIR})
-rcmake_prepend_path(SOLRECEIVERS_FILES_INC ${SOLRECEIVERS_SOURCE_DIR})
+rcmake_prepend_path(SRCVL_FILES_SRC ${SRCVL_SOURCE_DIR})
+rcmake_prepend_path(SRCVL_FILES_INC ${SRCVL_SOURCE_DIR})
 
 if(CMAKE_COMPILER_IS_GNUCC)
   set(MATH_LIB m)
 endif()
 
-add_library(solreceivers STATIC ${SOLRECEIVERS_FILES_SRC} ${SOLRECEIVERS_FILES_INC})
-target_link_libraries(solreceivers LibYAML ${MATH_LIB})
+add_library(srcvl STATIC ${SRCVL_FILES_SRC} ${SRCVL_FILES_INC})
+target_link_libraries(srcvl LibYAML ${MATH_LIB})
 
 ################################################################################
 # Tests
@@ -48,9 +48,9 @@ target_link_libraries(solreceivers LibYAML ${MATH_LIB})
 if(NOT NO_TEST)
   function(build_test _name)
     add_executable(${_name}
-      ${SOLRECEIVERS_SOURCE_DIR}/${_name}.c
-      ${SOLRECEIVERS_SOURCE_DIR}/../test_solstice_utils.h)
-    target_link_libraries(${_name} LibYAML ${MATH_LIB} RSys solreceivers)
+      ${SRCVL_SOURCE_DIR}/${_name}.c
+      ${SRCVL_SOURCE_DIR}/../test_solstice_utils.h)
+    target_link_libraries(${_name} LibYAML ${MATH_LIB} RSys srcvl)
   endfunction()
 
   function(new_test _name)
@@ -58,13 +58,13 @@ if(NOT NO_TEST)
     add_test(${_name} ${_name})
   endfunction()
 
-  build_test(test_solreceivers)
-  add_test(test_solreceivers_ok test_solreceivers
-    ${SOLRECEIVERS_SOURCE_DIR}/yaml/test_ok.yaml)
-  add_test(test_solreceivers_ko test_solreceivers -e
-    ${SOLRECEIVERS_SOURCE_DIR}/yaml/test_ko.yaml)
+  build_test(test_srcvl)
+  add_test(test_srcvl_ok test_srcvl
+    ${SRCVL_SOURCE_DIR}/yaml/test_ok.yaml)
+  add_test(test_srvvl_ko test_srcvl -e
+    ${SRCVL_SOURCE_DIR}/yaml/test_ko.yaml)
 
-  new_test(test_solreceivers2)
+  new_test(test_srcvl2)
 
 endif()
 
