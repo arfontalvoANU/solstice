@@ -297,7 +297,7 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
   *args = SOLSTICE_ARGS_DEFAULT;
 
   optind = 1;
-  while((opt = getopt(argc, argv, "D:hn:o:qr:")) != -1) {
+  while((opt = getopt(argc, argv, "D:hn:o:qR:r:")) != -1) {
     switch(opt) {
       case 'D':
         res = parse_sun_dir_list(optarg, args);

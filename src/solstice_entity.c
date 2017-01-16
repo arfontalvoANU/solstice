@@ -35,6 +35,19 @@ update_instance_transform
   return ssol_instance_set_transform(node->instance, transform);
 }
 
+static INLINE int
+srcvl_side_to_ssol_mask(const enum srcvl_side side)
+{
+  int mask = 0;
+  switch(side) {
+    case SRCVL_BACK: mask = SSOL_BACK; break;
+    case SRCVL_FRONT: mask = SSOL_FRONT; break;
+    case SRCVL_FRONT_AND_BACK: mask = SSOL_BACK | SSOL_FRONT; break;
+    default: FATAL("Unreachable code.\n"); break;
+  }
+  return mask;
+}
+
 static struct solstice_node*
 create_empty_node
   (struct solstice* solstice, const struct solparser_entity* entity)
@@ -150,7 +163,7 @@ create_node(struct solstice* solstice, const struct solparser_entity* entity)
   struct solstice_node* node = NULL;
   struct solstice_node* tgt = NULL;
   struct solstice_node* child = NULL;
-  struct solstice_node** pnode = NULL;
+  struct solstice_receiver* rcv = NULL;
   size_t i;
   res_T res = RES_OK;
   ASSERT(solstice && entity);
@@ -174,21 +187,18 @@ create_node(struct solstice* solstice, const struct solparser_entity* entity)
   }
 
   /* Setup the entity receiver flags */
-  pnode = htable_entity_find(&solstice->receivers, &entity);
-  if(pnode) {
-    if(node->type != SOLSTICE_NODE_GEOMETRY) {
-      fprintf(stderr,
-        "The entity `%s' is not a geometry. It cannot be a receiver.\n",
+  rcv = htable_receiver_find(&solstice->receivers, &entity);
+  if(rcv) {
+    const int mask = srcvl_side_to_ssol_mask(rcv->side);
+    ASSERT(rcv->node == NULL); /* Receiver is not attached to a node */
+
+    res = solstice_node_geometry_set_receiver(node, mask);
+    if(res != RES_OK) {
+      fprintf(stderr, "Could not define the entity `%s' as a receiver.\n",
         str_cget(&entity->name));
-    } else {
-      *pnode = node;
-      res = solstice_node_geometry_set_receiver(node, SSOL_FRONT|SSOL_BACK);
-      if(res != RES_OK) {
-        fprintf(stderr, "Could not define the entity `%s' as a receiver.\n",
-          str_cget(&entity->name));
-        goto error;
-      }
+      goto error;
     }
+    rcv->node = node;
   }
 
   /* Setup the entity transform */

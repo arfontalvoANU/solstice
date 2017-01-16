@@ -17,6 +17,7 @@
 #define SOLSTICE_H
 
 #include "parser/solparser_material.h"
+#include "receivers/srcvl.h"
 
 #include <rsys/dynamic_array_double.h>
 #include <rsys/hash_table.h>
@@ -29,6 +30,11 @@ struct ssol_device;
 struct ssol_material;
 struct ssol_object;
 struct sanim_node;
+
+struct solstice_receiver {
+  struct solstice_node* node;
+  enum srcvl_side side;
+};
 
 #define DARRAY_NAME nodes
 #define DARRAY_DATA struct solstice_node*
@@ -50,9 +56,9 @@ struct sanim_node;
 #define HTABLE_DATA struct solstice_node*
 #include <rsys/hash_table.h>
 
-#define HTABLE_NAME entity
+#define HTABLE_NAME receiver
 #define HTABLE_KEY const struct solparser_entity*
-#define HTABLE_DATA struct solstice_node*
+#define HTABLE_DATA struct solstice_receiver
 #include <rsys/hash_table.h>
 
 struct solstice {
@@ -64,7 +70,7 @@ struct solstice {
   struct htable_material materials;
   struct htable_object objects;
   struct htable_anchor anchors;
-  struct htable_entity receivers;
+  struct htable_receiver receivers;
   struct darray_nodes roots;
   struct darray_nodes pivots;
 

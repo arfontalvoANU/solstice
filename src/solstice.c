@@ -235,12 +235,6 @@ load_data(struct solstice* solstice, const struct solstice_args* args)
   res = solparser_load(solstice->parser);
   if(res != RES_OK) goto error;
 
-  res = solstice_setup_entities(solstice);
-  if(res != RES_OK) {
-    fprintf(stderr, "Could not setup the Solstice entities.\n");
-    goto error;
-  }
-
 exit:
   if(file && file != stdin) fclose(file);
   return res;
@@ -249,81 +243,84 @@ error:
 }
 
 static res_T
-parse_receiver_file(struct solstice* solstice, const char* filename)
+setup_receivers(struct solstice* solstice, struct srcvl* srcvl)
 {
-  char line[256];
-  FILE* file = NULL;
-  unsigned long iline = 0;
+  size_t i, n;
   res_T res = RES_OK;
-  ASSERT(solstice && filename);
+  ASSERT(solstice && srcvl);
 
-  file = fopen(filename, "r");
-  if(!file) {
-    fprintf(stderr, "Could not open the file `%s'.\n", filename);
-    res = RES_IO_ERR;
-    goto error;
-  }
-
-  while(fgets(line, sizeof(line)/sizeof(char), file)) {
+  n = srcvl_count(srcvl);
+  FOR_EACH(i, 0, n) {
+    struct srcvl_receiver rcv;
+    struct solstice_receiver receiver;
     const struct solparser_entity* entity;
-    struct solstice_node* node = NULL;
-    char* str;
-    char* p;
-    size_t last_char;
-    size_t first_char;
 
-    ++iline;
-
-    if(!strrchr(line, '\n')) {
-      fprintf(stderr,
-        "%s:%lu: insufficient memory. Could not parse the receiver name.\n",
-        filename, iline);
-      return RES_MEM_ERR;
-    }
-
-    /* Remove the new line character(s) */
-    last_char = strlen(line);
-    while(last_char-- && (line[last_char] == '\n' || line[last_char]=='\r'));
-    line[last_char+1] = '\0';
-
-    /* Strip beginning white spaces */
-    first_char = 0;
-    while(first_char < last_char
-       && (line[first_char]==' ' || line[first_char]=='\t')) {
-      ++first_char;
-    }
-    str = line + first_char;
-
-    /* Discard comments */
-    if((p = strchr(str, '#'))) *p = '\0';
-
-    /* Strip ending white spaces */
-    last_char = strlen(str);
-    while(last_char-- && (line[last_char] == ' ' || line[last_char] == '\t'));
-    str[last_char+1] = '\0';
-
-    /* Discard empty lines */
-    if(str[0] == '\0') continue;
-
-    /* Retrieve the entity */
-    entity = solparser_find_entity(solstice->parser, str);
+    srcvl_get(srcvl, i, &rcv);
+    entity = solparser_find_entity(solstice->parser, rcv.name);
     if(!entity) {
-      fprintf(stderr, "%s:%lu: invalid entity `%s'.\n",
-        filename, iline, str);
+      fprintf(stderr, "Invalid entity `%s'.\n", rcv.name);
+      res = RES_BAD_ARG;
+      goto error;
     }
 
-    /* Register the entity as a receiver */
-    res = htable_entity_set(&solstice->receivers, &entity, &node);
+    if(entity->type != SOLPARSER_ENTITY_GEOMETRY) {
+      fprintf(stderr,
+        "The entity `%s' is not geometry. It cannot be a receiver.\n",
+        rcv.name);
+      res = RES_BAD_ARG;
+      goto error;
+    }
+
+    receiver.node = NULL;
+    receiver.side = rcv.side;
+
+    res = htable_receiver_set(&solstice->receivers, &entity, &receiver);
     if(res != RES_OK) {
       fprintf(stderr,
-        "%s:%lu could not register the entity `%s' as a receiver.\n",
-        filename, iline, str);
+        "Could not register the receiver `%s' against Solstice.\n",
+        rcv.name);
       goto error;
     }
   }
 
 exit:
+  return res;
+error:
+  htable_receiver_clear(&solstice->receivers);
+  goto exit;
+}
+
+static res_T
+load_receivers(struct solstice* solstice, const struct solstice_args* args)
+{
+  FILE* file = NULL;
+  struct srcvl* srcvl = NULL;
+  res_T res = RES_OK;
+  ASSERT(solstice && args);
+
+  file = fopen(args->receivers_filename, "r");
+  if(!file) {
+    fprintf(stderr, "Could not open the list of receivers `%s'.\n",
+      args->receivers_filename);
+    res = RES_IO_ERR;
+    goto error;
+  }
+
+  res = srcvl_create(solstice->allocator, &srcvl);
+  if(res != RES_OK) goto error;
+  res = srcvl_setup_stream(srcvl, args->receivers_filename, file);
+  if(res != RES_OK) goto error;
+  res = srcvl_load(srcvl);
+  if(res != RES_OK) goto error;
+  res = setup_receivers(solstice, srcvl);
+  if(res != RES_OK) goto error;
+
+exit:
   if(file) fclose(file);
+  if(srcvl) {
+    srcvl_ref_put(srcvl);
+    srcvl = NULL;
+  }
   return res;
 error:
   goto exit;
@@ -345,7 +342,7 @@ solstice_init
   htable_material_init(allocator, &solstice->materials);
   htable_object_init(allocator, &solstice->objects);
   htable_anchor_init(allocator, &solstice->anchors);
-  htable_entity_init(allocator, &solstice->receivers);
+  htable_receiver_init(allocator, &solstice->receivers);
   darray_nodes_init(allocator, &solstice->roots);
   darray_nodes_init(allocator, &solstice->pivots);
   darray_double_init(allocator, &solstice->sun_dirs);
@@ -396,6 +393,17 @@ solstice_init
   res = load_data(solstice, args);
   if(res != RES_OK) goto error;
 
+  if(args->receivers_filename) {
+    res = load_receivers(solstice, args);
+    if(res != RES_OK) goto error;
+  }
+
+  res = solstice_setup_entities(solstice);
+  if(res != RES_OK) {
+    fprintf(stderr, "Could not setup the Solstice entities.\n");
+    goto error;
+  }
+
 exit:
   return res;
 error:
@@ -420,7 +428,7 @@ solstice_release(struct solstice* solstice)
   htable_material_release(&solstice->materials);
   htable_object_release(&solstice->objects);
   htable_anchor_release(&solstice->anchors);
-  htable_entity_release(&solstice->receivers);
+  htable_receiver_release(&solstice->receivers);
   darray_nodes_release(&solstice->roots);
   darray_nodes_release(&solstice->pivots);
   darray_double_release(&solstice->sun_dirs);
