@@ -1396,10 +1396,10 @@ parse_cylinder
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "height")) {
       SETUP_MASK(HEIGHT, "height");
-      res = parse_real(parser, val, 0, DBL_MAX, &shape->height);
+      res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &shape->height);
     } else if(!strcmp((char*)key->data.scalar.value, "radius")) {
       SETUP_MASK(RADIUS, "radius");
-      res = parse_real(parser, val, 0, DBL_MAX, &shape->radius);
+      res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &shape->radius);
     } else if(!strcmp((char*)key->data.scalar.value, "slices")) {
       SETUP_MASK(SLICES, "slices");
       res = parse_integer(parser, val, 4, 4096, &shape->nslices);
