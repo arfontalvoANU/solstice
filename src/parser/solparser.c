@@ -1210,7 +1210,7 @@ parse_polyclip
   #define CHECK_PARAM(Flag, Name)                                              \
     if(!(mask & BIT(Flag))) {                                                  \
       log_err(parser, polyclip,                                                \
-        "the clipping polygon parameter `"Name"' is missing");                 \
+        "the clipping polygon parameter `"Name"' is missing.\n");                 \
       res = RES_BAD_ARG;                                                       \
       goto error;                                                              \
     } (void)0
@@ -1747,7 +1747,7 @@ parse_sphere
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "radius")) {
       SETUP_MASK(RADIUS, "radius");
-      res = parse_real(parser, val, 0, DBL_MAX, &shape->radius);
+      res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &shape->radius);
     } else if(!strcmp((char*)key->data.scalar.value, "slices")) {
       SETUP_MASK(SLICES, "slices");
       res = parse_integer(parser, val, 4, 4096, &shape->nslices);
@@ -2715,7 +2715,8 @@ parse_pillbox
         goto error;
       }
       mask |= BIT(APERTURE);
-      res = parse_real(parser, val, nextafter(0, 1), PI/2.0, &sun->aperture);
+      res = parse_real(parser, val, nextafter(0, 1), 90, &sun->aperture);
+      sun->aperture = MDEG2RAD(sun->aperture);
     } else {
       log_err(parser, pillbox, "unknown pillbox parameter `%s'.\n",
         key->data.scalar.value);
