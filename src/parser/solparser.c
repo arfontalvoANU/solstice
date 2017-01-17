@@ -34,6 +34,16 @@
 #include <string.h>
 #include <yaml.h>
 
+struct target_alias {
+  struct solparser_pivot_id pivot;
+  const yaml_node_t* alias; /* Anchor */
+};
+
+/* Declare the target_alias array */
+#define DARRAY_NAME tgtalias
+#define DARRAY_DATA struct target_alias
+#include <rsys/dynamic_array.h>
+
 /* Declare the array of matte materials */
 #define DARRAY_NAME matte
 #define DARRAY_DATA struct solparser_material_matte
@@ -160,6 +170,9 @@ struct solparser {
   struct darray_matte mattes;
   struct darray_mirror mirrors;
 
+  /* Use to deferred the setup of the anchor targeted by a pivot */
+  struct darray_tgtalias tgtaliases;
+
   /* Shape data */
   struct darray_shape shapes; /* Generic loaded shapes */
   struct darray_cuboid cuboids;
@@ -244,6 +257,86 @@ log_err
   va_end(vargs_list);
 }
 
+static res_T
+flush_deferred_target_aliases
+  (struct solparser* parser,
+   const yaml_node_t* node,
+   const struct solparser_entity_id entity_id)
+{
+  const struct solparser_entity* entity;
+  struct darray_char alias;
+  size_t i, n;
+  size_t prefix_len;
+  res_T res = RES_OK;
+  ASSERT(parser);
+
+  darray_char_init(parser->allocator, &alias);
+
+  if(!darray_tgtalias_size_get(&parser->tgtaliases))
+    goto exit; /* No deferred target alias */
+
+  /* Retrieve the entity referenced by the 'self' keyword */
+  entity = solparser_get_entity(parser, entity_id);
+
+  /* Copy the entity name */
+  prefix_len = strlen(str_cget(&entity->name));
+  res = darray_char_resize(&alias, prefix_len);
+  if(res != RES_OK) {
+    log_err(parser, node,
+      "could not reserve the prefix of the targeted alias name.\n");
+    goto error;
+  }
+  strncpy(darray_char_data_get(&alias), str_cget(&entity->name), prefix_len);
+
+  n = darray_tgtalias_size_get(&parser->tgtaliases);
+  FOR_EACH(i, 0, n) {
+    const struct solparser_anchor* anchor;
+    struct solparser_pivot* pivot;
+    const struct target_alias* tgt;
+    size_t ianchor;
+    size_t len;
+
+    tgt = darray_tgtalias_cdata_get(&parser->tgtaliases) + i;
+    ASSERT(!strncmp((char*)tgt->alias->data.scalar.value, "self.", 5));
+
+    /* Copy the anchor alias */
+    len = strlen((char*)tgt->alias->data.scalar.value) 
+      - 4/*strlen(self)*/ + 1/*NULL char*/;
+    res = darray_char_resize(&alias, prefix_len + len);
+    if(res != RES_OK) {
+      log_err(parser, node,
+        "could not reserve the suffix of the targeted alias name.\n");
+      goto error;
+    }
+    strcpy(darray_char_data_get(&alias) + prefix_len, 
+      (char*)tgt->alias->data.scalar.value+4);
+
+    /* Retrieve the anchor */
+    anchor = solparser_find_anchor(parser, darray_char_cdata_get(&alias));
+    if(!anchor) {
+      log_err(parser, tgt->alias, "undefined anchor `%s'.\n",
+        tgt->alias->data.scalar.value);
+      res = RES_BAD_ARG;
+      goto error;
+    }
+
+    /* Define the targeted anchor of the pivot */
+    pivot = darray_pivot_data_get(&parser->pivots) + tgt->pivot.i;
+    ASSERT(pivot->target_type == SOLPARSER_TARGET_ANCHOR);
+    ianchor = (size_t)(anchor - darray_anchor_cdata_get(&parser->anchors));
+    ASSERT(ianchor < darray_anchor_size_get(&parser->anchors));
+    pivot->target.anchor.i = ianchor;
+  }
+
+  darray_tgtalias_clear(&parser->tgtaliases);
+
+exit:
+  darray_char_release(&alias);
+  return res;
+error:
+  goto exit;
+}
+
 /* Clean up loaded data */
 static INLINE void
 parser_clear(struct solparser* parser)
@@ -256,6 +349,9 @@ parser_clear(struct solparser* parser)
   darray_material2_clear(&parser->mtls2);
   darray_matte_clear(&parser->mattes);
   darray_mirror_clear(&parser->mirrors);
+
+  /* Deferred targeted anchors */
+  darray_tgtalias_clear(&parser->tgtaliases);
 
   /* Shapes */
   darray_shape_clear(&parser->shapes);
@@ -303,6 +399,9 @@ parser_release(ref_T* ref)
   darray_material2_release(&parser->mtls2);
   darray_matte_release(&parser->mattes);
   darray_mirror_release(&parser->mirrors);
+
+  /* Deferred targeted anchors */
+  darray_tgtalias_release(&parser->tgtaliases);
 
   /* Shapes */
   darray_shape_release(&parser->shapes);
@@ -369,18 +468,19 @@ parse_real
     double u = nextafter(upper_bound, DBL_MAX);
     int l_excluded = (l == (double) (int) l);
     int u_excluded = (u == (double) (int) u);
-    if (l_excluded && u_excluded)
+    if(l_excluded && u_excluded) {
       log_err(parser, real, "%g is not in ]%g, %g[.\n",
         *dst, l, u);
-    else if (l_excluded)
+    } else if(l_excluded) {
       log_err(parser, real, "%g is not in ]%g, %g].\n",
         *dst, l, upper_bound);
-    else if (u_excluded)
+    } else if(u_excluded) {
       log_err(parser, real, "%g is not in [%g, %g[.\n",
         *dst, lower_bound, u);
-    else
+    } else {
       log_err(parser, real, "%g is not in [%g, %g].\n",
         *dst, lower_bound, upper_bound);
+    }
     res = RES_BAD_ARG;
     goto error;
   }
@@ -2403,6 +2503,7 @@ static res_T
 parse_anchor_alias
   (struct solparser* parser,
    const yaml_node_t* alias,
+   const struct solparser_pivot_id pivot,
    struct solparser_anchor_id* out_ianchor)
 {
   const struct solparser_anchor* anchor = NULL;
@@ -2416,17 +2517,28 @@ parse_anchor_alias
     goto error;
   }
 
-  anchor = solparser_find_anchor(parser, (char*)alias->data.scalar.value);
-  if(!anchor) {
-    log_err(parser, alias, "undefined anchor `%s'.\n",
-      alias->data.scalar.value);
-    res = RES_BAD_ARG;
-    goto error;
-  }
+  if(!strncmp((char*)alias->data.scalar.value, "self.", 5)) {
+    struct target_alias tgt;
+    tgt.pivot = pivot;
+    tgt.alias = alias;
+    res = darray_tgtalias_push_back(&parser->tgtaliases, &tgt);
+    if(res != RES_OK) {
+      log_err(parser, alias, "could not register the anchor alias.\n");
+      goto error;
+    }
+  } else {
+    anchor = solparser_find_anchor(parser, (char*)alias->data.scalar.value);
+    if(!anchor) {
+      log_err(parser, alias, "undefined anchor `%s'.\n",
+        alias->data.scalar.value);
+      res = RES_BAD_ARG;
+      goto error;
+    }
 
-  ianchor = anchor - darray_anchor_cdata_get(&parser->anchors);
-  ASSERT(ianchor >= 0);
-  ASSERT((size_t)ianchor < darray_anchor_size_get(&parser->anchors));
+    ianchor = anchor - darray_anchor_cdata_get(&parser->anchors);
+    ASSERT(ianchor >= 0);
+    ASSERT((size_t)ianchor < darray_anchor_size_get(&parser->anchors));
+  }
 
 exit:
   out_ianchor->i = (size_t)ianchor;
@@ -2446,6 +2558,7 @@ parse_target
   enum { POLICY };
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
+  struct solparser_pivot_id pivot_id;
   res_T res = RES_OK;
   ASSERT(doc && target && pivot);
 
@@ -2454,6 +2567,9 @@ parse_target
     res = RES_BAD_ARG;
     goto error;
   }
+
+  /* Retrieve the pivot id */
+  pivot_id.i = (size_t)(pivot - darray_pivot_cdata_get(&parser->pivots));
 
   n = target->data.mapping.pairs.top - target->data.mapping.pairs.start;
   FOR_EACH(i, 0, n) {
@@ -2479,7 +2595,7 @@ parse_target
     if(!strcmp((char*)key->data.scalar.value, "anchor")) {
       SETUP_MASK(POLICY, "policy");
       pivot->target_type = SOLPARSER_TARGET_ANCHOR;
-      res = parse_anchor_alias(parser, val, &pivot->target.anchor);
+      res = parse_anchor_alias(parser, val, pivot_id, &pivot->target.anchor);
     } else if(!strcmp((char*)key->data.scalar.value, "direction")) {
       SETUP_MASK(POLICY, "policy");
       pivot->target_type = SOLPARSER_TARGET_DIRECTION;
@@ -2883,6 +2999,9 @@ parse_item
     res = parse_material(parser, doc, val, &mtl2);
   } else if(!strcmp((char*)key->data.scalar.value, "entity")) {
     res = parse_entity(parser, doc, val, &parser->str2entities, &entity);
+    if(res == RES_OK) {
+      res = flush_deferred_target_aliases(parser, item, entity);
+    }
   } else if(!strcmp((char*)key->data.scalar.value, "template")) {
     /* The parsing of the template data is deferred to its explicit used in the
      * definition of an entity. If the parsing of the template becomes a
@@ -2932,6 +3051,9 @@ solparser_create
   darray_material2_init(mem_allocator, &parser->mtls2);
   darray_matte_init(mem_allocator, &parser->mattes);
   darray_mirror_init(mem_allocator, &parser->mirrors);
+
+  /* Deferred targeted anchors */
+  darray_tgtalias_init(mem_allocator, &parser->tgtaliases);
 
   /* Shapes */
   darray_shape_init(mem_allocator, &parser->shapes);
