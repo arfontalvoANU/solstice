@@ -228,8 +228,9 @@
   name: STRING
   position: <real3>
 
+# "self" references the first level entity
 <entity-identifier> ::=
-  STRING[.STRING ... ]
+  <self|STRING>[.STRING ... ]
 
 <anchor-identifier> ::=
   <entity-identifier>.STRING
