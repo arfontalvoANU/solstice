@@ -257,6 +257,15 @@ log_err
   va_end(vargs_list);
 }
 
+static INLINE void
+log_node(const struct solparser* parser, const yaml_node_t* node)
+{
+  fprintf(stderr, "\tby %s:%lu:%lu\n",
+    str_cget(&parser->stream_name),
+    (unsigned long)node->start_mark.line+1,
+    (unsigned long)node->start_mark.column+1);
+}
+
 static res_T
 flush_deferred_target_aliases
   (struct solparser* parser,
@@ -300,7 +309,7 @@ flush_deferred_target_aliases
     ASSERT(!strncmp((char*)tgt->alias->data.scalar.value, "self.", 5));
 
     /* Copy the anchor alias */
-    len = strlen((char*)tgt->alias->data.scalar.value) 
+    len = strlen((char*)tgt->alias->data.scalar.value)
       - 4/*strlen(self)*/ + 1/*NULL char*/;
     res = darray_char_resize(&alias, prefix_len + len);
     if(res != RES_OK) {
@@ -308,7 +317,7 @@ flush_deferred_target_aliases
         "could not reserve the suffix of the targeted alias name.\n");
       goto error;
     }
-    strcpy(darray_char_data_get(&alias) + prefix_len, 
+    strcpy(darray_char_data_get(&alias) + prefix_len,
       (char*)tgt->alias->data.scalar.value+4);
 
     /* Retrieve the anchor */
@@ -681,8 +690,12 @@ parse_transform
       log_err(parser, key, "unknown transform parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
+      goto error;
     }
-    if(res != RES_OK) goto error;
+    if(res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
     #undef SETUP_MASK
   }
 exit:
@@ -744,8 +757,12 @@ parse_spectrum_data
       log_err(parser, key, "unknown spectrum data parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
+      goto error;
     }
-    if(res != RES_OK) goto error;
+    if(res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
     #undef SETUP_MASK
   }
 
@@ -867,8 +884,12 @@ parse_material_matte
       log_err(parser, key, "unknown matte parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
+      goto error;
     }
-    if(res != RES_OK) goto error;
+    if(res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
   }
 
   if(!(mask & BIT(REFLECTIVITY))) {
@@ -951,8 +972,12 @@ parse_material_mirror
       log_err(parser, key, "unknown mirror attribute `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
+      goto error;
     }
-    if(res != RES_OK) goto error;
+    if(res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
     #undef SETUP_MASK
   }
 
@@ -1051,7 +1076,10 @@ parse_material_descriptor
       res = RES_BAD_ARG;
       goto error;
     }
-    if(res != RES_OK) goto error;
+    if(res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
     #undef SETUP_MASK
   }
 
@@ -1143,8 +1171,12 @@ parse_material
       SETUP_MASK(BACK, "back");
       res = parse_material_descriptor(parser, doc, mtl, &mtl2->front);
       mtl2->back = mtl2->front;
+      if(res != RES_OK) goto error; /* Discard log_node */
     }
-    if(res != RES_OK) goto error;
+    if(res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
     #undef SETUP_MASK
   }
 
@@ -1302,15 +1334,19 @@ parse_polyclip
       log_err(parser, key, "unknown clipping polygon parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
+      goto error;
     }
-    if(res != RES_OK) goto error;
+    if(res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
     #undef SETUP_MASK
   }
 
   #define CHECK_PARAM(Flag, Name)                                              \
     if(!(mask & BIT(Flag))) {                                                  \
       log_err(parser, polyclip,                                                \
-        "the clipping polygon parameter `"Name"' is missing.\n");                 \
+        "the clipping polygon parameter `"Name"' is missing.\n");              \
       res = RES_BAD_ARG;                                                       \
       goto error;                                                              \
     } (void)0
@@ -1422,8 +1458,12 @@ parse_cuboid
       log_err(parser, key, "unknown cuboid parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
+      goto error;
     }
-    if(res != RES_OK) goto error;
+    if(res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
   }
 
   if(!(mask & BIT(SIZE))) {
@@ -1507,8 +1547,12 @@ parse_cylinder
       log_err(parser, key, "unknown cylinder parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
+      goto error;
     }
-    if(res != RES_OK) goto error;
+    if(res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
     #undef SETUP_MASK
   }
 
@@ -1597,8 +1641,12 @@ parse_imported_geometry
       log_err(parser, key, "unknown %s parameter `%s'.\n",
         name, key->data.scalar.value);
       res = RES_BAD_ARG;
+      goto error;
     }
-    if(res != RES_OK) goto error;
+    if(res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
   }
 
   if(!(mask & BIT(PATH))) {
@@ -1694,8 +1742,12 @@ parse_paraboloid
       log_err(parser, key, "unknown %s parameter `%s'.\n",
         name, key->data.scalar.value);
       res = RES_BAD_ARG;
+      goto error;
     }
-    if(res != RES_OK) goto error;
+    if(res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
     #undef SETUP_MASK
   }
   #define CHECK_PARAM(Flag, Name)                                              \
@@ -1774,8 +1826,12 @@ parse_plane
       log_err(parser, key, "unknown plane parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
+      goto error;
     }
-    if(res != RES_OK) goto error;
+    if(res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
   }
   if(!(mask & BIT(CLIP))) {
     log_err(parser, plane, "the plane parameter `clip' is missing.\n");
@@ -1855,8 +1911,12 @@ parse_sphere
       log_err(parser, key, "unknown sphere parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
+      goto error;
     }
-    if(res != RES_OK) goto error;
+    if(res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
     #undef SETUP_MASK
   }
 
@@ -1994,8 +2054,12 @@ parse_object
       log_err(parser, key, "unknown object parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
+      goto error;
     }
-    if(res != RES_OK) goto error;
+    if(res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
     #undef SETUP_MASK
   }
 
@@ -2245,8 +2309,12 @@ parse_anchor
       log_err(parser, key, "unknown anchor parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
+      goto error;
     }
-    if(res != RES_OK) goto error;
+    if(res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
     #undef SETUP_MASK
   }
 
@@ -2450,7 +2518,10 @@ parse_entity
       res = RES_BAD_ARG;
       goto error;
     }
-    if(res != RES_OK) goto error;
+    if(res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
     #undef SETUP_MASK
   }
 
@@ -2621,7 +2692,10 @@ parse_target
       res = RES_BAD_ARG;
       goto error;
     }
-    if(res != RES_OK) goto error;
+    if(res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
     #undef SETUP_MASK
   }
 
@@ -2702,8 +2776,12 @@ parse_pivot
       log_err(parser, key, "unknown pivot parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
+      goto error;
     }
-    if(res != RES_OK) goto error;
+    if(res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
     #undef SETUP_MASK
   }
   #define CHECK_PARAM(Flag, Name)                                              \
@@ -2776,8 +2854,12 @@ parse_buie
       log_err(parser, key, "unknown buie parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
+      goto error;
     }
-    if(res != RES_OK) goto error;
+    if(res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
   }
 
   if(!(mask & BIT(CSR))) {
@@ -2837,8 +2919,12 @@ parse_pillbox
       log_err(parser, pillbox, "unknown pillbox parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
+      goto error;
     }
-    if(res != RES_OK) goto error;
+    if(res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
   }
 
   if(!(mask & BIT(APERTURE))) {
@@ -2927,8 +3013,12 @@ parse_sun
       log_err(parser, key, "unknown sun parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
+      goto error;
     }
-    if(res != RES_OK) goto error;
+    if(res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
     #undef SETUP_MASK
   }
 
@@ -3013,8 +3103,12 @@ parse_item
   } else {
     log_err(parser, key, "unknown item `%s'.\n", key->data.scalar.value);
     res = RES_BAD_ARG;
+    goto error;
   }
-  if(res != RES_OK) goto error;
+  if(res != RES_OK) {
+    log_node(parser, key);
+    goto error;
+  }
 
 exit:
   return res;
