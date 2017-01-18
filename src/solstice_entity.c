@@ -195,6 +195,7 @@ create_node(struct solstice* solstice, const struct solparser_entity* entity)
     res = solstice_node_add_child(node, tgt);
     if(res != RES_OK) goto error;
 
+    solstice_node_ref_put(tgt);
     tgt = NULL;
   }
 
