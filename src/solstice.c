@@ -263,6 +263,7 @@ solstice_init
   memset(solstice, 0, sizeof(struct solstice));
   htable_material_init(allocator, &solstice->materials);
   htable_object_init(allocator, &solstice->objects);
+  htable_anchor_init(allocator, &solstice->anchors);
   darray_nodes_init(allocator, &solstice->roots);
   darray_nodes_init(allocator, &solstice->pivots);
   darray_double_init(allocator, &solstice->sun_dirs);
@@ -336,6 +337,7 @@ solstice_release(struct solstice* solstice)
   if(solstice->output && solstice->output != stdout) fclose(solstice->output);
   htable_material_release(&solstice->materials);
   htable_object_release(&solstice->objects);
+  htable_anchor_release(&solstice->anchors);
   darray_nodes_release(&solstice->roots);
   darray_nodes_release(&solstice->pivots);
   darray_double_release(&solstice->sun_dirs);
