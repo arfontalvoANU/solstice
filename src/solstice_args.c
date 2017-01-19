@@ -38,7 +38,7 @@ print_help(const char* program)
 {
   printf(
 "Usage: %s [OPTIONS] [FILE]\n"
-"Integrate the solar flux in complex solar facilities.\n",
+"Integrate the solar flux in complex solar facilities.\n\n",
     program);
   /* TODO print short help for the options */
 }

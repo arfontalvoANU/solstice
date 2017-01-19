@@ -368,6 +368,7 @@ create_shaded_shape
   const struct solparser_object* obj;
   const struct solparser_shape* shape;
   double transform[12];
+  double rotation[3];
   res_T res = RES_OK;
   ASSERT(solstice && ssol_front && ssol_back && ssol_shape);
 
@@ -378,7 +379,10 @@ create_shaded_shape
   solstice_create_ssol_material(solstice, mtl2->back, ssol_back);
 
   /* Define the shape transformation */
-  d33_rotation(transform, obj->rotation[0], obj->rotation[1], obj->rotation[2]);
+  rotation[0] = MDEG2RAD(obj->rotation[0]);
+  rotation[1] = MDEG2RAD(obj->rotation[1]);
+  rotation[2] = MDEG2RAD(obj->rotation[2]);
+  d33_rotation(transform, rotation[0], rotation[1], rotation[2]);
   d3_set(transform+9, obj->translation);
 
   shape = solparser_get_shape(solstice->parser, obj->shape);

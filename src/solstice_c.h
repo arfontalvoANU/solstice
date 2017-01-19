@@ -119,7 +119,7 @@ solstice_node_set_translation
 static INLINE void
 solstice_node_set_rotations
   (struct solstice_node* node,
-   const double rotations[3])
+   const double rotations[3]) /* In radians */
 {
   ASSERT(node && rotations && node->type != SOLSTICE_NODE_TARGET);
   SANIM(node_set_rotations(&node->anim, rotations));
