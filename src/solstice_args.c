@@ -38,8 +38,8 @@ print_help(const char* program)
 {
   printf(
 "Usage: %s [OPTIONS] [FILE]\n"
-"Integrate the solar flux in a complex solar facilities described in FILE. If\n"
-"not define, the solar facilities is read from standard input.\n\n",
+"Integrate the solar flux in a complex solar facility described in FILE. If\n"
+"not define, the solar facility is read from standard input.\n\n",
     program);
   printf(
 "  -D <dirs>       list of sun directions.\n");
