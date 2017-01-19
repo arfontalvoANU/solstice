@@ -38,9 +38,30 @@ print_help(const char* program)
 {
   printf(
 "Usage: %s [OPTIONS] [FILE]\n"
-"Integrate the solar flux in complex solar facilities.\n\n",
+"Integrate the solar flux in a complex solar facilities described in FILE. If\n"
+"not define, the solar facilities is read from standard input.\n\n",
     program);
-  /* TODO print short help for the options */
+  printf(
+"  -D <dirs>       list of sun directions.\n");
+  printf(
+"  -h              display this help and exit.\n");
+  printf(
+"  -n              number of realisation. Default is %lu.\n",
+    SOLSTICE_ARGS_DEFAULT.nrealisations);
+  printf(
+"  -o              write results to OUTPUT. If not define, write results to\n");
+  printf(
+"                  standard output.\n");
+  printf(
+"  -q              do not print the helper message when no FILE is submitted.\n");
+  printf(
+"  -r <rendering>  switch in rendering mode and configure it.\n");
+  printf(
+"  -R RECEIVERS    define the file from which the list of receivers are read.\n\n");
+  printf(
+"Solstice (C) 2016-2017 CNRS. This is a free software released under the GNU GPL\n"
+"license, version 3 or later. You are free to change or redistribute it under\n"
+"certain conditions <http://gnu.org/licenses/gpl.html>.\n");
 }
 
 static res_T
