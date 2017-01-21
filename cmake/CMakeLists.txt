@@ -88,6 +88,7 @@ set(SOLSTICE_FILES_SRC
   solstice_material.c
   solstice_node.c
   solstice_object.c
+  solstice_solve.c
   solstice_sun.c)
 set(SOLSTICE_FILES_INC
   solstice.h
@@ -111,7 +112,7 @@ endif()
 add_library(sollib STATIC ${SOLSTICE_FILES_SRC} ${SOLSTICE_FILES_INC})
 add_executable(solstice ${SOLSTICE_SOURCE_DIR}/main.c)
 target_link_libraries(solstice ${MATH_LIB} ${GETOPT_LIB}
-  LibYAML RSys sollib solparser SolAnim SolSolver srcvl Star3DUT)
+  LibYAML RSys sollib solparser SolAnim SolSolver srcvl Star3DUT StarSP)
 set_target_properties(solstice PROPERTIES
   VERSION ${VERSION}
   SOVERSION ${VERSION_MAJOR})

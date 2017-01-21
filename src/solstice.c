@@ -245,14 +245,16 @@ error:
 static res_T
 setup_receivers(struct solstice* solstice, struct srcvl* srcvl)
 {
+  struct solstice_receiver receiver;
   size_t i, n;
   res_T res = RES_OK;
   ASSERT(solstice && srcvl);
 
+  solstice_receiver_init(solstice->allocator, &receiver);
+
   n = srcvl_count(srcvl);
   FOR_EACH(i, 0, n) {
     struct srcvl_receiver rcv;
-    struct solstice_receiver receiver;
     const struct solparser_entity* entity;
 
     srcvl_get(srcvl, i, &rcv);
@@ -265,7 +267,7 @@ setup_receivers(struct solstice* solstice, struct srcvl* srcvl)
 
     if(entity->type != SOLPARSER_ENTITY_GEOMETRY) {
       fprintf(stderr,
-        "The entity `%s' is not geometry. It cannot be a receiver.\n",
+        "The entity `%s' is not a geometry. It cannot be a receiver.\n",
         rcv.name);
       res = RES_BAD_ARG;
       goto error;
@@ -273,6 +275,7 @@ setup_receivers(struct solstice* solstice, struct srcvl* srcvl)
 
     receiver.node = NULL;
     receiver.side = rcv.side;
+    str_set(&receiver.name, rcv.name);
 
     res = htable_receiver_set(&solstice->receivers, &entity, &receiver);
     if(res != RES_OK) {
@@ -284,6 +287,7 @@ setup_receivers(struct solstice* solstice, struct srcvl* srcvl)
   }
 
 exit:
+  solstice_receiver_release(&receiver);
   return res;
 error:
   htable_receiver_clear(&solstice->receivers);
@@ -458,8 +462,18 @@ solstice_run(struct solstice* solstice)
   nsun_dirs /= 3/*#dims*/;
 
   if(!solstice->framebuffer) { /* Solstice integration */
-    res = RES_BAD_OP; /* TODO */
-    goto error;
+    FOR_EACH(i, 0, nsun_dirs) {
+      const double* sun_dir = sun_dirs + i*3/*#dims*/;
+      res = ssol_sun_set_direction(solstice->sun, sun_dir);
+      if(res != RES_OK) {
+        fprintf(stderr, "Could not update the sun direction.\n");
+        goto error;
+      }
+      res = solstice_update_entities(solstice, sun_dir);
+      if(res != RES_OK) goto error;
+      res = solstice_solve(solstice);
+      if(res != RES_OK) goto error;
+    }
   } else if(!nsun_dirs) {
     res = solstice_draw(solstice);
     if(res != RES_OK) goto error;

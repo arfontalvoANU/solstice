@@ -46,6 +46,10 @@ solstice_draw
   (struct solstice* solstice);
 
 extern LOCAL_SYM res_T
+solstice_solve
+  (struct solstice* solstice);
+
+extern LOCAL_SYM res_T
 solstice_create_sun
   (struct solstice* solstice);
 
