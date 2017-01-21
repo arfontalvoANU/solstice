@@ -326,6 +326,12 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
     }
   }
 
+  if(!args->rendering && !args->nsun_dirs) {
+    fprintf(stderr, "Missing sun direction.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
   if(optind < argc) {
     args->input_filename = argv[optind];
   }

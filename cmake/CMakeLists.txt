@@ -87,7 +87,8 @@ set(SOLSTICE_FILES_SRC
   solstice_entity.c
   solstice_material.c
   solstice_node.c
-  solstice_object.c)
+  solstice_object.c
+  solstice_sun.c)
 set(SOLSTICE_FILES_INC
   solstice.h
   solstice_args.h.in

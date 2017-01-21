@@ -64,6 +64,7 @@ struct solstice_receiver {
 struct solstice {
   struct ssol_device* ssol;
   struct ssol_scene* scene;
+  struct ssol_sun* sun;
 
   struct solparser* parser;
 
@@ -80,6 +81,7 @@ struct solstice {
 
   struct darray_double sun_dirs; /* List of double3 */
 
+  size_t nrealisations; /* # realisations */
   FILE* output; /* Output stream */
 
   struct mem_allocator* allocator;

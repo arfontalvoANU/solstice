@@ -404,6 +404,14 @@ solstice_init
     goto error;
   }
 
+  res = solstice_create_sun(solstice);
+  if(res != RES_OK) {
+    fprintf(stderr, "Could not setup the Solstice sun.\n");
+    goto error;
+  }
+
+  solstice->nrealisations = args->nrealisations;
+
 exit:
   return res;
 error:
@@ -421,6 +429,7 @@ solstice_release(struct solstice* solstice)
   /* Don't clear pivots, as they are cleared from some root */
   if(solstice->ssol) SSOL(device_ref_put(solstice->ssol));
   if(solstice->scene) SSOL(scene_ref_put(solstice->scene));
+  if(solstice->sun) SSOL(sun_ref_put(solstice->sun));
   if(solstice->parser) solparser_ref_put(solstice->parser);
   if(solstice->camera) SSOL(camera_ref_put(solstice->camera));
   if(solstice->framebuffer) SSOL(image_ref_put(solstice->framebuffer));
