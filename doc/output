@@ -1,0 +1,33 @@
+<output> ::=
+  <receiver-count>
+[ <receiver-mapping> ... ]
+[ <mc-receiver> ... ]
+  <mc-shadow>
+  <mc-missing>
+[ <receiver-hit> ... ]
+
+<receiver-count> ::=
+  INTEGER
+
+<receiver-mapping> ::=
+  <receiver-id> <receiver-name>
+
+<receiver-id> ::=
+  INTEGER
+
+<receiver-name> ::=
+  STRING
+
+<mc-shadow> ::=
+  <estimation>
+
+<mc-missing> ::=
+  <estimation>
+
+<mc-receiver> ::=
+  <receiver-id> <estimation>
+
+<estimation> ::=
+  REAL REAL # Expected value and standard error
+
+<receiver-hit> ::= TODO
