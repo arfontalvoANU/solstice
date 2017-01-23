@@ -106,7 +106,6 @@
     point: <real3>
     normal: <real3>
     <target>
-[   <transform> ]
 
 <target> ::=
   target:
