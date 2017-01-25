@@ -51,8 +51,7 @@ print_help(const char* program)
 "  -n REALISATIONS  number of realisations. Default is %lu.\n",
     SOLSTICE_ARGS_DEFAULT.nrealisations);
   printf(
-"  -o               write results to OUTPUT. If not define, write results to\n");
-  printf(
+"  -o               write results to OUTPUT. If not define, write results to\n"
 "                   standard output.\n");
   printf(
 "  -q               do not print the helper message when no FILE is submitted.\n");
