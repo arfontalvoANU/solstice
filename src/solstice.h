@@ -128,6 +128,7 @@ struct solstice {
 
   size_t nrealisations; /* # realisations */
   FILE* output; /* Output stream */
+  int output_hits; /* Output per receiver hits */
 
   struct mem_allocator* allocator;
 };

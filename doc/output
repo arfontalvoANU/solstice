@@ -1,16 +1,15 @@
 <output> ::=
-  <receiver-count>
-[ <receiver-mapping> ... ]
+  <receivers-count>
 [ <mc-receiver> ... ]
   <mc-shadow>
   <mc-missing>
 [ <receiver-hit> ... ]
 
-<receiver-count> ::=
+<receivers-count> ::=
   INTEGER
 
-<receiver-mapping> ::=
-  <receiver-id> <receiver-name>
+<mc-receiver> ::=
+  <receiver-name> <receiver-id> <estimation>
 
 <receiver-id> ::=
   INTEGER
@@ -23,9 +22,6 @@
 
 <mc-missing> ::=
   <estimation>
-
-<mc-receiver> ::=
-  <receiver-id> <estimation>
 
 <estimation> ::=
   REAL REAL # Expected value and standard error

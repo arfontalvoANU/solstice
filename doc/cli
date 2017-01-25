@@ -1,4 +1,5 @@
 solstice
+  -b # Output binary per receiver hits
   -d <date-list>:<pos-on-earth>
   -D <sun-dir-list>
   -h # Short help and exit

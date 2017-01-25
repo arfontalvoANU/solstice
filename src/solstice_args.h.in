@@ -46,6 +46,7 @@ struct solstice_args {
   } img;
 
   int rendering;
+  int output_hits; /* Output the per receiver hits */
   int quiet;
   int quit; /* Quit the application */
 };
@@ -75,6 +76,7 @@ static const struct solstice_args SOLSTICE_ARGS_NULL = SOLSTICE_ARGS_NULL__;
   },                                                                           \
                                                                                \
   0, /* Rendering */                                                           \
+  0, /* Output hits */                                                         \
   0, /* Quiet */                                                               \
   0 /* Quit */                                                                 \
 }

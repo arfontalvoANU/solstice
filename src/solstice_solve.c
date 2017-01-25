@@ -22,32 +22,14 @@
  * Helper function
  ******************************************************************************/
 static void
-write_header(struct solstice* solstice)
-{
-  struct htable_receiver_iterator it, end;
-  ASSERT(solstice);
-
-  htable_receiver_begin(&solstice->receivers, &it);
-  htable_receiver_end(&solstice->receivers, &end);
-
-  fprintf(solstice->output, "%lu\n",
-    (unsigned long)htable_receiver_size_get(&solstice->receivers));
-
-  while(!htable_receiver_iterator_eq(&it, &end)) {
-    struct solstice_receiver* receiver = htable_receiver_iterator_data_get(&it);
-    uint32_t id;
-    SSOL(instance_get_id(receiver->node->instance, &id));
-    fprintf(solstice->output, "%u %s\n", id, str_cget(&receiver->name));
-    htable_receiver_iterator_next(&it);
-  }
-}
-
-static void
 write_global_mc(struct solstice* solstice, struct ssol_estimator* estimator)
 {
   struct ssol_estimator_status status;
   struct htable_receiver_iterator it, end;
   ASSERT(solstice && estimator);
+
+  fprintf(solstice->output, "%lu\n",
+    (unsigned long)htable_receiver_size_get(&solstice->receivers));
 
   htable_receiver_begin(&solstice->receivers, &it);
   htable_receiver_end(&solstice->receivers, &end);
@@ -75,7 +57,8 @@ write_global_mc(struct solstice* solstice, struct ssol_estimator* estimator)
       default: FATAL("Unreachable code.\n"); break;
     }
     SSOL(instance_get_id(inst, &id));
-    fprintf(solstice->output, "%u %g %g %g %g\n", (unsigned)id,
+    fprintf(solstice->output, "%s %u %g %g %g %g\n",
+      str_cget(&rcv->name), (unsigned)id,
       front.E, front.SE, back.E, back.SE);
   }
 
@@ -105,11 +88,13 @@ solstice_solve(struct solstice* solstice)
     goto error;
   }
 
-  bin_stream = tmpfile();
-  if(!bin_stream) {
-    fprintf(stderr, "Could not create the temporary output binary stream.\n");
-    res = RES_IO_ERR;
-    goto error;
+  if(solstice->output_hits) {
+    bin_stream = tmpfile();
+    if(!bin_stream) {
+      fprintf(stderr, "Could not create the temporary output binary stream.\n");
+      res = RES_IO_ERR;
+      goto error;
+    }
   }
 
   res = ssol_estimator_create(solstice->ssol, &estimator);
@@ -118,10 +103,8 @@ solstice_solve(struct solstice* solstice)
     goto error;
   }
 
-  write_header(solstice);
-
   res = ssol_solve(solstice->scene, rng, solstice->nrealisations,
-    /*bin_stream FIXME*/NULL, estimator);
+    bin_stream, estimator);
   if(res != RES_OK) {
     fprintf(stderr, "Error in integrating the solar flux.\n");
     goto error;
@@ -129,22 +112,24 @@ solstice_solve(struct solstice* solstice)
 
   write_global_mc(solstice, estimator);
 
-  sz = (size_t)ftell(bin_stream);
-  rewind(bin_stream);
+  if(solstice->output_hits) {
+    sz = (size_t)ftell(bin_stream);
+    rewind(bin_stream);
 
-  while(sz) {
-    const size_t read_sz = MMIN(sz, sizeof(buf));
-    if(fread(buf, 1, read_sz, bin_stream) != read_sz) {
-      fprintf(stderr, "Could not read the output binary stream.\n");
-      res = RES_IO_ERR;
-      goto error;
+    while(sz) {
+      const size_t read_sz = MMIN(sz, sizeof(buf));
+      if(fread(buf, 1, read_sz, bin_stream) != read_sz) {
+        fprintf(stderr, "Could not read the output binary stream.\n");
+        res = RES_IO_ERR;
+        goto error;
+      }
+      if(fwrite(buf, 1, read_sz, solstice->output) != read_sz) {
+        fprintf(stderr, "Could not write the output binary stream.\n");
+        res = RES_IO_ERR;
+        goto error;
+      }
+      sz -= read_sz;
     }
-    if(fwrite(buf, 1, read_sz, solstice->output) != read_sz) {
-      fprintf(stderr, "Could not write the output binary stream.\n");
-      res = RES_IO_ERR;
-      goto error;
-    }
-    sz -= read_sz;
   }
 
 exit:

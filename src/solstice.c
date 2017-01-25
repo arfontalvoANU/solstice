@@ -415,6 +415,7 @@ solstice_init
   }
 
   solstice->nrealisations = args->nrealisations;
+  solstice->output_hits = args->output_hits;
 
 exit:
   return res;

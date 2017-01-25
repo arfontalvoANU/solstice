@@ -44,6 +44,8 @@ print_help(const char* program)
   printf(
 "  -D <dirs>       list of sun directions.\n");
   printf(
+"  -H              output the per receiver hit data.\n");
+  printf(
 "  -h              display this help and exit.\n");
   printf(
 "  -n              number of realisation. Default is %lu.\n",
@@ -55,9 +57,10 @@ print_help(const char* program)
   printf(
 "  -q              do not print the helper message when no FILE is submitted.\n");
   printf(
-"  -r <rendering>  switch in rendering mode and configure it.\n");
+"  -R RECEIVERS    define the file from which the list of receivers are read.\n");
   printf(
-"  -R RECEIVERS    define the file from which the list of receivers are read.\n\n");
+"  -r <rendering>  switch in rendering mode and configure it.\n");
+  printf("\n");
   printf(
 "Solstice (C) 2016-2017 CNRS. This is a free software released under the GNU GPL\n"
 "license, version 3 or later. You are free to change or redistribute it under\n"
@@ -318,11 +321,12 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
   *args = SOLSTICE_ARGS_DEFAULT;
 
   optind = 1;
-  while((opt = getopt(argc, argv, "D:hn:o:qR:r:")) != -1) {
+  while((opt = getopt(argc, argv, "D:Hhn:o:qR:r:")) != -1) {
     switch(opt) {
       case 'D':
         res = parse_sun_dir_list(optarg, args);
         break;
+      case 'H': args->output_hits = 1; break;
       case 'h':
         print_help(argv[0]);
         solstice_args_release(args);
