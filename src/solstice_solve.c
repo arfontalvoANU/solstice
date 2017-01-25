@@ -97,14 +97,8 @@ solstice_solve(struct solstice* solstice)
     }
   }
 
-  res = ssol_estimator_create(solstice->ssol, &estimator);
-  if(res != RES_OK) {
-    fprintf(stderr, "Error in creating the Solstice Estimator.\n");
-    goto error;
-  }
-
   res = ssol_solve(solstice->scene, rng, solstice->nrealisations,
-    bin_stream, estimator);
+    bin_stream, &estimator);
   if(res != RES_OK) {
     fprintf(stderr, "Error in integrating the solar flux.\n");
     goto error;
