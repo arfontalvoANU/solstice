@@ -48,7 +48,7 @@ print_help(const char* program)
   printf(
 "  -h               display this help and exit.\n");
   printf(
-"  -n REALISATIONS  number of realisation. Default is %lu.\n",
+"  -n REALISATIONS  number of realisations. Default is %lu.\n",
     SOLSTICE_ARGS_DEFAULT.nrealisations);
   printf(
 "  -o               write results to OUTPUT. If not define, write results to\n");
@@ -324,7 +324,7 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
 
   *args = SOLSTICE_ARGS_DEFAULT;
 
-  optind = 1;
+  optind = 0;
   while((opt = getopt(argc, argv, "D:Hhn:o:qR:r:t:")) != -1) {
     switch(opt) {
       case 'D':
@@ -338,7 +338,7 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
         goto exit;
       case 'n':
         res = cstr_to_ulong(optarg, &args->nrealisations);
-        if(res != RES_OK && !args->nrealisations) res = RES_BAD_ARG;
+        if(res == RES_OK && !args->nrealisations) res = RES_BAD_ARG;
         break;
       case 'o': args->output_filename = optarg; break;
       case 'q': args->quiet = 1; break;
@@ -346,8 +346,11 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
       case 'r': res = parse_rendering_options(optarg, args); break;
       case 't':
         res = cstr_to_ulong(optarg, &ul);
-        if(res != RES_OK && !ul) res = RES_BAD_ARG;
-        args->nthreads = (unsigned)MMIN(ul, UINT_MAX);
+        if(res == RES_OK && !ul) {
+          res = RES_BAD_ARG;
+        } else {
+          args->nthreads = (unsigned)MMIN(ul, UINT_MAX);
+        }
         break;
       default: res = RES_BAD_ARG; break;
     }
