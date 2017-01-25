@@ -14,7 +14,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 cmake_minimum_required(VERSION 2.8)
-project(solstice C CXX)
+project(solstice C)
 enable_testing()
 option(NO_TEST "Do not build tests" OFF)
 

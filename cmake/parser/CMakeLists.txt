@@ -14,7 +14,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 cmake_minimum_required(VERSION 2.8)
-project(solstice-parser C CXX)
+project(solstice-parser C)
 
 set(SOLPARSER_SOURCE_DIR ${PROJECT_SOURCE_DIR}/../../src/parser)
 
