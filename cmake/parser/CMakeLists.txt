@@ -78,14 +78,11 @@ if(NOT NO_TEST)
     ${SOLPARSER_SOURCE_DIR}/yaml/test_ok_3.yaml)
   add_test(test_solstice_parser_ko_0 test_solparser -e
     ${SOLPARSER_SOURCE_DIR}/yaml/test_ko_0.yaml)
-  add_test(test_solstice_parser_ko_1 test_solparser -e
-    ${SOLPARSER_SOURCE_DIR}/yaml/test_ko_1.yaml)
-  add_test(test_solstice_parser_ko_2 test_solparser -e
-    ${SOLPARSER_SOURCE_DIR}/yaml/test_ko_2.yaml)
 
   new_test(test_solparser2)
   new_test(test_solparser3)
   new_test(test_solparser4)
+  new_test(test_solparser5)
 
   rcmake_copy_runtime_libraries(test_solparser)
 endif()

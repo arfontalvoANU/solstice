@@ -24,7 +24,7 @@
 struct solparser_object {
   struct solparser_material_double_sided_id mtl2;
   struct solparser_shape_id shape;
-  double rotation[3];
+  double rotation[3]; /* In degrees */
   double translation[3];
 };
 

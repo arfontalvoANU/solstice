@@ -56,7 +56,7 @@ struct solparser_entity_id { size_t i; };
 #include <rsys/hash_table.h>
 
 struct solparser_entity {
-  double rotation[3];
+  double rotation[3]; /* In degrees */
   double translation[3];
 
   struct str name;

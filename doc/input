@@ -77,6 +77,7 @@
 2/ Grammar
 --------------------------------------------------------------------------------
 <solar-factory> ::=
+  <sun>
   <items>
 
 <items> ::=
@@ -88,7 +89,6 @@
   | <material>
   | <entity>
   | <template>
-  | <sun>
 
 ----------------------------------------
 <geometry> ::=
@@ -128,12 +128,12 @@
 
 <cuboid> ::=
   cuboid:
-    size: <real3>
+    size: <real3*+>
 
 <cylinder> ::=
   cylinder:
-    height: REAL
-    radius: REAL
+    height: REAL # in ]0, INF)
+    radius: REAL # in ]0, INF)
 [   slices: INTEGER ] # in [4, 4096]. Default 16
 
 <obj> ::=
@@ -142,12 +142,12 @@
 
 <parabol> ::=
   parabol: # x^2 + y^2 - 4*focal*z = 0
-    focal: REAL
+    focal: REAL # in ]0, INF)
     clip: <polyclip-list>
 
 <parabolic-cylinder> ::=
   parabolic-cylinder: # y^2 - 4*focal*z = 0
-    focal: REAL
+    focal: REAL # in ]0, INF)
     clip: <polyclip-list>
 
 <plane> ::=
@@ -156,8 +156,8 @@
 
 <sphere> ::=
   sphere:
-    radius: REAL
-[   slices: INTEGER ] # Default 16
+    radius: REAL # in ]0, INF)
+[   slices: INTEGER ] # in [4, 4096]. Default 16
 
 <stl> ::=
   stl:
@@ -228,8 +228,9 @@
   name: STRING
   position: <real3>
 
+# "self" references the first level entity
 <entity-identifier> ::=
-  STRING[.STRING ... ]
+  <self|STRING>[.STRING ... ]
 
 <anchor-identifier> ::=
   <entity-identifier>.STRING
@@ -237,7 +238,7 @@
 ----------------------------------------
 <sun> ::=
   sun:
-    dni: REAL # Direct Normal Irradiance in ]0, INF) */
+    dni: REAL # Direct Normal Irradiance in ]0, INF)
     <spectrum>
 [   <radial-angular-distribution> ]
 
@@ -267,13 +268,18 @@
   - REAL
   - REAL
 
+<real3*+> ::=
+  - REAL # in ]0, inf)
+  - REAL # in ]0, inf)
+  - REAL # in ]0, inf)
+
 <spectrum> ::=
   spectrum:
     - <spectrum-data>
 [   - <spectrum-data> ... ]
 
 <spectrum-data> ::=
-  wavelength: REAL
-  data: REAL
+  wavelength: REAL # in [0, INF)
+  data: REAL # in [0, INF)
 
 

@@ -166,9 +166,7 @@ main(int argc, char** argv)
   entity_id = solparser_entity_get_child(entity, 1);
   entity1b = solparser_get_entity(parser, entity_id);
   CHECK(d3_eq(entity1b->translation, d3_splat(tmp, 0)), 1);
-  tmp[0] = MDEG2RAD(3.14);
-  tmp[2] = MDEG2RAD(-1);
-  CHECK(d3_eq_eps(entity1b->rotation, tmp, 1.e-6), 1);
+  CHECK(d3_eq_eps(entity1b->rotation, d3(tmp, 3.14, 0, -1), 1.e-6), 1);
   CHECK(strcmp("lvl1b", str_cget(&entity1b->name)), 0);
   CHECK(solparser_entity_get_children_count(entity1b), 1);
   CHECK(entity1b->type, SOLPARSER_ENTITY_GEOMETRY);

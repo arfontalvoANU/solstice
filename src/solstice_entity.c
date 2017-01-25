@@ -164,6 +164,7 @@ create_node(struct solstice* solstice, const struct solparser_entity* entity)
   struct solstice_node* tgt = NULL;
   struct solstice_node* child = NULL;
   struct solstice_receiver* rcv = NULL;
+  double rotation[3];
   size_t i;
   res_T res = RES_OK;
   ASSERT(solstice && entity);
@@ -202,8 +203,11 @@ create_node(struct solstice* solstice, const struct solparser_entity* entity)
   }
 
   /* Setup the entity transform */
+  rotation[0] = MDEG2RAD(entity->rotation[0]);
+  rotation[1] = MDEG2RAD(entity->rotation[1]);
+  rotation[2] = MDEG2RAD(entity->rotation[2]);
   solstice_node_set_translation(node, entity->translation);
-  solstice_node_set_rotations(node, entity->rotation);
+  solstice_node_set_rotations(node, rotation);
 
   /* Register entity anchors */
   FOR_EACH(i, 0, solparser_entity_get_anchors_count(entity)) {
@@ -224,6 +228,7 @@ create_node(struct solstice* solstice, const struct solparser_entity* entity)
     res = solstice_node_add_child(node, tgt);
     if(res != RES_OK) goto error;
 
+    solstice_node_ref_put(tgt);
     tgt = NULL;
   }
 
