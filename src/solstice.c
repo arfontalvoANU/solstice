@@ -353,8 +353,7 @@ solstice_init
 
   solstice->allocator = allocator ? allocator : &mem_default_allocator;
 
-  res = ssol_device_create
-    (NULL, allocator, SSOL_NTHREADS_DEFAULT, 0, &solstice->ssol);
+  res = ssol_device_create(NULL, allocator, args->nthreads, 0, &solstice->ssol);
   if(res != RES_OK) {
     fprintf(stderr, "Could not create the Solstice Solver device.\n");
     goto error;

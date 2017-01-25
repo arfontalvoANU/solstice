@@ -17,6 +17,7 @@
 #define SOLSTICE_ARGS_H
 
 #include <rsys/math.h>
+#include <solstice/ssol.h>
 
 struct solstice_args_spherical {
   double azimuth; /* In radians */
@@ -28,6 +29,7 @@ struct solstice_args {
   const char* input_filename; /* May be NULL <=> read data from stdin */
   const char* receivers_filename;
   unsigned long nrealisations; /* #realisations */
+  unsigned nthreads; /* #threads */
 
   /* List of sun directions */
   struct solstice_args_spherical* sun_dirs;
@@ -59,6 +61,7 @@ static const struct solstice_args SOLSTICE_ARGS_NULL = SOLSTICE_ARGS_NULL__;
   NULL, /* input_filename */                                                   \
   NULL, /* receivers_filename */                                               \
   @SOLSTICE_ARGS_DEFAULT_NREALISATIONS@,                                       \
+  SSOL_NTHREADS_DEFAULT,                                                       \
                                                                                \
   NULL, /* sun_dirs */                                                         \
   0, /* # nsun_dirs */                                                         \

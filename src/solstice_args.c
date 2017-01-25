@@ -42,24 +42,27 @@ print_help(const char* program)
 "not define, the solar facility is read from standard input.\n\n",
     program);
   printf(
-"  -D <dirs>       list of sun directions.\n");
+"  -D <dirs>        list of sun directions.\n");
   printf(
-"  -H              output the per receiver hit data.\n");
+"  -H               output the per receiver hit data.\n");
   printf(
-"  -h              display this help and exit.\n");
+"  -h               display this help and exit.\n");
   printf(
-"  -n              number of realisation. Default is %lu.\n",
+"  -n REALISATIONS  number of realisation. Default is %lu.\n",
     SOLSTICE_ARGS_DEFAULT.nrealisations);
   printf(
-"  -o              write results to OUTPUT. If not define, write results to\n");
+"  -o               write results to OUTPUT. If not define, write results to\n");
   printf(
-"                  standard output.\n");
+"                   standard output.\n");
   printf(
-"  -q              do not print the helper message when no FILE is submitted.\n");
+"  -q               do not print the helper message when no FILE is submitted.\n");
   printf(
-"  -R RECEIVERS    define the file from which the list of receivers are read.\n");
+"  -R RECEIVERS     define the file from which the list of receivers are read.\n");
   printf(
-"  -r <rendering>  switch in rendering mode and configure it.\n");
+"  -r <rendering>   switch in rendering mode and configure it.\n");
+  printf(
+"  -t THREADS       hint on the number of threads to use. By default use as\n"
+"                   many threads as CPU cores.\n");
   printf("\n");
   printf(
 "Solstice (C) 2016-2017 CNRS. This is a free software released under the GNU GPL\n"
@@ -314,6 +317,7 @@ error:
 res_T
 solstice_args_init(struct solstice_args* args, const int argc, char** argv)
 {
+  unsigned long ul = 0;
   int opt;
   res_T res = RES_OK;
   ASSERT(args && argc && argv);
@@ -321,7 +325,7 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
   *args = SOLSTICE_ARGS_DEFAULT;
 
   optind = 1;
-  while((opt = getopt(argc, argv, "D:Hhn:o:qR:r:")) != -1) {
+  while((opt = getopt(argc, argv, "D:Hhn:o:qR:r:t:")) != -1) {
     switch(opt) {
       case 'D':
         res = parse_sun_dir_list(optarg, args);
@@ -340,6 +344,11 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
       case 'q': args->quiet = 1; break;
       case 'R': args->receivers_filename = optarg; break;
       case 'r': res = parse_rendering_options(optarg, args); break;
+      case 't':
+        res = cstr_to_ulong(optarg, &ul);
+        if(res != RES_OK && !ul) res = RES_BAD_ARG;
+        args->nthreads = (unsigned)MMIN(ul, UINT_MAX);
+        break;
       default: res = RES_BAD_ARG; break;
     }
     if(res != RES_OK) {
