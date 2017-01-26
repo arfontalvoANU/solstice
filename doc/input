@@ -187,7 +187,7 @@
   back: <material-descriptor>
 
 <material-descriptor> ::=
-  <mirror> | <matte>
+  <mirror> | <matte> | <virtual>
 
 <mirror> ::=
   mirror:
@@ -197,6 +197,9 @@
 <matte> ::=
   matte:
     reflectivity: REAL # in [0, 1]
+
+<virtual> ::=
+  virtual: EMPTY-STRING
 
 ----------------------------------------
 <entity> ::=
@@ -281,5 +284,4 @@
 <spectrum-data> ::=
   wavelength: REAL # in [0, INF)
   data: REAL # in [0, INF)
-
 

@@ -921,7 +921,7 @@ parse_material_mirror
 
   if(mirror->type != YAML_MAPPING_NODE) {
     log_err(parser, mirror,
-      "expect a mapping of mirror material attributes .\n");
+      "expect a mapping of mirror material attributes.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -998,6 +998,26 @@ error:
 }
 
 static res_T
+parse_material_virtual(struct solparser* parser, yaml_node_t* virtual)
+{
+  res_T res = RES_OK;
+  ASSERT(virtual);
+
+  if(virtual->type != YAML_SCALAR_NODE
+  || ((char*)virtual->data.scalar.value)[0] != '\0') {
+    log_err(parser, virtual,
+      "virtual materials can have a null scalar value only.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+static res_T
 parse_material_descriptor
   (struct solparser* parser,
    yaml_document_t* doc,
@@ -1065,6 +1085,10 @@ parse_material_descriptor
       SETUP_MASK(DESCRIPTOR, "descriptor");
       mtl->type = SOLPARSER_MATERIAL_MIRROR;
       res = parse_material_mirror(parser, doc, val, &mtl->data.mirror);
+    } else if(!strcmp((char*)key->data.scalar.value, "virtual")) {
+      SETUP_MASK(DESCRIPTOR, "virtual");
+      mtl->type = SOLPARSER_MATERIAL_VIRTUAL;
+      res = parse_material_virtual(parser, val);
     } else {
       log_err(parser, key, "unknown material descriptor `%s'.\n",
         key->data.scalar.value);

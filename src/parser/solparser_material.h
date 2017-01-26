@@ -20,7 +20,8 @@
 
 enum solparser_material_type {
   SOLPARSER_MATERIAL_MATTE,
-  SOLPARSER_MATERIAL_MIRROR
+  SOLPARSER_MATERIAL_MIRROR,
+  SOLPARSER_MATERIAL_VIRTUAL
 };
 
 struct solparser_material_matte {

@@ -74,8 +74,10 @@ if(NOT NO_TEST)
     ${SOLPARSER_SOURCE_DIR}/yaml/test_ok_1.yaml)
   add_test(test_solparser_ok_2 test_solparser
     ${SOLPARSER_SOURCE_DIR}/yaml/test_ok_2.yaml)
-  add_test(test_solparser_ok_2 test_solparser
+  add_test(test_solparser_ok_3 test_solparser
     ${SOLPARSER_SOURCE_DIR}/yaml/test_ok_3.yaml)
+  add_test(test_solparser_ok_4 test_solparser
+    ${SOLPARSER_SOURCE_DIR}/yaml/test_ok_4.yaml)
   add_test(test_solparser_ko test_solparser -e
     ${SOLPARSER_SOURCE_DIR}/yaml/test_ko_0.yaml)
 
