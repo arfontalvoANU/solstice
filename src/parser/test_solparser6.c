@@ -43,6 +43,7 @@ main(int argc, char** argv)
   fprintf(stream, "- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1 }] }\n");
   fprintf(stream, "- entity:\n");
   fprintf(stream, "    name: test\n");
+  fprintf(stream, "    primary: 0\n"); 
   fprintf(stream, "    geometry:\n");
   fprintf(stream, "      - sphere: { radius: 1 }\n");
   fprintf(stream, "        material: { ?virtual }\n");

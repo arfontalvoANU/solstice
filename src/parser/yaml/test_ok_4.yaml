@@ -5,6 +5,7 @@
 
 - entity:
     name: "entity"
+    primary: 0
     geometry:
       - material: *virtual
         sphere: { radius: 1 }
@@ -12,6 +13,7 @@
 - sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - entity:
     name: "entity"
+    primary: 0
     geometry:
       - material: { virtual: "" }
         sphere: { radius: 1 }
@@ -19,6 +21,7 @@
 - sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - entity:
     name: "entity"
+    primary: 0
     geometry:
       - material: { virtual: }
         sphere: { radius: 1 }
@@ -26,6 +29,7 @@
 - sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - entity:
     name: "entity"
+    primary: 0
     geometry:
       - material: { ?virtual }
         sphere: { radius: 1 }
