@@ -122,6 +122,11 @@ solparser_get_pivot
   (const struct solparser* parser,
    const struct solparser_pivot_id pivot);
 
+extern LOCAL_SYM const struct solparser_pivot2*
+solparser_get_pivot2
+  (const struct solparser* parser,
+   const struct solparser_pivot_id pivot2);
+
 extern LOCAL_SYM const struct solparser_shape*
 solparser_get_shape
   (const struct solparser* parser,

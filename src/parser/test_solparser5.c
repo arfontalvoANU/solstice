@@ -71,9 +71,9 @@ check_entity(struct solparser* parser, const struct solparser_entity* entity)
   pivot = solparser_get_pivot(parser, entity->data.pivot);
   CHECK(d3_eq(pivot->point, d3(tmp, 1, 2, 3)), 1);
   CHECK(d3_eq(pivot->normal, d3(tmp, 4, 5, 6)), 1);
-  CHECK(pivot->target_type, SOLPARSER_TARGET_ANCHOR);
+  CHECK(pivot->target.type, SOLPARSER_TARGET_ANCHOR);
 
-  anchor = solparser_get_anchor(parser, pivot->target.anchor);
+  anchor = solparser_get_anchor(parser, pivot->target.data.anchor);
   CHECK(strcmp(str_cget(&anchor->name), "anchor0"), 0);
   CHECK(d3_eq(anchor->position, d3(tmp, 1, 2, 3)), 1);
 }

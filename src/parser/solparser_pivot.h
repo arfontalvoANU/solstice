@@ -67,32 +67,56 @@ solparser_anchor_copy_and_release
   return str_copy_and_release(&dst->name, &src->name);
 }
 
-struct solparser_pivot {
-  double point[3];
-  double normal[3];
-  enum solparser_target_type target_type;
+struct solparser_target {
+  enum solparser_target_type type;
   union {
     double position[3]; /* World space position */
     double direction[3]; /* World space direction */
     struct solparser_anchor_id anchor;
-  } target;
+  } data;
+};
+
+struct solparser_pivot_id { size_t i; };
+
+struct solparser_pivot {
+  double point[3];
+  double normal[3];
+  struct solparser_target target;
 };
 
 #define SOLPARSER_PIVOT_NULL__ {                                               \
   {0,0,0}, {0,0,0}, SOLPARSER_TARGET_TYPES_COUNT__, {{0,0,0}}                  \
 }
-static const struct solparser_pivot SOLPARSER_PIVOT_NULL = 
-  SOLPARSER_PIVOT_NULL__;
-
-struct solparser_pivot_id { size_t i; };
+static const struct solparser_pivot SOLPARSER_PIVOT_NULL =
+SOLPARSER_PIVOT_NULL__;
 
 static INLINE void
 solparser_pivot_init
-  (struct mem_allocator* allocator, struct solparser_pivot* pivot)
+(struct mem_allocator* allocator, struct solparser_pivot* pivot)
 {
   (void) allocator;
   ASSERT(pivot);
   *pivot = SOLPARSER_PIVOT_NULL;
+}
+struct solparser_pivot2 {
+  double spacing;
+  double ref_point[3];
+  struct solparser_target target;
+};
+
+#define SOLPARSER_PIVOT2_NULL__ {                                               \
+  0, {0,0,0}, SOLPARSER_TARGET_TYPES_COUNT__, {{0,0,0}}                  \
+}
+static const struct solparser_pivot2 SOLPARSER_PIVOT2_NULL = 
+  SOLPARSER_PIVOT2_NULL__;
+
+static INLINE void
+solparser_pivot2_init
+  (struct mem_allocator* allocator, struct solparser_pivot2* pivot2)
+{
+  (void) allocator;
+  ASSERT(pivot2);
+  *pivot2 = SOLPARSER_PIVOT2_NULL;
 }
 
 #endif /* SOLPARSER_PIVOT_H */

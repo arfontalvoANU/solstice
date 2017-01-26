@@ -113,6 +113,12 @@
 #     normal: <real3>
 #     <target>
 # 
+# <pivot2> ::=
+#   pivot2:
+#     spacing: REAL # in [0, INF)
+#     ref_point: <real3>
+#     <target>
+# 
 # <target> ::=
 #   target:
 #     anchor: <anchor-identifier>
@@ -217,7 +223,7 @@
 # 
 # <entity-data> ::=
 #   name: STRING
-# [ <geometry-data> | <pivot> ]
+# [ <geometry-data> | <pivot> | <pivot2> ]
 # [ <anchors> ]
 # [ <transform> ]
 # [ <children>  ]
@@ -293,3 +299,4 @@
 # <spectrum-data> ::=
 #   wavelength: REAL # in [0, INF)
 #   data: REAL # in [0, INF)
+# 

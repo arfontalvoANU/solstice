@@ -112,26 +112,25 @@ create_pivot_node
 
   parser_pivot = solparser_get_pivot(solstice->parser, entity->data.pivot);
 
-  /* Setup the pivot descriptor TODO: 2-axis pivots */
   anim_pivot.type = PIVOT_SINGLE_AXIS;
   d3_set(anim_pivot.data.pivot1.ref_normal, parser_pivot->normal);
   d3_set(anim_pivot.data.pivot1.ref_point, parser_pivot->point);
 
   /* Setup the tracking descriptor */
-  switch (parser_pivot->target_type) {
+  switch (parser_pivot->target.type) {
     case SOLPARSER_TARGET_ANCHOR:
       anim_tracking.policy = TRACKING_NODE_TARGET;
       target = *htable_anchor_find
-        (&solstice->anchors, &parser_pivot->target.anchor.i);
+        (&solstice->anchors, &parser_pivot->target.data.anchor.i);
       solstice_node_target_get_tracking(target, &anim_tracking);
       break;
     case SOLPARSER_TARGET_DIRECTION:
       anim_tracking.policy = TRACKING_OUT_DIR;
-      d3_set(anim_tracking.data.out_dir.u, parser_pivot->target.direction);
+      d3_set(anim_tracking.data.out_dir.u, parser_pivot->target.data.direction);
       break;
     case SOLPARSER_TARGET_POSITION:
       anim_tracking.policy = TRACKING_POINT;
-      d3_set(anim_tracking.data.point.target, parser_pivot->target.position);
+      d3_set(anim_tracking.data.point.target, parser_pivot->target.data.position);
       anim_tracking.data.point.target_is_local = 0; /* TODO */
       break;
     case SOLPARSER_TARGET_SUN:
@@ -151,6 +150,65 @@ exit:
   return node;
 error:
   if(node) {
+    solstice_node_ref_put(node);
+    node = NULL;
+  }
+  goto exit;
+}
+
+static struct solstice_node*
+create_pivot2_node
+  (struct solstice* solstice,
+   const struct solparser_entity* entity)
+{
+  struct solstice_node* node = NULL;
+  struct solstice_node* target = NULL;
+  const struct solparser_pivot2* parser_pivot2 = NULL;
+  struct sanim_pivot anim_pivot = SANIM_PIVOT_NULL;
+  struct sanim_tracking anim_tracking = SANIM_TRACKING_NULL;
+  res_T res = RES_OK;
+  ASSERT(solstice && entity);
+
+  parser_pivot2 = solparser_get_pivot2(solstice->parser, entity->data.pivot2);
+
+  anim_pivot.type = PIVOT_TWO_AXIS;
+  anim_pivot.data.pivot2.spacing = parser_pivot2->spacing;
+  d3_set(anim_pivot.data.pivot2.ref_point, parser_pivot2->ref_point);
+
+  /* Setup the tracking descriptor */
+  switch (parser_pivot2->target.type) {
+  case SOLPARSER_TARGET_ANCHOR:
+    anim_tracking.policy = TRACKING_NODE_TARGET;
+    target = *htable_anchor_find
+    (&solstice->anchors, &parser_pivot2->target.data.anchor.i);
+    solstice_node_target_get_tracking(target, &anim_tracking);
+    break;
+  case SOLPARSER_TARGET_DIRECTION:
+    anim_tracking.policy = TRACKING_OUT_DIR;
+    d3_set(anim_tracking.data.out_dir.u, parser_pivot2->target.data.direction);
+    break;
+  case SOLPARSER_TARGET_POSITION:
+    anim_tracking.policy = TRACKING_POINT;
+    d3_set(anim_tracking.data.point.target, parser_pivot2->target.data.position);
+    anim_tracking.data.point.target_is_local = 0; /* TODO */
+    break;
+  case SOLPARSER_TARGET_SUN:
+    anim_tracking.policy = TRACKING_SUN;
+    break;
+  default: FATAL("Unreachable code.\n"); break;
+  }
+
+  res = solstice_node_pivot_create
+    (solstice->allocator, &anim_pivot, &anim_tracking, &node);
+  if (res != RES_OK) goto error;
+
+  res = darray_nodes_push_back(&solstice->pivots, &node);
+  if (res != RES_OK) goto error;
+
+exit:
+  return node;
+error:
+  if (node) {
     solstice_node_ref_put(node);
     node = NULL;
   }
@@ -179,6 +237,9 @@ create_node(struct solstice* solstice, const struct solparser_entity* entity)
       break;
     case SOLPARSER_ENTITY_PIVOT:
       node = create_pivot_node(solstice, entity);
+      break;
+    case SOLPARSER_ENTITY_PIVOT2:
+      node = create_pivot2_node(solstice, entity);
       break;
     default: FATAL("Unreachable code.\n"); break;
   }

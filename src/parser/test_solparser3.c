@@ -52,6 +52,12 @@ static const char* input[] = {
   "      point: [1, 2, 3]\n",
   "      normal: [4, 5, 6]\n",
   "      target: { anchor: \"entity0.entity0b.anchor0\" }\n",
+  "- entity:\n",
+  "    name: entity2\n",
+  "    pivot2:\n",
+  "      spacing: 1\n",
+  "      ref_point: [1, 2, 3]\n",
+  "      target: { anchor: \"entity0.entity0b.anchor0\" }\n",
   NULL
 };
 
@@ -61,6 +67,7 @@ const struct solparser_anchor* entity0_entity0b_anchor0;
 const struct solparser_anchor* entity0_entity0b_entity0b;
 const struct solparser_geometry* geom;
 const struct solparser_pivot* pivot;
+const struct solparser_pivot2* pivot2;
 
 static void
 check_entity0
@@ -168,7 +175,27 @@ check_entity1
   pivot = solparser_get_pivot(parser, entity1->data.pivot);
   CHECK(d3_eq(pivot->point, d3(tmp, 1, 2, 3)), 1);
   CHECK(d3_eq(pivot->normal, d3(tmp, 4, 5, 6)), 1);
-  CHECK(pivot->target_type, SOLPARSER_TARGET_ANCHOR);
+  CHECK(pivot->target.type, SOLPARSER_TARGET_ANCHOR);
+}
+
+static void
+check_entity2
+(struct solparser* parser, const struct solparser_entity* entity2)
+{
+  double tmp[3];
+
+  NCHECK(parser, NULL);
+  NCHECK(entity2, NULL);
+
+  CHECK(strcmp(str_cget(&entity2->name), "entity2"), 0);
+  CHECK(entity2->type, SOLPARSER_ENTITY_PIVOT2);
+  CHECK(solparser_entity_get_anchors_count(entity2), 0);
+  CHECK(solparser_entity_get_children_count(entity2), 0);
+
+  pivot2 = solparser_get_pivot2(parser, entity2->data.pivot2);
+  CHECK(pivot2->spacing, 1);
+  CHECK(d3_eq(pivot2->ref_point, d3(tmp, 1, 2, 3)), 1);
+  CHECK(pivot2->target.type, SOLPARSER_TARGET_ANCHOR);
 }
 
 int
@@ -211,8 +238,12 @@ main(int argc, char** argv)
 
     if(!strcmp(str_cget(&entity->name), "entity0")) {
       check_entity0(parser, entity);
-    } else if(!strcmp(str_cget(&entity->name), "entity1")) {
+    }
+    else if (!strcmp(str_cget(&entity->name), "entity1")) {
       check_entity1(parser, entity);
+    }
+    else if(!strcmp(str_cget(&entity->name), "entity2")) {
+      check_entity2(parser, entity);
     } else {
       FATAL("Unexpected entity name.\n");
     }
@@ -220,7 +251,7 @@ main(int argc, char** argv)
     solparser_entity_iterator_next(&it);
   }
 
-  anchor = solparser_get_anchor(parser, pivot->target.anchor);
+  anchor = solparser_get_anchor(parser, pivot->target.data.anchor);
   CHECK(anchor, entity0_entity0b_anchor0);
 
   anchor = solparser_find_anchor(parser, "entity0");

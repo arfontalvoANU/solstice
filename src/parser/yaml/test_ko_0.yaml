@@ -860,6 +860,179 @@
       target: { sun: *sun }
 ---
 
+# <pivot2> ::=
+#   pivot2:
+#     spacing: REAL # in [0, INF)
+#     ref_point: <real3>
+#     <target>
+# 
+# <target> ::=
+#   target:
+#     anchor: <anchor-identifier>
+#   | direction: <real3>
+#   | position: <real3>
+#   | <sun>
+# 
+
+# missing pivot2 definition
+- entity:
+    pivot2:
+---
+# unknown dummy parameter
+- entity:
+    pivot2:
+      dummy: 1
+---
+# missing spacing definition
+- entity:
+    pivot2:
+      spacing:
+---
+# missing ref_point definition
+- entity:
+    pivot2:
+      ref_point:
+---
+# missing target definition
+- entity:
+    pivot2:
+      target:
+---
+# spacing should be a number
+- entity:
+    pivot2:
+      spacing: "dummy"
+---
+# -1 invalid
+- entity:
+    pivot2:
+      spacing: -1
+---
+# spacing should be a number
+- entity:
+    pivot2:
+      ref_point: "dummy"
+---
+# ref_point should have 3 values
+- entity:
+    pivot2:
+      ref_point: [ -4, 5.2 ]
+---
+# ref_point should have 3 values
+- entity:
+    pivot2:
+      ref_point: [ -4, 5.2, 0, 1 ]
+---
+# target should be a <target>
+- entity:
+    pivot2:
+      target: "dummy"
+---
+# missing anchor definition
+- entity:
+    pivot2:
+      target:
+        anchor:
+---
+# missing direction definition
+- entity:
+    pivot2:
+      target:
+        direction:
+---
+# missing position definition
+- entity:
+    pivot2:
+      target:
+        position:
+---
+# undefined anchor
+- entity:
+    pivot2:
+      target:
+        anchor: dummy
+---
+# direction should be a number
+- entity:
+    pivot2:
+      target:
+        direction: "dummy"
+---
+# direction should have 3 values
+- entity:
+    pivot2:
+      target:
+        direction: [ -4, 5.2 ]
+---
+# direction should have 3 values
+- entity:
+    pivot2:
+      target:
+        direction: [ -4, 5.2, 0, 1 ]
+---
+# position should be a number
+- entity:
+    pivot2:
+      target:
+        position: "dummy"
+---
+# position should have 3 values
+- entity:
+    pivot2:
+      target:
+        position: [ -4, 5.2 ]
+---
+# position should have 3 values
+- entity:
+    pivot2:
+      target:
+        position: [ -4, 5.2, 0, 1 ]
+---
+# sun should be a <sun>
+- entity:
+    pivot2:
+      target: { sun: "dummy" }
+---
+# missing point
+- sun: &sun { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
+- entity:
+    pivot2:
+      normal: [ -4, 5.2, 0 ]
+      target: { sun: *sun }
+---
+# missing normal
+- sun: &sun { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
+- entity:
+    pivot2:
+      point: [ -4, 5.2, 0 ]
+      target: { sun: *sun }
+---
+# missing target
+- entity:
+    pivot2:
+      point: [ -4, 5.2, 0 ]
+      normal: [ -4, 5.2, 0 ]
+---
+# 2x spacing
+- entity:
+    pivot2:
+      spacing: 1
+      spacing: 1
+---
+# 2x ref_point
+- entity:
+    pivot2:
+      ref_point: [ 0, 5.2, 0 ]
+      ref_point: [ 0, 5.2, 0 ]
+---
+# 2x target
+- sun: &sun { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
+- entity:
+    pivot2:
+      target: { sun: *sun }
+      target: { sun: *sun }
+---
+
 #
 # <anchors> ::=
 #   anchors:
@@ -901,7 +1074,7 @@
 #
 # <entity-data> ::=
 #   name: STRING
-# [ <geometry-data> | <pivot> ]
+# [ <geometry-data> | <pivot> | <pivot2> ]
 # [ <anchors> ]
 # [ <transform> ]
 # [ <children>  ]
@@ -928,6 +1101,9 @@
 ---
 # missing pivot value
 - entity: { pivot: }
+---
+# missing pivot2 value
+- entity: { pivot2: }
 ---
 # missing anchors value
 - entity: { anchors: }
@@ -981,6 +1157,27 @@
       target: { sun: *sun }
     geometry: [ { stl: { path: "file" } } ]
 ---
+# cannot define both geometry and pivot2
+- sun: &sun { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
+- entity:
+    pivot2:
+      spacing: 1
+      ref_point: [ 0, 5.2, 0 ]
+      target: { sun: *sun }
+    geometry: [ { stl: { path: "file" } } ]
+---
+# cannot define both pivot and pivot2
+- sun: &sun { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
+- entity:
+    pivot:
+      point: [ -4, 5.2, 0 ]
+      normal: [ -4, 5.2, 0 ]
+      target: { sun: *sun }
+    pivot2:
+      spacing: 1
+      ref_point: [ 0, 5.2, 0 ]
+      target: { sun: *sun }
+---
 # 2x anchors
 - entity:
     anchors:
@@ -1023,7 +1220,7 @@
 #
 # <entity-data> ::=
 #   name: STRING
-# [ <geometry-data> | <pivot> ]
+# [ <geometry-data> | <pivot> | <pivot2> ]
 # [ <anchors> ]
 # [ <transform> ]
 # [ <children>  ]
@@ -1055,6 +1252,10 @@
 ---
 # missing pivot value
 - template: &temp { pivot: }
+- entity: *temp
+---
+# missing pivot2 value
+- template: &temp { pivot2: }
 - entity: *temp
 ---
 # missing anchors value
@@ -1117,6 +1318,29 @@
       normal: [ -4, 5.2, 0 ]
       target: { sun: *sun }
     geometry: [ { stl: { path: "file" } } ]
+- entity: *temp
+---
+# cannot define both geometry and pivot2
+- sun: &sun { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
+- template: &temp
+    pivot2:
+      spacing: 1
+      ref_point: [ 0, 5.2, 0 ]
+      target: { sun: *sun }
+    geometry: [ { stl: { path: "file" } } ]
+- entity: *temp
+---
+# cannot define both pivot and pivot2
+- sun: &sun { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
+- template: &temp
+    pivot:
+      point: [ -4, 5.2, 0 ]
+      normal: [ -4, 5.2, 0 ]
+      target: { sun: *sun }
+    pivot2:
+      spacing: 1
+      ref_point: [ 0, 5.2, 0 ]
+      target: { sun: *sun }
 - entity: *temp
 ---
 # 2x anchors

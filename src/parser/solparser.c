@@ -151,6 +151,12 @@ struct target_alias {
 #define DARRAY_FUNCTOR_INIT solparser_pivot_init
 #include <rsys/dynamic_array.h>
 
+/* Declare the array of pivot2s */
+#define DARRAY_NAME pivot2
+#define DARRAY_DATA struct solparser_pivot2
+#define DARRAY_FUNCTOR_INIT solparser_pivot2_init
+#include <rsys/dynamic_array.h>
+
 /* Declare the hash table that maps the address of a YAML node to the id of its
  * in memory representation. */
 #define HTABLE_NAME yaml2sols
@@ -201,6 +207,7 @@ struct solparser {
   /* Miscellaneous */
   struct darray_anchor anchors;
   struct darray_pivot pivots;
+  struct darray_pivot2 pivot2s;
 
   ref_T ref;
   struct mem_allocator* allocator;
@@ -226,6 +233,13 @@ parse_pivot
   (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* pivot,
+   struct solparser_pivot_id* out_isolpivot);
+
+static res_T
+parse_pivot2
+  (struct solparser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* pivot2,
    struct solparser_pivot_id* out_isolpivot);
 
 static res_T
@@ -331,10 +345,10 @@ flush_deferred_target_aliases
 
     /* Define the targeted anchor of the pivot */
     pivot = darray_pivot_data_get(&parser->pivots) + tgt->pivot.i;
-    ASSERT(pivot->target_type == SOLPARSER_TARGET_ANCHOR);
+    ASSERT(pivot->target.type == SOLPARSER_TARGET_ANCHOR);
     ianchor = (size_t)(anchor - darray_anchor_cdata_get(&parser->anchors));
     ASSERT(ianchor < darray_anchor_size_get(&parser->anchors));
-    pivot->target.anchor.i = ianchor;
+    pivot->target.data.anchor.i = ianchor;
   }
 
   darray_tgtalias_clear(&parser->tgtaliases);
@@ -390,6 +404,7 @@ parser_clear(struct solparser* parser)
   /* Miscellaneous */
   darray_anchor_clear(&parser->anchors);
   darray_pivot_clear(&parser->pivots);
+  darray_pivot2_clear(&parser->pivot2s);
 }
 
 static void
@@ -439,6 +454,7 @@ parser_release(ref_T* ref)
   /* Miscellaneous */
   darray_anchor_release(&parser->anchors);
   darray_pivot_release(&parser->pivots);
+  darray_pivot2_release(&parser->pivot2s);
 
   MEM_RM(parser->allocator, parser);
 }
@@ -2527,6 +2543,11 @@ parse_entity
       SETUP_MASK(DATA, "data");
       solent.type = SOLPARSER_ENTITY_PIVOT;
       res = parse_pivot(parser, doc, val, &solent.data.pivot);
+    }
+    else if (!strcmp((char*) key->data.scalar.value, "pivot2")) {
+      SETUP_MASK(DATA, "data");
+      solent.type = SOLPARSER_ENTITY_PIVOT2;
+      res = parse_pivot2(parser, doc, val, &solent.data.pivot2);
     } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
       SETUP_MASK(TRANSFORM, "transform");
       res = parse_transform
@@ -2652,35 +2673,32 @@ error:
 }
 
 static res_T
-parse_target
+parse_target_
   (struct solparser* parser,
    yaml_document_t* doc,
-   const yaml_node_t* target,
-   struct solparser_pivot* pivot)
+   const yaml_node_t* target_node,
+   struct solparser_target* target,
+   struct solparser_pivot_id pivot_id)
 {
   enum { POLICY };
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
-  struct solparser_pivot_id pivot_id;
   res_T res = RES_OK;
-  ASSERT(doc && target && pivot);
+  ASSERT(doc && target_node && target);
 
-  if(target->type != YAML_MAPPING_NODE) {
-    log_err(parser, target, "expect a target definition.\n");
+  if(target_node->type != YAML_MAPPING_NODE) {
+    log_err(parser, target_node, "expect a target definition.\n");
     res = RES_BAD_ARG;
     goto error;
   }
 
-  /* Retrieve the pivot id */
-  pivot_id.i = (size_t)(pivot - darray_pivot_cdata_get(&parser->pivots));
-
-  n = target->data.mapping.pairs.top - target->data.mapping.pairs.start;
+  n = target_node->data.mapping.pairs.top - target_node->data.mapping.pairs.start;
   FOR_EACH(i, 0, n) {
     yaml_node_t* key;
     yaml_node_t* val;
 
-    key = yaml_document_get_node(doc, target->data.mapping.pairs.start[i].key);
-    val = yaml_document_get_node(doc, target->data.mapping.pairs.start[i].value);
+    key = yaml_document_get_node(doc, target_node->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, target_node->data.mapping.pairs.start[i].value);
     if(key->type != YAML_SCALAR_NODE) {
       log_err(parser, key, "expect a target parameter.\n");
       res = RES_BAD_ARG;
@@ -2697,18 +2715,18 @@ parse_target
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "anchor")) {
       SETUP_MASK(POLICY, "policy");
-      pivot->target_type = SOLPARSER_TARGET_ANCHOR;
-      res = parse_anchor_alias(parser, val, pivot_id, &pivot->target.anchor);
+      target->type = SOLPARSER_TARGET_ANCHOR;
+      res = parse_anchor_alias(parser, val, pivot_id, &target->data.anchor);
     } else if(!strcmp((char*)key->data.scalar.value, "direction")) {
       SETUP_MASK(POLICY, "policy");
-      pivot->target_type = SOLPARSER_TARGET_DIRECTION;
+      target->type = SOLPARSER_TARGET_DIRECTION;
       res = parse_real3
-        (parser, doc, val, -DBL_MAX, DBL_MAX, pivot->target.direction);
+        (parser, doc, val, -DBL_MAX, DBL_MAX, target->data.direction);
     } else if(!strcmp((char*)key->data.scalar.value, "position")) {
       SETUP_MASK(POLICY, "policy");
-      pivot->target_type = SOLPARSER_TARGET_POSITION;
+      target->type = SOLPARSER_TARGET_POSITION;
       res = parse_real3
-        (parser, doc, val, -DBL_MAX, DBL_MAX, pivot->target.position);
+        (parser, doc, val, -DBL_MAX, DBL_MAX, target->data.position);
     } else if(!strcmp((char*)key->data.scalar.value, "sun")) {
       /* There is only one sun per YAML file. It is thus sufficient to define
        * the target_type to SOLPARSER_TARGET_SUN to indentify which data is
@@ -2716,7 +2734,7 @@ parse_target
        * to target */
       struct solparser_sun* sun;
       SETUP_MASK(POLICY, "policy");
-      pivot->target_type = SOLPARSER_TARGET_SUN;
+      target->type = SOLPARSER_TARGET_SUN;
       res = parse_sun(parser, doc, val, &sun);
     } else {
       log_err(parser, key, "unknown target parameter `%s'.\n",
@@ -2732,7 +2750,100 @@ parse_target
   }
 
   if(!(mask & BIT(POLICY))) {
-    log_err(parser, target, "the target policy is missing.\n");
+    log_err(parser, target_node, "the target policy is missing.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+static res_T
+parse_target
+  (struct solparser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* target_node,
+   const struct solparser_pivot_id pivot_id,
+   struct solparser_target* target)
+{
+  enum { POLICY };
+  intptr_t i, n;
+  int mask = 0; /* Register the parsed attributes */
+  res_T res = RES_OK;
+  ASSERT(doc && target_node && target);
+
+  if (target_node->type != YAML_MAPPING_NODE) {
+    log_err(parser, target_node, "expect a target definition.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  n = target_node->data.mapping.pairs.top - target_node->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, target_node->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, target_node->data.mapping.pairs.start[i].value);
+    if (key->type != YAML_SCALAR_NODE) {
+      log_err(parser, key, "expect a target parameter.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+
+#define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(parser, key, "the target "Name" is already defined.\n");       \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if (!strcmp((char*) key->data.scalar.value, "anchor")) {
+      SETUP_MASK(POLICY, "policy");
+      target->type = SOLPARSER_TARGET_ANCHOR;
+      res = parse_anchor_alias(parser, val, pivot_id, &target->data.anchor);
+    }
+    else if (!strcmp((char*) key->data.scalar.value, "direction")) {
+      SETUP_MASK(POLICY, "policy");
+      target->type = SOLPARSER_TARGET_DIRECTION;
+      res = parse_real3
+      (parser, doc, val, -DBL_MAX, DBL_MAX, target->data.direction);
+    }
+    else if (!strcmp((char*) key->data.scalar.value, "position")) {
+      SETUP_MASK(POLICY, "policy");
+      target->type = SOLPARSER_TARGET_POSITION;
+      res = parse_real3
+      (parser, doc, val, -DBL_MAX, DBL_MAX, target->data.position);
+    }
+    else if (!strcmp((char*) key->data.scalar.value, "sun")) {
+      /* There is only one sun per YAML file. It is thus sufficient to define
+      * the target_type to SOLPARSER_TARGET_SUN to indentify which data is
+      * targeted, i.e. it is not necessary to store the identifier of the sun
+      * to target */
+      struct solparser_sun* sun;
+      SETUP_MASK(POLICY, "policy");
+      target->type = SOLPARSER_TARGET_SUN;
+      res = parse_sun(parser, doc, val, &sun);
+    }
+    else {
+      log_err(parser, key, "unknown target parameter `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    if (res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
+#undef SETUP_MASK
+  }
+
+  if (!(mask & BIT(POLICY))) {
+    log_err(parser, target_node, "the target policy is missing.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -2802,8 +2913,10 @@ parse_pivot
       SETUP_MASK(NORMAL, "normal");
       res = parse_real3(parser, doc, val, -DBL_MAX, DBL_MAX, solpivot->normal);
     } else if(!strcmp((char*)key->data.scalar.value, "target")) {
+      struct solparser_pivot_id pivot_id;
+      pivot_id.i = (size_t) (solpivot - darray_pivot_cdata_get(&parser->pivots));
       SETUP_MASK(TARGET, "target");
-      res = parse_target(parser, doc, val, solpivot);
+      res = parse_target(parser, doc, val, pivot_id, &solpivot->target);
     } else {
       log_err(parser, key, "unknown pivot parameter `%s'.\n",
         key->data.scalar.value);
@@ -2836,6 +2949,106 @@ error:
     isolpivot = SIZE_MAX;
   }
   goto exit;
+}
+
+static res_T
+parse_pivot2
+  (struct solparser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* pivot2,
+   struct solparser_pivot_id* out_isolpivot)
+{
+  enum { SPACING, REF_POINT, TARGET };
+  struct solparser_pivot2* solpivot2 = NULL;
+  size_t isolpivot = SIZE_MAX;
+  int mask = 0; /* Register the parsed attributes */
+  intptr_t i, n;
+  res_T res = RES_OK;
+  ASSERT(doc && pivot2 && out_isolpivot);
+
+  if (pivot2->type != YAML_MAPPING_NODE) {
+    log_err(parser, pivot2, "expect a pivot2 definition.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  /* Allocate the solstice pivot */
+  isolpivot = darray_pivot2_size_get(&parser->pivot2s);
+  res = darray_pivot2_resize(&parser->pivot2s, isolpivot + 1);
+  if (res != RES_OK) {
+    log_err(parser, pivot2, "could not allocate the pivot2.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+  solpivot2 = darray_pivot2_data_get(&parser->pivot2s) + isolpivot;
+
+  n = pivot2->data.mapping.pairs.top - pivot2->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, pivot2->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, pivot2->data.mapping.pairs.start[i].value);
+    if (key->type != YAML_SCALAR_NODE) {
+      log_err(parser, key, "expect pivot2 parameters.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+#define SETUP_MASK(Flag, Name) {                                             \
+      if(mask & BIT(Flag)) {                                                 \
+        log_err(parser, key,                                                 \
+          "the pivot2 parameter `"Name"' is already defined.\n");            \
+        res = RES_BAD_ARG;                                                   \
+        goto error;                                                          \
+      }                                                                      \
+      mask |= BIT(Flag);                                                     \
+    } (void)0
+    if (!strcmp((char*) key->data.scalar.value, "spacing")) {
+      SETUP_MASK(SPACING, "spacing");
+      res = parse_real(parser, val, 0, DBL_MAX, &solpivot2->spacing);
+    }
+    else if (!strcmp((char*) key->data.scalar.value, "ref_point")) {
+      SETUP_MASK(REF_POINT, "ref_point");
+      res = parse_real3(parser, doc, val, -DBL_MAX, DBL_MAX, solpivot2->ref_point);
+    }
+    else if (!strcmp((char*) key->data.scalar.value, "target")) {
+      struct solparser_pivot_id pivot_id;
+      pivot_id.i = (size_t) (solpivot2 - darray_pivot2_cdata_get(&parser->pivot2s));
+      SETUP_MASK(TARGET, "target");
+      res = parse_target(parser, doc, val, pivot_id, &solpivot2->target);
+    }
+    else {
+      log_err(parser, key, "unknown pivot2 parameter `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    if (res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
+#undef SETUP_MASK
+  }
+#define CHECK_PARAM(Flag, Name)                                              \
+    if(!(mask & BIT(Flag))) {                                                \
+      log_err(parser, pivot2, "the pivot2 parameter `"Name"' is missing.\n");\
+      res = RES_BAD_ARG;                                                     \
+      goto error;                                                            \
+    } (void)0
+  CHECK_PARAM(SPACING, "spacing");
+  CHECK_PARAM(REF_POINT, "ref_point");
+  CHECK_PARAM(TARGET, "target");
+#undef CHECK_PARAM
+
+  exit :
+       out_isolpivot->i = isolpivot;
+       return res;
+     error:
+       if (solpivot2) {
+         darray_pivot2_pop_back(&parser->pivot2s);
+         isolpivot = SIZE_MAX;
+       }
+       goto exit;
 }
 
 /*******************************************************************************
@@ -3206,9 +3419,10 @@ solparser_create
   htable_str2sols_init(mem_allocator, &parser->str2entities);
   darray_entity_init(mem_allocator, &parser->entities);
 
-  /* Anchors */
+  /* Anchors and pivot(2)s */
   darray_anchor_init(mem_allocator, &parser->anchors);
   darray_pivot_init(mem_allocator, &parser->pivots);
+  darray_pivot2_init(mem_allocator, &parser->pivot2s);
 
 exit:
   *out_parser = parser;
@@ -3545,6 +3759,15 @@ solparser_get_pivot
 {
   ASSERT(parser && pivot.i < darray_pivot_size_get(&parser->pivots));
   return darray_pivot_cdata_get(&parser->pivots) + pivot.i;
+}
+
+const struct solparser_pivot2*
+solparser_get_pivot2
+  (const struct solparser* parser,
+   const struct solparser_pivot_id pivot2)
+{
+  ASSERT(parser && pivot2.i < darray_pivot2_size_get(&parser->pivot2s));
+  return darray_pivot2_cdata_get(&parser->pivot2s) + pivot2.i;
 }
 
 const struct solparser_shape*
