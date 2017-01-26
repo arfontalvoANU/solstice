@@ -57,19 +57,23 @@ main(int argc, char** argv)
   fprintf(stream, "      material: { matte: { reflectivity: 1 } }\n");
   fprintf(stream, "- entity:\n");
   fprintf(stream, "    name: lvl 0\n");
+  fprintf(stream, "    primary: 0\n");
   fprintf(stream, "    geometry: *sphere\n");
   fprintf(stream, "    transform: { translation: [1,2,3], rotation: [4,5,6]}\n");
   fprintf(stream, "    children:\n");
   fprintf(stream, "      - name: lvl1a\n");
+  fprintf(stream, "        primary: 1\n");
   fprintf(stream, "        geometry: \n");
   fprintf(stream, "          - sphere: {radius: 2}\n");
   fprintf(stream, "            material:\n");
   fprintf(stream, "              mirror: { reflectivity: 0.9, roughness: 0.1 }\n");
   fprintf(stream, "      - name: lvl1b\n");
+  fprintf(stream, "        primary: 0\n");
   fprintf(stream, "        geometry: *sphere\n");
   fprintf(stream, "        transform: { rotation: [3.14, 0, -1] }\n");
   fprintf(stream, "        children:\n");
   fprintf(stream, "          - name: lvl2\n");
+  fprintf(stream, "            primary: 0\n");
   fprintf(stream, "            geometry: *sphere\n");
   fprintf(stream, "- sun:\n");
   fprintf(stream, "    dni: 1\n");
@@ -142,6 +146,7 @@ main(int argc, char** argv)
   CHECK(strcmp("lvl1a", str_cget(&entity1a->name)), 0);
   CHECK(solparser_entity_get_children_count(entity1a), 0);
   CHECK(entity1a->type, SOLPARSER_ENTITY_GEOMETRY);
+  CHECK(entity1a->primary, 1);
   NCHECK(entity1a->data.geometry.i, geom_id.i);
   geom = solparser_get_geometry(parser, entity1a->data.geometry);
   CHECK(geom == geoms[0] || geom == geoms[1], 1);
@@ -170,6 +175,7 @@ main(int argc, char** argv)
   CHECK(strcmp("lvl1b", str_cget(&entity1b->name)), 0);
   CHECK(solparser_entity_get_children_count(entity1b), 1);
   CHECK(entity1b->type, SOLPARSER_ENTITY_GEOMETRY);
+  CHECK(entity1b->primary, 0);
   CHECK(entity1b->data.geometry.i, geom_id.i);
 
   entity_id = solparser_entity_get_child(entity1b, 0);

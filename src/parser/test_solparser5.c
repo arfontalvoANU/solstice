@@ -26,6 +26,7 @@ static const char* input[] = {
   "      material: { matte: { reflectivity: 1 } }\n",
   "- template: &template\n",
   "    name: lvl1\n",
+  "    primary: 1\n",
   "    geometry: *cuboid\n",
   "    anchors:\n",
   "      - name: anchor0\n",
