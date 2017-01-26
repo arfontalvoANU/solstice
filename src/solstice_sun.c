@@ -105,7 +105,7 @@ create_sun_pillbox
   }
 
   res = ssol_sun_set_pillbox_aperture
-    (sun, solparser_sun->radang_distrib.pillbox.aperture);
+    (sun, MDEG2RAD(solparser_sun->radang_distrib.pillbox.aperture));
   if(res != RES_OK) {
     fprintf(stderr, "Could not setup the aperture of the solver pillbox sun.\n");
     goto error;
