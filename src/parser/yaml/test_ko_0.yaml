@@ -898,13 +898,18 @@
 # <entity> ::=
 #   entity:
 #     <entity-data>
-##
+#
 # <entity-data> ::=
 #   name: STRING
-# [ <geometry> | <pivot> ]
+# [ <geometry-data> | <pivot> ]
 # [ <anchors> ]
 # [ <transform> ]
 # [ <children>  ]
+#
+# <geometry-data> ::=
+#   primary: INTEGER # in [0, 1]
+#   <geometry> 
+#
 
 # missing entity definition
 - entity:
@@ -914,6 +919,9 @@
 ---
 # missing name value
 - entity: { name: }
+---
+# missing primary value
+- entity: { primary: }
 ---
 # missing geometry value
 - entity: { geometry: }
@@ -930,14 +938,39 @@
 # missing children value
 - entity: { children: }
 ---
+# primary should be a number
+- entity: { primary: "dummy" }
+---
+# -1 invalid
+- entity: { primary: -1 }
+---
+# 2 invalid
+- entity: { primary: 2 }
+---
 # missing entity name
 - entity:
+    primary: 1
     geometry:
       - stl: { path: "file" }
         material: { matte: { reflectivity: 1 } }
 ---
+# missing entity primary
+- entity:
+    name: "entity"
+    geometry:
+      - stl: { path: "file" }
+        material: { matte: { reflectivity: 1 } }
+---
+# primary invalid in this context
+- entity:
+    name: "entity"
+    primary: 1
+---
 # 2x name
 - entity: { name: "ent", name: "ent" }
+---
+# 2x primary
+- entity: { primary: 1, primary: 1 }
 ---
 # cannot define both geometry and pivot
 - sun: &sun { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
@@ -972,11 +1005,13 @@
 # 2 entities with the same name
 - entity:
     name: "foo"
+    primary: 1
     geometry:
       - stl: { path: "file" }
         material: { matte: { reflectivity: 1 } }
 - entity:
     name: "foo"
+    primary: 1
     geometry:
       - stl: { path: "file" }
         material: { matte: { reflectivity: 1 } }
@@ -988,10 +1023,15 @@
 #
 # <entity-data> ::=
 #   name: STRING
-# [ <geometry> | <pivot> ]
+# [ <geometry-data> | <pivot> ]
 # [ <anchors> ]
 # [ <transform> ]
 # [ <children>  ]
+#
+# <geometry-data> ::=
+#   primary: INTEGER # in [0, 1]
+#   <geometry> 
+#
 
 # missing template definition
 - template: &temp
@@ -1003,6 +1043,10 @@
 ---
 # missing name value
 - template: &temp { name: }
+- entity: *temp
+---
+# missing primary value
+- template: &temp { primary: }
 - entity: *temp
 ---
 # missing geometry value
@@ -1025,6 +1069,17 @@
 - template: &temp { children: }
 - entity: *temp
 ---
+# primary should be a number
+- template: &temp { primary: "dummy" }
+---
+# -1 invalid
+- template: &temp { primary: -1 }
+- entity: *temp
+---
+# 2 invalid
+- template: &temp { primary: 2 }
+- entity: *temp
+---
 # missing template name
 - template: &temp
     geometry:
@@ -1032,8 +1087,26 @@
         material: { matte: { reflectivity: 1 } }
 - entity: *temp
 ---
+# missing template primary
+- template: &temp
+    name: "entity"
+    geometry:
+      - stl: { path: "file" }
+        material: { matte: { reflectivity: 1 } }
+- entity: *temp
+---
+# primary invalid in this context
+- template: &temp
+    name: "entity"
+    primary: 1
+- entity: *temp
+---
 # 2x name
 - template: &temp { name: "ent", name: "ent" }
+- entity: *temp
+---
+# 2x primary
+- template: &temp { primary: 1, primary: 1 }
 - entity: *temp
 ---
 # cannot define both geometry and pivot
@@ -1073,11 +1146,13 @@
 # 2 templates with the same name
 - template: &temp1
     name: "foo"
+    primary: 1
     geometry:
       - stl: { path: "file" }
         material: { matte: { reflectivity: 1 } }
 - template: &temp2
     name: "foo"
+    primary: 1
     geometry:
       - stl: { path: "file" }
         material: { matte: { reflectivity: 1 } }
@@ -1188,6 +1263,7 @@
 # missing sun in document
 - entity:
     name: foo
+    primary: 1
     geometry:
       - cuboid: { size: [1, 2, 3] }
         material: { matte: { reflectivity: 1 } }

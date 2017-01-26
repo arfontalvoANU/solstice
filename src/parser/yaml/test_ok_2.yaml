@@ -1,6 +1,7 @@
 - sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - entity:
     name: 1
+    primary: 0
     geometry:
       - material: { matte: { reflectivity: 1 } }
         stl: { path: path toward }
@@ -8,6 +9,7 @@
 - sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - entity:
     name: 1a
+    primary: 1
     geometry:
       - material: { matte: { reflectivity: 1 } }
         obj: { path: "my_path" }
@@ -15,6 +17,7 @@
 - sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - entity:
     name: test
+    primary: 0
     geometry:
       - material: { matte: { reflectivity: 1 } }
         obj: { path: "path/path/path" }
@@ -23,6 +26,7 @@
 - sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - entity:
     name: test
+    primary: 0
     geometry:
       - material: { matte: { reflectivity: 1 } }
         obj: { path: "path/path/path" }
@@ -31,6 +35,7 @@
 - sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - entity:
     name: hop
+    primary: 1
     geometry:
       - material: { matte: { reflectivity: 1 } }
         stl: { path: "path/path/path" }

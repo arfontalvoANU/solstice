@@ -14,6 +14,7 @@
 
 - entity:
     name: "hop"
+    primary: 0
     geometry: *cylinder
     transform:
       translation: [0, 1, 2]
@@ -34,11 +35,13 @@
 
 - entity:
     name: "entity"
+    primary: 0
     geometry: *cylinder
 ---
 - sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - entity:
     name: entity
+    primary: 1
     geometry:
       - material: { mirror: { reflectivity: 0.314, roughness: 0.5 } }
         cylinder: { height: 10.12, radius: 0.32 }
@@ -46,6 +49,7 @@
 - sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - entity:
     name: entity
+    primary: 1
     geometry:
       - material: { mirror: { reflectivity: 0, roughness: 0.5 } }
         cylinder: { height: 1, radius: 1 }

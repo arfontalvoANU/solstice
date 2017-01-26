@@ -27,6 +27,7 @@
 # Create the solar factory
 - entity:
     name: "entity0"
+    primary: 0
     transform: { rotation: [0, 90, 0] }
     anchors:
       - name: "anchor0"
@@ -42,6 +43,7 @@
 
 - template: &composition
     name: "composition"
+    primary: 1
     transform: { translation: [1, 2, 3 ] }
     geometry:
       - cylinder: { height: 5, radius: 0.5 }
@@ -60,16 +62,19 @@
 
 - entity:
     name: "entity2"
+    primary: 0
     transform: { translation: [4, 5, 6] }
     children: [ *composition ]
 
 - entity:
     name: "entity3"
+    primary: 0
     transform: { translation: [7, 8, 9] }
     children: [ *composition ]
 
 - entity:
     name: "entity4"
+    primary: 1
     transform: { translation: [10, 11, 12] }
     children: [ *composition ]
 
@@ -113,7 +118,6 @@
   | direction: <real3>
   | position: <real3>
   | <sun>
-
 
 ----------------------------------------
 <shape> ::=
@@ -212,10 +216,14 @@
 
 <entity-data> ::=
   name: STRING
-[ <geometry> | <pivot> ]
+[ <geometry-data> | <pivot> ]
 [ <anchors> ]
 [ <transform> ]
 [ <children>  ]
+
+<geometry-data> ::=
+  primary: INTEGER # in [0, 1]
+  <geometry> 
 
 <children> ::=
   children:

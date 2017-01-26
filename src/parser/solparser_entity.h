@@ -61,6 +61,8 @@ struct solparser_entity {
 
   struct str name;
 
+  int primary;
+
   enum solparser_entity_type type;
   union {
     struct solparser_geometry_id geometry;
@@ -84,6 +86,7 @@ solparser_entity_init
   entity->type = SOLPARSER_ENTITY_GEOMETRY;
   entity->data.geometry.i = SIZE_MAX;
   str_init(allocator, &entity->name);
+  entity->primary = 2;
   htable_str2sols_init(allocator, &entity->str2anchors);
   htable_str2sols_init(allocator, &entity->str2children);
   darray_anchor_id_init(allocator, &entity->anchors);
@@ -112,6 +115,7 @@ solparser_entity_copy
   dst->type = src->type;
   dst->data = src->data;
   res = str_copy(&dst->name, &src->name);
+  dst->primary = src->primary;
   if(res != RES_OK) return res;
   res = htable_str2sols_copy(&dst->str2anchors, &src->str2anchors);
   if(res != RES_OK) return res;
@@ -135,6 +139,7 @@ solparser_entity_copy_and_release
   dst->type = src->type;
   dst->data = src->data;
   res = str_copy_and_release(&dst->name, &src->name);
+  dst->primary = src->primary;
   if(res != RES_OK) return res;
   res = htable_str2sols_copy_and_release(&dst->str2anchors, &src->str2anchors);
   if(res != RES_OK) return res;
@@ -158,6 +163,7 @@ solparser_entity_copy_and_clear
   dst->type = src->type;
   dst->data = src->data;
   res = str_copy_and_clear(&dst->name, &src->name);
+  dst->primary = src->primary;
   if(res != RES_OK) return res;
   res = htable_str2sols_copy_and_clear(&dst->str2anchors, &src->str2anchors);
   if(res != RES_OK) return res;

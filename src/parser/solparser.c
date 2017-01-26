@@ -2450,7 +2450,7 @@ parse_entity
    struct htable_str2sols* htable,
    struct solparser_entity_id* out_isolent)
 {
-  enum { ANCHORS, CHILDREN, DATA, NAME, TRANSFORM };
+  enum { ANCHORS, CHILDREN, DATA, NAME, TRANSFORM, PRIMARY };
   struct solparser_entity solent;
   struct solparser_entity* psolent;
   const size_t *pisolent;
@@ -2531,7 +2531,13 @@ parse_entity
       SETUP_MASK(TRANSFORM, "transform");
       res = parse_transform
         (parser, doc, val, solent.translation, solent.rotation);
-    } else {
+    } else if (!strcmp((char*) key->data.scalar.value, "primary")) {
+      long tmp;
+      SETUP_MASK(PRIMARY, "primary");
+      res = parse_integer(parser, val, 0, 1, &tmp);
+      solent.primary = (int)tmp;
+    }
+    else {
       log_err(parser, key, "unknown entity parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
@@ -2554,8 +2560,22 @@ parse_entity
       res = RES_BAD_ARG;                                                       \
       goto error;                                                              \
     } (void)0
+  #define CHECK_NOPARAM(Flag, Name)                                            \
+    if(mask & BIT(Flag)) {                                                     \
+      log_err(parser, entity,                                                  \
+        "the entity "Name" is invalid in this context.\n");                    \
+      res = RES_BAD_ARG;                                                       \
+      goto error;                                                              \
+    } (void) 0
   CHECK_PARAM(NAME, "name");
+  if (solent.type == SOLPARSER_ENTITY_GEOMETRY) {
+    CHECK_PARAM(PRIMARY, "primary");
+  }
+  else {
+    CHECK_NOPARAM(PRIMARY, "primary");
+  }
   #undef CHECK_PARAM
+  #undef CHECK_NOPARAM
 
   psolent = darray_entity_data_get(&parser->entities) + isolent;
   res = solparser_entity_copy_and_clear(psolent, &solent);

@@ -29,6 +29,7 @@ static const char* input[] = {
   "      material: *lambertian\n",
   "- template: &template\n",
   "    name: template0\n",
+  "    primary: 1\n",
   "    geometry: *cuboid\n",
   "- entity:\n",
   "    name: entity0\n",

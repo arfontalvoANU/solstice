@@ -13,9 +13,11 @@
 
 - template: &template
     name: "template"
+    primary: 0
     geometry: *geom
     children:
       - name: "child0"
+        primary: 0
         geometry: *geom
         transform: { rotation: [1, 2, 3] }
 

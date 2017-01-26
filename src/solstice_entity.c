@@ -176,6 +176,8 @@ create_node(struct solstice* solstice, const struct solparser_entity* entity)
       break;
     case SOLPARSER_ENTITY_GEOMETRY:
       node = create_geometry_node(solstice, entity);
+      res = solstice_node_geometry_set_primary(node, entity->primary);
+      if (res != RES_OK) goto error;
       break;
     case SOLPARSER_ENTITY_PIVOT:
       node = create_pivot_node(solstice, entity);
