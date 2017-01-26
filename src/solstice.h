@@ -119,6 +119,7 @@ struct solstice {
   struct htable_receiver receivers;
   struct darray_nodes roots;
   struct darray_nodes pivots;
+  struct ssol_material* mtl_virtual; /* Shared virtual material */
 
   /* Rendering */
   struct ssol_camera* camera;

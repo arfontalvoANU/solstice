@@ -365,6 +365,12 @@ solstice_init
     goto error;
   }
 
+  res = ssol_material_create_virtual(solstice->ssol, &solstice->mtl_virtual);
+  if(res != RES_OK) {
+    fprintf(stderr, "Could not create the global virtual material.\n");
+    goto error;
+  }
+
   res = solparser_create(allocator, &solstice->parser);
   if(res != RES_OK) {
     fprintf(stderr, "Could not create the Solstice Parser.\n");
@@ -438,6 +444,7 @@ solstice_release(struct solstice* solstice)
   if(solstice->camera) SSOL(camera_ref_put(solstice->camera));
   if(solstice->framebuffer) SSOL(image_ref_put(solstice->framebuffer));
   if(solstice->output && solstice->output != stdout) fclose(solstice->output);
+  if(solstice->mtl_virtual) SSOL(material_ref_put(solstice->mtl_virtual));
   htable_material_release(&solstice->materials);
   htable_object_release(&solstice->objects);
   htable_anchor_release(&solstice->anchors);
