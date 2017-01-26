@@ -223,8 +223,7 @@ solstice_node_ref_put(struct solstice_node* node)
 
 res_T
 solstice_node_geometry_set_primary
-  (struct solstice_node* node,
-   const int is_primary)
+  (struct solstice_node* node, const int is_primary)
 {
   ASSERT(node && (!is_primary || node->type == SOLSTICE_NODE_GEOMETRY));
   return ssol_instance_sample(node->instance, is_primary);

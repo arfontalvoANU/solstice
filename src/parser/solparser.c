@@ -2531,13 +2531,12 @@ parse_entity
       SETUP_MASK(TRANSFORM, "transform");
       res = parse_transform
         (parser, doc, val, solent.translation, solent.rotation);
-    } else if (!strcmp((char*) key->data.scalar.value, "primary")) {
+    } else if(!strcmp((char*) key->data.scalar.value, "primary")) {
       long tmp;
       SETUP_MASK(PRIMARY, "primary");
       res = parse_integer(parser, val, 0, 1, &tmp);
       solent.primary = (int)tmp;
-    }
-    else {
+    } else {
       log_err(parser, key, "unknown entity parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
@@ -2556,26 +2555,20 @@ parse_entity
 
   #define CHECK_PARAM(Flag, Name)                                              \
     if(!(mask & BIT(Flag))) {                                                  \
-      log_err(parser, entity, "the entity "Name" is missing.\n");              \
+      log_err(parser, entity, "the entity "Name" parameter is missing.\n");    \
       res = RES_BAD_ARG;                                                       \
       goto error;                                                              \
     } (void)0
-  #define CHECK_NOPARAM(Flag, Name)                                            \
-    if(mask & BIT(Flag)) {                                                     \
-      log_err(parser, entity,                                                  \
-        "the entity "Name" is invalid in this context.\n");                    \
-      res = RES_BAD_ARG;                                                       \
-      goto error;                                                              \
-    } (void) 0
   CHECK_PARAM(NAME, "name");
-  if (solent.type == SOLPARSER_ENTITY_GEOMETRY) {
+  if(solent.type == SOLPARSER_ENTITY_GEOMETRY) {
     CHECK_PARAM(PRIMARY, "primary");
-  }
-  else {
-    CHECK_NOPARAM(PRIMARY, "primary");
+  } else if(mask & BIT(PRIMARY)) {
+    log_err(parser, entity,
+      "the entity primary parameter is invalid in this context.\n");
+    res = RES_BAD_ARG;
+    goto error;
   }
   #undef CHECK_PARAM
-  #undef CHECK_NOPARAM
 
   psolent = darray_entity_data_get(&parser->entities) + isolent;
   res = solparser_entity_copy_and_clear(psolent, &solent);

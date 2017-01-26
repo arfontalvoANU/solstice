@@ -176,8 +176,6 @@ create_node(struct solstice* solstice, const struct solparser_entity* entity)
       break;
     case SOLPARSER_ENTITY_GEOMETRY:
       node = create_geometry_node(solstice, entity);
-      res = solstice_node_geometry_set_primary(node, entity->primary);
-      if (res != RES_OK) goto error;
       break;
     case SOLPARSER_ENTITY_PIVOT:
       node = create_pivot_node(solstice, entity);
@@ -187,6 +185,17 @@ create_node(struct solstice* solstice, const struct solparser_entity* entity)
   if(!node) {
     fprintf(stderr, "Could not setup the entity node.\n");
     goto error;
+  }
+
+  /* Setup the primary parameter for the geometry entity */
+  if(entity->type == SOLPARSER_ENTITY_GEOMETRY) {
+    res = solstice_node_geometry_set_primary(node, entity->primary);
+    if(res != RES_OK) {
+      fprintf(stderr,
+        "Could not define the primary parameter of the entity `%s'.\n",
+        str_cget(&entity->name));
+      goto error;
+    }
   }
 
   /* Setup the entity receiver flags */
