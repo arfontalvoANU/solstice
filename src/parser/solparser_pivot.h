@@ -75,6 +75,9 @@ struct solparser_target {
     struct solparser_anchor_id anchor;
   } data;
 };
+#define SOLPARSER_TARGET_NULL__ { SOLPARSER_TARGET_TYPES_COUNT__, {{0,0,0}} }
+static const struct solparser_target SOLPARSER_TARGET_NULL =
+  SOLPARSER_TARGET_NULL__;
 
 struct solparser_pivot_id { size_t i; };
 
@@ -84,11 +87,9 @@ struct solparser_pivot {
   struct solparser_target target;
 };
 
-#define SOLPARSER_PIVOT_NULL__ {                                               \
-  {0,0,0}, {0,0,0}, SOLPARSER_TARGET_TYPES_COUNT__, {{0,0,0}}                  \
-}
+#define SOLPARSER_PIVOT_NULL__ { {0,0,0}, {0,0,0}, SOLPARSER_TARGET_NULL__ }
 static const struct solparser_pivot SOLPARSER_PIVOT_NULL =
-SOLPARSER_PIVOT_NULL__;
+  SOLPARSER_PIVOT_NULL__;
 
 static INLINE void
 solparser_pivot_init
@@ -104,10 +105,8 @@ struct solparser_pivot2 {
   struct solparser_target target;
 };
 
-#define SOLPARSER_PIVOT2_NULL__ {                                               \
-  0, {0,0,0}, SOLPARSER_TARGET_TYPES_COUNT__, {{0,0,0}}                  \
-}
-static const struct solparser_pivot2 SOLPARSER_PIVOT2_NULL = 
+#define SOLPARSER_PIVOT2_NULL__ { 0, {0,0,0}, SOLPARSER_TARGET_NULL__ }
+static const struct solparser_pivot2 SOLPARSER_PIVOT2_NULL =
   SOLPARSER_PIVOT2_NULL__;
 
 static INLINE void
