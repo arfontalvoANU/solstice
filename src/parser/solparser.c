@@ -2997,7 +2997,7 @@ parse_buie
         goto error;
       }
       mask |= BIT(CSR);
-      res = parse_real(parser, val, nextafter(0, 1), nextafter(1, 0), &sun->csr);
+      res = parse_real(parser, val, 1e-6, 0.849, &sun->csr);
     } else {
       log_err(parser, key, "unknown buie parameter `%s'.\n",
         key->data.scalar.value);
