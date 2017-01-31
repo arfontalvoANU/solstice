@@ -265,7 +265,7 @@
 # 
 # <buie> ::=
 #   buie:
-#     csr: REAL # in ]0, 1[
+#     csr: REAL # in [1e-6, 0.849]
 # 
 # <pillbox> ::=
 #   pillbox:
