@@ -145,16 +145,16 @@ struct target_alias {
 #define DARRAY_FUNCTOR_COPY_AND_RELEASE solparser_anchor_copy_and_release
 #include <rsys/dynamic_array.h>
 
-/* Declare the array of pivots */
-#define DARRAY_NAME pivot
-#define DARRAY_DATA struct solparser_pivot
-#define DARRAY_FUNCTOR_INIT solparser_pivot_init
+/* Declare the array of x_pivots */
+#define DARRAY_NAME x_pivot
+#define DARRAY_DATA struct solparser_x_pivot
+#define DARRAY_FUNCTOR_INIT solparser_x_pivot_init
 #include <rsys/dynamic_array.h>
 
-/* Declare the array of pivot2s */
-#define DARRAY_NAME pivot2
-#define DARRAY_DATA struct solparser_pivot2
-#define DARRAY_FUNCTOR_INIT solparser_pivot2_init
+/* Declare the array of xz_pivots */
+#define DARRAY_NAME xz_pivot
+#define DARRAY_DATA struct solparser_xz_pivot
+#define DARRAY_FUNCTOR_INIT solparser_xz_pivot_init
 #include <rsys/dynamic_array.h>
 
 /* Declare the hash table that maps the address of a YAML node to the id of its
@@ -206,8 +206,8 @@ struct solparser {
 
   /* Miscellaneous */
   struct darray_anchor anchors;
-  struct darray_pivot pivots;
-  struct darray_pivot2 pivot2s;
+  struct darray_x_pivot x_pivots;
+  struct darray_xz_pivot xz_pivots;
 
   ref_T ref;
   struct mem_allocator* allocator;
@@ -229,17 +229,17 @@ parse_geometry
    struct solparser_geometry_id* solgeom);
 
 static res_T
-parse_pivot
+parse_x_pivot
   (struct solparser* parser,
    yaml_document_t* doc,
-   const yaml_node_t* pivot,
+   const yaml_node_t* x_pivot,
    struct solparser_pivot_id* out_isolpivot);
 
 static res_T
-parse_pivot2
+parse_xz_pivot
   (struct solparser* parser,
    yaml_document_t* doc,
-   const yaml_node_t* pivot2,
+   const yaml_node_t* xz_pivot,
    struct solparser_pivot_id* out_isolpivot);
 
 static res_T
@@ -314,7 +314,7 @@ flush_deferred_target_aliases
   n = darray_tgtalias_size_get(&parser->tgtaliases);
   FOR_EACH(i, 0, n) {
     const struct solparser_anchor* anchor;
-    struct solparser_pivot* pivot;
+    struct solparser_x_pivot* x_pivot;
     const struct target_alias* tgt;
     size_t ianchor;
     size_t len;
@@ -344,11 +344,11 @@ flush_deferred_target_aliases
     }
 
     /* Define the targeted anchor of the pivot */
-    pivot = darray_pivot_data_get(&parser->pivots) + tgt->pivot.i;
-    ASSERT(pivot->target.type == SOLPARSER_TARGET_ANCHOR);
+    x_pivot = darray_x_pivot_data_get(&parser->x_pivots) + tgt->pivot.i;
+    ASSERT(x_pivot->target.type == SOLPARSER_TARGET_ANCHOR);
     ianchor = (size_t)(anchor - darray_anchor_cdata_get(&parser->anchors));
     ASSERT(ianchor < darray_anchor_size_get(&parser->anchors));
-    pivot->target.data.anchor.i = ianchor;
+    x_pivot->target.data.anchor.i = ianchor;
   }
 
   darray_tgtalias_clear(&parser->tgtaliases);
@@ -403,8 +403,8 @@ parser_clear(struct solparser* parser)
 
   /* Miscellaneous */
   darray_anchor_clear(&parser->anchors);
-  darray_pivot_clear(&parser->pivots);
-  darray_pivot2_clear(&parser->pivot2s);
+  darray_x_pivot_clear(&parser->x_pivots);
+  darray_xz_pivot_clear(&parser->xz_pivots);
 }
 
 static void
@@ -453,8 +453,8 @@ parser_release(ref_T* ref)
 
   /* Miscellaneous */
   darray_anchor_release(&parser->anchors);
-  darray_pivot_release(&parser->pivots);
-  darray_pivot2_release(&parser->pivot2s);
+  darray_x_pivot_release(&parser->x_pivots);
+  darray_xz_pivot_release(&parser->xz_pivots);
 
   MEM_RM(parser->allocator, parser);
 }
@@ -1603,11 +1603,11 @@ parse_cylinder
   #undef CHECK_PARAM
 
   #define DEFAULT_PARAM(Flag, Ptr, Value)                                      \
-  if(!(mask & BIT(Flag))) {                                                    \
-    *(Ptr) = Value;                                                            \
-  } (void)0
+    if(!(mask & BIT(Flag))) {                                                  \
+      *(Ptr) = Value;                                                          \
+    } (void)0
   DEFAULT_PARAM(SLICES, &shape->nslices, 16);
-  #undef DEFAULT_PARAM
+ #undef DEFAULT_PARAM
 
 exit:
   out_ishape->i = ishape;
@@ -1971,11 +1971,11 @@ parse_sphere
     } (void)0
   CHECK_PARAM(RADIUS, "radius");
   #undef CHECK_PARAM
- 
+
   #define DEFAULT_PARAM(Flag, Ptr, Value)                                      \
-  if(!(mask & BIT(Flag))) {                                                    \
-    *(Ptr) = Value;                                                            \
-  } (void)0
+    if(!(mask & BIT(Flag))) {                                                  \
+      *(Ptr) = Value;                                                          \
+    } (void)0
   DEFAULT_PARAM(SLICES, &shape->nslices, 16);
   #undef DEFAULT_PARAM
 
@@ -2557,14 +2557,14 @@ parse_entity
     } else if(!strcmp((char*)key->data.scalar.value, "name")) {
       SETUP_MASK(NAME, "name");
       res = parse_identifier_string(parser, val, &solent.name);
-    } else if(!strcmp((char*)key->data.scalar.value, "pivot")) {
+    } else if(!strcmp((char*)key->data.scalar.value, "x_pivot")) {
       SETUP_MASK(DATA, "data");
-      solent.type = SOLPARSER_ENTITY_PIVOT;
-      res = parse_pivot(parser, doc, val, &solent.data.pivot);
-    } else if(!strcmp((char*) key->data.scalar.value, "pivot2")) {
+      solent.type = SOLPARSER_ENTITY_X_PIVOT;
+      res = parse_x_pivot(parser, doc, val, &solent.data.x_pivot);
+    } else if(!strcmp((char*) key->data.scalar.value, "xz_pivot")) {
       SETUP_MASK(DATA, "data");
-      solent.type = SOLPARSER_ENTITY_PIVOT2;
-      res = parse_pivot2(parser, doc, val, &solent.data.pivot2);
+      solent.type = SOLPARSER_ENTITY_XZ_PIVOT;
+      res = parse_xz_pivot(parser, doc, val, &solent.data.xz_pivot);
     } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
       SETUP_MASK(TRANSFORM, "transform");
       res = parse_transform
@@ -2779,70 +2779,67 @@ error:
 }
 
 static res_T
-parse_pivot
+parse_x_pivot
   (struct solparser* parser,
    yaml_document_t* doc,
-   const yaml_node_t* pivot,
+   const yaml_node_t* x_pivot,
    struct solparser_pivot_id* out_isolpivot)
 {
-  enum { NORMAL, POINT, TARGET };
-  struct solparser_pivot* solpivot = NULL;
+  enum { REF_POINT, TARGET };
+  struct solparser_x_pivot* solxpivot = NULL;
   size_t isolpivot = SIZE_MAX;
   int mask = 0; /* Register the parsed attributes */
   intptr_t i, n;
   res_T res = RES_OK;
-  ASSERT(doc && pivot && out_isolpivot);
+  ASSERT(doc && x_pivot && out_isolpivot);
 
-  if(pivot->type != YAML_MAPPING_NODE) {
-    log_err(parser, pivot, "expect a pivot definition.\n");
+  if(x_pivot->type != YAML_MAPPING_NODE) {
+    log_err(parser, x_pivot, "expect a x_pivot definition.\n");
     res = RES_BAD_ARG;
     goto error;
   }
 
   /* Allocate the solstice pivot */
-  isolpivot = darray_pivot_size_get(&parser->pivots);
-  res = darray_pivot_resize(&parser->pivots, isolpivot + 1);
+  isolpivot = darray_x_pivot_size_get(&parser->x_pivots);
+  res = darray_x_pivot_resize(&parser->x_pivots, isolpivot + 1);
   if(res != RES_OK) {
-    log_err(parser, pivot, "could not allocate the pivot.\n");
+    log_err(parser, x_pivot, "could not allocate the x_pivot.\n");
     res = RES_BAD_ARG;
     goto error;
   }
-  solpivot = darray_pivot_data_get(&parser->pivots) + isolpivot;
+  solxpivot = darray_x_pivot_data_get(&parser->x_pivots) + isolpivot;
 
-  n = pivot->data.mapping.pairs.top - pivot->data.mapping.pairs.start;
+  n = x_pivot->data.mapping.pairs.top - x_pivot->data.mapping.pairs.start;
   FOR_EACH(i, 0, n) {
     yaml_node_t* key;
     yaml_node_t* val;
 
-    key = yaml_document_get_node(doc, pivot->data.mapping.pairs.start[i].key);
-    val = yaml_document_get_node(doc, pivot->data.mapping.pairs.start[i].value);
+    key = yaml_document_get_node(doc, x_pivot->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, x_pivot->data.mapping.pairs.start[i].value);
     if(key->type != YAML_SCALAR_NODE) {
-      log_err(parser, key, "expect pivot parameters.\n");
+      log_err(parser, key, "expect x_pivot parameters.\n");
       res = RES_BAD_ARG;
       goto error;
     }
     #define SETUP_MASK(Flag, Name) {                                           \
       if(mask & BIT(Flag)) {                                                   \
         log_err(parser, key,                                                   \
-          "the pivot parameter `"Name"' is already defined.\n");               \
+          "the x_pivot parameter `"Name"' is already defined.\n");             \
         res = RES_BAD_ARG;                                                     \
         goto error;                                                            \
       }                                                                        \
       mask |= BIT(Flag);                                                       \
     } (void)0
-    if(!strcmp((char*)key->data.scalar.value, "point")) {
-      SETUP_MASK(POINT, "point");
-      res = parse_real3(parser, doc, val, -DBL_MAX, DBL_MAX, solpivot->point);
-    } else if(!strcmp((char*)key->data.scalar.value, "normal")) {
-      SETUP_MASK(NORMAL, "normal");
-      res = parse_real3(parser, doc, val, -DBL_MAX, DBL_MAX, solpivot->normal);
+    if(!strcmp((char*)key->data.scalar.value, "ref_point")) {
+      SETUP_MASK(REF_POINT, "point");
+      res = parse_real3(parser, doc, val, -DBL_MAX, DBL_MAX, solxpivot->ref_point);
     } else if(!strcmp((char*)key->data.scalar.value, "target")) {
       struct solparser_pivot_id pivot_id;
-      pivot_id.i = (size_t) (solpivot - darray_pivot_cdata_get(&parser->pivots));
+      pivot_id.i = (size_t) (solxpivot - darray_x_pivot_cdata_get(&parser->x_pivots));
       SETUP_MASK(TARGET, "target");
-      res = parse_target(parser, doc, val, &solpivot->target, pivot_id);
+      res = parse_target(parser, doc, val, &solxpivot->target, pivot_id);
     } else {
-      log_err(parser, key, "unknown pivot parameter `%s'.\n",
+      log_err(parser, key, "unknown x_pivot parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
       goto error;
@@ -2855,73 +2852,81 @@ parse_pivot
   }
   #define CHECK_PARAM(Flag, Name)                                              \
     if(!(mask & BIT(Flag))) {                                                  \
-      log_err(parser, pivot, "the pivot parameter `"Name"' is missing.\n");    \
+      log_err(parser, x_pivot, "the x_pivot parameter `"Name"' is missing.\n");\
       res = RES_BAD_ARG;                                                       \
       goto error;                                                              \
     } (void)0
-  CHECK_PARAM(POINT, "point");
-  CHECK_PARAM(NORMAL, "normal");
   CHECK_PARAM(TARGET, "target");
   #undef CHECK_PARAM
+
+  #define DEFAULT_PARAM(Flag, Ptr, Value)                                      \
+    if(!(mask & BIT(Flag))) {                                                  \
+      *(Ptr) = Value;                                                          \
+    } (void)0
+  DEFAULT_PARAM(REF_POINT, solxpivot->ref_point, 0);
+  DEFAULT_PARAM(REF_POINT, solxpivot->ref_point+1, 0);
+  DEFAULT_PARAM(REF_POINT, solxpivot->ref_point+2, 0);
+  #undef DEFAULT_PARAM
 
 exit:
   out_isolpivot->i = isolpivot;
   return res;
 error:
-  if(solpivot) {
-    darray_pivot_pop_back(&parser->pivots);
+  if(solxpivot) {
+    darray_x_pivot_pop_back(&parser->x_pivots);
     isolpivot = SIZE_MAX;
   }
   goto exit;
 }
 
 static res_T
-parse_pivot2
+parse_xz_pivot
   (struct solparser* parser,
    yaml_document_t* doc,
-   const yaml_node_t* pivot2,
+   const yaml_node_t* xz_pivot,
    struct solparser_pivot_id* out_isolpivot)
 {
   enum { SPACING, REF_POINT, TARGET };
-  struct solparser_pivot2* solpivot2 = NULL;
+  struct solparser_xz_pivot* solxzpivot = NULL;
   size_t isolpivot = SIZE_MAX;
   int mask = 0; /* Register the parsed attributes */
   intptr_t i, n;
   res_T res = RES_OK;
-  ASSERT(doc && pivot2 && out_isolpivot);
+  ASSERT(doc && xz_pivot && out_isolpivot);
 
-  if(pivot2->type != YAML_MAPPING_NODE) {
-    log_err(parser, pivot2, "expect a pivot2 definition.\n");
+  if(xz_pivot->type != YAML_MAPPING_NODE) {
+    log_err(parser, xz_pivot, "expect a xz_pivot definition.\n");
     res = RES_BAD_ARG;
     goto error;
   }
 
   /* Allocate the solstice pivot */
-  isolpivot = darray_pivot2_size_get(&parser->pivot2s);
-  res = darray_pivot2_resize(&parser->pivot2s, isolpivot + 1);
+  isolpivot = darray_xz_pivot_size_get(&parser->xz_pivots);
+  res = darray_xz_pivot_resize(&parser->xz_pivots, isolpivot + 1);
   if(res != RES_OK) {
-    log_err(parser, pivot2, "could not allocate the pivot2.\n");
+    log_err(parser, xz_pivot, "could not allocate the xz_pivot.\n");
     res = RES_BAD_ARG;
     goto error;
   }
-  solpivot2 = darray_pivot2_data_get(&parser->pivot2s) + isolpivot;
+  solxzpivot = darray_xz_pivot_data_get(&parser->xz_pivots) + isolpivot;
 
-  n = pivot2->data.mapping.pairs.top - pivot2->data.mapping.pairs.start;
+  n = xz_pivot->data.mapping.pairs.top - xz_pivot->data.mapping.pairs.start;
   FOR_EACH(i, 0, n) {
     yaml_node_t* key;
     yaml_node_t* val;
 
-    key = yaml_document_get_node(doc, pivot2->data.mapping.pairs.start[i].key);
-    val = yaml_document_get_node(doc, pivot2->data.mapping.pairs.start[i].value);
+    key = yaml_document_get_node(doc, xz_pivot->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(
+      doc, xz_pivot->data.mapping.pairs.start[i].value);
     if(key->type != YAML_SCALAR_NODE) {
-      log_err(parser, key, "expect pivot2 parameters.\n");
+      log_err(parser, key, "expect xz_pivot parameters.\n");
       res = RES_BAD_ARG;
       goto error;
     }
     #define SETUP_MASK(Flag, Name) {                                           \
       if(mask & BIT(Flag)) {                                                   \
         log_err(parser, key,                                                   \
-          "the pivot2 parameter `"Name"' is already defined.\n");              \
+          "the xz_pivot parameter `"Name"' is already defined.\n");            \
         res = RES_BAD_ARG;                                                     \
         goto error;                                                            \
       }                                                                        \
@@ -2929,17 +2934,19 @@ parse_pivot2
     } (void)0
     if(!strcmp((char*) key->data.scalar.value, "spacing")) {
       SETUP_MASK(SPACING, "spacing");
-      res = parse_real(parser, val, 0, DBL_MAX, &solpivot2->spacing);
+      res = parse_real(parser, val, 0, DBL_MAX, &solxzpivot->spacing);
     } else if(!strcmp((char*) key->data.scalar.value, "ref_point")) {
       SETUP_MASK(REF_POINT, "ref_point");
-      res = parse_real3(parser, doc, val, -DBL_MAX, DBL_MAX, solpivot2->ref_point);
+      res = parse_real3(
+        parser, doc, val, -DBL_MAX, DBL_MAX, solxzpivot->ref_point);
     } else if(!strcmp((char*) key->data.scalar.value, "target")) {
       struct solparser_pivot_id pivot_id;
-      pivot_id.i = (size_t) (solpivot2 - darray_pivot2_cdata_get(&parser->pivot2s));
+      pivot_id.i = 
+        (size_t) (solxzpivot - darray_xz_pivot_cdata_get(&parser->xz_pivots));
       SETUP_MASK(TARGET, "target");
-      res = parse_target(parser, doc, val, &solpivot2->target, pivot_id);
+      res = parse_target(parser, doc, val, &solxzpivot->target, pivot_id);
     } else {
-      log_err(parser, key, "unknown pivot2 parameter `%s'.\n",
+      log_err(parser, key, "unknown xz_pivot parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
       goto error;
@@ -2952,21 +2959,30 @@ parse_pivot2
   }
   #define CHECK_PARAM(Flag, Name)                                              \
     if(!(mask & BIT(Flag))) {                                                  \
-      log_err(parser, pivot2, "the pivot2 parameter `"Name"' is missing.\n");  \
+      log_err(parser, xz_pivot,                                                \
+         "the xz_pivot parameter `"Name"' is missing.\n");                     \
       res = RES_BAD_ARG;                                                       \
       goto error;                                                              \
     } (void)0
-  CHECK_PARAM(SPACING, "spacing");
-  CHECK_PARAM(REF_POINT, "ref_point");
   CHECK_PARAM(TARGET, "target");
   #undef CHECK_PARAM
+
+  #define DEFAULT_PARAM(Flag, Ptr, Value)                                      \
+    if(!(mask & BIT(Flag))) {                                                  \
+      *(Ptr) = Value;                                                          \
+    } (void)0
+  DEFAULT_PARAM(SPACING, &solxzpivot->spacing, 0);
+  DEFAULT_PARAM(REF_POINT, solxzpivot->ref_point, 0);
+  DEFAULT_PARAM(REF_POINT, solxzpivot->ref_point+1, 0);
+  DEFAULT_PARAM(REF_POINT, solxzpivot->ref_point+2, 0);
+  #undef DEFAULT_PARAM
 
 exit:
   out_isolpivot->i = isolpivot;
   return res;
 error:
-  if(solpivot2) {
-    darray_pivot2_pop_back(&parser->pivot2s);
+  if(solxzpivot) {
+    darray_xz_pivot_pop_back(&parser->xz_pivots);
     isolpivot = SIZE_MAX;
   }
   goto exit;
@@ -3342,8 +3358,8 @@ solparser_create
 
   /* Anchors and pivot(2)s */
   darray_anchor_init(mem_allocator, &parser->anchors);
-  darray_pivot_init(mem_allocator, &parser->pivots);
-  darray_pivot2_init(mem_allocator, &parser->pivot2s);
+  darray_x_pivot_init(mem_allocator, &parser->x_pivots);
+  darray_xz_pivot_init(mem_allocator, &parser->xz_pivots);
 
 exit:
   *out_parser = parser;
@@ -3673,22 +3689,22 @@ solparser_get_object
   return darray_object_cdata_get(&parser->objects) + obj.i;
 }
 
-const struct solparser_pivot*
-solparser_get_pivot
+const struct solparser_x_pivot*
+solparser_get_x_pivot
   (const struct solparser* parser,
-   const struct solparser_pivot_id pivot)
+   const struct solparser_pivot_id x_pivot)
 {
-  ASSERT(parser && pivot.i < darray_pivot_size_get(&parser->pivots));
-  return darray_pivot_cdata_get(&parser->pivots) + pivot.i;
+  ASSERT(parser && x_pivot.i < darray_x_pivot_size_get(&parser->x_pivots));
+  return darray_x_pivot_cdata_get(&parser->x_pivots) + x_pivot.i;
 }
 
-const struct solparser_pivot2*
-solparser_get_pivot2
+const struct solparser_xz_pivot*
+solparser_get_xz_pivot
   (const struct solparser* parser,
-   const struct solparser_pivot_id pivot2)
+   const struct solparser_pivot_id xz_pivot)
 {
-  ASSERT(parser && pivot2.i < darray_pivot2_size_get(&parser->pivot2s));
-  return darray_pivot2_cdata_get(&parser->pivot2s) + pivot2.i;
+  ASSERT(parser && xz_pivot.i < darray_xz_pivot_size_get(&parser->xz_pivots));
+  return darray_xz_pivot_cdata_get(&parser->xz_pivots) + xz_pivot.i;
 }
 
 const struct solparser_shape*

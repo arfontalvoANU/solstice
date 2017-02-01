@@ -29,8 +29,8 @@
 enum solparser_entity_type {
   SOLPARSER_ENTITY_EMPTY,
   SOLPARSER_ENTITY_GEOMETRY,
-  SOLPARSER_ENTITY_PIVOT,
-  SOLPARSER_ENTITY_PIVOT2
+  SOLPARSER_ENTITY_X_PIVOT,
+  SOLPARSER_ENTITY_XZ_PIVOT
 };
 
 struct solparser_entity_id { size_t i; };
@@ -67,8 +67,8 @@ struct solparser_entity {
   enum solparser_entity_type type;
   union {
     struct solparser_geometry_id geometry;
-    struct solparser_pivot_id pivot;
-    struct solparser_pivot_id pivot2;
+    struct solparser_pivot_id x_pivot;
+    struct solparser_pivot_id xz_pivot;
   } data;
 
   /* Internal data. Should not be acceded directly. */
