@@ -22,6 +22,9 @@ static const char* input[] = {
   "- geometry: &cylinder\n",
   "    - cylinder: { radius: 1, height: 10, slices: 128 }\n",
   "      material: *lambertian\n",
+  "- geometry: &cylinder2\n",
+  "    - cylinder: { radius: 1, height: 10 }\n",
+  "      material: *lambertian\n",
   "- sun: \n",
   "    dni: 1\n",
   "    spectrum: [{wavelength: 1, data: 1}]\n",
@@ -37,7 +40,7 @@ static const char* input[] = {
   "    children:\n",
   "      - name: entity0a\n",
   "        primary: 1\n",
-  "        geometry: *cylinder\n",
+  "        geometry: *cylinder2\n",
   "      - name: entity0b\n",
   "        primary: 1\n",
   "        geometry: *cylinder\n",
@@ -135,9 +138,20 @@ check_entity0
   entity0a = solparser_get_entity(parser, entity_id);
   CHECK(strcmp(str_cget(&entity0a->name), "entity0a"), 0);
   CHECK(entity0a->type, SOLPARSER_ENTITY_GEOMETRY);
-  CHECK(entity0->data.geometry.i, entity0a->data.geometry.i);
+  NCHECK(entity0->data.geometry.i, entity0a->data.geometry.i);
   CHECK(solparser_entity_get_anchors_count(entity0a), 0);
   CHECK(solparser_entity_get_children_count(entity0a), 0);
+
+  geom = solparser_get_geometry(parser, entity0a->data.geometry);
+  CHECK(solparser_geometry_get_objects_count(geom), 1);
+  obj_id = solparser_geometry_get_object(geom, 0);
+  obj = solparser_get_object(parser, obj_id);
+  shape = solparser_get_shape(parser, obj->shape);
+  CHECK(shape->type, SOLPARSER_SHAPE_CYLINDER);
+  cylinder = solparser_get_shape_cylinder(parser, shape->data.cylinder);
+  CHECK(cylinder->height, 10);
+  CHECK(cylinder->radius, 1);
+  CHECK(cylinder->nslices, 16);
 
   entity_id = solparser_entity_get_child(entity0, 1);
   entity0b = solparser_get_entity(parser, entity_id);

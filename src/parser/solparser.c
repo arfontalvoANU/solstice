@@ -1602,6 +1602,13 @@ parse_cylinder
   CHECK_PARAM(RADIUS, "radius");
   #undef CHECK_PARAM
 
+  #define DEFAULT_PARAM(Flag, Ptr, Value)                                      \
+  if(!(mask & BIT(Flag))) {                                                    \
+    *(Ptr) = Value;                                                            \
+  } (void)0
+  DEFAULT_PARAM(SLICES, &shape->nslices, 16);
+  #undef DEFAULT_PARAM
+
 exit:
   out_ishape->i = ishape;
   return res;
@@ -1955,11 +1962,22 @@ parse_sphere
     #undef SETUP_MASK
   }
 
-  if(!(mask & BIT(RADIUS))) {
-    log_err(parser, sphere, "the sphere radius is missing.\n");
-    res = RES_BAD_ARG;
-    goto error;
-  }
+  #define CHECK_PARAM(Flag, Name)                                              \
+    if(!(mask & BIT(Flag))) {                                                  \
+      log_err(parser, sphere,                                                  \
+        "the sphere parameter `"Name"' is missing.\n");                        \
+      res = RES_BAD_ARG;                                                       \
+      goto error;                                                              \
+    } (void)0
+  CHECK_PARAM(RADIUS, "radius");
+  #undef CHECK_PARAM
+ 
+  #define DEFAULT_PARAM(Flag, Ptr, Value)                                      \
+  if(!(mask & BIT(Flag))) {                                                    \
+    *(Ptr) = Value;                                                            \
+  } (void)0
+  DEFAULT_PARAM(SLICES, &shape->nslices, 16);
+  #undef DEFAULT_PARAM
 
 exit:
   out_ishape->i = ishape;
