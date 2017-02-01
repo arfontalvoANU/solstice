@@ -86,36 +86,10 @@ parse_fov(const char* str, double* out_fov)
     fprintf(stderr, "The field of view %g is not in [30, 120].\n", fov);
     return RES_BAD_ARG;
   }
-  *out_fov = MDEG2RAD(fov);
+  *out_fov = fov;
   return RES_OK;
 }
 
-
-static res_T
-parse_doubleN(const char* str, double dbl[], const size_t N)
-{
-  char buf[64];
-  char* tk;
-  char* ctx;
-  size_t i;
-  res_T res = RES_OK;
-  ASSERT(str && dbl);
-
-  if(strlen(str) >= sizeof(buf) - 1/*NULL char*/) {
-    fprintf(stderr,
-      "Could not duplicate the string `%s'.\n", str);
-    return RES_MEM_ERR;
-  }
-  strncpy(buf, str, sizeof(buf));
-
-  FOR_EACH(i, 0, N) {
-    tk = strtok_r(i == 0 ? buf : NULL, i == N-1 ? "" : ",", &ctx);
-    res = cstr_to_double(tk, dbl+i);
-    if(res != RES_OK) return res;
-  }
-
-  return RES_OK;
-}
 
 static res_T
 parse_sun_dir_list(const char* str, struct solstice_args* args)
@@ -123,6 +97,7 @@ parse_sun_dir_list(const char* str, struct solstice_args* args)
   char buf[512];
   char* tk;
   char* ctx;
+  size_t len;
   res_T res = RES_OK;
   ASSERT(str && args);
 
@@ -139,7 +114,8 @@ parse_sun_dir_list(const char* str, struct solstice_args* args)
     struct solstice_args_spherical spherical;
     double tmp[2];
 
-    res = parse_doubleN(tk, tmp, 2);
+    res = cstr_to_list_double(tk, ',', tmp, &len, 2);
+    if(res == RES_OK && len != 2) res = RES_BAD_ARG;
     if(res != RES_OK) {
       fprintf(stderr, "Invalid sun direction `%s'.\n", tk);
       goto error;
@@ -160,8 +136,8 @@ parse_sun_dir_list(const char* str, struct solstice_args* args)
       goto error;
     }
 
-    spherical.azimuth = MDEG2RAD(tmp[0]);
-    spherical.elevation = MDEG2RAD(tmp[1]);
+    spherical.azimuth = tmp[0];
+    spherical.elevation = tmp[1];
     sa_push(args->sun_dirs, spherical);
 
     tk = strtok_r(NULL, ":", &ctx);
@@ -223,6 +199,7 @@ parse_rendering_option(const char* str, struct solstice_args* args)
   char* key;
   char* val;
   char* ctx;
+  size_t len;
   res_T res;
   ASSERT(str && args);
 
@@ -244,19 +221,22 @@ parse_rendering_option(const char* str, struct solstice_args* args)
     res = parse_image_definition(val, &args->img.width, &args->img.height);
     if(res != RES_OK) goto error;
   } else if(!strcmp(key, "pos")) {
-    res = parse_doubleN(val, args->camera.pos, 3);
-    if(res != RES_OK) {
+    res = cstr_to_list_double(val, ',', args->camera.pos, &len, 3);
+    if(res == RES_OK && len != 3) res = RES_BAD_ARG;
+    if(res != RES_OK ) {
       fprintf(stderr, "Invalid camera position `%s'.\n", val);
       goto error;
     }
   } else if(!strcmp(key, "tgt")) {
-    res = parse_doubleN(val, args->camera.tgt, 3);
+    res = cstr_to_list_double(val, ',', args->camera.tgt, &len, 3);
+    if(res == RES_OK && len != 3) res = RES_BAD_ARG;
     if(res != RES_OK) {
       fprintf(stderr, "Invalid camera target `%s'.\n", val);
       goto error;
     }
   } else if(!strcmp(key, "up")) {
-    res = parse_doubleN(val, args->camera.up, 3);
+    res = cstr_to_list_double(val, ',', args->camera.up, &len, 3);
+    if(res == RES_OK && len != 3) res = RES_BAD_ARG;
     if(res != RES_OK) {
       fprintf(stderr, "Invalid camera up vector `%s'.\n", val);
       goto error;
@@ -316,7 +296,6 @@ error:
 res_T
 solstice_args_init(struct solstice_args* args, const int argc, char** argv)
 {
-  unsigned long ul = 0;
   int opt;
   res_T res = RES_OK;
   ASSERT(args && argc && argv);
@@ -344,12 +323,8 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
       case 'R': args->receivers_filename = optarg; break;
       case 'r': res = parse_rendering_options(optarg, args); break;
       case 't':
-        res = cstr_to_ulong(optarg, &ul);
-        if(res == RES_OK && !ul) {
-          res = RES_BAD_ARG;
-        } else {
-          args->nthreads = (unsigned)MMIN(ul, UINT_MAX);
-        }
+        res = cstr_to_uint(optarg, &args->nthreads);
+        if(res == RES_OK && !args->nthreads) res = RES_BAD_ARG;
         break;
       default: res = RES_BAD_ARG; break;
     }

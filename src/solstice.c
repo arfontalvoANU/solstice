@@ -88,11 +88,10 @@ setup_camera(struct solstice* solstice, const struct solstice_args* args)
     goto error;
   }
 
-  res = ssol_camera_set_fov(cam, args->camera.fov_x);
+  res = ssol_camera_set_fov(cam, MDEG2RAD(args->camera.fov_x));
   if(res != RES_OK) {
-    fprintf(stderr,
-      "Invalid horizontal field of view '%g degrees' (%g radians).\n",
-      MRAD2DEG(args->camera.fov_x), args->camera.fov_x);
+    fprintf(stderr, "Invalid horizontal field of view '%g' degrees.\n",
+      args->camera.fov_x);
     goto error;
   }
 
@@ -163,12 +162,17 @@ spherical_to_cartesian_sun_dir
   double sin_azimuth;
   double cos_elevation;
   double sin_elevation;
+  double azimuth;
+  double elevation;
   ASSERT(spherical && sun_dir);
 
-  cos_azimuth = cos(spherical->azimuth);
-  sin_azimuth = sin(spherical->azimuth);
-  cos_elevation = cos(spherical->elevation);
-  sin_elevation = sin(spherical->elevation);
+  azimuth = MDEG2RAD(spherical->azimuth);
+  elevation = MDEG2RAD(spherical->elevation);
+
+  cos_azimuth = cos(azimuth);
+  sin_azimuth = sin(azimuth);
+  cos_elevation = cos(elevation);
+  sin_elevation = sin(elevation);
 
   sun_dir[0] = -(cos_elevation * cos_azimuth);
   sun_dir[1] = -(cos_elevation * sin_azimuth);

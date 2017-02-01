@@ -96,7 +96,7 @@ test_rendering(void)
   CHECK(args.img.width, 640);
   CHECK(args.img.height, 480);
   CHECK(args.quiet, 1);
-  CHECK(eq_eps(args.camera.fov_x, MDEG2RAD(70), 1.e-6), 1);
+  CHECK(eq_eps(args.camera.fov_x, 70, 1.e-6), 1);
   CHECK(args.output_filename, NULL);
   solstice_args_release(&args);
   cmd_delete(cmd);
@@ -169,29 +169,29 @@ test_sun_dirs(void)
   CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
   CHECK(args.nsun_dirs, 1);
   CHECK(args.sun_dirs[0].azimuth, 0);
-  CHECK(eq_eps(args.sun_dirs[0].elevation, MDEG2RAD(1), 1.e-6), 1);
+  CHECK(eq_eps(args.sun_dirs[0].elevation, 1, 1.e-6), 1);
   solstice_args_release(&args);
   cmd_delete(cmd);
 
   cmd = cmd_create(0, "test", "-D", "1.2,3.4:3.14,0.123:", RES_OK);
   CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
   CHECK(args.nsun_dirs, 2);
-  CHECK(eq_eps(args.sun_dirs[0].azimuth, MDEG2RAD(1.2), 1.e-6), 1);
-  CHECK(eq_eps(args.sun_dirs[0].elevation, MDEG2RAD(3.4), 1.e-6), 1);
-  CHECK(eq_eps(args.sun_dirs[1].azimuth, MDEG2RAD(3.14), 1.e-6), 1);
-  CHECK(eq_eps(args.sun_dirs[1].elevation, MDEG2RAD(0.123), 1.e-6), 1);
+  CHECK(eq_eps(args.sun_dirs[0].azimuth, 1.2, 1.e-6), 1);
+  CHECK(eq_eps(args.sun_dirs[0].elevation, 3.4, 1.e-6), 1);
+  CHECK(eq_eps(args.sun_dirs[1].azimuth, 3.14, 1.e-6), 1);
+  CHECK(eq_eps(args.sun_dirs[1].elevation, 0.123, 1.e-6), 1);
   solstice_args_release(&args);
   cmd_delete(cmd);
 
   cmd = cmd_create(0, "test", "-D", "1.2,3.4:3.14,0.123:2.01,23.1", RES_OK);
   CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
   CHECK(args.nsun_dirs, 3);
-  CHECK(eq_eps(args.sun_dirs[0].azimuth, MDEG2RAD(1.2), 1.e-6), 1);
-  CHECK(eq_eps(args.sun_dirs[0].elevation, MDEG2RAD(3.4), 1.e-6), 1);
-  CHECK(eq_eps(args.sun_dirs[1].azimuth, MDEG2RAD(3.14), 1.e-6), 1);
-  CHECK(eq_eps(args.sun_dirs[1].elevation, MDEG2RAD(0.123), 1.e-6), 1);
-  CHECK(eq_eps(args.sun_dirs[2].azimuth, MDEG2RAD(2.01), 1.e-6), 1);
-  CHECK(eq_eps(args.sun_dirs[2].elevation, MDEG2RAD(23.1), 1.e-6), 1);
+  CHECK(eq_eps(args.sun_dirs[0].azimuth, 1.2, 1.e-6), 1);
+  CHECK(eq_eps(args.sun_dirs[0].elevation, 3.4, 1.e-6), 1);
+  CHECK(eq_eps(args.sun_dirs[1].azimuth, 3.14, 1.e-6), 1);
+  CHECK(eq_eps(args.sun_dirs[1].elevation, 0.123, 1.e-6), 1);
+  CHECK(eq_eps(args.sun_dirs[2].azimuth, 2.01, 1.e-6), 1);
+  CHECK(eq_eps(args.sun_dirs[2].elevation, 23.1, 1.e-6), 1);
   solstice_args_release(&args);
   cmd_delete(cmd);
 
@@ -414,6 +414,26 @@ test_receivers(void)
   cmd_delete(cmd);
 }
 
+static void
+test_input(void)
+{
+  struct solstice_args args = SOLSTICE_ARGS_NULL;
+  char** cmd = NULL;
+
+  cmd = cmd_create(0, "test", "-D", "0,90", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.input_filename, SOLSTICE_ARGS_DEFAULT.input_filename);
+  CHECK(args.input_filename, NULL);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "0,90", "my_input", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(strcmp(args.input_filename, "my_input"), 0);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+}
+
 int
 main(int argc, char** argv)
 {
@@ -426,6 +446,7 @@ main(int argc, char** argv)
   test_output();
   test_quiet();
   test_receivers();
+  test_input();
   CHECK(mem_allocated_size(), 0);
   return 0;
 }
