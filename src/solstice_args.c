@@ -303,7 +303,7 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
   *args = SOLSTICE_ARGS_DEFAULT;
 
   optind = 0;
-  while((opt = getopt(argc, argv, "D:Hhn:o:qR:r:t:")) != -1) {
+  while((opt = getopt(argc, argv, "D:Hhn:O:o:qR:r:t:")) != -1) {
     switch(opt) {
       case 'D':
         res = parse_sun_dir_list(optarg, args);
@@ -318,6 +318,7 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
         res = cstr_to_ulong(optarg, &args->nrealisations);
         if(res == RES_OK && !args->nrealisations) res = RES_BAD_ARG;
         break;
+      case 'O': args->dump_obj = 1; break;
       case 'o': args->output_filename = optarg; break;
       case 'q': args->quiet = 1; break;
       case 'R': args->receivers_filename = optarg; break;
@@ -339,6 +340,13 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
 
   if(!args->rendering && !args->nsun_dirs) {
     fprintf(stderr, "Missing sun direction.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  if(args->dump_obj && args->rendering) {
+    fprintf(stderr,
+      "The '-O' and '-r' options cannot be defined simultaneously.\n");
     res = RES_BAD_ARG;
     goto error;
   }

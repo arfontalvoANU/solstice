@@ -344,9 +344,6 @@ solstice_setup_entities(struct solstice* solstice)
   res_T res = RES_OK;
   ASSERT(solstice);
 
-  /* Release possible previous roots (incomplete, TODO) */
-  /*score_scene_clear(solstice->score);*/
-
   /* (re) create the list of roots from entities */
   solparser_entity_iterator_begin(solstice->parser, &it);
   solparser_entity_iterator_end(solstice->parser, &it_end);

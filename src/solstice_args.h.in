@@ -47,6 +47,7 @@ struct solstice_args {
     unsigned long height;
   } img;
 
+  int dump_obj;
   int rendering;
   int output_hits; /* Output the per receiver hits */
   int quiet;
@@ -78,6 +79,7 @@ static const struct solstice_args SOLSTICE_ARGS_NULL = SOLSTICE_ARGS_NULL__;
     @SOLSTICE_ARGS_DEFAULT_IMG_HEIGHT@                                         \
   },                                                                           \
                                                                                \
+  0, /* Dump */                                                                \
   0, /* Rendering */                                                           \
   0, /* Output hits */                                                         \
   0, /* Quiet */                                                               \
