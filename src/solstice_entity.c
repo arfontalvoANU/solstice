@@ -98,39 +98,40 @@ error:
 }
 
 static struct solstice_node*
-create_pivot_node
+create_x_pivot_node
   (struct solstice* solstice,
    const struct solparser_entity* entity)
 {
+  double n[3];
   struct solstice_node* node = NULL;
   struct solstice_node* target = NULL;
-  const struct solparser_pivot* parser_pivot = NULL;
+  const struct solparser_x_pivot* parser_x_pivot = NULL;
   struct sanim_pivot anim_pivot = SANIM_PIVOT_NULL;
   struct sanim_tracking anim_tracking = SANIM_TRACKING_NULL;
   res_T res = RES_OK;
   ASSERT(solstice && entity);
 
-  parser_pivot = solparser_get_pivot(solstice->parser, entity->data.pivot);
+  parser_x_pivot = solparser_get_x_pivot(solstice->parser, entity->data.x_pivot);
 
   anim_pivot.type = PIVOT_SINGLE_AXIS;
-  d3_set(anim_pivot.data.pivot1.ref_normal, parser_pivot->normal);
-  d3_set(anim_pivot.data.pivot1.ref_point, parser_pivot->point);
+  d3_set(anim_pivot.data.pivot1.ref_normal, d3(n, 0, 0, 1));
+  d3_set(anim_pivot.data.pivot1.ref_point, parser_x_pivot->ref_point);
 
   /* Setup the tracking descriptor */
-  switch (parser_pivot->target.type) {
+  switch (parser_x_pivot->target.type) {
     case SOLPARSER_TARGET_ANCHOR:
       anim_tracking.policy = TRACKING_NODE_TARGET;
       target = *htable_anchor_find
-        (&solstice->anchors, &parser_pivot->target.data.anchor.i);
+        (&solstice->anchors, &parser_x_pivot->target.data.anchor.i);
       solstice_node_target_get_tracking(target, &anim_tracking);
       break;
     case SOLPARSER_TARGET_DIRECTION:
       anim_tracking.policy = TRACKING_OUT_DIR;
-      d3_set(anim_tracking.data.out_dir.u, parser_pivot->target.data.direction);
+      d3_set(anim_tracking.data.out_dir.u, parser_x_pivot->target.data.direction);
       break;
     case SOLPARSER_TARGET_POSITION:
       anim_tracking.policy = TRACKING_POINT;
-      d3_set(anim_tracking.data.point.target, parser_pivot->target.data.position);
+      d3_set(anim_tracking.data.point.target, parser_x_pivot->target.data.position);
       anim_tracking.data.point.target_is_local = 0; /* TODO */
       break;
     case SOLPARSER_TARGET_SUN:
@@ -157,39 +158,39 @@ error:
 }
 
 static struct solstice_node*
-create_pivot2_node
+create_xz_pivot_node
   (struct solstice* solstice,
    const struct solparser_entity* entity)
 {
   struct solstice_node* node = NULL;
   struct solstice_node* target = NULL;
-  const struct solparser_pivot2* parser_pivot2 = NULL;
+  const struct solparser_xz_pivot* parser_xz_pivot = NULL;
   struct sanim_pivot anim_pivot = SANIM_PIVOT_NULL;
   struct sanim_tracking anim_tracking = SANIM_TRACKING_NULL;
   res_T res = RES_OK;
   ASSERT(solstice && entity);
 
-  parser_pivot2 = solparser_get_pivot2(solstice->parser, entity->data.pivot2);
+  parser_xz_pivot = solparser_get_xz_pivot(solstice->parser, entity->data.xz_pivot);
 
   anim_pivot.type = PIVOT_TWO_AXIS;
-  anim_pivot.data.pivot2.spacing = parser_pivot2->spacing;
-  d3_set(anim_pivot.data.pivot2.ref_point, parser_pivot2->ref_point);
+  anim_pivot.data.pivot2.spacing = parser_xz_pivot->spacing;
+  d3_set(anim_pivot.data.pivot2.ref_point, parser_xz_pivot->ref_point);
 
   /* Setup the tracking descriptor */
-  switch (parser_pivot2->target.type) {
+  switch (parser_xz_pivot->target.type) {
   case SOLPARSER_TARGET_ANCHOR:
     anim_tracking.policy = TRACKING_NODE_TARGET;
     target = *htable_anchor_find
-    (&solstice->anchors, &parser_pivot2->target.data.anchor.i);
+    (&solstice->anchors, &parser_xz_pivot->target.data.anchor.i);
     solstice_node_target_get_tracking(target, &anim_tracking);
     break;
   case SOLPARSER_TARGET_DIRECTION:
     anim_tracking.policy = TRACKING_OUT_DIR;
-    d3_set(anim_tracking.data.out_dir.u, parser_pivot2->target.data.direction);
+    d3_set(anim_tracking.data.out_dir.u, parser_xz_pivot->target.data.direction);
     break;
   case SOLPARSER_TARGET_POSITION:
     anim_tracking.policy = TRACKING_POINT;
-    d3_set(anim_tracking.data.point.target, parser_pivot2->target.data.position);
+    d3_set(anim_tracking.data.point.target, parser_xz_pivot->target.data.position);
     anim_tracking.data.point.target_is_local = 0; /* TODO */
     break;
   case SOLPARSER_TARGET_SUN:
@@ -235,11 +236,11 @@ create_node(struct solstice* solstice, const struct solparser_entity* entity)
     case SOLPARSER_ENTITY_GEOMETRY:
       node = create_geometry_node(solstice, entity);
       break;
-    case SOLPARSER_ENTITY_PIVOT:
-      node = create_pivot_node(solstice, entity);
+    case SOLPARSER_ENTITY_X_PIVOT:
+      node = create_x_pivot_node(solstice, entity);
       break;
-    case SOLPARSER_ENTITY_PIVOT2:
-      node = create_pivot2_node(solstice, entity);
+    case SOLPARSER_ENTITY_XZ_PIVOT:
+      node = create_xz_pivot_node(solstice, entity);
       break;
     default: FATAL("Unreachable code.\n"); break;
   }

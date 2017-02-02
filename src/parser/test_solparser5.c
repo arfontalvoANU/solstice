@@ -33,9 +33,8 @@ static const char* input[] = {
   "        position: [1, 2, 3]\n",
   "    children:\n",
   "      - name: lvl2\n",
-  "        pivot:\n",
-  "          point: [1, 2, 3]\n",
-  "          normal: [4, 5, 6]\n",
+  "        x_pivot:\n",
+  "          ref_point: [1, 2, 3]\n",
   "          target: { anchor: self.lvl1.anchor0 }\n",
   "- entity:\n",
   "    name: entity0\n",
@@ -50,7 +49,7 @@ static void
 check_entity(struct solparser* parser, const struct solparser_entity* entity)
 {
   const struct solparser_anchor* anchor;
-  const struct solparser_pivot* pivot;
+  const struct solparser_x_pivot* x_pivot;
   struct solparser_entity_id entity_id;
   double tmp[3];
 
@@ -66,14 +65,13 @@ check_entity(struct solparser* parser, const struct solparser_entity* entity)
   entity_id = solparser_entity_get_child(entity, 0);
   entity = solparser_get_entity(parser, entity_id);
   CHECK(strcmp(str_cget(&entity->name), "lvl2"), 0);
-  CHECK(entity->type, SOLPARSER_ENTITY_PIVOT);
+  CHECK(entity->type, SOLPARSER_ENTITY_X_PIVOT);
 
-  pivot = solparser_get_pivot(parser, entity->data.pivot);
-  CHECK(d3_eq(pivot->point, d3(tmp, 1, 2, 3)), 1);
-  CHECK(d3_eq(pivot->normal, d3(tmp, 4, 5, 6)), 1);
-  CHECK(pivot->target.type, SOLPARSER_TARGET_ANCHOR);
+  x_pivot = solparser_get_x_pivot(parser, entity->data.x_pivot);
+  CHECK(d3_eq(x_pivot->ref_point, d3(tmp, 1, 2, 3)), 1);
+  CHECK(x_pivot->target.type, SOLPARSER_TARGET_ANCHOR);
 
-  anchor = solparser_get_anchor(parser, pivot->target.data.anchor);
+  anchor = solparser_get_anchor(parser, x_pivot->target.data.anchor);
   CHECK(strcmp(str_cget(&anchor->name), "anchor0"), 0);
   CHECK(d3_eq(anchor->position, d3(tmp, 1, 2, 3)), 1);
 }

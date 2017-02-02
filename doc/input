@@ -60,9 +60,7 @@
         children:
           - name: "child 1"
             transform: { rotation: [0, 0, 0] }
-            pivot:
-              point: [0, 0, 0]
-              normal: [0, 1, 0]
+            x_pivot:
               target: { position: [0, 0, 0] }
 - entity:
     name: "entity2"
@@ -107,16 +105,15 @@
 #   <material>
 # [ <transform> ]
 # 
-# <pivot> ::=
-#   pivot:
-#     point: <real3>
-#     normal: <real3>
+# <x_pivot> ::=
+#   x_pivot:
+# [   ref_point: <real3>. Default 0,0,0 ]
 #     <target>
 # 
-# <pivot2> ::=
-#   pivot2:
-#     spacing: REAL # in [0, INF)
-#     ref_point: <real3>
+# <zx_pivot> ::=
+#   zx_pivot:
+# [   spacing: REAL # in [0, INF). Default 0 ]
+# [   ref_point: <real3>. Default 0,0,0 ]
 #     <target>
 # 
 # <target> ::=
@@ -223,7 +220,7 @@
 # 
 # <entity-data> ::=
 #   name: STRING
-# [ <geometry-data> | <pivot> | <pivot2> ]
+# [ <geometry-data> | <x_pivot> | <zx_pivot> ]
 # [ <anchors> ]
 # [ <transform> ]
 # [ <children>  ]

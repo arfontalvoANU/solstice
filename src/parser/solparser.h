@@ -117,15 +117,15 @@ solparser_get_object
   (const struct solparser* parser,
    const struct solparser_object_id obj);
 
-extern LOCAL_SYM const struct solparser_pivot*
-solparser_get_pivot
+extern LOCAL_SYM const struct solparser_x_pivot*
+solparser_get_x_pivot
   (const struct solparser* parser,
-   const struct solparser_pivot_id pivot);
+   const struct solparser_pivot_id x_pivot);
 
-extern LOCAL_SYM const struct solparser_pivot2*
-solparser_get_pivot2
+extern LOCAL_SYM const struct solparser_xz_pivot*
+solparser_get_xz_pivot
   (const struct solparser* parser,
-   const struct solparser_pivot_id pivot2);
+   const struct solparser_pivot_id xz_pivot);
 
 extern LOCAL_SYM const struct solparser_shape*
 solparser_get_shape
