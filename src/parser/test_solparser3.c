@@ -56,7 +56,7 @@ static const char* input[] = {
   "      target: { anchor: \"entity0.entity0b.anchor0\" }\n",
   "- entity:\n",
   "    name: entity2\n",
-  "    xz_pivot:\n",
+  "    zx_pivot:\n",
   "      spacing: 1\n",
   "      ref_point: [1, 2, 3]\n",
   "      target: { anchor: \"entity0.entity0b.anchor0\" }\n",
@@ -69,7 +69,7 @@ const struct solparser_anchor* entity0_entity0b_anchor0;
 const struct solparser_anchor* entity0_entity0b_entity0b;
 const struct solparser_geometry* geom;
 const struct solparser_x_pivot* x_pivot;
-const struct solparser_xz_pivot* xz_pivot;
+const struct solparser_zx_pivot* zx_pivot;
 
 static void
 check_entity0
@@ -200,14 +200,14 @@ check_entity2
   NCHECK(entity2, NULL);
 
   CHECK(strcmp(str_cget(&entity2->name), "entity2"), 0);
-  CHECK(entity2->type, SOLPARSER_ENTITY_XZ_PIVOT);
+  CHECK(entity2->type, SOLPARSER_ENTITY_ZX_PIVOT);
   CHECK(solparser_entity_get_anchors_count(entity2), 0);
   CHECK(solparser_entity_get_children_count(entity2), 0);
 
-  xz_pivot = solparser_get_xz_pivot(parser, entity2->data.xz_pivot);
-  CHECK(xz_pivot->spacing, 1);
-  CHECK(d3_eq(xz_pivot->ref_point, d3(tmp, 1, 2, 3)), 1);
-  CHECK(xz_pivot->target.type, SOLPARSER_TARGET_ANCHOR);
+  zx_pivot = solparser_get_zx_pivot(parser, entity2->data.zx_pivot);
+  CHECK(zx_pivot->spacing, 1);
+  CHECK(d3_eq(zx_pivot->ref_point, d3(tmp, 1, 2, 3)), 1);
+  CHECK(zx_pivot->target.type, SOLPARSER_TARGET_ANCHOR);
 }
 
 int

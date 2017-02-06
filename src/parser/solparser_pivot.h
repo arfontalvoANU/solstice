@@ -98,23 +98,23 @@ solparser_x_pivot_init
   ASSERT(x_pivot);
   *x_pivot = SOLPARSER_X_PIVOT_NULL;
 }
-struct solparser_xz_pivot {
+struct solparser_zx_pivot {
   double spacing;
   double ref_point[3];
   struct solparser_target target;
 };
 
-#define SOLPARSER_XZ_PIVOT_NULL__ { 0, {0,0,0}, SOLPARSER_TARGET_NULL__ }
-static const struct solparser_xz_pivot SOLPARSER_XZ_PIVOT_NULL =
-  SOLPARSER_XZ_PIVOT_NULL__;
+#define SOLPARSER_zx_PIVOT_NULL__ { 0, {0,0,0}, SOLPARSER_TARGET_NULL__ }
+static const struct solparser_zx_pivot SOLPARSER_zx_PIVOT_NULL =
+  SOLPARSER_zx_PIVOT_NULL__;
 
 static INLINE void
-solparser_xz_pivot_init
-  (struct mem_allocator* allocator, struct solparser_xz_pivot* xz_pivot)
+solparser_zx_pivot_init
+  (struct mem_allocator* allocator, struct solparser_zx_pivot* zx_pivot)
 {
   (void) allocator;
-  ASSERT(xz_pivot);
-  *xz_pivot = SOLPARSER_XZ_PIVOT_NULL;
+  ASSERT(zx_pivot);
+  *zx_pivot = SOLPARSER_zx_PIVOT_NULL;
 }
 
 #endif /* SOLPARSER_PIVOT_H */

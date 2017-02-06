@@ -151,10 +151,10 @@ struct target_alias {
 #define DARRAY_FUNCTOR_INIT solparser_x_pivot_init
 #include <rsys/dynamic_array.h>
 
-/* Declare the array of xz_pivots */
-#define DARRAY_NAME xz_pivot
-#define DARRAY_DATA struct solparser_xz_pivot
-#define DARRAY_FUNCTOR_INIT solparser_xz_pivot_init
+/* Declare the array of zx_pivots */
+#define DARRAY_NAME zx_pivot
+#define DARRAY_DATA struct solparser_zx_pivot
+#define DARRAY_FUNCTOR_INIT solparser_zx_pivot_init
 #include <rsys/dynamic_array.h>
 
 /* Declare the hash table that maps the address of a YAML node to the id of its
@@ -207,7 +207,7 @@ struct solparser {
   /* Miscellaneous */
   struct darray_anchor anchors;
   struct darray_x_pivot x_pivots;
-  struct darray_xz_pivot xz_pivots;
+  struct darray_zx_pivot zx_pivots;
 
   ref_T ref;
   struct mem_allocator* allocator;
@@ -236,10 +236,10 @@ parse_x_pivot
    struct solparser_pivot_id* out_isolpivot);
 
 static res_T
-parse_xz_pivot
+parse_zx_pivot
   (struct solparser* parser,
    yaml_document_t* doc,
-   const yaml_node_t* xz_pivot,
+   const yaml_node_t* zx_pivot,
    struct solparser_pivot_id* out_isolpivot);
 
 static res_T
@@ -404,7 +404,7 @@ parser_clear(struct solparser* parser)
   /* Miscellaneous */
   darray_anchor_clear(&parser->anchors);
   darray_x_pivot_clear(&parser->x_pivots);
-  darray_xz_pivot_clear(&parser->xz_pivots);
+  darray_zx_pivot_clear(&parser->zx_pivots);
 }
 
 static void
@@ -454,7 +454,7 @@ parser_release(ref_T* ref)
   /* Miscellaneous */
   darray_anchor_release(&parser->anchors);
   darray_x_pivot_release(&parser->x_pivots);
-  darray_xz_pivot_release(&parser->xz_pivots);
+  darray_zx_pivot_release(&parser->zx_pivots);
 
   MEM_RM(parser->allocator, parser);
 }
@@ -2561,10 +2561,10 @@ parse_entity
       SETUP_MASK(DATA, "data");
       solent.type = SOLPARSER_ENTITY_X_PIVOT;
       res = parse_x_pivot(parser, doc, val, &solent.data.x_pivot);
-    } else if(!strcmp((char*) key->data.scalar.value, "xz_pivot")) {
+    } else if(!strcmp((char*) key->data.scalar.value, "zx_pivot")) {
       SETUP_MASK(DATA, "data");
-      solent.type = SOLPARSER_ENTITY_XZ_PIVOT;
-      res = parse_xz_pivot(parser, doc, val, &solent.data.xz_pivot);
+      solent.type = SOLPARSER_ENTITY_ZX_PIVOT;
+      res = parse_zx_pivot(parser, doc, val, &solent.data.zx_pivot);
     } else if(!strcmp((char*)key->data.scalar.value, "transform")) {
       SETUP_MASK(TRANSFORM, "transform");
       res = parse_transform
@@ -2880,53 +2880,53 @@ error:
 }
 
 static res_T
-parse_xz_pivot
+parse_zx_pivot
   (struct solparser* parser,
    yaml_document_t* doc,
-   const yaml_node_t* xz_pivot,
+   const yaml_node_t* zx_pivot,
    struct solparser_pivot_id* out_isolpivot)
 {
   enum { SPACING, REF_POINT, TARGET };
-  struct solparser_xz_pivot* solxzpivot = NULL;
+  struct solparser_zx_pivot* solxzpivot = NULL;
   size_t isolpivot = SIZE_MAX;
   int mask = 0; /* Register the parsed attributes */
   intptr_t i, n;
   res_T res = RES_OK;
-  ASSERT(doc && xz_pivot && out_isolpivot);
+  ASSERT(doc && zx_pivot && out_isolpivot);
 
-  if(xz_pivot->type != YAML_MAPPING_NODE) {
-    log_err(parser, xz_pivot, "expect a xz_pivot definition.\n");
+  if(zx_pivot->type != YAML_MAPPING_NODE) {
+    log_err(parser, zx_pivot, "expect a zx_pivot definition.\n");
     res = RES_BAD_ARG;
     goto error;
   }
 
   /* Allocate the solstice pivot */
-  isolpivot = darray_xz_pivot_size_get(&parser->xz_pivots);
-  res = darray_xz_pivot_resize(&parser->xz_pivots, isolpivot + 1);
+  isolpivot = darray_zx_pivot_size_get(&parser->zx_pivots);
+  res = darray_zx_pivot_resize(&parser->zx_pivots, isolpivot + 1);
   if(res != RES_OK) {
-    log_err(parser, xz_pivot, "could not allocate the xz_pivot.\n");
+    log_err(parser, zx_pivot, "could not allocate the zx_pivot.\n");
     res = RES_BAD_ARG;
     goto error;
   }
-  solxzpivot = darray_xz_pivot_data_get(&parser->xz_pivots) + isolpivot;
+  solxzpivot = darray_zx_pivot_data_get(&parser->zx_pivots) + isolpivot;
 
-  n = xz_pivot->data.mapping.pairs.top - xz_pivot->data.mapping.pairs.start;
+  n = zx_pivot->data.mapping.pairs.top - zx_pivot->data.mapping.pairs.start;
   FOR_EACH(i, 0, n) {
     yaml_node_t* key;
     yaml_node_t* val;
 
-    key = yaml_document_get_node(doc, xz_pivot->data.mapping.pairs.start[i].key);
+    key = yaml_document_get_node(doc, zx_pivot->data.mapping.pairs.start[i].key);
     val = yaml_document_get_node(
-      doc, xz_pivot->data.mapping.pairs.start[i].value);
+      doc, zx_pivot->data.mapping.pairs.start[i].value);
     if(key->type != YAML_SCALAR_NODE) {
-      log_err(parser, key, "expect xz_pivot parameters.\n");
+      log_err(parser, key, "expect zx_pivot parameters.\n");
       res = RES_BAD_ARG;
       goto error;
     }
     #define SETUP_MASK(Flag, Name) {                                           \
       if(mask & BIT(Flag)) {                                                   \
         log_err(parser, key,                                                   \
-          "the xz_pivot parameter `"Name"' is already defined.\n");            \
+          "the zx_pivot parameter `"Name"' is already defined.\n");            \
         res = RES_BAD_ARG;                                                     \
         goto error;                                                            \
       }                                                                        \
@@ -2942,11 +2942,11 @@ parse_xz_pivot
     } else if(!strcmp((char*) key->data.scalar.value, "target")) {
       struct solparser_pivot_id pivot_id;
       pivot_id.i = 
-        (size_t) (solxzpivot - darray_xz_pivot_cdata_get(&parser->xz_pivots));
+        (size_t) (solxzpivot - darray_zx_pivot_cdata_get(&parser->zx_pivots));
       SETUP_MASK(TARGET, "target");
       res = parse_target(parser, doc, val, &solxzpivot->target, pivot_id);
     } else {
-      log_err(parser, key, "unknown xz_pivot parameter `%s'.\n",
+      log_err(parser, key, "unknown zx_pivot parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
       goto error;
@@ -2959,8 +2959,8 @@ parse_xz_pivot
   }
   #define CHECK_PARAM(Flag, Name)                                              \
     if(!(mask & BIT(Flag))) {                                                  \
-      log_err(parser, xz_pivot,                                                \
-         "the xz_pivot parameter `"Name"' is missing.\n");                     \
+      log_err(parser, zx_pivot,                                                \
+         "the zx_pivot parameter `"Name"' is missing.\n");                     \
       res = RES_BAD_ARG;                                                       \
       goto error;                                                              \
     } (void)0
@@ -2982,7 +2982,7 @@ exit:
   return res;
 error:
   if(solxzpivot) {
-    darray_xz_pivot_pop_back(&parser->xz_pivots);
+    darray_zx_pivot_pop_back(&parser->zx_pivots);
     isolpivot = SIZE_MAX;
   }
   goto exit;
@@ -3359,7 +3359,7 @@ solparser_create
   /* Anchors and pivot(2)s */
   darray_anchor_init(mem_allocator, &parser->anchors);
   darray_x_pivot_init(mem_allocator, &parser->x_pivots);
-  darray_xz_pivot_init(mem_allocator, &parser->xz_pivots);
+  darray_zx_pivot_init(mem_allocator, &parser->zx_pivots);
 
 exit:
   *out_parser = parser;
@@ -3698,13 +3698,13 @@ solparser_get_x_pivot
   return darray_x_pivot_cdata_get(&parser->x_pivots) + x_pivot.i;
 }
 
-const struct solparser_xz_pivot*
-solparser_get_xz_pivot
+const struct solparser_zx_pivot*
+solparser_get_zx_pivot
   (const struct solparser* parser,
-   const struct solparser_pivot_id xz_pivot)
+   const struct solparser_pivot_id zx_pivot)
 {
-  ASSERT(parser && xz_pivot.i < darray_xz_pivot_size_get(&parser->xz_pivots));
-  return darray_xz_pivot_cdata_get(&parser->xz_pivots) + xz_pivot.i;
+  ASSERT(parser && zx_pivot.i < darray_zx_pivot_size_get(&parser->zx_pivots));
+  return darray_zx_pivot_cdata_get(&parser->zx_pivots) + zx_pivot.i;
 }
 
 const struct solparser_shape*
