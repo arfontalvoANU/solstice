@@ -104,9 +104,9 @@ struct solparser_zx_pivot {
   struct solparser_target target;
 };
 
-#define SOLPARSER_zx_PIVOT_NULL__ { 0, {0,0,0}, SOLPARSER_TARGET_NULL__ }
-static const struct solparser_zx_pivot SOLPARSER_zx_PIVOT_NULL =
-  SOLPARSER_zx_PIVOT_NULL__;
+#define SOLPARSER_ZX_PIVOT_NULL__ { 0, {0,0,0}, SOLPARSER_TARGET_NULL__ }
+static const struct solparser_zx_pivot SOLPARSER_ZX_PIVOT_NULL =
+  SOLPARSER_ZX_PIVOT_NULL__;
 
 static INLINE void
 solparser_zx_pivot_init
@@ -114,7 +114,7 @@ solparser_zx_pivot_init
 {
   (void) allocator;
   ASSERT(zx_pivot);
-  *zx_pivot = SOLPARSER_zx_PIVOT_NULL;
+  *zx_pivot = SOLPARSER_ZX_PIVOT_NULL;
 }
 
 #endif /* SOLPARSER_PIVOT_H */
