@@ -190,7 +190,8 @@ setup_sun_dirs(struct solstice* solstice, const struct solstice_args* args)
   res = darray_double_resize(&solstice->sun_dirs, args->nsun_dirs*3/*#dims*/);
   if(res != RES_OK) {
     fprintf(stderr,
-      "Could not reserve the list of %lu sun directions.\n", args->nsun_dirs);
+      "Could not reserve the list of %lu sun directions.\n", 
+      (unsigned long)args->nsun_dirs);
     goto error;
 
   }
