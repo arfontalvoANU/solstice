@@ -44,6 +44,9 @@ print_help(const char* program)
   printf(
 "  -D <dirs>        list of sun directions.\n");
   printf(
+"  -f               do not prompt before overwriting the output file submitted\n"
+"                   with the '-o' option.\n");
+  printf(
 "  -H               output hit-on-receiver data (binary format).\n");
   printf(
 "  -h               display this help and exit.\n");
@@ -303,11 +306,12 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
   *args = SOLSTICE_ARGS_DEFAULT;
 
   optind = 0;
-  while((opt = getopt(argc, argv, "D:Hhn:O:o:qR:r:t:")) != -1) {
+  while((opt = getopt(argc, argv, "D:fHhn:O:o:qR:r:t:")) != -1) {
     switch(opt) {
       case 'D':
         res = parse_sun_dir_list(optarg, args);
         break;
+      case 'f': args->force_overwriting = 1; break;
       case 'H': args->output_hits = 1; break;
       case 'h':
         print_help(argv[0]);

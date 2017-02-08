@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>. */
 
-#define _POSIX_C_SOURCE 200112L /* fdopen support */
+#define _POSIX_C_SOURCE 200112L /* close support */
 
 #include "solstice.h"
 #include "solstice_c.h"
@@ -379,30 +379,38 @@ prompt_yes_no(void)
 }
 
 static FILE*
-open_output_stream(const char* name)
+open_output_stream(const char* name, const int force_overwriting)
 {
   int fd = -1;
   FILE* fp = NULL;
   ASSERT(name);
 
-  fd = open(name, O_CREAT|O_WRONLY|O_EXCL|O_TRUNC, S_IRUSR|S_IWUSR);
+  if(force_overwriting) {
+    fp = fopen(name, "w");
+    if(!fp) goto error;
+  } else {
+    fd = open(name, O_CREAT|O_WRONLY|O_EXCL|O_TRUNC, S_IRUSR|S_IWUSR);
+    if(fd >= 0) {
+      fp = fdopen(fd, "w");
+      if(fp == NULL) goto error;
+    } else if(errno == EEXIST) {
+      fprintf(stderr, "The output file `%s' already exist. Overwrite it? ", name);
+      if(!prompt_yes_no()) return NULL;
 
-  if(fd >= 0) {
-    fp = fdopen(fd, "w");
-    if(fp == NULL) goto error;
-  } else if(errno == EEXIST) {
-    fprintf(stderr, "The output file `%s' already exist. Overwrite it? ", name);
-    if(!prompt_yes_no()) return NULL;
-
-    fd = open(name, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IRUSR);
-    if(fd >= 0 && !(fp = fdopen(fd, "w"))) goto error;
+      fd = open(name, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IRUSR);
+      if(fd >= 0 && !(fp = fdopen(fd, "w"))) goto error;
+    }
   }
 
 exit:
   return fp;
 error:
-  if(fd >= 0) CHECK(close(fd), 0);
-  fp = NULL;
+  if(fp) {
+    CHECK(fclose(fp), 0);
+    fp = NULL;
+  } else if(fd >= 0) {
+    CHECK(close(fd), 0);
+  }
   goto exit;
 }
 
@@ -466,7 +474,8 @@ solstice_init
   if(!args->output_filename) {
     solstice->output = stdout;
   } else {
-    solstice->output = open_output_stream(args->output_filename);
+    solstice->output = open_output_stream
+      (args->output_filename, args->force_overwriting);
     if(!solstice->output) {
       fprintf(stderr, "Could not open the output file `%s'.\n",
         args->output_filename);
