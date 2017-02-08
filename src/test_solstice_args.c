@@ -23,6 +23,11 @@
 #include <string.h>
 #include <limits.h>
 
+#ifdef COMPILER_CL
+  #pragma warning(push)
+  #pragma warning(disable:4706) /* Assignment within a condition */
+#endif
+
 static char**
 cmd_create(int dummy, ...)
 {
@@ -48,6 +53,10 @@ cmd_create(int dummy, ...)
   va_end(ap_cp);
   return cmd;
 }
+
+#ifdef COMPILER_CL
+  #pragma warning(pop)
+#endif
 
 static void
 cmd_delete(char** cmd)
