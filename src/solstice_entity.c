@@ -217,16 +217,22 @@ error:
 }
 
 static struct solstice_node*
-create_node(struct solstice* solstice, const struct solparser_entity* entity)
+create_node
+  (struct solstice* solstice,
+   const struct solparser_entity* entity,
+   const struct str* name)
 {
   struct solstice_node* node = NULL;
   struct solstice_node* tgt = NULL;
   struct solstice_node* child = NULL;
   struct solstice_receiver* rcv = NULL;
+  struct str child_name;
   double rotation[3];
   size_t i;
   res_T res = RES_OK;
-  ASSERT(solstice && entity);
+  ASSERT(solstice && entity && name);
+
+  str_init(solstice->allocator, &child_name);
 
   /* Create the entity node */
   switch(entity->type) {
@@ -261,7 +267,7 @@ create_node(struct solstice* solstice, const struct solparser_entity* entity)
   }
 
   /* Setup the entity receiver flags */
-  rcv = htable_receiver_find(&solstice->receivers, &entity);
+  rcv = htable_receiver_find(&solstice->receivers, name);
   if(rcv) {
     const int mask = srcvl_side_to_ssol_mask(rcv->side);
     ASSERT(rcv->node == NULL); /* Receiver is not attached to a node */
@@ -313,7 +319,17 @@ create_node(struct solstice* solstice, const struct solparser_entity* entity)
     id = solparser_entity_get_child(entity, i);
     child_entity = solparser_get_entity(solstice->parser, id);
 
-    child = create_node(solstice, child_entity);
+    #define CALL(Func)                                                         \
+      if(RES_OK != (res = Func)) {                                             \
+        fprintf(stderr, "Could not build the absolute entity name.\n");        \
+        goto error;                                                            \
+      } (void)0
+    CALL(str_copy(&child_name, name));
+    CALL(str_append_char(&child_name, '.'));
+    CALL(str_append(&child_name, str_cget(&child_entity->name)));
+    #undef CALL
+
+    child = create_node(solstice, child_entity, &child_name);
     if(!child) goto error;
 
     res = solstice_node_add_child(node, child);
@@ -324,6 +340,7 @@ create_node(struct solstice* solstice, const struct solparser_entity* entity)
   }
 
 exit:
+  str_release(&child_name);
   return node;
 error:
   if(tgt) solstice_node_ref_put(tgt);
@@ -341,9 +358,12 @@ solstice_setup_entities(struct solstice* solstice)
 {
   struct solparser_entity_iterator it, it_end;
   struct solstice_node* root = NULL;
+  struct str name;
   const double dummy_sun_dir[3] = {0, 0, -1};
   res_T res = RES_OK;
   ASSERT(solstice);
+
+  str_init(solstice->allocator, &name);
 
   /* (re) create the list of roots from entities */
   solparser_entity_iterator_begin(solstice->parser, &it);
@@ -352,10 +372,17 @@ solstice_setup_entities(struct solstice* solstice)
     struct solparser_entity_id entity_id;
     const struct solparser_entity* entity;
 
+    str_clear(&name);
     entity_id = solparser_entity_iterator_get(&it);
     entity = solparser_get_entity(solstice->parser, entity_id);
 
-    root = create_node(solstice, entity);
+    res = str_copy(&name, &entity->name);
+    if(res != RES_OK) {
+      fprintf(stderr, "Could not initialise the absolute entity name.\n");
+      goto error;
+    }
+
+    root = create_node(solstice, entity, &name);
     if(!root) {
       res = RES_BAD_ARG;
       goto error;
@@ -381,6 +408,7 @@ solstice_setup_entities(struct solstice* solstice)
   }
 
 exit:
+  str_release(&name);
   return res;
 error:
   if(root) solstice_node_ref_put(root);

@@ -34,6 +34,7 @@ write_global_mc(struct solstice* solstice, struct ssol_estimator* estimator)
   htable_receiver_begin(&solstice->receivers, &it);
   htable_receiver_end(&solstice->receivers, &end);
   while(!htable_receiver_iterator_eq(&it, &end)) {
+    const struct str* name = htable_receiver_iterator_key_get(&it);
     struct solstice_receiver* rcv = htable_receiver_iterator_data_get(&it);
     struct ssol_instance* inst = rcv->node->instance;
     struct ssol_estimator_status front;
@@ -58,7 +59,7 @@ write_global_mc(struct solstice* solstice, struct ssol_estimator* estimator)
     }
     SSOL(instance_get_id(inst, &id));
     fprintf(solstice->output, "%s %u %g %g %g %g\n",
-      str_cget(&rcv->name), (unsigned)id,
+      str_cget(name), (unsigned)id,
       front.E, front.SE, back.E, back.SE);
   }
 

@@ -190,7 +190,7 @@ setup_sun_dirs(struct solstice* solstice, const struct solstice_args* args)
   res = darray_double_resize(&solstice->sun_dirs, args->nsun_dirs*3/*#dims*/);
   if(res != RES_OK) {
     fprintf(stderr,
-      "Could not reserve the list of %lu sun directions.\n", 
+      "Could not reserve the list of %lu sun directions.\n",
       (unsigned long)args->nsun_dirs);
     goto error;
 
@@ -251,11 +251,12 @@ static res_T
 setup_receivers(struct solstice* solstice, struct srcvl* srcvl)
 {
   struct solstice_receiver receiver;
+  struct str name;
   size_t i, n;
   res_T res = RES_OK;
   ASSERT(solstice && srcvl);
 
-  solstice_receiver_init(solstice->allocator, &receiver);
+  str_init(solstice->allocator, &name);
 
   n = srcvl_count(srcvl);
   FOR_EACH(i, 0, n) {
@@ -278,11 +279,16 @@ setup_receivers(struct solstice* solstice, struct srcvl* srcvl)
       goto error;
     }
 
+    res = str_set(&name, rcv.name);
+    if(res != RES_OK) {
+      fprintf(stderr, "Could not copy the receiver name.\n");
+      goto error;
+    }
+
     receiver.node = NULL;
     receiver.side = rcv.side;
-    str_set(&receiver.name, rcv.name);
 
-    res = htable_receiver_set(&solstice->receivers, &entity, &receiver);
+    res = htable_receiver_set(&solstice->receivers, &name, &receiver);
     if(res != RES_OK) {
       fprintf(stderr,
         "Could not register the receiver `%s' against Solstice.\n",
@@ -292,7 +298,7 @@ setup_receivers(struct solstice* solstice, struct srcvl* srcvl)
   }
 
 exit:
-  solstice_receiver_release(&receiver);
+  str_release(&name);
   return res;
 error:
   htable_receiver_clear(&solstice->receivers);

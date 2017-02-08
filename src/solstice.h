@@ -34,48 +34,8 @@ struct sanim_node;
 
 struct solstice_receiver {
   struct solstice_node* node;
-  struct str name; /* Absolute entity name */
   enum srcvl_side side;
 };
-
-static void
-solstice_receiver_init
-  (struct mem_allocator* allocator,
-   struct solstice_receiver* receiver)
-{
-  ASSERT(allocator && receiver);
-  receiver->node = NULL;
-  receiver->side = SRCVL_FRONT_AND_BACK;
-  str_init(allocator, &receiver->name);
-}
-
-static void
-solstice_receiver_release(struct solstice_receiver* receiver)
-{
-  ASSERT(receiver);
-  str_release(&receiver->name);
-}
-
-static res_T
-solstice_receiver_copy
-  (struct solstice_receiver* dst,
-   const struct solstice_receiver* src)
-{
-  ASSERT(dst && src);
-  dst->node = src->node;
-  dst->side = src->side;
-  return str_copy(&dst->name, &src->name);
-}
-
-static res_T
-solstice_receiver_copy_and_release
-  (struct solstice_receiver* dst, struct solstice_receiver* src)
-{
-  ASSERT(dst && src);
-  dst->node = src->node;
-  dst->side = src->side;
-  return str_copy_and_release(&dst->name, &src->name);
-}
 
 #define DARRAY_NAME nodes
 #define DARRAY_DATA struct solstice_node*
@@ -98,12 +58,14 @@ solstice_receiver_copy_and_release
 #include <rsys/hash_table.h>
 
 #define HTABLE_NAME receiver
-#define HTABLE_KEY const struct solparser_entity*
+#define HTABLE_KEY struct str
+#define HTABLE_KEY_FUNCTOR_INIT str_init
+#define HTABLE_KEY_FUNCTOR_RELEASE str_release
+#define HTABLE_KEY_FUNCTOR_COPY str_copy
+#define HTABLE_KEY_FUNCTOR_COPY_AND_RELEASE str_copy_and_release
+#define HTABLE_KEY_FUNCTOR_EQ str_eq
+#define HTABLE_KEY_FUNCTOR_HASH str_hash
 #define HTABLE_DATA struct solstice_receiver
-#define HTABLE_DATA_FUNCTOR_INIT solstice_receiver_init
-#define HTABLE_DATA_FUNCTOR_RELEASE solstice_receiver_release
-#define HTABLE_DATA_FUNCTOR_COPY solstice_receiver_copy
-#define HTABLE_DATA_FUNCTOR_COPY_AND_RELEASE solstice_receiver_copy_and_release
 #include <rsys/hash_table.h>
 
 struct solstice {
