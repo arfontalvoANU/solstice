@@ -13,10 +13,27 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>. */
 
+#define _POSIX_C_SOURCE 200112L /* fdopen support */
+
 #include "solstice.h"
 #include "solstice_c.h"
 #include "solstice_args.h"
 #include "parser/solparser.h"
+
+#include <sys/stat.h>
+#include <sys/types.h>
+
+#include <stdio.h>
+
+#ifdef OS_WINDOS
+  /* TODO */
+#else
+  /* open/close functions */
+  #include <errno.h>
+  #include <fcntl.h>
+  #include <unistd.h>
+#endif
+
 
 #include <solstice/ssol.h>
 
@@ -341,6 +358,54 @@ error:
   goto exit;
 }
 
+static int
+prompt_yes_no(void)
+{
+  int val[2];
+
+  do {
+    fprintf(stderr, "(y/n) ");
+
+    val[0] = getc(stdin);
+    if(val[0] != '\n' && val[0] != '\r') {
+      val[1] = getc(stdin);
+    }
+    if(val[1] != '\n' && val[1] != '\r') {
+      while(getc(stdin) != '\n'); /* Flush stdin */
+    }
+  } while((val[1] != '\n' && val[1] != '\r') || (val[0] != 'y' && val[0] != 'n'));
+
+  return val[0] == 'y';
+}
+
+static FILE*
+open_output_stream(const char* name)
+{
+  int fd = -1;
+  FILE* fp = NULL;
+  ASSERT(name);
+
+  fd = open(name, O_CREAT|O_WRONLY|O_EXCL|O_TRUNC, S_IRUSR|S_IWUSR);
+
+  if(fd >= 0) {
+    fp = fdopen(fd, "w");
+    if(fp == NULL) goto error;
+  } else if(errno == EEXIST) {
+    fprintf(stderr, "The output file `%s' already exist. Overwrite it? ", name);
+    if(!prompt_yes_no()) return NULL;
+
+    fd = open(name, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IRUSR);
+    if(fd >= 0 && !(fp = fdopen(fd, "w"))) goto error;
+  }
+
+exit:
+  return fp;
+error:
+  if(fd >= 0) CHECK(close(fd), 0);
+  fp = NULL;
+  goto exit;
+}
+
 /*******************************************************************************
  * Solstice local functions
  ******************************************************************************/
@@ -401,7 +466,7 @@ solstice_init
   if(!args->output_filename) {
     solstice->output = stdout;
   } else {
-    solstice->output = fopen(args->output_filename, "w+");
+    solstice->output = open_output_stream(args->output_filename);
     if(!solstice->output) {
       fprintf(stderr, "Could not open the output file `%s'.\n",
         args->output_filename);
