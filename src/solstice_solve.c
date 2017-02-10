@@ -15,6 +15,7 @@
 
 #include "solstice.h"
 #include "solstice_c.h"
+#include "parser/solparser_sun.h"
 #include <solstice/ssol.h>
 #include <star/ssp.h>
 
@@ -26,10 +27,15 @@ write_global_mc(struct solstice* solstice, struct ssol_estimator* estimator)
 {
   struct ssol_estimator_status status;
   struct htable_receiver_iterator it, end;
+  const struct solparser_sun* solparser_sun = NULL;
+  double irradiance_factor;
   ASSERT(solstice && estimator);
 
-  /* get realization count */
+  /* get global information */
   SSOL(estimator_get_status(estimator, SSOL_STATUS_SHADOW, &status));
+  SSOL(estimator_get_primary_area(estimator, &irradiance_factor));
+  solparser_sun = solparser_get_sun(solstice->parser);
+  irradiance_factor = 1 / (solparser_sun->dni * irradiance_factor);
 
   fprintf(solstice->output, "%lu %lu %lu\n",
     (unsigned long)htable_receiver_size_get(&solstice->receivers),
@@ -45,6 +51,7 @@ write_global_mc(struct solstice* solstice, struct ssol_estimator* estimator)
     struct ssol_estimator_status front;
     struct ssol_estimator_status back;
     uint32_t id;
+    double f_eff_E, f_eff_SE, b_eff_E, b_eff_SE;
 
     htable_receiver_iterator_next(&it);
     switch(rcv->side) {
@@ -53,29 +60,40 @@ write_global_mc(struct solstice* solstice, struct ssol_estimator* estimator)
         back.irradiance.E = back.irradiance.SE = -1;
         back.reflectivity_loss.E = back.reflectivity_loss.SE = -1;
         back.absorptivity_loss.E = back.absorptivity_loss.SE = -1;
+        f_eff_E = front.irradiance.E * irradiance_factor;
+        f_eff_SE = front.irradiance.SE * irradiance_factor;
+        b_eff_E = b_eff_SE = -1;
         break;
       case SRCVL_BACK:
         SSOL(estimator_get_receiver_status(estimator, inst, SSOL_BACK, &back));
         front.irradiance.E = front.irradiance.SE = -1;
         front.reflectivity_loss.E = front.reflectivity_loss.SE = -1;
         front.absorptivity_loss.E = front.absorptivity_loss.SE = -1;
+        f_eff_E = f_eff_SE = -1;
+        b_eff_E = back.irradiance.E * irradiance_factor;
+        b_eff_SE = back.irradiance.SE * irradiance_factor;
         break;
       case SRCVL_FRONT_AND_BACK:
         SSOL(estimator_get_receiver_status(estimator, inst, SSOL_FRONT, &front));
         SSOL(estimator_get_receiver_status(estimator, inst, SSOL_BACK, &back));
+        f_eff_E = front.irradiance.E * irradiance_factor;
+        f_eff_SE = front.irradiance.SE * irradiance_factor;
+        b_eff_E = back.irradiance.E * irradiance_factor;
+        b_eff_SE = back.irradiance.SE * irradiance_factor;
         break;
       default: FATAL("Unreachable code.\n"); break;
     }
     SSOL(instance_get_id(inst, &id));
-    fprintf(solstice->output, "%s %u  %g %g %g %g  %g %g %g %g  %g %g %g %g\n",
-      str_cget(name), (unsigned)id,
-      front.irradiance.E, front.irradiance.SE, 
+    fprintf(solstice->output, "%s %u   %g %g %g %g   %g %g %g %g   %g %g %g %g   %g %g %g %g\n",
+      str_cget(name), (unsigned) id,
+      front.irradiance.E, front.irradiance.SE,
       back.irradiance.E, back.irradiance.SE,
       front.reflectivity_loss.E, front.reflectivity_loss.SE,
       back.reflectivity_loss.E, back.reflectivity_loss.SE,
-      front.absorptivity_loss.E, front.absorptivity_loss.SE, 
-      back.absorptivity_loss.E, back.absorptivity_loss.SE
-      );
+      front.absorptivity_loss.E, front.absorptivity_loss.SE,
+      back.absorptivity_loss.E, back.absorptivity_loss.SE,
+      /* global efficiency */
+      f_eff_E, f_eff_SE, b_eff_E, b_eff_SE);
   }
 
   SSOL(estimator_get_status(estimator, SSOL_STATUS_SHADOW, &status));
