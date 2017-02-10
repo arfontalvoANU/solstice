@@ -33,6 +33,7 @@ find_package(SolAnim 0.1 REQUIRED)
 find_package(SolSolver 0.1 REQUIRED)
 find_package(Star3DUT REQUIRED)
 find_package(StarSP 0.4 REQUIRED)
+find_package(StarSTL 0.3 REQUIRED)
 
 if(MSVC)
   find_package(MuslGetopt REQUIRED)
@@ -49,6 +50,7 @@ include_directories(
   ${SolAnim_INCLUDE_DIR}
   ${SolSolver_INCLUDE_DIR}
   ${StarSP_INCLUDE_DIR}
+  ${StarSTL_INCLUDE_DIR}
   ${Star3DUT_INCLUDE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR})
 
@@ -112,7 +114,7 @@ endif()
 add_library(sollib STATIC ${SOLSTICE_FILES_SRC} ${SOLSTICE_FILES_INC})
 add_executable(solstice ${SOLSTICE_SOURCE_DIR}/main.c)
 target_link_libraries(solstice ${MATH_LIB} ${GETOPT_LIB}
-  LibYAML RSys sollib solparser SolAnim SolSolver srcvl Star3DUT StarSP)
+  LibYAML RSys sollib solparser SolAnim SolSolver srcvl Star3DUT StarSP StarSTL)
 set_target_properties(solstice PROPERTIES
   VERSION ${VERSION}
   SOVERSION ${VERSION_MAJOR})

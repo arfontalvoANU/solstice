@@ -15,10 +15,13 @@
 
 #include "solstice_c.h"
 
+#include <solstice/ssol.h>
+
 #include <rsys/double33.h>
 #include <rsys/float3.h>
-#include <solstice/ssol.h>
+
 #include <star/s3dut.h>
+#include <star/sstl.h>
 
 #include <limits.h>
 
@@ -27,6 +30,11 @@
 struct mesh_context {
   struct s3dut_mesh_data data;
   double transform[12];
+};
+
+struct mesh_fcontext {
+  struct sstl_desc desc;
+  const double *transform;
 };
 
 /*******************************************************************************
@@ -54,6 +62,31 @@ get_pos(const unsigned ivert, float pos[3], void* ctx)
   d3_set(tmp, mesh->data.positions + ivert*3);
   d33_muld3(tmp, mesh->transform, tmp);
   d3_add(tmp, mesh->transform+9, tmp);
+  f3_set_d3(pos, tmp);
+}
+
+static void
+get_fids(const unsigned itri, unsigned ids[3], void* ctx)
+{
+  const struct mesh_fcontext* mesh = ctx;
+  ASSERT(ids && ctx && itri < mesh->desc.triangles_count);
+  ASSERT(mesh->desc.indices[itri * 3 + 0] <= UINT_MAX);
+  ASSERT(mesh->desc.indices[itri * 3 + 1] <= UINT_MAX);
+  ASSERT(mesh->desc.indices[itri * 3 + 2] <= UINT_MAX);
+  ids[0] = mesh->desc.indices[itri * 3 + 0];
+  ids[1] = mesh->desc.indices[itri * 3 + 1];
+  ids[2] = mesh->desc.indices[itri * 3 + 2];
+}
+
+static void
+get_fpos(const unsigned ivert, float pos[3], void* ctx)
+{
+  const struct mesh_fcontext* mesh = ctx;
+  double tmp[3];
+  ASSERT(pos && ctx && ivert < mesh->desc.vertices_count);
+  d3_set_f3(tmp, mesh->desc.vertices + ivert * 3);
+  d33_muld3(tmp, mesh->transform, tmp);
+  d3_add(tmp, mesh->transform + 9, tmp);
   f3_set_d3(pos, tmp);
 }
 
@@ -224,6 +257,69 @@ exit:
   return res;
 error:
   if(ssol_shape) {
+    SSOL(shape_ref_put(ssol_shape));
+    ssol_shape = NULL;
+  }
+  goto exit;
+}
+
+static res_T
+create_stl
+  (struct solstice* solstice,
+   const double transform[12],
+   const struct solparser_shape_imported_geometry_id stl_id,
+   struct ssol_shape** out_stl)
+{
+  const struct solparser_shape_imported_geometry* stl;
+  struct ssol_shape* ssol_shape = NULL;
+  struct sstl* tmp_stl;
+  struct sstl_desc tmp_desc;
+  struct mesh_fcontext mesh_ctx;
+  struct ssol_vertex_data vertex_data = SSOL_VERTEX_DATA_NULL;
+  res_T res = RES_OK;
+  ASSERT(solstice && out_stl);
+
+  stl = solparser_get_shape_stl(solstice->parser, stl_id);
+  ASSERT(str_cget(&stl->filename));
+
+  res = sstl_create(NULL, solstice->allocator, 0, &tmp_stl);
+  if (res != RES_OK) {
+    fprintf(stderr, "Could not create a Solstice Solver STL shape.\n");
+    goto error;
+  }
+  res = sstl_load(tmp_stl, str_cget(&stl->filename));
+  if (res != RES_OK) goto error;
+  res = sstl_get_desc(tmp_stl, &tmp_desc);
+  if (res != RES_OK) goto error;
+  ASSERT(tmp_desc.triangles_count <= UINT_MAX);
+  ASSERT(tmp_desc.vertices_count <= UINT_MAX);
+  mesh_ctx.transform = transform;
+  mesh_ctx.desc = tmp_desc;
+
+  res = ssol_shape_create_mesh(solstice->ssol, &ssol_shape);
+  if (res != RES_OK) {
+    fprintf(stderr, "Could not create the STL mesh shape.\n");
+    goto error;
+  }
+
+  vertex_data.usage = SSOL_POSITION;
+  vertex_data.get = get_fpos;
+  res = ssol_mesh_setup(ssol_shape, (unsigned)tmp_desc.triangles_count,
+    get_fids, (unsigned)tmp_desc.vertices_count, &vertex_data, 1, &mesh_ctx);
+  if (res != RES_OK) {
+    fprintf(stderr, "Could not setup STL mesh.\n");
+    goto error;
+  }
+
+exit:
+  if (tmp_stl) {
+    SSTL(ref_put(tmp_stl));
+    tmp_stl = NULL;
+  }
+  *out_stl = ssol_shape;
+  return res;
+error:
+  if (ssol_shape) {
     SSOL(shape_ref_put(ssol_shape));
     ssol_shape = NULL;
   }
@@ -412,8 +508,7 @@ create_shaded_shape
       res = create_sphere(solstice, transform, shape->data.sphere, ssol_shape);
       break;
     case SOLPARSER_SHAPE_STL:
-      fprintf(stderr, "`STL' shapes are not supported yet.\n");
-      res = RES_BAD_ARG;
+      res = create_stl(solstice, transform, shape->data.stl, ssol_shape);
       break;
     default: FATAL("Unreachable code.\n"); break;
   }
