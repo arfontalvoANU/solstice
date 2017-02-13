@@ -84,7 +84,8 @@ write_global_mc(struct solstice* solstice, struct ssol_estimator* estimator)
       default: FATAL("Unreachable code.\n"); break;
     }
     SSOL(instance_get_id(inst, &id));
-    fprintf(solstice->output, "%s %u   %g %g %g %g   %g %g %g %g   %g %g %g %g   %g %g %g %g\n",
+    fprintf(solstice->output, 
+      "%s %u   %g %g %g %g   %g %g %g %g   %g %g %g %g   %g %g %g %g\n",
       str_cget(name), (unsigned) id,
       front.irradiance.E, front.irradiance.SE,
       back.irradiance.E, back.irradiance.SE,

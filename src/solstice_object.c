@@ -27,12 +27,12 @@
 
 #define MAX_POLYCLIPS 16
 
-struct mesh_context {
+struct mesh_ctx_s3dut {
   struct s3dut_mesh_data data;
   double transform[12];
 };
 
-struct mesh_fcontext {
+struct mesh_ctx_sstl {
   struct sstl_desc desc;
   const double *transform;
 };
@@ -41,9 +41,9 @@ struct mesh_fcontext {
  * Helper functions
  ******************************************************************************/
 static void
-get_ids(const unsigned itri, unsigned ids[3], void* ctx)
+mesh_ctx_s3dut_get_ids(const unsigned itri, unsigned ids[3], void* ctx)
 {
-  const struct mesh_context* mesh = ctx;
+  const struct mesh_ctx_s3dut* mesh = ctx;
   ASSERT(ids && ctx && itri < mesh->data.nprimitives);
   ASSERT(mesh->data.indices[itri*3+0] <= UINT_MAX);
   ASSERT(mesh->data.indices[itri*3+1] <= UINT_MAX);
@@ -54,9 +54,9 @@ get_ids(const unsigned itri, unsigned ids[3], void* ctx)
 }
 
 static void
-get_pos(const unsigned ivert, float pos[3], void* ctx)
+mesh_ctx_s3dut_get_pos(const unsigned ivert, float pos[3], void* ctx)
 {
-  const struct mesh_context* mesh = ctx;
+  const struct mesh_ctx_s3dut* mesh = ctx;
   double tmp[3];
   ASSERT(pos && ctx && ivert < mesh->data.nvertices);
   d3_set(tmp, mesh->data.positions + ivert*3);
@@ -66,22 +66,22 @@ get_pos(const unsigned ivert, float pos[3], void* ctx)
 }
 
 static void
-get_fids(const unsigned itri, unsigned ids[3], void* ctx)
+mesh_ctx_sstl_get_ids(const unsigned itri, unsigned ids[3], void* ctx)
 {
-  const struct mesh_fcontext* mesh = ctx;
+  const struct mesh_ctx_sstl* mesh = ctx;
   ASSERT(ids && ctx && itri < mesh->desc.triangles_count);
-  ASSERT(mesh->desc.indices[itri * 3 + 0] <= UINT_MAX);
-  ASSERT(mesh->desc.indices[itri * 3 + 1] <= UINT_MAX);
-  ASSERT(mesh->desc.indices[itri * 3 + 2] <= UINT_MAX);
-  ids[0] = mesh->desc.indices[itri * 3 + 0];
-  ids[1] = mesh->desc.indices[itri * 3 + 1];
-  ids[2] = mesh->desc.indices[itri * 3 + 2];
+  ASSERT(mesh->desc.indices[itri*3+0] <= UINT_MAX);
+  ASSERT(mesh->desc.indices[itri*3+1] <= UINT_MAX);
+  ASSERT(mesh->desc.indices[itri*3+2] <= UINT_MAX);
+  ids[0] = mesh->desc.indices[itri*3+0];
+  ids[1] = mesh->desc.indices[itri*3+1];
+  ids[2] = mesh->desc.indices[itri*3+2];
 }
 
 static void
-get_fpos(const unsigned ivert, float pos[3], void* ctx)
+mesh_ctx_sstl_get_pos(const unsigned ivert, float pos[3], void* ctx)
 {
-  const struct mesh_fcontext* mesh = ctx;
+  const struct mesh_ctx_sstl* mesh = ctx;
   double tmp[3];
   ASSERT(pos && ctx && ivert < mesh->desc.vertices_count);
   d3_set_f3(tmp, mesh->desc.vertices + ivert * 3);
@@ -115,7 +115,7 @@ create_ssol_shape_mesh
    const struct s3dut_mesh* mesh,
    struct ssol_shape** out_ssol_shape)
 {
-  struct mesh_context mesh_ctx;
+  struct mesh_ctx_s3dut mesh_ctx;
   struct ssol_vertex_data vertex_data = SSOL_VERTEX_DATA_NULL;
   struct ssol_shape* ssol_shape = NULL;
   res_T res = RES_OK;
@@ -134,9 +134,10 @@ create_ssol_shape_mesh
   }
 
   vertex_data.usage = SSOL_POSITION;
-  vertex_data.get = get_pos;
+  vertex_data.get = mesh_ctx_s3dut_get_pos;
   res = ssol_mesh_setup(ssol_shape, (unsigned)mesh_ctx.data.nprimitives,
-    get_ids, (unsigned)mesh_ctx.data.nvertices, &vertex_data, 1, &mesh_ctx);
+    mesh_ctx_s3dut_get_ids, (unsigned)mesh_ctx.data.nvertices, &vertex_data, 1,
+    &mesh_ctx);
   if(res != RES_OK) {
     fprintf(stderr, "Could not setup a Solstice Solver mesh shape.\n");
     goto error;
@@ -274,7 +275,7 @@ create_stl
   struct ssol_shape* ssol_shape = NULL;
   struct sstl* tmp_stl;
   struct sstl_desc tmp_desc;
-  struct mesh_fcontext mesh_ctx;
+  struct mesh_ctx_sstl mesh_ctx;
   struct ssol_vertex_data vertex_data = SSOL_VERTEX_DATA_NULL;
   res_T res = RES_OK;
   ASSERT(solstice && out_stl);
@@ -303,9 +304,10 @@ create_stl
   }
 
   vertex_data.usage = SSOL_POSITION;
-  vertex_data.get = get_fpos;
+  vertex_data.get = mesh_ctx_sstl_get_pos;
   res = ssol_mesh_setup(ssol_shape, (unsigned)tmp_desc.triangles_count,
-    get_fids, (unsigned)tmp_desc.vertices_count, &vertex_data, 1, &mesh_ctx);
+    mesh_ctx_sstl_get_ids, (unsigned)tmp_desc.vertices_count, &vertex_data, 1,
+    &mesh_ctx);
   if (res != RES_OK) {
     fprintf(stderr, "Could not setup STL mesh.\n");
     goto error;
