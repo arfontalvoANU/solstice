@@ -233,7 +233,7 @@ res_T
 solstice_node_geometry_set_receiver(struct solstice_node* node, const int mask)
 {
   ASSERT(node && node->type == SOLSTICE_NODE_GEOMETRY);
-  return ssol_instance_set_receiver(node->instance, mask);
+  return ssol_instance_set_receiver(node->instance, mask, 0);
 }
 
 void
