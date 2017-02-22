@@ -86,6 +86,7 @@ set(SOLSTICE_FILES_SRC
   solstice.c
   solstice_args.c
   solstice_draw.c
+  solstice_dump_obj.c
   solstice_entity.c
   solstice_material.c
   solstice_node.c
