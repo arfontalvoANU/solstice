@@ -377,9 +377,10 @@ prompt_yes_no(void)
     fprintf(stderr, "(y/n) ");
 
     val[0] = getc(stdin);
-    if(val[0] != '\n' && val[0] != '\r') {
-      val[1] = getc(stdin);
-    }
+    if(val[0] == '\n' && val[0] == '\r')
+      continue;
+
+    val[1] = getc(stdin);
     if(val[1] != '\n' && val[1] != '\r') {
       while(getc(stdin) != '\n'); /* Flush stdin */
     }
