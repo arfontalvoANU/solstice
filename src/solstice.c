@@ -520,6 +520,7 @@ solstice_init
 
   solstice->nrealisations = args->nrealisations;
   solstice->output_hits = args->output_hits;
+  solstice->dump_obj = args->dump_obj;
 
 exit:
   return res;
@@ -567,22 +568,15 @@ solstice_run(struct solstice* solstice)
   ASSERT(nsun_dirs%3 == 0);
   nsun_dirs /= 3/*#dims*/;
 
-  if(!solstice->framebuffer) { /* Solstice integration */
-    FOR_EACH(i, 0, nsun_dirs) {
-      const double* sun_dir = sun_dirs + i*3/*#dims*/;
-      res = ssol_sun_set_direction(solstice->sun, sun_dir);
-      if(res != RES_OK) {
-        fprintf(stderr, "Could not update the sun direction.\n");
-        goto error;
-      }
-      res = solstice_update_entities(solstice, sun_dir);
+  if(!nsun_dirs) {
+    if(solstice->dump_obj) {
+      res = solstice_dump_obj(solstice);
       if(res != RES_OK) goto error;
-      res = solstice_solve(solstice);
+    } else {
+      ASSERT(solstice->framebuffer);
+      res = solstice_draw(solstice);
       if(res != RES_OK) goto error;
     }
-  } else if(!nsun_dirs) {
-    res = solstice_draw(solstice);
-    if(res != RES_OK) goto error;
   } else {
     FOR_EACH(i, 0, nsun_dirs) {
       const double* sun_dir = sun_dirs + i*3/*#dims*/;
@@ -590,11 +584,22 @@ solstice_run(struct solstice* solstice)
       res = solstice_update_entities(solstice, sun_dir);
       if(res != RES_OK) goto error;
 
-      res = solstice_draw(solstice);
-      if(res != RES_OK) goto error;
-
-      fprintf(solstice->output,
-        "# Sun direction: %g %g %g\n", SPLIT3(sun_dir));
+      if(solstice->framebuffer) {
+        res = solstice_draw(solstice);
+        if(res != RES_OK) goto error;
+      } else if(solstice->dump_obj) {
+        res = solstice_dump_obj(solstice);
+        if(res != RES_OK) goto error;
+      } else {
+        res = ssol_sun_set_direction(solstice->sun, sun_dir);
+        if(res != RES_OK) {
+          fprintf(stderr, "Could not update the sun direction.\n");
+          goto error;
+        }
+        res = solstice_solve(solstice);
+        if(res != RES_OK) goto error;
+      }
+      fprintf(solstice->output, "# Sun direction: %g %g %g\n", SPLIT3(sun_dir));
     }
   }
 

@@ -91,6 +91,7 @@ struct solstice {
 
   size_t nrealisations; /* # realisations */
   FILE* output; /* Output stream */
+  int dump_obj; /* Dump the geometry */
   int output_hits; /* Output per receiver hits */
 
   struct mem_allocator* allocator;

@@ -54,6 +54,8 @@ print_help(const char* program)
 "  -n REALISATIONS  number of realisations. Default is %lu.\n",
     SOLSTICE_ARGS_DEFAULT.nrealisations);
   printf(
+"  -O               switch in dump geometry mode.\n");
+  printf(
 "  -o OUTPUT        write results to OUTPUT. If not defined, write results to\n"
 "                   standard output.\n");
   printf(
@@ -306,7 +308,7 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
   *args = SOLSTICE_ARGS_DEFAULT;
 
   optind = 0;
-  while((opt = getopt(argc, argv, "D:fHhn:O:o:qR:r:t:")) != -1) {
+  while((opt = getopt(argc, argv, "D:fHhn:Oo:qR:r:t:")) != -1) {
     switch(opt) {
       case 'D':
         res = parse_sun_dir_list(optarg, args);
@@ -342,15 +344,14 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
     }
   }
 
-  if(!args->rendering && !args->nsun_dirs) {
+  if(!args->rendering && !args->dump_obj && !args->nsun_dirs) {
     fprintf(stderr, "Missing sun direction.\n");
     res = RES_BAD_ARG;
     goto error;
   }
 
   if(args->dump_obj && args->rendering) {
-    fprintf(stderr,
-      "The '-O' and '-r' options cannot be defined simultaneously.\n");
+    fprintf(stderr, "The '-O' and '-r' options are exclusive\n");
     res = RES_BAD_ARG;
     goto error;
   }
