@@ -152,7 +152,7 @@ parse_side
   } else if(!strcmp((char*)side->data.scalar.value, "FRONT_AND_BACK")) {
     *out_side = SRCVL_FRONT_AND_BACK;
   } else {
-    log_err(srcvl, side, "unknown side valie `%s'.\n",
+    log_err(srcvl, side, "unknown side value `%s'.\n",
       side->data.scalar.value);
     res = RES_BAD_ARG;
     goto error;
