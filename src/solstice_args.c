@@ -219,6 +219,12 @@ parse_rendering_option(const char* str, struct solstice_args* args)
   key = strtok_r(buf, "=", &ctx);
   val = strtok_r(NULL, "", &ctx);
 
+  if(!val) {
+    fprintf(stderr, "Missing a value to the rendering option `%s'.\n", key);
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
   if(!strcmp(key, "fov")) {
     res = parse_fov(val, &args->camera.fov_x);
     if(res != RES_OK) goto error;
@@ -266,14 +272,11 @@ parse_rendering_options(const char* str, struct solstice_args* args)
   char* tk;
   char* ctx;
   res_T res = RES_OK;
-  ASSERT(args);
-  (void)str, (void)args;
+  ASSERT(args && str);
 
   /* Setup default values of the rendering parameters */
   args->camera = SOLSTICE_ARGS_DEFAULT.camera;
   args->img = SOLSTICE_ARGS_DEFAULT.img;
-
-  if(!str) goto exit;
 
   if(strlen(str) >= sizeof(buf) - 1/*NULL char*/) {
     fprintf(stderr,
