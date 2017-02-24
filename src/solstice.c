@@ -520,7 +520,8 @@ solstice_init
 
   solstice->nrealisations = args->nrealisations;
   solstice->output_hits = args->output_hits;
-  solstice->dump_obj = args->dump_obj;
+  solstice->dump_format = args->dump_format;
+  solstice->dump_split_mode = args->dump_split_mode;
 
 exit:
   return res;
@@ -560,6 +561,8 @@ solstice_run(struct solstice* solstice)
   const double* sun_dirs = NULL;
   size_t nsun_dirs = 0;
   size_t i;
+  int dump;
+  int draw;
   res_T res = RES_OK;
   ASSERT(solstice);
 
@@ -568,12 +571,15 @@ solstice_run(struct solstice* solstice)
   ASSERT(nsun_dirs%3 == 0);
   nsun_dirs /= 3/*#dims*/;
 
+  dump = solstice->dump_format != SOLSTICE_ARGS_DUMP_NONE;
+  draw = solstice->framebuffer != NULL;
+
   if(!nsun_dirs) {
-    if(solstice->dump_obj) {
-      res = solstice_dump_obj(solstice);
+    if(dump) {
+      res = solstice_dump(solstice);
       if(res != RES_OK) goto error;
     } else {
-      ASSERT(solstice->framebuffer);
+      ASSERT(draw);
       res = solstice_draw(solstice);
       if(res != RES_OK) goto error;
     }
@@ -584,11 +590,11 @@ solstice_run(struct solstice* solstice)
       res = solstice_update_entities(solstice, sun_dir);
       if(res != RES_OK) goto error;
 
-      if(solstice->framebuffer) {
+      if(draw) {
         res = solstice_draw(solstice);
         if(res != RES_OK) goto error;
-      } else if(solstice->dump_obj) {
-        res = solstice_dump_obj(solstice);
+      } else if(dump) {
+        res = solstice_dump(solstice);
         if(res != RES_OK) goto error;
       } else {
         res = ssol_sun_set_direction(solstice->sun, sun_dir);

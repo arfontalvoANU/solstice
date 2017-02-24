@@ -24,6 +24,17 @@ struct solstice_args_spherical {
   double elevation; /* In radians */
 };
 
+enum solstice_args_dump_format {
+  SOLSTICE_ARGS_DUMP_OBJ,
+  SOLSTICE_ARGS_DUMP_NONE
+};
+
+enum solstice_args_dump_split_mode {
+  SOLSTICE_ARGS_DUMP_SPLIT_GEOMETRY,
+  SOLSTICE_ARGS_DUMP_SPLIT_NONE,
+  SOLSTICE_ARGS_DUMP_SPLIT_OBJECT
+};
+
 struct solstice_args {
   const char* output_filename;
   const char* input_filename; /* May be NULL <=> read data from stdin */
@@ -47,8 +58,10 @@ struct solstice_args {
     unsigned long height;
   } img;
 
+  enum solstice_args_dump_format dump_format;
+  enum solstice_args_dump_split_mode dump_split_mode;
+
   int force_overwriting;
-  int dump_obj;
   int rendering;
   int output_hits; /* Output the per receiver hits */
   int quiet;
@@ -80,8 +93,10 @@ static const struct solstice_args SOLSTICE_ARGS_NULL = SOLSTICE_ARGS_NULL__;
     @SOLSTICE_ARGS_DEFAULT_IMG_HEIGHT@                                         \
   },                                                                           \
                                                                                \
+  SOLSTICE_ARGS_DUMP_NONE, /* Dump format */                                   \
+  SOLSTICE_ARGS_DUMP_SPLIT_NONE, /* Dump split mode */                         \
+                                                                               \
   0, /* Force overwriting */                                                   \
-  0, /* Dump */                                                                \
   0, /* Rendering */                                                           \
   0, /* Output hits */                                                         \
   0, /* Quiet */                                                               \

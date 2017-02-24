@@ -4,7 +4,7 @@ solstice
   -D <sun-dir-list>
   -f # Force output overwrite
   -h # Short help and exit
-  -O # Switch in dump mode
+  -g <dump> # Switch in dump geometry
   -o OUTPUT # defaulting to stdout if not defined
   -q # don't print a message if no INPUT is submitted
   -n INTEGER # Realisations count
@@ -14,6 +14,7 @@ solstice
   INPUT # Input scene in YAML
 
 solstice -r img=1280x720:pos=0,100,0:tgt=0,0,0:up=0,1,0:fov=70
+solstice -g format=obj:split-group=1
 
 -d and -D are exclusive
 
@@ -37,6 +38,15 @@ solstice -r img=1280x720:pos=0,100,0:tgt=0,0,0:up=0,1,0:fov=70
 
 <rendering-option> ::=
   <fov> | <img> | <position> | <target> | <up>
+
+<dump> ::=
+  format=<dump-format>[:split=<split-mode>]
+
+<dump-format> ::=
+  obj
+
+<split-mode> ::=
+  geometry | object | none
 
 <fov> ::=
   fov=<real3>

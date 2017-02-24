@@ -54,7 +54,7 @@ print_help(const char* program)
 "  -n REALISATIONS  number of realisations. Default is %lu.\n",
     SOLSTICE_ARGS_DEFAULT.nrealisations);
   printf(
-"  -O               switch in dump geometry mode.\n");
+"  -g <dump>        switch in dump geometry mode and configure it.\n");
   printf(
 "  -o OUTPUT        write results to OUTPUT. If not defined, write results to\n"
 "                   standard output.\n");
@@ -298,6 +298,128 @@ error:
   goto exit;
 }
 
+static res_T
+parse_dump_format(const char* str, enum solstice_args_dump_format* fmt)
+{
+  res_T res = RES_OK;
+  ASSERT(str && fmt);
+
+  if(!strcmp(str, "obj")) {
+    *fmt = SOLSTICE_ARGS_DUMP_OBJ;
+  } else {
+    fprintf(stderr, "Invalid dump format `%s'.\n", str);
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+static res_T
+parse_dump_split_mode(const char* str, enum solstice_args_dump_split_mode* mode)
+{
+  res_T res = RES_OK;
+  ASSERT(str && mode);
+
+  if(!strcmp(str, "geometry")) {
+    *mode = SOLSTICE_ARGS_DUMP_SPLIT_GEOMETRY;
+  } else if(!strcmp(str, "none")) {
+    *mode = SOLSTICE_ARGS_DUMP_SPLIT_NONE;
+  } else if(!strcmp(str, "object")) {
+    *mode = SOLSTICE_ARGS_DUMP_SPLIT_OBJECT;
+  } else {
+    fprintf(stderr, "Invalid dump split mode `%s'.\n", str);
+    res = RES_BAD_ARG;
+    goto error;
+  }
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+static res_T
+parse_dump_option(const char* str, struct solstice_args* args)
+{
+  char buf[128];
+  char* key;
+  char* val;
+  char* ctx;
+  res_T res = RES_OK;
+  ASSERT(str && args);
+
+  if(strlen(str) >= sizeof(buf) - 1/*NULL char*/) {
+    fprintf(stderr,
+      "Could not duplicate the dump geometry option string `%s'\n", str);
+    res = RES_MEM_ERR;
+    goto error;
+  }
+  strncpy(buf, str, sizeof(buf));
+
+  key = strtok_r(buf, "=", &ctx);
+  val = strtok_r(NULL, "", &ctx);
+
+  if(!val) {
+    fprintf(stderr, "Missing a value to the dump option `%s'.\n", key);
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  if(!strcmp(key, "format")) {
+    res = parse_dump_format(val, &args->dump_format);
+  } else if(!strcmp(key, "split")) {
+    res = parse_dump_split_mode(val, &args->dump_split_mode);
+  } else {
+    fprintf(stderr, "Invalid dump option `%s'.\n", val);
+    res = RES_BAD_ARG;
+    goto error;
+  }
+  if(res != RES_OK) goto error;
+
+  if(args->dump_format == SOLSTICE_ARGS_DUMP_NONE) {
+    fprintf(stderr, "No dump format is defined.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+static res_T
+parse_dump_options(const char* str, struct solstice_args* args)
+{
+  char buf[512];
+  char* tk;
+  char* ctx;
+  res_T res = RES_OK;
+  ASSERT(args && str);
+  (void)str, (void)args;
+
+  if(strlen(str) >= sizeof(buf) - 1/*NULL char*/) {
+    fprintf(stderr,
+      "Could not duplicate the dump geometry options string `%s'.\n", str);
+    res = RES_MEM_ERR;
+    goto error;
+  }
+  strncpy(buf, str, sizeof(buf));
+  tk = strtok_r(buf, ":", &ctx);
+  do {
+    res = parse_dump_option(tk, args);
+    tk = strtok_r(NULL, ":", &ctx);
+  } while(tk);
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
 /*******************************************************************************
  * Local function
  ******************************************************************************/
@@ -311,7 +433,7 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
   *args = SOLSTICE_ARGS_DEFAULT;
 
   optind = 0;
-  while((opt = getopt(argc, argv, "D:fHhn:Oo:qR:r:t:")) != -1) {
+  while((opt = getopt(argc, argv, "D:fg:Hhn:o:qR:r:t:")) != -1) {
     switch(opt) {
       case 'D':
         res = parse_sun_dir_list(optarg, args);
@@ -327,7 +449,7 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
         res = cstr_to_ulong(optarg, &args->nrealisations);
         if(res == RES_OK && !args->nrealisations) res = RES_BAD_ARG;
         break;
-      case 'O': args->dump_obj = 1; break;
+      case 'g': res = parse_dump_options(optarg, args); break;
       case 'o': args->output_filename = optarg; break;
       case 'q': args->quiet = 1; break;
       case 'R': args->receivers_filename = optarg; break;
@@ -347,14 +469,16 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
     }
   }
 
-  if(!args->rendering && !args->dump_obj && !args->nsun_dirs) {
+  if(!args->rendering
+  && args->dump_format == SOLSTICE_ARGS_DUMP_NONE
+  && !args->nsun_dirs) {
     fprintf(stderr, "Missing sun direction.\n");
     res = RES_BAD_ARG;
     goto error;
   }
 
-  if(args->dump_obj && args->rendering) {
-    fprintf(stderr, "The '-O' and '-r' options are exclusive\n");
+  if(args->dump_format != SOLSTICE_ARGS_DUMP_NONE && args->rendering) {
+    fprintf(stderr, "The '-g' and '-r' options are exclusive\n");
     res = RES_BAD_ARG;
     goto error;
   }

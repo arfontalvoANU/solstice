@@ -459,6 +459,64 @@ test_input(void)
   cmd_delete(cmd);
 }
 
+static void
+test_dump(void)
+{
+  struct solstice_args args = SOLSTICE_ARGS_NULL;
+  char** cmd = NULL;
+
+  cmd = cmd_create(0, "test", "-D", "0,90", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.dump_format, SOLSTICE_ARGS_DUMP_NONE);
+  CHECK(args.dump_split_mode, SOLSTICE_ARGS_DUMP_SPLIT_NONE);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-g", "format=obj", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.dump_format, SOLSTICE_ARGS_DUMP_OBJ);
+  CHECK(args.dump_split_mode, SOLSTICE_ARGS_DUMP_SPLIT_NONE);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-g", "split=geometry:format=obj", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.dump_format, SOLSTICE_ARGS_DUMP_OBJ);
+  CHECK(args.dump_split_mode, SOLSTICE_ARGS_DUMP_SPLIT_GEOMETRY);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-g", "format=obj:split=object", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.dump_format, SOLSTICE_ARGS_DUMP_OBJ);
+  CHECK(args.dump_split_mode, SOLSTICE_ARGS_DUMP_SPLIT_OBJECT);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-g", "format=obj::::split=none", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.dump_format, SOLSTICE_ARGS_DUMP_OBJ);
+  CHECK(args.dump_split_mode, SOLSTICE_ARGS_DUMP_SPLIT_NONE);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-g", "split=object", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-g", "format=stl", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-g", "format=obj:dummy", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-g", "format=obj:split", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+}
+
 int
 main(int argc, char** argv)
 {
@@ -472,6 +530,7 @@ main(int argc, char** argv)
   test_quiet();
   test_receivers();
   test_input();
+  test_dump();
   CHECK(mem_allocated_size(), 0);
   return 0;
 }

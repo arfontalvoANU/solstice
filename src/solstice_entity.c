@@ -255,6 +255,12 @@ create_node
     goto error;
   }
 
+  res = solstice_node_set_name(node, str_cget(name));
+  if(res != RES_OK) {
+    fprintf(stderr, "Could not setup the solstice node name.\n");
+    goto error;
+  }
+
   /* Setup the primary parameter for the geometry entity */
   if(entity->type == SOLPARSER_ENTITY_GEOMETRY) {
     res = solstice_node_geometry_set_primary(node, entity->primary);
