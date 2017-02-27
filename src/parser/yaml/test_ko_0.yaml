@@ -598,6 +598,82 @@
             vertices: [ [1, 2], [3, 4], [6, 7] ]
 ---
 
+# <hyperbol> ::=
+#   hyperbol: #(x^2 + y^2) / a^2 - (z - 1/2)^2 / b^2 + 1 = 0
+#             with a^2 = f - f^2; b = f -1/2; f = real_focal / (img_focal + real_focal)
+#     real_focal: REAL # in ]0, INF)
+#     img_focal: REAL # in ]0, INF)
+#     clip: <polyclip-list>
+# 
+# missing hyperbol definition
+- geometry: [ { hyperbol: } ]
+---
+# unknown dummy parameter
+- geometry: [ { hyperbol: { dummy: 1 } } ]
+---
+# missing real_focal value
+- geometry: [ { hyperbol: { real_focal: } } ]
+---
+# missing img_focal value
+- geometry: [ { hyperbol: { img_focal: } } ]
+---
+# missing clip value
+- geometry: [ { hyperbol: { clip: } } ]
+---
+# real_focal should be a number
+- geometry: [ { hyperbol: { real_focal: "dummy" } } ]
+---
+# -1 invalid
+- geometry: [ { hyperbol: { real_focal: -1 } } ]
+---
+# 0 invalid
+- geometry: [ { hyperbol: { real_focal: 0 } } ]
+---
+# img_focal should be a number
+- geometry: [ { hyperbol: { img_focal: "dummy" } } ]
+---
+# -1 invalid
+- geometry: [ { hyperbol: { img_focal: -1 } } ]
+---
+# 0 invalid
+- geometry: [ { hyperbol: { img_focal: 0 } } ]
+---
+# missing clip parameter
+- geometry: [ { hyperbol: { real_focal: 10, img_focal: 10 } } ]
+---
+# missing real_focal parameter
+- geometry:
+    - hyperbol:
+        img_focal: 10
+        clip:
+          - operation: AND
+            vertices: [ [1, 2], [3, 4], [6, 7] ]
+---
+# missing img_focal parameter
+- geometry:
+    - hyperbol:
+        real_focal: 10
+        clip:
+          - operation: AND
+            vertices: [ [1, 2], [3, 4], [6, 7] ]
+---
+# 2x real_focal
+- geometry: [ { hyperbol: { real_focal: 10, real_focal: 10 } } ]
+---
+# 2x img_focal
+- geometry: [ { hyperbol: { img_focal: 10, img_focal: 10 } } ]
+---
+# 2x clip
+- geometry:
+    - hyperbol:
+        clip:
+          - operation: AND
+            vertices: [ [1, 2], [3, 4], [6, 7] ]
+        clip:
+          - operation: AND
+            vertices: [ [1, 2], [3, 4], [6, 7] ]
+---
+
 #
 # <plane> ::=
 #   plane:
