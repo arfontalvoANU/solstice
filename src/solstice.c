@@ -368,57 +368,44 @@ error:
   goto exit;
 }
 
-static int
-prompt_yes_no(void)
+static res_T
+open_output_stream(const char* name, const int force_overwriting, FILE** stream)
 {
-  int val[2];
-
-  do {
-    fprintf(stderr, "(y/n) ");
-
-    val[0] = getc(stdin);
-    if(val[0] == '\n' && val[0] == '\r')
-      continue;
-
-    val[1] = getc(stdin);
-    if(val[1] != '\n' && val[1] != '\r') {
-      while(getc(stdin) != '\n'); /* Flush stdin */
-    }
-  } while((val[1] != '\n' && val[1] != '\r') || (val[0] != 'y' && val[0] != 'n'));
-
-  return val[0] == 'y';
-}
-
-static FILE*
-open_output_stream(const char* name, const int force_overwriting)
-{
+  res_T res = RES_OK;
   int fd = -1;
   FILE* fp = NULL;
   ASSERT(name);
 
   if(force_overwriting) {
     fp = fopen(name, "w");
-    if(!fp) goto error;
+    if(!fp) {
+      fprintf(stderr, "Could not open the output file `%s'.\n", name);
+      goto error;
+    }
   } else {
     fd = open(name, O_CREAT|O_WRONLY|O_EXCL|O_TRUNC, S_IRUSR|S_IWUSR);
     if(fd >= 0) {
       fp = fdopen(fd, "w");
-      if(fp == NULL) goto error;
-    } else if(errno == EEXIST) {
-      fprintf(stderr, "The output file `%s' already exist. Overwrite it? ", name);
-      if(!prompt_yes_no()) return NULL;
-
-      fd = open(name, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IRUSR);
-      if(fd >= 0) {
-        fp = fdopen(fd, "w");
-        if(!fp) goto error;
+      if(fp == NULL) {
+        fprintf(stderr, "Could not open the output file `%s'.\n", name);
+        goto error;
       }
+    } else if(errno == EEXIST) {
+      fprintf(stderr,
+        "The output file `%s' already exists. Use -f to overwrite it.\n", name);
+      goto error;
+    } else {
+      fprintf(stderr,
+        "Unexpected error while opening the output file `%s'.\n", name);
+      goto error;
     }
   }
 
 exit:
-  return fp;
+  *stream = fp;
+  return res;
 error:
+  res = RES_IO_ERR;
   if(fp) {
     CHECK(fclose(fp), 0);
     fp = NULL;
@@ -488,14 +475,9 @@ solstice_init
   if(!args->output_filename) {
     solstice->output = stdout;
   } else {
-    solstice->output = open_output_stream
-      (args->output_filename, args->force_overwriting);
-    if(!solstice->output) {
-      fprintf(stderr, "Could not open the output file `%s'.\n",
-        args->output_filename);
-      res = RES_IO_ERR;
-      goto error;
-    }
+    res = open_output_stream(args->output_filename, args->force_overwriting,
+      &solstice->output);
+    if(res != RES_OK) goto error;
   }
 
   res = load_data(solstice, args);
@@ -605,7 +587,7 @@ solstice_run(struct solstice* solstice)
         res = solstice_solve(solstice);
         if(res != RES_OK) goto error;
       }
-      fprintf(solstice->output, "# Sun direction: %g %g %g\n", SPLIT3(sun_dir));
+      fprintf(solstice->output, "#--- Sun direction: %g %g %g\n", SPLIT3(sun_dir));
     }
   }
 
