@@ -219,7 +219,7 @@
 #     <entity-data>
 # 
 # <entity-data> ::=
-#   name: STRING
+#   name: STRING # except "self"
 # [ <geometry-data> | <x_pivot> | <zx_pivot> ]
 # [ <anchors> ]
 # [ <transform> ]

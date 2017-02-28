@@ -758,8 +758,8 @@
 ---
 
 #
-# <pivot> ::=
-#   pivot:
+# <x_pivot> ::=
+#   x_pivot:
 #     point: <real3>
 #     normal: <real3>
 #     <target>
@@ -772,172 +772,172 @@
 #   | <sun>
 #
 
-# missing pivot definition
+# missing x_pivot definition
 - entity:
-    pivot:
+    x_pivot:
 ---
 # unknown dummy parameter
 - entity:
-    pivot:
+    x_pivot:
       dummy: 1
 ---
 # missing point definition
 - entity:
-    pivot:
+    x_pivot:
       point:
 ---
 # missing normal definition
 - entity:
-    pivot:
+    x_pivot:
       normal:
 ---
 # missing target definition
 - entity:
-    pivot:
+    x_pivot:
       target:
 ---
 # point should be a number
 - entity:
-    pivot:
+    x_pivot:
       point: "dummy"
 ---
 # point should have 3 values
 - entity:
-    pivot:
+    x_pivot:
       point: [ -4, 5.2 ]
 ---
 # point should have 3 values
 - entity:
-    pivot:
+    x_pivot:
       point: [ -4, 5.2, 0, 1 ]
 ---
 # normal should be a number
 - entity:
-    pivot:
+    x_pivot:
       normal: "dummy"
 ---
 # normal should have 3 values
 - entity:
-    pivot:
+    x_pivot:
       normal: [ -4, 5.2 ]
 ---
 # normal should have 3 values
 - entity:
-    pivot:
+    x_pivot:
       normal: [ -4, 5.2, 0, 1 ]
 ---
 # target should be a <target>
 - entity:
-    pivot:
+    x_pivot:
       target: "dummy"
 ---
 # missing anchor definition
 - entity:
-    pivot:
+    x_pivot:
       target:
         anchor:
 ---
 # missing direction definition
 - entity:
-    pivot:
+    x_pivot:
       target:
         direction:
 ---
 # missing position definition
 - entity:
-    pivot:
+    x_pivot:
       target:
         position:
 ---
 # undefined anchor
 - entity:
-    pivot:
+    x_pivot:
       target:
         anchor: dummy
 ---
 # direction should be a number
 - entity:
-    pivot:
+    x_pivot:
       target:
         direction: "dummy"
 ---
 # direction should have 3 values
 - entity:
-    pivot:
+    x_pivot:
       target:
         direction: [ -4, 5.2 ]
 ---
 # direction should have 3 values
 - entity:
-    pivot:
+    x_pivot:
       target:
         direction: [ -4, 5.2, 0, 1 ]
 ---
 # position should be a number
 - entity:
-    pivot:
+    x_pivot:
       target:
         position: "dummy"
 ---
 # position should have 3 values
 - entity:
-    pivot:
+    x_pivot:
       target:
         position: [ -4, 5.2 ]
 ---
 # position should have 3 values
 - entity:
-    pivot:
+    x_pivot:
       target:
         position: [ -4, 5.2, 0, 1 ]
 ---
 # sun should be a <sun>
 - entity:
-    pivot:
+    x_pivot:
       target: { sun: "dummy" }
 ---
 # missing point
 - sun: &sun { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - entity:
-    pivot:
+    x_pivot:
       normal: [ -4, 5.2, 0 ]
       target: { sun: *sun }
 ---
 # missing normal
 - sun: &sun { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - entity:
-    pivot:
+    x_pivot:
       point: [ -4, 5.2, 0 ]
       target: { sun: *sun }
 ---
 # missing target
 - entity:
-    pivot:
+    x_pivot:
       point: [ -4, 5.2, 0 ]
       normal: [ -4, 5.2, 0 ]
 ---
 # 2x point
 - entity:
-    pivot:
+    x_pivot:
       point: [ -4, 5.2, 0 ]
       point: [ -4, 5.2, 0 ]
 ---
 # 2x normal
 - entity:
-    pivot:
+    x_pivot:
       normal: [ -4, 5.2, 0 ]
       normal: [ -4, 5.2, 0 ]
 ---
 # 2x target
 - sun: &sun { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - entity:
-    pivot:
+    x_pivot:
       target: { sun: *sun }
       target: { sun: *sun }
 ---
 
-# <pivot2> ::=
-#   pivot2:
+# <zx_pivot> ::=
+#   zx_pivot:
 #     spacing: REAL # in [0, INF)
 #     ref_point: <real3>
 #     <target>
@@ -950,161 +950,161 @@
 #   | <sun>
 # 
 
-# missing pivot2 definition
+# missing zx_pivot definition
 - entity:
-    pivot2:
+    zx_pivot:
 ---
 # unknown dummy parameter
 - entity:
-    pivot2:
+    zx_pivot:
       dummy: 1
 ---
 # missing spacing definition
 - entity:
-    pivot2:
+    zx_pivot:
       spacing:
 ---
 # missing ref_point definition
 - entity:
-    pivot2:
+    zx_pivot:
       ref_point:
 ---
 # missing target definition
 - entity:
-    pivot2:
+    zx_pivot:
       target:
 ---
 # spacing should be a number
 - entity:
-    pivot2:
+    zx_pivot:
       spacing: "dummy"
 ---
 # -1 invalid
 - entity:
-    pivot2:
+    zx_pivot:
       spacing: -1
 ---
 # spacing should be a number
 - entity:
-    pivot2:
+    zx_pivot:
       ref_point: "dummy"
 ---
 # ref_point should have 3 values
 - entity:
-    pivot2:
+    zx_pivot:
       ref_point: [ -4, 5.2 ]
 ---
 # ref_point should have 3 values
 - entity:
-    pivot2:
+    zx_pivot:
       ref_point: [ -4, 5.2, 0, 1 ]
 ---
 # target should be a <target>
 - entity:
-    pivot2:
+    zx_pivot:
       target: "dummy"
 ---
 # missing anchor definition
 - entity:
-    pivot2:
+    zx_pivot:
       target:
         anchor:
 ---
 # missing direction definition
 - entity:
-    pivot2:
+    zx_pivot:
       target:
         direction:
 ---
 # missing position definition
 - entity:
-    pivot2:
+    zx_pivot:
       target:
         position:
 ---
 # undefined anchor
 - entity:
-    pivot2:
+    zx_pivot:
       target:
         anchor: dummy
 ---
 # direction should be a number
 - entity:
-    pivot2:
+    zx_pivot:
       target:
         direction: "dummy"
 ---
 # direction should have 3 values
 - entity:
-    pivot2:
+    zx_pivot:
       target:
         direction: [ -4, 5.2 ]
 ---
 # direction should have 3 values
 - entity:
-    pivot2:
+    zx_pivot:
       target:
         direction: [ -4, 5.2, 0, 1 ]
 ---
 # position should be a number
 - entity:
-    pivot2:
+    zx_pivot:
       target:
         position: "dummy"
 ---
 # position should have 3 values
 - entity:
-    pivot2:
+    zx_pivot:
       target:
         position: [ -4, 5.2 ]
 ---
 # position should have 3 values
 - entity:
-    pivot2:
+    zx_pivot:
       target:
         position: [ -4, 5.2, 0, 1 ]
 ---
 # sun should be a <sun>
 - entity:
-    pivot2:
+    zx_pivot:
       target: { sun: "dummy" }
 ---
 # missing point
 - sun: &sun { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - entity:
-    pivot2:
+    zx_pivot:
       normal: [ -4, 5.2, 0 ]
       target: { sun: *sun }
 ---
 # missing normal
 - sun: &sun { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - entity:
-    pivot2:
+    zx_pivot:
       point: [ -4, 5.2, 0 ]
       target: { sun: *sun }
 ---
 # missing target
 - entity:
-    pivot2:
+    zx_pivot:
       point: [ -4, 5.2, 0 ]
       normal: [ -4, 5.2, 0 ]
 ---
 # 2x spacing
 - entity:
-    pivot2:
+    zx_pivot:
       spacing: 1
       spacing: 1
 ---
 # 2x ref_point
 - entity:
-    pivot2:
+    zx_pivot:
       ref_point: [ 0, 5.2, 0 ]
       ref_point: [ 0, 5.2, 0 ]
 ---
 # 2x target
 - sun: &sun { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - entity:
-    pivot2:
+    zx_pivot:
       target: { sun: *sun }
       target: { sun: *sun }
 ---
@@ -1150,7 +1150,7 @@
 #
 # <entity-data> ::=
 #   name: STRING
-# [ <geometry-data> | <pivot> | <pivot2> ]
+# [ <geometry-data> | <x_pivot> | <zx_pivot> ]
 # [ <anchors> ]
 # [ <transform> ]
 # [ <children>  ]
@@ -1169,17 +1169,20 @@
 # missing name value
 - entity: { name: }
 ---
+# reserved word used as name
+- entity: { name: "self" }
+---
 # missing primary value
 - entity: { primary: }
 ---
 # missing geometry value
 - entity: { geometry: }
 ---
-# missing pivot value
-- entity: { pivot: }
+# missing x_pivot value
+- entity: { x_pivot: }
 ---
-# missing pivot2 value
-- entity: { pivot2: }
+# missing zx_pivot value
+- entity: { zx_pivot: }
 ---
 # missing anchors value
 - entity: { anchors: }
@@ -1224,32 +1227,32 @@
 # 2x primary
 - entity: { primary: 1, primary: 1 }
 ---
-# cannot define both geometry and pivot
+# cannot define both geometry and x_pivot
 - sun: &sun { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - entity:
-    pivot:
+    x_pivot:
       point: [ -4, 5.2, 0 ]
       normal: [ -4, 5.2, 0 ]
       target: { sun: *sun }
     geometry: [ { stl: { path: "file" } } ]
 ---
-# cannot define both geometry and pivot2
+# cannot define both geometry and zx_pivot
 - sun: &sun { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - entity:
-    pivot2:
+    zx_pivot:
       spacing: 1
       ref_point: [ 0, 5.2, 0 ]
       target: { sun: *sun }
     geometry: [ { stl: { path: "file" } } ]
 ---
-# cannot define both pivot and pivot2
+# cannot define both x_pivot and zx_pivot
 - sun: &sun { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - entity:
-    pivot:
+    x_pivot:
       point: [ -4, 5.2, 0 ]
       normal: [ -4, 5.2, 0 ]
       target: { sun: *sun }
-    pivot2:
+    zx_pivot:
       spacing: 1
       ref_point: [ 0, 5.2, 0 ]
       target: { sun: *sun }
@@ -1296,7 +1299,7 @@
 #
 # <entity-data> ::=
 #   name: STRING
-# [ <geometry-data> | <pivot> | <pivot2> ]
+# [ <geometry-data> | <x_pivot> | <zx_pivot> ]
 # [ <anchors> ]
 # [ <transform> ]
 # [ <children>  ]
@@ -1326,12 +1329,12 @@
 - template: &temp { geometry: }
 - entity: *temp
 ---
-# missing pivot value
-- template: &temp { pivot: }
+# missing x_pivot value
+- template: &temp { x_pivot: }
 - entity: *temp
 ---
-# missing pivot2 value
-- template: &temp { pivot2: }
+# missing zx_pivot value
+- template: &temp { zx_pivot: }
 - entity: *temp
 ---
 # missing anchors value
@@ -1386,34 +1389,34 @@
 - template: &temp { primary: 1, primary: 1 }
 - entity: *temp
 ---
-# cannot define both geometry and pivot
+# cannot define both geometry and x_pivot
 - sun: &sun { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - template: &temp
-    pivot:
+    x_pivot:
       point: [ -4, 5.2, 0 ]
       normal: [ -4, 5.2, 0 ]
       target: { sun: *sun }
     geometry: [ { stl: { path: "file" } } ]
 - entity: *temp
 ---
-# cannot define both geometry and pivot2
+# cannot define both geometry and zx_pivot
 - sun: &sun { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - template: &temp
-    pivot2:
+    zx_pivot:
       spacing: 1
       ref_point: [ 0, 5.2, 0 ]
       target: { sun: *sun }
     geometry: [ { stl: { path: "file" } } ]
 - entity: *temp
 ---
-# cannot define both pivot and pivot2
+# cannot define both x_pivot and zx_pivot
 - sun: &sun { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 - template: &temp
-    pivot:
+    x_pivot:
       point: [ -4, 5.2, 0 ]
       normal: [ -4, 5.2, 0 ]
       target: { sun: *sun }
-    pivot2:
+    zx_pivot:
       spacing: 1
       ref_point: [ 0, 5.2, 0 ]
       target: { sun: *sun }

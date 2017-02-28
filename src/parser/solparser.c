@@ -2673,6 +2673,13 @@ parse_entity
     } else if(!strcmp((char*)key->data.scalar.value, "name")) {
       SETUP_MASK(NAME, "name");
       res = parse_identifier_string(parser, val, &solent.name);
+      if (!strcmp(str_get(&solent.name), "self")) {
+        /* self is a reserved keyword */
+        log_err(parser, key, "Reserved keywords cannot be used as names: %s.\n",
+          str_get(&solent.name));
+        res = RES_BAD_ARG;
+        goto error;
+      }
     } else if(!strcmp((char*)key->data.scalar.value, "x_pivot")) {
       SETUP_MASK(DATA, "data");
       solent.type = SOLPARSER_ENTITY_X_PIVOT;
