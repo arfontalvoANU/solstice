@@ -1093,6 +1093,9 @@
 # missing name value
 - entity: { name: }
 ---
+# reserved word used as name
+- entity: { name: "self" }
+---
 # missing primary value
 - entity: { primary: }
 ---
