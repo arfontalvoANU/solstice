@@ -21,6 +21,7 @@
 enum solparser_material_type {
   SOLPARSER_MATERIAL_MATTE,
   SOLPARSER_MATERIAL_MIRROR,
+  SOLPARSER_MATERIAL_THIN_DIELECTRIC,
   SOLPARSER_MATERIAL_VIRTUAL
 };
 
@@ -37,11 +38,19 @@ struct solparser_material_mirror {
 
 struct solparser_material_mirror_id { size_t i; };
 
+struct solparser_material_thin_dielectric {
+  double refractive_index;
+  double thickness;
+};
+
+struct solparser_material_thin_dielectric_id { size_t i; };
+
 struct solparser_material {
   enum solparser_material_type type;
   union {
     struct solparser_material_matte_id matte;
     struct solparser_material_mirror_id mirror;
+    struct solparser_material_thin_dielectric_id thin_dielectric;
   } data;
 };
 

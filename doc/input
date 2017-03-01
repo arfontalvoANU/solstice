@@ -195,7 +195,7 @@
 #   back: <material-descriptor>
 # 
 # <material-descriptor> ::=
-#   <mirror> | <matte> | <virtual>
+#   <mirror> | <matte> | <thin-dielectric> | <virtual>
 # 
 # <mirror> ::=
 #   mirror:
@@ -208,6 +208,11 @@
 # 
 # <virtual> ::=
 #   virtual: EMPTY-STRING
+#
+# <thin-dielectric> ::=
+#   thin_dielectric:
+#     thickness: REAL
+#     refractive_index: REAL
 # 
 # ----------------------------------------
 # <entity> ::=
