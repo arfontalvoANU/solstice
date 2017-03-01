@@ -132,6 +132,9 @@ solstice_dump(struct solstice* solstice)
     struct solstice_node* node = darray_nodes_data_get(&solstice->roots)[i];
 
     fprintf(solstice->output, "# %s\n", solstice_node_get_name(node));
+
+    /* TODO use a anim tree visitor that neither resolve the pivot
+     * transformations nor compute the node transforms */
     res = sanim_node_visit_tree(&node->anim, dummy_dir, &ctx, dump_geometry);
     if(res != RES_OK) {
       fprintf(stderr, "Could not dump the solstice geometry.\n");
