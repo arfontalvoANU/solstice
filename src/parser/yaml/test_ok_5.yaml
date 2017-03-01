@@ -1,0 +1,43 @@
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
+
+- material: &thin_dielectric
+    thin_dielectric:
+      absorption: 0.1
+      thickness: 0.2
+      refractive_index: 1.00027
+
+- entity:
+    name: "entity"
+    primary: 0
+    geometry:
+      - material: *thin_dielectric
+        cylinder: { height: 1, radius: 1 }
+---
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
+
+- material: &thin_dielectric
+    thin_dielectric:
+      absorption: 0
+      thickness: 0
+      refractive_index: 0.0001
+
+- entity:
+    name: "entity"
+    primary: 0
+    geometry:
+      - material: *thin_dielectric
+        cylinder: { height: 1, radius: 1 }
+
+---
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
+- entity:
+    name: "entity"
+    primary: 0
+    geometry:
+      - cylinder: { height: 1, radius: 1 }
+        material:
+          thin_dielectric:
+            absorption: 0
+            thickness: 10
+            refractive_index: 0.0001
+
