@@ -44,11 +44,12 @@ main(int argc, char** argv)
   fprintf(stream, "- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1 }] }\n");
   fprintf(stream, "- entity:\n");
   fprintf(stream, "    name: test\n");
-  fprintf(stream, "    primary: 0\n"); 
+  fprintf(stream, "    primary: 0\n");
   fprintf(stream, "    geometry:\n");
   fprintf(stream, "      - sphere: { radius: 1 }\n");
   fprintf(stream, "        material:\n");
   fprintf(stream, "          thin_dielectric:\n");
+  fprintf(stream, "            absorption: 0.5\n");
   fprintf(stream, "            thickness: 0.123\n");
   fprintf(stream, "            refractive_index: 1.5\n");
   rewind(stream);
@@ -78,6 +79,7 @@ main(int argc, char** argv)
   CHECK(mtl->type, SOLPARSER_MATERIAL_THIN_DIELECTRIC);
   thin = solparser_get_material_thin_dielectric
     (parser, mtl->data.thin_dielectric);
+  CHECK(thin->absorption, 0.5);
   CHECK(thin->thickness, 0.123);
   CHECK(thin->refractive_index, 1.5);
 

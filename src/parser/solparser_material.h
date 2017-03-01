@@ -39,6 +39,7 @@ struct solparser_material_mirror {
 struct solparser_material_mirror_id { size_t i; };
 
 struct solparser_material_thin_dielectric {
+  double absorption;
   double refractive_index;
   double thickness;
 };

@@ -1028,7 +1028,7 @@ parse_material_thin_dielectric
    yaml_node_t* thin,
    struct solparser_material_thin_dielectric_id* out_imtl)
 {
-  enum { REFRACTIVE_INDEX, THICKNESS };
+  enum { ABSORPTION, REFRACTIVE_INDEX, THICKNESS };
   struct solparser_material_thin_dielectric* mtl = NULL;
   size_t imtl = SIZE_MAX;
   int mask = 0; /* Register the parsed attributes */
@@ -1075,7 +1075,10 @@ parse_material_thin_dielectric
       }                                                                        \
       mask |= BIT(Flag);                                                       \
     } (void)0
-    if(!strcmp((char*)key->data.scalar.value, "refractive_index")) {
+    if(!strcmp((char*)key->data.scalar.value, "absorption")) {
+      SETUP_MASK(ABSORPTION, "absorption");
+      res = parse_real(parser, val, 0, 1, &mtl->absorption);
+    } else if(!strcmp((char*)key->data.scalar.value, "refractive_index")) {
       SETUP_MASK(REFRACTIVE_INDEX, "refractive_index");
       res = parse_real
         (parser, val, nextafter(0, 1), DBL_MAX, &mtl->refractive_index);
@@ -1102,6 +1105,7 @@ parse_material_thin_dielectric
       res = RES_BAD_ARG;                                                       \
       goto error;                                                              \
     } (void)0
+  CHECK_PARAM(ABSORPTION, "absorption");
   CHECK_PARAM(REFRACTIVE_INDEX, "refractive_index");
   CHECK_PARAM(THICKNESS, "thickness");
   #undef CHECK_PARAM
