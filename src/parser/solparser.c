@@ -1077,7 +1077,7 @@ parse_material_thin_dielectric
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "absorption")) {
       SETUP_MASK(ABSORPTION, "absorption");
-      res = parse_real(parser, val, 0, 1, &mtl->absorption);
+      res = parse_real(parser, val, 0, DBL_MAX, &mtl->absorption);
     } else if(!strcmp((char*)key->data.scalar.value, "refractive_index")) {
       SETUP_MASK(REFRACTIVE_INDEX, "refractive_index");
       res = parse_real

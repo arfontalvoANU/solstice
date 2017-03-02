@@ -234,10 +234,6 @@
 - material:
     thin_dielectric: { absorption: -1, thickness: 0,  refractive_index: 1 }
 ---
-# invalid absorption
-- material:
-    thin_dielectric: { absorption: 1.001, thickness: 0,  refractive_index: 1 }
----
 # invalid thickness
 - material:
     thin_dielectric: { absorption: 0, thickness: -0.01,  refractive_index: 1 }
