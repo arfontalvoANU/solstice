@@ -44,7 +44,6 @@
   #include <unistd.h>
 #endif
 
-
 #include <solstice/ssol.h>
 
 /*******************************************************************************
@@ -95,10 +94,99 @@ clear_nodes(struct darray_nodes* nodes)
 }
 
 static res_T
+auto_look_at
+  (struct ssol_scene* scn,
+   const double fov_x, /* Horizontal field of view in radian */
+   const double proj_ratio, /* Width / height */
+   const double up[3], /* Up vector */
+   double position[3],
+   double target[3])
+{
+  float flower[3], fupper[3];
+  double lower[3], upper[3];
+  double up_abs[3];
+  double axis_min[3];
+  double axis_x[3];
+  double axis_z[3];
+  double tmp[3];
+  double radius;
+  double depth;
+  res_T res;
+  ASSERT(scn && fov_x && proj_ratio && up);
+
+  res = ssol_scene_compute_aabb(scn, flower, fupper);
+  if(res != RES_OK) {
+    fprintf(stderr, "Couldn't compute the scene bounding box.\n");
+    goto error;
+  }
+
+  if(flower[0] > fupper[0]
+  || flower[1] > fupper[1]
+  || flower[2] > fupper[2]) { /* Empty scene */
+    d3_set(position, SOLSTICE_ARGS_DEFAULT.camera.pos);
+    d3_set(target, SOLSTICE_ARGS_DEFAULT.camera.tgt);
+    goto exit;
+  }
+
+  d3_set_f3(upper, fupper);
+  d3_set_f3(lower, flower);
+
+  /* The target is the scene centroid */
+  d3_muld(target, d3_add(target, lower, upper), 0.5);
+
+  /* Define which up dimension is minimal and use its unit vector to compute a
+   * vector orthogonal to `up'. This ensures that the unit vector and `up' are
+   * not collinear and thus that their cross product is not a zero vector. */
+  up_abs[0] = fabs(up[0]);
+  up_abs[1] = fabs(up[1]);
+  up_abs[2] = fabs(up[2]);
+  if(up_abs[0] < up_abs[1]) {
+    if(up_abs[0] < up_abs[2]) d3(axis_min, 1, 0, 0);
+    else d3(axis_min, 0, 0, 1);
+  } else {
+    if(up_abs[1] < up_abs[2]) d3(axis_min, 0, 1, 0);
+    else d3(axis_min, 0, 0, 1);
+  }
+  d3_normalize(axis_x, d3_cross(axis_x, up, axis_min));
+  d3_normalize(axis_z, d3_cross(axis_z, up, axis_x));
+
+  /* Approximate whether on the XYZ or the ZYX basis the visible part of the
+   * model is maximise */
+  if(fabs(d3_dot(axis_x, upper)) < fabs(d3_dot(axis_z, upper))) {
+    SWAP(double, axis_x[0], axis_z[0]);
+    SWAP(double, axis_x[1], axis_z[1]);
+    SWAP(double, axis_x[2], axis_z[2]);
+  }
+
+  /* Ensure that the whole model is visible */
+  radius = d3_len(d3_sub(tmp, upper, lower)) * 0.5;
+  if(proj_ratio < 1) {
+    depth = radius / sin(fov_x/2.0);
+  } else {
+    depth = radius / sin(fov_x/(2.0*proj_ratio));
+  }
+
+  /* Define the camera position */
+  d3_sub(position, target, d3_muld(tmp, axis_z, depth));
+
+  /* Empirically move the position to find a better point of view */
+  d3_add(position, position, d3_muld(tmp, up, radius)); /*Empirical offset*/
+  d3_add(position, position, d3_muld(tmp, axis_x, radius)); /*Empirical offset*/
+  d3_normalize(tmp, d3_sub(tmp, target, position));
+  d3_sub(position, target, d3_muld(tmp, tmp, depth));
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+static res_T
 setup_camera(struct solstice* solstice, const struct solstice_args* args)
 {
   struct ssol_camera* cam = NULL;
   double proj_ratio = 0;
+  double pos[3], tgt[3];
   res_T res = RES_OK;
   ASSERT(solstice && args);
 
@@ -122,8 +210,16 @@ setup_camera(struct solstice* solstice, const struct solstice_args* args)
     goto error;
   }
 
-  res = ssol_camera_look_at
-    (cam, args->camera.pos, args->camera.tgt, args->camera.up);
+  if(!args->camera.auto_look_at) {
+    d3_set(pos, args->camera.pos);
+    d3_set(tgt, args->camera.tgt);
+  } else {
+    res = auto_look_at(solstice->scene, MDEG2RAD(args->camera.fov_x),
+      proj_ratio, args->camera.up, pos, tgt);
+    if(res != RES_OK) goto error;
+  }
+
+  res = ssol_camera_look_at(cam, pos, tgt, args->camera.up);
   if(res != RES_OK) {
     fprintf(stderr,
 "Invalid camera point of view:\n"
@@ -462,13 +558,6 @@ solstice_init
     goto error;
   }
 
-  if(args->rendering) {
-    res = setup_camera(solstice, args);
-    if(res != RES_OK) goto error;
-    res = setup_framebuffer(solstice, args);
-    if(res != RES_OK) goto error;
-  }
-
   res = setup_sun_dirs(solstice, args);
   if(res != RES_OK) goto error;
 
@@ -504,6 +593,13 @@ solstice_init
   solstice->output_hits = args->output_hits;
   solstice->dump_format = args->dump_format;
   solstice->dump_split_mode = args->dump_split_mode;
+
+  if(args->rendering) {
+    res = setup_camera(solstice, args);
+    if(res != RES_OK) goto error;
+    res = setup_framebuffer(solstice, args);
+    if(res != RES_OK) goto error;
+  }
 
 exit:
   return res;
