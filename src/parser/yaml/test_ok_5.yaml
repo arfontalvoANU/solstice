@@ -37,7 +37,7 @@
       - cylinder: { height: 1, radius: 1 }
         material:
           thin_dielectric:
-            absorption: 0
+            absorption: 40
             thickness: 10
             refractive_index: 0.0001
 

@@ -222,7 +222,7 @@
 #
 # <thin-dielectric> ::=
 #   thin_dielectric:
-#     absorption: REAL # in [0, 1]
+#     absorption: REAL # in [0, INF)
 #     thickness: REAL # in [0, INF)
 #     refractive_index: REAL # in ]0, INF)
 #
