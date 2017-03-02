@@ -130,6 +130,7 @@
 #   | <obj>
 #   | <parabol>
 #   | <parabolic-cylinder>
+#   | <hyperbol>
 #   | <plane>
 #   | <sphere>
 #   | <stl>
@@ -157,6 +158,16 @@
 #   parabolic-cylinder: # y^2 - 4*focal*z = 0
 #     focal: REAL # in ]0, INF)
 #     clip: <polyclip-list>
+#
+# <hyperbol> ::= # (x^2 + y^2) / a^2 - (z + z0 - g/2)^2 / b^2 + 1 = 0
+#   hyperbol:    #      with g = img_focal + real_focal; f = real_focal / g;
+#                #      a^2 = g^2(f - f^2); b = g(f - 1/2); z0 = |b| + g/2
+#     focals: <hyperboloid_focals>-
+#     clip: <polyclip-list>
+# 
+# <hyperboloid_focals> ::=
+#       real: REAL # in ]0, INF)
+#       image: REAL # in ]0, INF)
 #
 # <plane> ::=
 #   plane:
@@ -247,7 +258,10 @@
 #
 # <anchor-data> ::=
 #   name: STRING
-#   position: <real3>
+#   <position-description>
+#
+# <position-description> ::=
+#   position: <real3> | hyperboloid_image_focal: <hyperboloid_focals>
 #
 # # "self" references the first level entity
 # <entity-identifier> ::=

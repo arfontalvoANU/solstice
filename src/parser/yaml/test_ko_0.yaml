@@ -627,12 +627,17 @@
             vertices: [ [1, 2], [3, 4], [6, 7] ]
 ---
 
+#
 # <hyperbol> ::=
-#   hyperbol: #(x^2 + y^2) / a^2 - (z - 1/2)^2 / b^2 + 1 = 0
-#             with a^2 = f - f^2; b = f -1/2; f = real_focal / (img_focal + real_focal)
-#     real_focal: REAL # in ]0, INF)
-#     img_focal: REAL # in ]0, INF)
+#   hyperbol: # (x^2 + y^2) / a^2 - (z + z0 - 1/2)^2 / b^2 + 1 = 0
+#             # with g = img_focal + real_focal; f = real_focal / g;
+#             # a^2 = g^2(f - f^2); b = g(f - 1/2); z0 = |b| + g/2
+#     focals: <hyperboloid_focals>
 #     clip: <polyclip-list>
+#
+# <hyperboloid_focals> ::=
+#       real: REAL # in ]0, INF)
+#       image: REAL # in ]0, INF)
 # 
 # missing hyperbol definition
 - geometry: [ { hyperbol: } ]
@@ -640,57 +645,66 @@
 # unknown dummy parameter
 - geometry: [ { hyperbol: { dummy: 1 } } ]
 ---
-# missing real_focal value
-- geometry: [ { hyperbol: { real_focal: } } ]
+# missing focals definition
+- geometry: [ { hyperbol: { focals: } } ]
 ---
-# missing img_focal value
-- geometry: [ { hyperbol: { img_focal: } } ]
+# missing real value
+- geometry: [ { hyperbol: { focals: { real: } } } ]
+---
+# missing image value
+- geometry: [ { hyperbol: { focals: { image: } } } ]
 ---
 # missing clip value
 - geometry: [ { hyperbol: { clip: } } ]
 ---
-# real_focal should be a number
-- geometry: [ { hyperbol: { real_focal: "dummy" } } ]
+# real should be a number
+- geometry: [ { hyperbol: { focals: { real: "dummy" } } } ]
 ---
 # -1 invalid
-- geometry: [ { hyperbol: { real_focal: -1 } } ]
+- geometry: [ { hyperbol: { focals: { real: -1 } } } ]
 ---
 # 0 invalid
-- geometry: [ { hyperbol: { real_focal: 0 } } ]
+- geometry: [ { hyperbol: { focals: { real: 0 } } } ]
 ---
-# img_focal should be a number
-- geometry: [ { hyperbol: { img_focal: "dummy" } } ]
+# image should be a number
+- geometry: [ { hyperbol: { focals: { image: "dummy" } } } ]
 ---
 # -1 invalid
-- geometry: [ { hyperbol: { img_focal: -1 } } ]
+- geometry: [ { hyperbol: { focals: { image: -1 } } } ]
 ---
 # 0 invalid
-- geometry: [ { hyperbol: { img_focal: 0 } } ]
+- geometry: [ { hyperbol: { focals: { image: 0 } } } ]
 ---
 # missing clip parameter
-- geometry: [ { hyperbol: { real_focal: 10, img_focal: 10 } } ]
+- geometry: [ { hyperbol: { focals: { real: 1, image: 1 } } } ]
 ---
-# missing real_focal parameter
+# missing real parameter
 - geometry:
     - hyperbol:
-        img_focal: 10
+        focals: { image: 1 }
         clip:
           - operation: AND
             vertices: [ [1, 2], [3, 4], [6, 7] ]
 ---
-# missing img_focal parameter
+# missing image parameter
 - geometry:
     - hyperbol:
-        real_focal: 10
+        focals: { real: 10 }
         clip:
           - operation: AND
             vertices: [ [1, 2], [3, 4], [6, 7] ]
 ---
-# 2x real_focal
-- geometry: [ { hyperbol: { real_focal: 10, real_focal: 10 } } ]
+# 2x focals
+- geometry:
+    - hyperbol:
+        focals: { real: 1, image: 1 }
+        focals: { real: 1, image: 1 }
 ---
-# 2x img_focal
-- geometry: [ { hyperbol: { img_focal: 10, img_focal: 10 } } ]
+# 2x real
+- geometry: [ { hyperbol: { focals: { real: 1, real: 1 } } } ]
+---
+# 2x image
+- geometry: [ { hyperbol: { focals: { image: 1, image: 1 } } } ]
 ---
 # 2x clip
 - geometry:
@@ -1146,30 +1160,71 @@
 #
 # <anchor-data> ::=
 #   name: STRING
-#   position: <real3>
+#   <position-description>
 #
+# <position-description> ::=
+#   position: <real3> | hyperboloid_image_focals: <hyperboloid_focals>
+# 
 
 # missing anchors definition
 - entity:
     anchors:
 ---
-# missing position
+# missing name definition
 - entity:
-    anchors:
-      - name: "anchor"
+    anchors: [ name: ]
+---
+# missing position definition
+- entity:
+    anchors: [ position: ]
+---
+# missing hyperboloid_image_focals definition
+- entity:
+    anchors: [ { hyperboloid_image_focals: } ]
+---
+# missing position-description
+- entity:
+    anchors: [ { name: "anchor" } ]
+---
+# position should have 3 values
+- entity:
+    anchors: [ { name: "anchor", position: [ -4, 5.2 ] } ]
+---
+# position should have 3 values
+- entity:
+    anchors: [ { name: "anchor", position: [ -4, 5.2, 0, 5 ] } ]
 ---
 # missing name
 - entity:
+    anchors: [ { position: [ -4, 5.2, 0 ] } ]
+---
+# 2x name
+- entity:
+    anchors: [ { name: "anchor", name: "anchor" } ]
+---
+# 2x position-description
+- entity:
+    anchors: [ { position: [ -4, 5.2, 0 ], position: [ -4, 5.2, 0 ] } ]
+---
+# 2x position-description
+- entity:
     anchors:
-      - position: [ -4, 5.2, 0 ]
+    - hyperboloid_image_focals: { real: 1, image: 1 }
+      hyperboloid_image_focals: { real: 1, image: 1 }
+---
+# 2x position-description
+- entity:
+    anchors:
+    - hyperboloid_image_focals: { real: 1, image: 1 }
+      position: [ -4, 5.2, 0 ]
 ---
 # 2 anchors with same name
 - entity:
     anchors:
-      - name: "anchor"
-        position: [ -4, 5.2, 0 ]
-      - name: "anchor"
-        position: [ -4, 5.2, 0 ]
+    - name: "anchor"
+      position: [ -4, 5.2, 0 ]
+    - name: "anchor"
+      position: [ -4, 5.2, 0 ]
 ---
 
 #

@@ -1941,13 +1941,84 @@ error:
 }
 
 static res_T
+parse_focals_description
+  (struct solparser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* desc,
+   struct hyperboloid_focals* focals)
+{
+  enum { REAL, IMAGE };
+  intptr_t i, n;
+  int mask = 0; /* Register the parsed attributes */
+  res_T res = RES_OK;
+  ASSERT(doc && desc && focals);
+
+  if (desc->type != YAML_MAPPING_NODE) {
+    log_err(parser, desc, "expect a mapping of focal parameters.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  n = desc->data.mapping.pairs.top - desc->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, desc->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, desc->data.mapping.pairs.start[i].value);
+    if (key->type != YAML_SCALAR_NODE) {
+      log_err(parser, key, "expect focal parameters.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(parser, key,                                                   \
+          "the focal parameter `"Name"' is already defined.\n");               \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if (!strcmp((char*) key->data.scalar.value, "real")) {
+      SETUP_MASK(REAL, "real");
+      res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &focals->real);
+    }
+    else if (!strcmp((char*) key->data.scalar.value, "image")) {
+      SETUP_MASK(IMAGE, "image");
+      res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &focals->image);
+    }
+    if (res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
+  }
+  #undef SETUP_MASK
+  #define CHECK_PARAM(Flag, Name)                                              \
+    if(!(mask & BIT(Flag))) {                                                  \
+      log_err(parser, desc,                                                    \
+        "the focal parameter `"Name"' is missing.\n");                         \
+      res = RES_BAD_ARG;                                                       \
+      goto error;                                                              \
+    } (void)0
+  CHECK_PARAM(REAL, "real");
+  CHECK_PARAM(IMAGE, "image");
+  #undef CHECK_PARAM
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+static res_T
 parse_hyperboloid
   (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* hyperboloid,
    struct solparser_shape_hyperboloid_id* out_ishape)
 {
-  enum { CLIP, REAL_FOCAL, IMG_FOCAL };
+  enum { CLIP, FOCAL };
   struct solparser_shape_hyperboloid* shape = NULL;
   size_t ishape = SIZE_MAX;
   intptr_t i, n;
@@ -1995,13 +2066,9 @@ parse_hyperboloid
       SETUP_MASK(CLIP, "clip");
       res = parse_clip(parser, doc, val, &shape->polyclips);
     }
-    else if (!strcmp((char*) key->data.scalar.value, "real_focal")) {
-      SETUP_MASK(REAL_FOCAL, "real_focal");
-      res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &shape->real_focal);
-    }
-    else if (!strcmp((char*) key->data.scalar.value, "img_focal")) {
-      SETUP_MASK(IMG_FOCAL, "img_focal");
-      res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &shape->img_focal);
+    else if (!strcmp((char*) key->data.scalar.value, "focals")) {
+      SETUP_MASK(FOCAL, "focals");
+      res = parse_focals_description(parser, doc, val, &shape->focals);
     }
     else {
       log_err(parser, key, "unknown hyperbol parameter `%s'.\n",
@@ -2023,8 +2090,7 @@ parse_hyperboloid
       goto error;                                                              \
     } (void)0
   CHECK_PARAM(CLIP, "clip");
-  CHECK_PARAM(REAL_FOCAL, "real_focal");
-  CHECK_PARAM(IMG_FOCAL, "img_focal");
+  CHECK_PARAM(FOCAL, "focals");
   #undef CHECK_PARAM
 
 exit :
@@ -2585,8 +2651,16 @@ parse_anchor
       SETUP_MASK(NAME, "name");
       res = parse_identifier_string(parser, val, &solanchor->name);
     } else if(!strcmp((char*)key->data.scalar.value, "position")) {
-      SETUP_MASK(POSITION, "position");
+      SETUP_MASK(POSITION, "position description");
       res = parse_real3(parser, doc, val, -DBL_MAX, DBL_MAX, solanchor->position);
+    }
+    else if (!strcmp((char*) key->data.scalar.value, "hyperboloid_image_focals"))
+    {
+      struct hyperboloid_focals focals;
+      SETUP_MASK(POSITION, "position description");
+      res = parse_focals_description(parser, doc, val, &focals);
+      if (res != RES_OK) goto error;
+      d3(solanchor->position, 0, 0, focals.image);
     } else {
       log_err(parser, key, "unknown anchor parameter `%s'.\n",
         key->data.scalar.value);
@@ -2607,7 +2681,7 @@ parse_anchor
       goto error;                                                              \
     } (void)0
   CHECK_PARAM(NAME, "name");
-  CHECK_PARAM(POSITION, "position");
+  CHECK_PARAM(POSITION, "position description");
   #undef CHECK_PARAM
 
   res = anchor_register_name(parser, anchor, htable, isolanchor);

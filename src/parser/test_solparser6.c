@@ -57,8 +57,7 @@ main(int argc, char** argv)
   fprintf(stream, "          vertices : [[1, 2], [3, 4], [6, 7]]\n");
   fprintf(stream, "      material: { ?virtual }\n");
   fprintf(stream, "    - hyperbol:\n");
-  fprintf(stream, "        real_focal: 10\n");
-  fprintf(stream, "        img_focal: 2\n");
+  fprintf(stream, "        focals: { real: 10, image: 2 }\n");
   fprintf(stream, "        clip :\n");
   fprintf(stream, "          - operation : AND\n");
   fprintf(stream, "            vertices : [[1, 2], [3, 4], [6, 7]]\n");
@@ -101,8 +100,8 @@ main(int argc, char** argv)
   shape = solparser_get_shape(parser, obj->shape);
   CHECK(shape->type, SOLPARSER_SHAPE_HYPERBOL);
   hyperbol = solparser_get_shape_hyperbol(parser, shape->data.hyperbol);
-  CHECK(hyperbol->real_focal, 10);
-  CHECK(hyperbol->img_focal, 2);
+  CHECK(hyperbol->focals.real, 10);
+  CHECK(hyperbol->focals.image, 2);
 
   mtl2 = solparser_get_material_double_sided(parser, obj->mtl2);
   CHECK(mtl2->front.i, mtl2->back.i);

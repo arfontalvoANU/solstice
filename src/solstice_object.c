@@ -447,8 +447,8 @@ create_hyperbol
   hyperboloid = solparser_get_shape_hyperbol(solstice->parser, id);
 
   quadric.type = SSOL_QUADRIC_HYPERBOL;
-  quadric.data.hyperbol.real_focal = hyperboloid->real_focal;
-  quadric.data.hyperbol.img_focal = hyperboloid->img_focal;
+  quadric.data.hyperbol.real_focal = hyperboloid->focals.real;
+  quadric.data.hyperbol.img_focal = hyperboloid->focals.image;
   d33_set(quadric.transform, transform);
   d3_set(quadric.transform + 9, transform + 9);
 
