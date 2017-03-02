@@ -54,6 +54,11 @@ struct target_alias {
 #define DARRAY_DATA struct solparser_material_mirror
 #include <rsys/dynamic_array.h>
 
+/* Declare the array of thin_dielectric materials */
+#define DARRAY_NAME thin_dielectric
+#define DARRAY_DATA struct solparser_material_thin_dielectric
+#include <rsys/dynamic_array.h>
+
 /* Declare the array of materials  */
 #define DARRAY_NAME material
 #define DARRAY_DATA struct solparser_material
@@ -185,6 +190,7 @@ struct solparser {
   struct darray_material2 mtls2; /* Double sided materials */
   struct darray_matte mattes;
   struct darray_mirror mirrors;
+  struct darray_thin_dielectric thin_dielectrics;
 
   /* Use to deferred the setup of the anchor targeted by a pivot */
   struct darray_tgtalias tgtaliases;
@@ -383,6 +389,7 @@ parser_clear(struct solparser* parser)
   darray_material2_clear(&parser->mtls2);
   darray_matte_clear(&parser->mattes);
   darray_mirror_clear(&parser->mirrors);
+  darray_thin_dielectric_clear(&parser->thin_dielectrics);
 
   /* Deferred targeted anchors */
   darray_tgtalias_clear(&parser->tgtaliases);
@@ -435,6 +442,7 @@ parser_release(ref_T* ref)
   darray_material2_release(&parser->mtls2);
   darray_matte_release(&parser->mattes);
   darray_mirror_release(&parser->mirrors);
+  darray_thin_dielectric_release(&parser->thin_dielectrics);
 
   /* Deferred targeted anchors */
   darray_tgtalias_release(&parser->tgtaliases);
@@ -1027,6 +1035,106 @@ error:
 }
 
 static res_T
+parse_material_thin_dielectric
+  (struct solparser* parser,
+   yaml_document_t* doc,
+   yaml_node_t* thin,
+   struct solparser_material_thin_dielectric_id* out_imtl)
+{
+  enum { ABSORPTION, REFRACTIVE_INDEX, THICKNESS };
+  struct solparser_material_thin_dielectric* mtl = NULL;
+  size_t imtl = SIZE_MAX;
+  int mask = 0; /* Register the parsed attributes */
+  intptr_t i, n;
+  res_T res = RES_OK;
+  ASSERT(doc && thin && out_imtl);
+
+  if(thin->type != YAML_MAPPING_NODE) {
+    log_err(parser, thin,
+      "expect a mapping of thin material attributes.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  /* Allocate the thin dielectric material */
+  imtl = darray_thin_dielectric_size_get(&parser->thin_dielectrics);
+  res = darray_thin_dielectric_resize(&parser->thin_dielectrics, imtl + 1);
+  if(res != RES_OK) {
+    log_err(parser, thin,
+      "could not allocate the thin dielectric material.\n");
+    goto error;
+  }
+  mtl = darray_thin_dielectric_data_get(&parser->thin_dielectrics) + imtl;
+
+  n = thin->data.mapping.pairs.top - thin->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, thin->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, thin->data.mapping.pairs.start[i].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(parser, key, "expect a thin dielectric material parameter.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(parser, key,                                                   \
+          "the "Name" of the thin dielectric material is already defined.\n"); \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if(!strcmp((char*)key->data.scalar.value, "absorption")) {
+      SETUP_MASK(ABSORPTION, "absorption");
+      res = parse_real(parser, val, 0, 1, &mtl->absorption);
+    } else if(!strcmp((char*)key->data.scalar.value, "refractive_index")) {
+      SETUP_MASK(REFRACTIVE_INDEX, "refractive_index");
+      res = parse_real
+        (parser, val, nextafter(0, 1), DBL_MAX, &mtl->refractive_index);
+    } else if(!strcmp((char*)key->data.scalar.value, "thickness")) {
+      SETUP_MASK(THICKNESS, "thickness");
+      res = parse_real(parser, val, 0, DBL_MAX, &mtl->thickness);
+    } else {
+      log_err(parser, key, "unknown thin dielectric parameter `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    if(res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
+    #undef SETUP_MASK
+  }
+
+  #define CHECK_PARAM(Flag, Name)                                              \
+    if(!(mask & BIT(Flag))) {                                                  \
+      log_err(parser, thin,                                                    \
+        "the "Name" of the thin dielectric material is missing.\n");           \
+      res = RES_BAD_ARG;                                                       \
+      goto error;                                                              \
+    } (void)0
+  CHECK_PARAM(ABSORPTION, "absorption");
+  CHECK_PARAM(REFRACTIVE_INDEX, "refractive_index");
+  CHECK_PARAM(THICKNESS, "thickness");
+  #undef CHECK_PARAM
+
+exit:
+  out_imtl->i = imtl;
+  return res;
+error:
+  if(mtl) {
+    darray_thin_dielectric_pop_back(&parser->thin_dielectrics);
+    imtl = SIZE_MAX;
+  }
+  goto exit;
+}
+
+static res_T
 parse_material_virtual(struct solparser* parser, yaml_node_t* virtual)
 {
   res_T res = RES_OK;
@@ -1114,8 +1222,13 @@ parse_material_descriptor
       SETUP_MASK(DESCRIPTOR, "descriptor");
       mtl->type = SOLPARSER_MATERIAL_MIRROR;
       res = parse_material_mirror(parser, doc, val, &mtl->data.mirror);
+    } else if(!strcmp((char*)key->data.scalar.value, "thin_dielectric")) {
+      SETUP_MASK(DESCRIPTOR, "descriptor");
+      mtl->type = SOLPARSER_MATERIAL_THIN_DIELECTRIC;
+      res = parse_material_thin_dielectric
+        (parser, doc, val, &mtl->data.thin_dielectric);
     } else if(!strcmp((char*)key->data.scalar.value, "virtual")) {
-      SETUP_MASK(DESCRIPTOR, "virtual");
+      SETUP_MASK(DESCRIPTOR, "descriptor");
       mtl->type = SOLPARSER_MATERIAL_VIRTUAL;
       res = parse_material_virtual(parser, val);
     } else {
@@ -1620,7 +1733,7 @@ parse_cylinder
       *(Ptr) = Value;                                                          \
     } (void)0
   DEFAULT_PARAM(SLICES, &shape->nslices, 16);
- #undef DEFAULT_PARAM
+  #undef DEFAULT_PARAM
 
 exit:
   out_ishape->i = ishape;
@@ -3064,7 +3177,7 @@ parse_zx_pivot
         parser, doc, val, -DBL_MAX, DBL_MAX, solxzpivot->ref_point);
     } else if(!strcmp((char*) key->data.scalar.value, "target")) {
       struct solparser_pivot_id pivot_id;
-      pivot_id.i = 
+      pivot_id.i =
         (size_t) (solxzpivot - darray_zx_pivot_cdata_get(&parser->zx_pivots));
       SETUP_MASK(TARGET, "target");
       res = parse_target(parser, doc, val, &solxzpivot->target, pivot_id);
@@ -3451,6 +3564,7 @@ solparser_create
   darray_material2_init(mem_allocator, &parser->mtls2);
   darray_matte_init(mem_allocator, &parser->mattes);
   darray_mirror_init(mem_allocator, &parser->mirrors);
+  darray_thin_dielectric_init(mem_allocator, &parser->thin_dielectrics);
 
   /* Deferred targeted anchors */
   darray_tgtalias_init(mem_allocator, &parser->tgtaliases);
@@ -3802,6 +3916,16 @@ solparser_get_material_mirror
 {
   ASSERT(parser && mirror.i < darray_mirror_size_get(&parser->mirrors));
   return darray_mirror_cdata_get(&parser->mirrors) + mirror.i;
+}
+
+const struct solparser_material_thin_dielectric*
+solparser_get_material_thin_dielectric
+  (const struct solparser* parser,
+   const struct solparser_material_thin_dielectric_id thin)
+{
+  ASSERT(parser);
+  ASSERT(thin.i < darray_thin_dielectric_size_get(&parser->thin_dielectrics));
+  return darray_thin_dielectric_cdata_get(&parser->thin_dielectrics) + thin.i;
 }
 
 const struct solparser_object*

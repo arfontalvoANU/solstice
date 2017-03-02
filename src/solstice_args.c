@@ -254,7 +254,9 @@ parse_rendering_option(const char* str, struct solstice_args* args)
     }
   } else {
     fprintf(stderr, "Invalid rendering option `%s'.\n", val);
-    fprintf(stderr, "Valid options are: fov=FOV:img=WIDTHxHEIGHT:pos=X,Y,Z:tgt=X,Y,Z:up=X,Y,Z\n");
+    /* TODO remove this. The man page will be sufficient */
+    fprintf(stderr,
+"Valid options are: fov=FOV:img=WIDTHxHEIGHT:pos=X,Y,Z:tgt=X,Y,Z:up=X,Y,Z\n");
     res = RES_BAD_ARG;
     goto error;
   }

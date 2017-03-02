@@ -97,6 +97,37 @@ error:
   goto exit;
 }
 
+static res_T
+get_anchor_node
+  (struct solstice* solstice,
+   struct solparser_anchor_id anchor_id,
+   struct solstice_node** out_node)
+{
+  struct solstice_node* node = NULL;
+  struct solstice_node** pnode = NULL;
+  res_T res = RES_OK;
+  ASSERT(solstice && out_node);
+
+  pnode = htable_anchor_find(&solstice->anchors, &anchor_id.i);
+  if(pnode) {
+    node = *pnode;
+  } else {
+    res = solstice_node_target_create(solstice->allocator, &node);
+    if(res != RES_OK) goto error;
+
+    res = htable_anchor_set(&solstice->anchors, &anchor_id.i, &node);
+    if(res != RES_OK) goto error;
+  }
+
+exit:
+  *out_node = node;
+  return res;
+error:
+  if(node) solstice_node_ref_put(node);
+  goto exit;
+}
+
+
 static struct solstice_node*
 create_x_pivot_node
   (struct solstice* solstice,
@@ -180,8 +211,8 @@ create_zx_pivot_node
   switch (parser_zx_pivot->target.type) {
   case SOLPARSER_TARGET_ANCHOR:
     anim_tracking.policy = TRACKING_NODE_TARGET;
-    target = *htable_anchor_find
-    (&solstice->anchors, &parser_zx_pivot->target.data.anchor.i);
+    CHECK(RES_OK,
+      get_anchor_node(solstice, parser_zx_pivot->target.data.anchor, &target));
     solstice_node_target_get_tracking(target, &anim_tracking);
     break;
   case SOLPARSER_TARGET_DIRECTION:
@@ -223,7 +254,6 @@ create_node
    const struct str* name)
 {
   struct solstice_node* node = NULL;
-  struct solstice_node* tgt = NULL;
   struct solstice_node* child = NULL;
   struct solstice_receiver* rcv = NULL;
   struct str child_name;
@@ -296,16 +326,14 @@ create_node
 
   /* Register entity anchors */
   FOR_EACH(i, 0, solparser_entity_get_anchors_count(entity)) {
+    struct solstice_node* tgt = NULL;
     struct solparser_anchor_id id;
-    const struct solparser_anchor* anchor = NULL;
-
-    res = solstice_node_target_create(solstice->allocator, &tgt);
-    if(res != RES_OK) goto error;
+    const struct solparser_anchor* anchor;
 
     id = solparser_entity_get_anchor(entity, i);
     anchor = solparser_get_anchor(solstice->parser, id);
 
-    res = htable_anchor_set(&solstice->anchors, &id.i, &tgt);
+    res = get_anchor_node(solstice, id, &tgt);
     if(res != RES_OK) goto error;
 
     solstice_node_set_translation(tgt, anchor->position);
@@ -349,7 +377,6 @@ exit:
   str_release(&child_name);
   return node;
 error:
-  if(tgt) solstice_node_ref_put(tgt);
   if(child) solstice_node_ref_put(child);
   if(node) solstice_node_ref_put(node);
   node = NULL;

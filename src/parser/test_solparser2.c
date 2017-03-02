@@ -114,7 +114,6 @@ main(int argc, char** argv)
 
   entity_id = solparser_entity_iterator_get(&it);
   entity = solparser_get_entity(parser, entity_id);
-
   
   CHECK(strcmp("lvl 0", str_cget(&entity->name)), 0);
   CHECK(solparser_entity_get_children_count(entity), 2);

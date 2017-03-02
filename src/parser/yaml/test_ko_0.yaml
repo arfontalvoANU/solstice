@@ -16,7 +16,7 @@
 - sun: { spectrum: [{data: 1}] }
 ---
 # missing data
-- sun: { spectrum: [{wavelength: 1}] } 
+- sun: { spectrum: [{wavelength: 1}] }
 ---
 # 2x wavelength
 - sun: { spectrum: [{wavelength: 1, wavelength: 1}] }
@@ -143,7 +143,7 @@
 - sun: { dni: 1, dni: 1 }
 ---
 # 2x spectrum
-- sun: 
+- sun:
     spectrum: [{wavelength: 1, data: 1}]
     spectrum: [{wavelength: 1, data: 1}]
 ---
@@ -223,6 +223,35 @@
 ---
 
 #
+# <thin-dielectric> ::=
+#   thin_dielectric:
+#     absorption: REAL # in [0, 1]
+#     thickness: REAL # in [0, INF)
+#     refractive_index: REAL # in ]0, INF)
+#
+
+# invalid absorption
+- material:
+    thin_dielectric: { absorption: -1, thickness: 0,  refractive_index: 1 }
+---
+# invalid absorption
+- material:
+    thin_dielectric: { absorption: 1.001, thickness: 0,  refractive_index: 1 }
+---
+# invalid thickness
+- material:
+    thin_dielectric: { absorption: 0, thickness: -0.01,  refractive_index: 1 }
+---
+# invalid refractive index
+- material:
+    thin_dielectric: { absorption: 0, thickness: 0,  refractive_index: 0 }
+---
+# invalid refractive index
+- material:
+    thin_dielectric: { absorption: 0, thickness: 0,  refractive_index: -0.0001 }
+---
+
+#
 # front: <material-descriptor>
 #
 
@@ -254,7 +283,7 @@
 #
 
 # missing material definition
-- material: 
+- material:
 ---
 # unknown dummy parameter
 - material: { dummy: 123 }
@@ -941,14 +970,14 @@
 #     spacing: REAL # in [0, INF)
 #     ref_point: <real3>
 #     <target>
-# 
+#
 # <target> ::=
 #   target:
 #     anchor: <anchor-identifier>
 #   | direction: <real3>
 #   | position: <real3>
 #   | <sun>
-# 
+#
 
 # missing zx_pivot definition
 - entity:
@@ -1157,7 +1186,7 @@
 #
 # <geometry-data> ::=
 #   primary: INTEGER # in [0, 1]
-#   <geometry> 
+#   <geometry>
 #
 
 # missing entity definition
@@ -1273,9 +1302,9 @@
 ---
 # 2x children
 - entity:
-    children: 
+    children:
       - name: "child1"
-    children: 
+    children:
       - name: "child2"
 ---
 # 2 entities with the same name
@@ -1306,7 +1335,7 @@
 #
 # <geometry-data> ::=
 #   primary: INTEGER # in [0, 1]
-#   <geometry> 
+#   <geometry>
 #
 
 # missing template definition
@@ -1440,9 +1469,9 @@
 ---
 # 2x children
 - template: &temp
-    children: 
+    children:
       - name: "child1"
-    children: 
+    children:
       - name: "child2"
 - entity: *temp
 ---
@@ -1517,7 +1546,7 @@
 - geometry:
 ---
 # unknown dummy parameter
-- geometry: 
+- geometry:
   - dummy: 1
 ---
 # missing material definition
@@ -1570,4 +1599,4 @@
     geometry:
       - cuboid: { size: [1, 2, 3] }
         material: { matte: { reflectivity: 1 } }
-    
+

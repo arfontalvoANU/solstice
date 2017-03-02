@@ -83,46 +83,46 @@
 # <solar-factory> ::=
 #   <sun>
 #   <items>
-# 
+#
 # <items> ::=
 #   - <item>
 # [ - <item> ... ]
-# 
+#
 # <item> ::=
 #     <geometry>
 #   | <material>
 #   | <entity>
 #   | <template>
-# 
+#
 # ----------------------------------------
 # <geometry> ::=
 #   geometry:
 #     - <object>
 # [   - <object> ... ]
-# 
+#
 # <object> ::=
 #   <shape>
 #   <material>
 # [ <transform> ]
-# 
+#
 # <x_pivot> ::=
 #   x_pivot:
 # [   ref_point: <real3>. Default 0,0,0 ]
 #     <target>
-# 
+#
 # <zx_pivot> ::=
 #   zx_pivot:
 # [   spacing: REAL # in [0, INF). Default 0 ]
 # [   ref_point: <real3>. Default 0,0,0 ]
 #     <target>
-# 
+#
 # <target> ::=
 #   target:
 #     anchor: <anchor-identifier>
 #   | direction: <real3>
 #   | position: <real3>
 #   | <sun>
-# 
+#
 # ----------------------------------------
 # <shape> ::=
 #     <cuboid>
@@ -133,167 +133,173 @@
 #   | <plane>
 #   | <sphere>
 #   | <stl>
-# 
+#
 # <cuboid> ::=
 #   cuboid:
 #     size: <real3*+>
-# 
+#
 # <cylinder> ::=
 #   cylinder:
 #     height: REAL # in ]0, INF)
 #     radius: REAL # in ]0, INF)
 # [   slices: INTEGER ] # in [4, 4096]. Default 16
-# 
+#
 # <obj> ::=
 #   obj:
 #     path: PATH
-# 
+#
 # <parabol> ::=
 #   parabol: # x^2 + y^2 - 4*focal*z = 0
 #     focal: REAL # in ]0, INF)
 #     clip: <polyclip-list>
-# 
+#
 # <parabolic-cylinder> ::=
 #   parabolic-cylinder: # y^2 - 4*focal*z = 0
 #     focal: REAL # in ]0, INF)
 #     clip: <polyclip-list>
-# 
+#
 # <plane> ::=
 #   plane:
 #     clip: <polyclip-list>
-# 
+#
 # <sphere> ::=
 #   sphere:
 #     radius: REAL # in ]0, INF)
 # [   slices: INTEGER ] # in [4, 4096]. Default 16
-# 
+#
 # <stl> ::=
 #   stl:
 #     path: PATH
-# 
+#
 # ----------------------------------------
 # <polyclip-list> ::=
 #   - <polyclip>
 # [ - <polyclip> ... ]
-# 
+#
 # <polyclip> ::=
 #   operation: <AND|SUB>
 #   vertices: <vertices-list>
-# 
+#
 # <vertices-list> ::=
 #   - <real2>
 #   - <real2>
 #   - <real2>
 # [ - <real2> ... ]
-# 
+#
 # ----------------------------------------
 # <material> ::=
 #   <material-descriptor> | <double-sided-material>
-# 
+#
 # <double-sided-material> ::=
 #   front: <material-descriptor>
 #   back: <material-descriptor>
-# 
+#
 # <material-descriptor> ::=
-#   <mirror> | <matte> | <virtual>
-# 
+#   <mirror> | <matte> | <thin-dielectric> | <virtual>
+#
 # <mirror> ::=
 #   mirror:
 #     reflectivity: REAL # in [0, 1]
 #     roughness: REAL # in [0, 1]
-# 
+#
 # <matte> ::=
 #   matte:
 #     reflectivity: REAL # in [0, 1]
-# 
+#
 # <virtual> ::=
 #   virtual: EMPTY-STRING
-# 
+#
+# <thin-dielectric> ::=
+#   thin_dielectric:
+#     absorption: REAL # in [0, 1]
+#     thickness: REAL # in [0, INF)
+#     refractive_index: REAL # in ]0, INF)
+#
 # ----------------------------------------
 # <entity> ::=
 #   entity:
 #     <entity-data>
-# 
+#
 # <template> ::=
 #   template:
 #     <entity-data>
-# 
+#
 # <entity-data> ::=
 #   name: STRING # except "self"
 # [ <geometry-data> | <x_pivot> | <zx_pivot> ]
 # [ <anchors> ]
 # [ <transform> ]
 # [ <children>  ]
-# 
+#
 # <geometry-data> ::=
 #   primary: INTEGER # in [0, 1]
-#   <geometry> 
-# 
+#   <geometry>
+#
 # <children> ::=
 #   children:
 #     - <entity-data>
 # [   - <entity-data> ... ]
-# 
+#
 # <anchors> ::=
 #   anchors:
 #     - <anchor-data>
 # [   - <anchor-data> ... ]
-# 
+#
 # <anchor-data> ::=
 #   name: STRING
 #   position: <real3>
-# 
+#
 # # "self" references the first level entity
 # <entity-identifier> ::=
 #   <self|STRING>[.STRING ... ]
-# 
+#
 # <anchor-identifier> ::=
 #   <entity-identifier>.STRING
-# 
+#
 # ----------------------------------------
 # <sun> ::=
 #   sun:
 #     dni: REAL # Direct Normal Irradiance in ]0, INF)
 #     <spectrum>
 # [   <radial-angular-distribution> ]
-# 
+#
 # <radial-angular-distribution> ::=
 #     <pillbox> | <buie>
-# 
+#
 # <buie> ::=
 #   buie:
 #     csr: REAL # in [1e-6, 0.849]
-# 
+#
 # <pillbox> ::=
 #   pillbox:
 #     aperture: REAL # in ]0, 90]
-# 
+#
 # ----------------------------------------
 # <transform> ::=
 #   transform:
 #     translation: <real3>
 #     rotation: <real3>
-# 
+#
 # <real2> ::=
 #   - REAL
 #   - REAL
-# 
+#
 # <real3> ::=
 #   - REAL
 #   - REAL
 #   - REAL
-# 
+#
 # <real3*+> ::=
 #   - REAL # in ]0, inf)
 #   - REAL # in ]0, inf)
 #   - REAL # in ]0, inf)
-# 
+#
 # <spectrum> ::=
 #   spectrum:
 #     - <spectrum-data>
 # [   - <spectrum-data> ... ]
-# 
+#
 # <spectrum-data> ::=
 #   wavelength: REAL # in [0, INF)
 #   data: REAL # in [0, INF)
-# 
+#

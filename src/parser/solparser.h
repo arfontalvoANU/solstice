@@ -112,6 +112,11 @@ solparser_get_material_mirror
   (const struct solparser* parser,
    const struct solparser_material_mirror_id mirror);
 
+extern LOCAL_SYM const struct solparser_material_thin_dielectric*
+solparser_get_material_thin_dielectric
+  (const struct solparser* parser,
+   const struct solparser_material_thin_dielectric_id thin_dielectric);
+
 extern LOCAL_SYM const struct solparser_object*
 solparser_get_object
   (const struct solparser* parser,
