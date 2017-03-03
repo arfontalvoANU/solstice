@@ -18,15 +18,9 @@
 
 #include <rsys/double3.h>
 
-enum solparser_target_type {
-  SOLPARSER_TARGET_ANCHOR,
-  SOLPARSER_TARGET_DIRECTION,
-  SOLPARSER_TARGET_POSITION,
-  SOLPARSER_TARGET_SUN,
-
-  SOLPARSER_TARGET_TYPES_COUNT__
-};
-
+/*******************************************************************************
+ * Anchor
+ ******************************************************************************/
 struct solparser_anchor_id { size_t i; };
 
 struct solparser_anchor {
@@ -67,6 +61,18 @@ solparser_anchor_copy_and_release
   return str_copy_and_release(&dst->name, &src->name);
 }
 
+/*******************************************************************************
+ * Target
+ ******************************************************************************/
+enum solparser_target_type {
+  SOLPARSER_TARGET_ANCHOR,
+  SOLPARSER_TARGET_DIRECTION,
+  SOLPARSER_TARGET_POSITION,
+  SOLPARSER_TARGET_SUN,
+
+  SOLPARSER_TARGET_TYPES_COUNT__
+};
+
 struct solparser_target {
   enum solparser_target_type type;
   union {
@@ -75,10 +81,14 @@ struct solparser_target {
     struct solparser_anchor_id anchor;
   } data;
 };
-#define SOLPARSER_TARGET_NULL__ { SOLPARSER_TARGET_TYPES_COUNT__, {{0,0,0}} }
+#define SOLPARSER_TARGET_NULL__ { 0 }
 static const struct solparser_target SOLPARSER_TARGET_NULL =
   SOLPARSER_TARGET_NULL__;
 
+
+/*******************************************************************************
+ * X pivot
+ ******************************************************************************/
 struct solparser_pivot_id { size_t i; };
 
 struct solparser_x_pivot {
@@ -92,12 +102,16 @@ static const struct solparser_x_pivot SOLPARSER_X_PIVOT_NULL =
 
 static INLINE void
 solparser_x_pivot_init
-(struct mem_allocator* allocator, struct solparser_x_pivot* x_pivot)
+  (struct mem_allocator* allocator, struct solparser_x_pivot* x_pivot)
 {
-  (void) allocator;
+  (void)allocator;
   ASSERT(x_pivot);
   *x_pivot = SOLPARSER_X_PIVOT_NULL;
 }
+
+/*******************************************************************************
+ * ZX pivot
+ ******************************************************************************/
 struct solparser_zx_pivot {
   double spacing;
   double ref_point[3];
@@ -112,7 +126,7 @@ static INLINE void
 solparser_zx_pivot_init
   (struct mem_allocator* allocator, struct solparser_zx_pivot* zx_pivot)
 {
-  (void) allocator;
+  (void)allocator;
   ASSERT(zx_pivot);
   *zx_pivot = SOLPARSER_ZX_PIVOT_NULL;
 }

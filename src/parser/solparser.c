@@ -206,7 +206,6 @@ struct solparser {
   struct solparser_sun sun; /* The loaded sun */
 
   /* Entity */
-  struct htable_yaml2sols yaml2entities; /* Cache of entities */
   struct htable_str2sols str2entities;
   struct darray_entity entities;
 
@@ -404,7 +403,6 @@ parser_clear(struct solparser* parser)
   parser->sun_key = 0;
 
   /* Entities */
-  htable_yaml2sols_clear(&parser->yaml2entities);
   htable_str2sols_clear(&parser->str2entities);
   darray_entity_clear(&parser->entities);
 
@@ -455,7 +453,6 @@ parser_release(ref_T* ref)
   solparser_sun_release(&parser->sun);
 
   /* Entities */
-  htable_yaml2sols_release(&parser->yaml2entities);
   htable_str2sols_release(&parser->str2entities);
   darray_entity_release(&parser->entities);
 
@@ -2600,7 +2597,6 @@ parse_entity
   enum { ANCHORS, CHILDREN, DATA, NAME, TRANSFORM, PRIMARY };
   struct solparser_entity solent;
   struct solparser_entity* psolent;
-  const size_t *pisolent;
   size_t isolent = SIZE_MAX;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
@@ -2608,14 +2604,6 @@ parse_entity
   ASSERT(doc && entity && htable && out_isolent);
 
   solparser_entity_init(parser->allocator, &solent);
-
-  pisolent = htable_yaml2sols_find(&parser->yaml2entities, &entity);
-  if(pisolent) {
-    isolent = *pisolent;
-    res = entity_register_name(parser, entity, htable, *pisolent);
-    if(res != RES_OK) goto error;
-    goto exit;
-  }
 
   if(entity->type != YAML_MAPPING_NODE) {
     log_err(parser, entity, "expect an entity definition.\n");
@@ -2737,12 +2725,6 @@ parse_entity
   }
   res = entity_register_name(parser, entity, htable, isolent);
   if(res != RES_OK) goto error;
-
-  res = htable_yaml2sols_set(&parser->yaml2entities, &entity, &isolent);
-  if(res != RES_OK) {
-    log_err(parser, entity, "could not register the entity.\n");
-    goto error;
-  }
 
 exit:
   solparser_entity_release(&solent);
@@ -3473,7 +3455,6 @@ solparser_create
   solparser_sun_init(mem_allocator, &parser->sun);
 
   /* Entities */
-  htable_yaml2sols_init(mem_allocator, &parser->yaml2entities);
   htable_str2sols_init(mem_allocator, &parser->str2entities);
   darray_entity_init(mem_allocator, &parser->entities);
 
