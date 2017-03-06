@@ -39,7 +39,7 @@ set(SOLPARSER_FILES_INC
   solparser_shape.h
   solparser_sun.h)
 
-# Prepend each file in the `SOLSTICE_FILES_<SRC|INC>' list by `SOLSTICE_SOURCE_DIR'
+# Prepend each file in the `SOLPARSER_FILES_<SRC|INC>' list by `SOLPARSER_SOURCE_DIR'
 rcmake_prepend_path(SOLPARSER_FILES_SRC ${SOLPARSER_SOURCE_DIR})
 rcmake_prepend_path(SOLPARSER_FILES_INC ${SOLPARSER_SOURCE_DIR})
 rcmake_prepend_path(SOLPARSER_FILES_DOC ${PROJECT_SOURCE_DIR}/../)

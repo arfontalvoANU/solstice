@@ -44,6 +44,8 @@ print_help(const char* program)
   printf(
 "  -D <dirs>        list of sun directions.\n");
   printf(
+"  -3 <dir>         sun direction.\n");
+  printf(
 "  -f               do not prompt before overwriting the output file submitted\n"
 "                   with the '-o' option.\n");
   printf(
@@ -157,6 +159,57 @@ error:
     sa_release(args->sun_dirs);
     args->sun_dirs = NULL;
     args->nsun_dirs = 0;
+  }
+  goto exit;
+}
+
+static res_T
+parse_sun_dir3(const char* str, struct solstice_args* args)
+{
+  char buf[512];
+  char* tk;
+  char* ctx;
+  size_t len;
+  res_T res = RES_OK;
+  ASSERT(str && args);
+
+  if (strlen(str) >= sizeof(buf) - 1/*NULL char*/) {
+    fprintf(stderr,
+      "Could not duplicate the list of sun directions `%s'.\n", str);
+    res = RES_MEM_ERR;
+    goto error;
+  }
+  strncpy(buf, str, sizeof(buf));
+
+  tk = strtok_r(buf, ":", &ctx);
+  while (tk) {
+    struct solstice_args_dir3 tmp;
+
+    res = cstr_to_list_double(tk, ',', &tmp.x, &len, 3);
+    if (res == RES_OK && len != 3) res = RES_BAD_ARG;
+    if (res != RES_OK) {
+      fprintf(stderr, "Invalid sun direction `%s'.\n", tk);
+      goto error;
+    }
+
+    if (tmp.x == 0 && tmp.y == 0 && tmp.z == 0) {
+      fprintf(stderr, "Invalid 0,0,0 sun direction.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    sa_push(args->sun_dirs3, tmp);
+
+    tk = strtok_r(NULL, ":", &ctx);
+  }
+  args->nsun_dirs3 += sa_size(args->sun_dirs3);
+
+exit:
+  return res;
+error:
+  if (args->sun_dirs3) {
+    sa_release(args->sun_dirs3);
+    args->sun_dirs3 = NULL;
+    args->nsun_dirs3 = 0;
   }
   goto exit;
 }
@@ -438,10 +491,13 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
   *args = SOLSTICE_ARGS_DEFAULT;
 
   optind = 0;
-  while((opt = getopt(argc, argv, "D:fg:Hhn:o:qR:r:t:")) != -1) {
+  while((opt = getopt(argc, argv, "D:3:fg:Hhn:o:qR:r:t:")) != -1) {
     switch(opt) {
       case 'D':
         res = parse_sun_dir_list(optarg, args);
+        break;
+      case '3':
+        res = parse_sun_dir3(optarg, args);
         break;
       case 'f': args->force_overwriting = 1; break;
       case 'H': args->output_hits = 1; break;
@@ -476,7 +532,7 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
 
   if(!args->rendering
   && args->dump_format == SOLSTICE_ARGS_DUMP_NONE
-  && !args->nsun_dirs) {
+  && 0 == args->nsun_dirs + args->nsun_dirs3) {
     fprintf(stderr, "Missing sun direction.\n");
     res = RES_BAD_ARG;
     goto error;
@@ -505,6 +561,7 @@ solstice_args_release(struct solstice_args* args)
 {
   ASSERT(args);
   sa_release(args->sun_dirs);
+  sa_release(args->sun_dirs3);
   *args = SOLSTICE_ARGS_NULL;
 }
 

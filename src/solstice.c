@@ -306,11 +306,11 @@ static res_T
 setup_sun_dirs(struct solstice* solstice, const struct solstice_args* args)
 {
   double* sun_dirs = NULL;
-  size_t i;
+  size_t i, ii;
   res_T res = RES_OK;
   ASSERT(solstice && args);
 
-  res = darray_double_resize(&solstice->sun_dirs, args->nsun_dirs*3/*#dims*/);
+  res = darray_double_resize(&solstice->sun_dirs, (args->nsun_dirs + args->nsun_dirs3)*3/*#dims*/);
   if(res != RES_OK) {
     fprintf(stderr,
       "Could not reserve the list of %lu sun directions.\n",
@@ -322,6 +322,9 @@ setup_sun_dirs(struct solstice* solstice, const struct solstice_args* args)
   sun_dirs = darray_double_data_get(&solstice->sun_dirs);
   FOR_EACH(i, 0, args->nsun_dirs) {
     spherical_to_cartesian_sun_dir(args->sun_dirs + i, sun_dirs + i*3/*#dims*/);
+  }
+  FOR_EACH(ii, 0, args->nsun_dirs3) {
+    d3_normalize(sun_dirs + (i + ii) * 3/*#dims*/, &args->sun_dirs3[ii].x);
   }
 
 exit:
@@ -664,6 +667,7 @@ solstice_run(struct solstice* solstice)
   } else {
     FOR_EACH(i, 0, nsun_dirs) {
       const double* sun_dir = sun_dirs + i*3/*#dims*/;
+      fprintf(solstice->output, "#--- Sun direction: %g %g %g\n", SPLIT3(sun_dir));
 
       res = solstice_update_entities(solstice, sun_dir);
       if(res != RES_OK) goto error;
@@ -683,7 +687,6 @@ solstice_run(struct solstice* solstice)
         res = solstice_solve(solstice);
         if(res != RES_OK) goto error;
       }
-      fprintf(solstice->output, "#--- Sun direction: %g %g %g\n", SPLIT3(sun_dir));
     }
   }
 
