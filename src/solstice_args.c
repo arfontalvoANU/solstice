@@ -238,6 +238,7 @@ parse_rendering_option(const char* str, struct solstice_args* args)
       fprintf(stderr, "Invalid camera position `%s'.\n", val);
       goto error;
     }
+    args->camera.auto_look_at = 0; /* Disable auto look at */
   } else if(!strcmp(key, "tgt")) {
     res = cstr_to_list_double(val, ',', args->camera.tgt, &len, 3);
     if(res == RES_OK && len != 3) res = RES_BAD_ARG;
@@ -245,6 +246,7 @@ parse_rendering_option(const char* str, struct solstice_args* args)
       fprintf(stderr, "Invalid camera target `%s'.\n", val);
       goto error;
     }
+    args->camera.auto_look_at = 0; /* Disable auto look at */
   } else if(!strcmp(key, "up")) {
     res = cstr_to_list_double(val, ',', args->camera.up, &len, 3);
     if(res == RES_OK && len != 3) res = RES_BAD_ARG;
