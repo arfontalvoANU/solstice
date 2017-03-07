@@ -20,6 +20,8 @@
 #include "solstice_args.h"
 #include "parser/solparser.h"
 
+#include <rsys/double2.h>
+
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -306,31 +308,37 @@ static res_T
 setup_sun_dirs(struct solstice* solstice, const struct solstice_args* args)
 {
   double* sun_dirs = NULL;
-  size_t i, ii;
+  double* sun_angles = NULL;
+  size_t i;
   res_T res = RES_OK;
   ASSERT(solstice && args);
 
-  res = darray_double_resize(&solstice->sun_dirs, (args->nsun_dirs + args->nsun_dirs3)*3/*#dims*/);
+  res = darray_double_resize(&solstice->sun_dirs, args->nsun_dirs*3/*#dims*/);
   if(res != RES_OK) {
     fprintf(stderr,
       "Could not reserve the list of %lu sun directions.\n",
       (unsigned long)args->nsun_dirs);
     goto error;
-
   }
-
+  res = darray_double_resize(&solstice->sun_angles, args->nsun_dirs*2/*#dims*/);
+  if (res != RES_OK) {
+    fprintf(stderr,
+      "Could not reserve the list of %lu sun angles.\n",
+      (unsigned long)args->nsun_dirs);
+    goto error;
+  }
   sun_dirs = darray_double_data_get(&solstice->sun_dirs);
+  sun_angles = darray_double_data_get(&solstice->sun_angles);
   FOR_EACH(i, 0, args->nsun_dirs) {
     spherical_to_cartesian_sun_dir(args->sun_dirs + i, sun_dirs + i*3/*#dims*/);
-  }
-  FOR_EACH(ii, 0, args->nsun_dirs3) {
-    d3_normalize(sun_dirs + (i + ii) * 3/*#dims*/, &args->sun_dirs3[ii].x);
+    d2(sun_angles + i*2, args->sun_dirs[i].azimuth, args->sun_dirs[i].elevation);
   }
 
 exit:
   return res;
 error:
   darray_double_clear(&solstice->sun_dirs);
+  darray_double_clear(&solstice->sun_angles);
   goto exit;
 }
 
@@ -534,6 +542,7 @@ solstice_init
   darray_nodes_init(allocator, &solstice->roots);
   darray_nodes_init(allocator, &solstice->pivots);
   darray_double_init(allocator, &solstice->sun_dirs);
+  darray_double_init(allocator, &solstice->sun_angles);
 
   solstice->allocator = allocator ? allocator : &mem_default_allocator;
 
@@ -634,12 +643,14 @@ solstice_release(struct solstice* solstice)
   darray_nodes_release(&solstice->roots);
   darray_nodes_release(&solstice->pivots);
   darray_double_release(&solstice->sun_dirs);
+  darray_double_release(&solstice->sun_angles);
 }
 
 res_T
 solstice_run(struct solstice* solstice)
 {
   const double* sun_dirs = NULL;
+  const double* sun_angles = NULL;
   size_t nsun_dirs = 0;
   size_t i;
   int dump;
@@ -648,6 +659,7 @@ solstice_run(struct solstice* solstice)
   ASSERT(solstice);
 
   sun_dirs = darray_double_cdata_get(&solstice->sun_dirs);
+  sun_angles = darray_double_cdata_get(&solstice->sun_angles);
   nsun_dirs = darray_double_size_get(&solstice->sun_dirs);
   ASSERT(nsun_dirs%3 == 0);
   nsun_dirs /= 3/*#dims*/;
@@ -667,7 +679,8 @@ solstice_run(struct solstice* solstice)
   } else {
     FOR_EACH(i, 0, nsun_dirs) {
       const double* sun_dir = sun_dirs + i*3/*#dims*/;
-      fprintf(solstice->output, "#--- Sun direction: %g %g %g\n", SPLIT3(sun_dir));
+      fprintf(solstice->output, "#--- Sun direction: %g %g (%g %g %g)\n",
+        SPLIT2(sun_angles), SPLIT3(sun_dir));
 
       res = solstice_update_entities(solstice, sun_dir);
       if(res != RES_OK) goto error;

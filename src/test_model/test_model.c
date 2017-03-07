@@ -70,19 +70,19 @@ sundir_header [] = "#--- Sun direction:";
 static res_T
 get_dir_and_counts
   (FILE* ref_file,
-   double sun_dir[3],
+   double sun_angles[2],
    size_t* recv_count,
    size_t* realisation_count)
 {
   char line[MAX_LINE_LEN];
 
-  ASSERT(ref_file);
+  ASSERT(ref_file && sun_angles);
   if (!fgets(line, sizeof(line), ref_file)) return RES_BAD_ARG;
   if (!IS_NEW_BLOC(line, sundir_header))
     return RES_BAD_ARG;
   /* get sun dir */
-  if (3 != sscanf(line + strlen(sundir_header),
-    "%lg%lg%lg", &sun_dir[0], &sun_dir[1], &sun_dir[2])) {
+  if (2 != sscanf(line + strlen(sundir_header),
+    "%lg%lg", &sun_angles[0], &sun_angles[1])) {
     return RES_BAD_ARG;
   }
   /* get sun dir */
@@ -145,10 +145,10 @@ check_1_reference
 {
   res_T res = RES_OK;
   ASSERT(tested_file && rcv_name && reference_E && reference_SE);
-  double d[3];
+  double a[2];
   size_t c1, c2;
 
-  res = get_dir_and_counts(tested_file, d, &c1, &c2); /* skip headers */
+  res = get_dir_and_counts(tested_file, a, &c1, &c2); /* skip headers */
   if (res != RES_OK) goto error;
   while(!feof(tested_file)) {
     char line[MAX_LINE_LEN];
@@ -187,13 +187,13 @@ check_1_global
 {
   res_T res = RES_OK;
   char line[MAX_LINE_LEN];
-  double d[3];
+  double a[2];
   size_t recv_count, r2;
   unsigned i;
   int nb;
   double tested_E, tested_SE;
 
-  res = get_dir_and_counts(tested_file, d, &recv_count, &r2);
+  res = get_dir_and_counts(tested_file, a, &recv_count, &r2);
   if (res != RES_OK) goto error;
   /* skip receivers */
   for ( ; recv_count--; ) {
@@ -320,7 +320,7 @@ do_check(const char* base_name)
   }
   while (!feof(ref_file)) {
     char cmd[128 + 3 * MAX_PATH];
-    double sun_dir[3];
+    double sun_angles[2];
     char tested_file_name[L_tmpnam_s];
 #ifdef COMPILER_CL
     const char* exe_name = "..\\Debug\\solstice.exe";
@@ -328,15 +328,15 @@ do_check(const char* base_name)
     const char* exe_name = "../Debug/solstice.exe";
 #endif
 
-    res = get_dir_and_counts(ref_file, sun_dir, &c1, &realisation_count);
+    res = get_dir_and_counts(ref_file, sun_angles, &c1, &realisation_count);
     if (res != RES_OK) goto end;
 
     res = create_tmp_file_name(tested_file_name);
     if (res != RES_OK) goto end;
 
     snprintf(cmd, sizeof(cmd),
-      "%s -o %s -f -3 %lg,%lg,%lg -n %zu -R %s%s_receiver.yaml %s%s.yaml",
-      exe_name, tested_file_name, SPLIT3(sun_dir), realisation_count, 
+      "%s -o %s -f -D %g,%g -n %zu -R %s%s_receiver.yaml %s%s.yaml",
+      exe_name, tested_file_name, SPLIT2(sun_angles), realisation_count,
       dir, base_name, dir, base_name);
     if (system(cmd)) {
       res = RES_BAD_ARG;

@@ -24,10 +24,6 @@ struct solstice_args_spherical {
   double elevation; /* In radians */
 };
 
-struct solstice_args_dir3 {
-  double x, y, z;
-};
-
 enum solstice_args_dump_format {
   SOLSTICE_ARGS_DUMP_OBJ,
   SOLSTICE_ARGS_DUMP_NONE
@@ -49,8 +45,6 @@ struct solstice_args {
   /* List of sun directions */
   struct solstice_args_spherical* sun_dirs;
   size_t nsun_dirs;
-  struct solstice_args_dir3* sun_dirs3;
-  size_t nsun_dirs3;
 
   struct {
     double pos[3];
@@ -87,8 +81,6 @@ static const struct solstice_args SOLSTICE_ARGS_NULL = SOLSTICE_ARGS_NULL__;
                                                                                \
   NULL, /* sun_dirs */                                                         \
   0, /* # nsun_dirs */                                                         \
-  NULL, /* sun_dirs3 */                                                        \
-  0, /* # nsun_dirs3 */                                                        \
                                                                                \
   { /* Camera */                                                               \
     { @SOLSTICE_ARGS_DEFAULT_CAMERA_POS@ },                                    \
