@@ -59,6 +59,7 @@ include_directories(
 ################################################################################
 add_subdirectory(parser)
 add_subdirectory(receivers)
+add_subdirectory(test_model)
 
 ################################################################################
 # Generate files

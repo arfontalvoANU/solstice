@@ -1,0 +1,373 @@
+/* Copyright (C) CNRS 2016-2017
+*
+* This program is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program. If not, see <http://www.gnu.org/licenses/>. */
+
+#include <rsys/rsys.h>
+#include <rsys/math.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+#ifdef COMPILER_CL
+  /* Wrap POSIX functions and constants */
+  #include <io.h>
+  #define fdopen _fdopen
+  #define fileno _fileno
+  #define execvp _execvp
+#endif
+
+#ifndef COMPILER_CL
+#include <linux/limits.h> /* MAX_PATH */
+#endif
+
+enum side {
+  FRONT,
+  BACK
+};
+
+enum RESULTS {
+  FRONT_INTEGRATED_IRRADIANCE,
+  BACK_INTEGRATED_IRRADIANCE,
+  FRONT_REFLECTIVITY_LOSS,
+  BACK_REFLECTIVITY_LOSS,
+  FRONT_ABSORPTIVITY_LOSS,
+  BACK_ABSORPTIVITY_LOSS,
+  FRONT_COS_LOSS,
+  BACK_COS_LOSS,
+  FRONT_EFFICIENCY,
+  BACK_EFFICIENCY,
+  MAX_RESULTS_COUNT__
+};
+
+static int
+file_exists(const char* name)
+{
+  FILE* f = fopen(name, "r");
+  if (!f) return 0;
+  fclose(f);
+  return 1;
+}
+
+#define MAX_LINE_LEN 2048
+
+static const char 
+sundir_header [] = "#--- Sun direction:";
+
+#define IS_NEW_BLOC(Line, Header) (!strncmp((Line), (Header), strlen(Header)))
+
+static res_T
+get_dir_and_counts
+  (FILE* ref_file,
+   double sun_angles[2],
+   size_t* recv_count,
+   size_t* realisation_count)
+{
+  char line[MAX_LINE_LEN];
+
+  ASSERT(ref_file && sun_angles);
+  if (!fgets(line, sizeof(line), ref_file)) return RES_BAD_ARG;
+  if (!IS_NEW_BLOC(line, sundir_header))
+    return RES_BAD_ARG;
+  /* get sun dir */
+  if (2 != sscanf(line + strlen(sundir_header),
+    "%lg%lg", &sun_angles[0], &sun_angles[1])) {
+    return RES_BAD_ARG;
+  }
+  /* get sun dir */
+  if (!fgets(line, sizeof(line), ref_file)) return RES_BAD_ARG;
+  if (2 != sscanf(line, "%zu%zu", recv_count, realisation_count))
+    return RES_BAD_ARG;
+  return RES_OK;
+}
+
+#define READ_RECV(Name, Values, Std)                                          \
+{                                                                             \
+ if (2 * MAX_RESULTS_COUNT__ + 1                                              \
+  != sscanf(line,                                                             \
+  "%s%*zu%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg",       \
+  Name,                                                                       \
+  &Values[FRONT_INTEGRATED_IRRADIANCE], &Std[FRONT_INTEGRATED_IRRADIANCE],    \
+  &Values[BACK_INTEGRATED_IRRADIANCE], &Std[BACK_INTEGRATED_IRRADIANCE],      \
+  &Values[FRONT_REFLECTIVITY_LOSS], &Std[FRONT_REFLECTIVITY_LOSS],            \
+  &Values[BACK_REFLECTIVITY_LOSS], &Std[BACK_REFLECTIVITY_LOSS],              \
+  &Values[FRONT_ABSORPTIVITY_LOSS], &Std[FRONT_ABSORPTIVITY_LOSS],            \
+  &Values[BACK_ABSORPTIVITY_LOSS], &Std[BACK_ABSORPTIVITY_LOSS],              \
+  &Values[FRONT_COS_LOSS], &Std[FRONT_COS_LOSS],                              \
+  &Values[BACK_COS_LOSS], &Std[BACK_COS_LOSS],                                \
+  &Values[FRONT_EFFICIENCY], &Std[FRONT_EFFICIENCY],                          \
+  &Values[BACK_EFFICIENCY], &Std[BACK_EFFICIENCY])                            \
+  )                                                                           \
+ {                                                                            \
+    res = RES_BAD_ARG;                                                        \
+    goto error;                                                               \
+  }                                                                           \
+}
+
+#define POSITIVE_OR_M_ONE(x) ((x) == -1 || (x) >= 0)
+
+static FINLINE int
+is_compatible_with
+  (const double ref_E,
+   const double ref_SE,
+   const double test_E,
+   const double test_SE)
+{
+  double SE;
+  ASSERT(POSITIVE_OR_M_ONE(ref_E) && POSITIVE_OR_M_ONE(ref_SE)
+    && POSITIVE_OR_M_ONE(test_E) && POSITIVE_OR_M_ONE(test_SE));
+  if (ref_E == -1) {
+    ASSERT(ref_SE == -1);
+    return (test_E == -1 && test_SE == -1);
+  }
+  ASSERT(ref_SE != -1);
+  SE = ref_SE > 0 ? 2 * ref_SE : (ref_E > 0 ? ref_E * 1e-6 : 1e-6);
+  return (fabs(ref_E - test_E) <= SE && test_SE <= SE);
+}
+
+static res_T 
+check_1_reference
+  (FILE* tested_file,
+   const char* rcv_name,
+   const double* reference_E,
+   const double* reference_SE)
+{
+  res_T res = RES_OK;
+  ASSERT(tested_file && rcv_name && reference_E && reference_SE);
+  double a[2];
+  size_t c1, c2;
+
+  res = get_dir_and_counts(tested_file, a, &c1, &c2); /* skip headers */
+  if (res != RES_OK) goto error;
+  while(!feof(tested_file)) {
+    char line[MAX_LINE_LEN];
+    char tested_rcv_name[MAX_LINE_LEN];
+    double tested_E[MAX_RESULTS_COUNT__], tested_SE[MAX_RESULTS_COUNT__];
+    enum RESULTS r;
+    if (!fgets(line, sizeof(line), tested_file)) {
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    READ_RECV(tested_rcv_name, tested_E, tested_SE);
+    if (strcmp(rcv_name, tested_rcv_name)) continue;
+    for (r = FRONT_INTEGRATED_IRRADIANCE; r < MAX_RESULTS_COUNT__; r++) {
+      if (!is_compatible_with
+        (reference_E[r], reference_SE[r], tested_E[r], tested_SE[r]))
+      {
+        res = RES_BAD_ARG;
+        goto error;
+      }
+    }
+    goto end; /* success */
+  }
+  res = RES_BAD_ARG; /* could not find data */
+end:
+  return res;
+error:
+  goto end;
+}
+
+static res_T
+check_1_global
+  (FILE* tested_file,
+   const double reference_E,
+   const double reference_SE,
+   const unsigned rank)
+{
+  res_T res = RES_OK;
+  char line[MAX_LINE_LEN];
+  double a[2];
+  size_t recv_count, r2;
+  unsigned i;
+  int nb;
+  double tested_E, tested_SE;
+
+  res = get_dir_and_counts(tested_file, a, &recv_count, &r2);
+  if (res != RES_OK) goto error;
+  /* skip receivers */
+  for ( ; recv_count--; ) {
+    if (!fgets(line, sizeof(line), tested_file)) {
+      res = RES_BAD_ARG;
+      goto error;
+    }
+  }
+  /* read the rank th global data */
+  for (i = 0; i <= rank; i++) {
+    if (!fgets(line, sizeof(line), tested_file)) {
+      res = RES_BAD_ARG;
+      goto error;
+    }
+  }
+  nb = sscanf(line, "%lg%lg", &tested_E, &tested_SE);
+  if (nb != 2) {
+    res = RES_BAD_ARG;
+    goto error;
+  }
+  if (!is_compatible_with
+    (reference_E, reference_SE, tested_E, tested_SE)) {
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+end:
+  return res;
+error:
+  goto end;
+}
+
+static res_T
+check_references
+  (FILE* ref_file, const char* tested_file_name)
+{
+  res_T res = RES_OK;
+  char line[MAX_LINE_LEN];
+  int nb_global = 0;
+  FILE* tested_file;
+
+  ASSERT(ref_file && tested_file_name);
+  tested_file = fopen(tested_file_name, "r");
+  if (!tested_file) {
+    res = RES_IO_ERR;
+    goto error;
+  }
+  for ( ; ; ) {
+    int nb = 0;
+    double val, std;
+    fpos_t pos;
+    
+    CHECK(fgetpos(ref_file, &pos), 0);
+    if (!fgets(line, sizeof(line), ref_file)) {
+      if (feof(ref_file)) goto end;
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    if (IS_NEW_BLOC(line, sundir_header)) {
+      /* keep the header as a part of the following bloc */
+      CHECK(fsetpos(ref_file, &pos), 0);
+      goto end;
+    }
+    nb = sscanf(line, "%lg%lg", &val, &std);
+    if (nb == EOF) goto end;
+    rewind(tested_file);
+    ASSERT(nb == 0 || nb == 2);
+    if (nb != 0) {
+      res = check_1_global(tested_file, val, std, nb_global);
+      if (res != RES_OK) goto error;
+      nb_global++;
+    }
+    else {
+      char ref_name[MAX_LINE_LEN];
+      double reference_E[MAX_RESULTS_COUNT__], reference_SE[MAX_RESULTS_COUNT__];
+      READ_RECV(ref_name, reference_E, reference_SE);
+      res = 
+        check_1_reference(tested_file, ref_name, reference_E, reference_SE);
+      if (res != RES_OK) goto error;
+    }
+  };
+
+end:
+  if (tested_file) CHECK(fclose(tested_file), 0);
+  CHECK(remove(tested_file_name), 0);
+  return res;
+error:
+  goto end;
+}
+
+static FINLINE res_T
+create_tmp_file_name(char* out_name)
+{
+  ASSERT(out_name);
+#ifdef COMPILER_CL
+  if (tmpnam_s(out_name, L_tmpnam_s)) return RES_IO_ERR;
+#else
+  int fd;
+  strncpy(out_name, "solstice_tmp_file_XXXXXX", L_tmpnam_s);
+  fd = mkstemp(out_name);
+  if (-1 == fd) return RES_IO_ERR;
+  /* just want a name */
+  close(fd);
+#endif
+  return RES_OK;
+}
+
+static res_T
+do_check(const char* base_name)
+{
+  res_T res = RES_OK;
+  FILE* ref_file;
+  char ref_file_name[MAX_PATH];
+  size_t c1, realisation_count;
+  const char* dir = "../../yaml/";
+
+  ASSERT(base_name);
+  snprintf(ref_file_name, MAX_PATH, "%s%s.ref", dir, base_name);
+  ref_file = fopen(ref_file_name, "r");
+  if (!ref_file) {
+    res = RES_IO_ERR;
+    printf("Cannot open file '%s'\n", base_name);
+    goto end;
+  }
+  while (!feof(ref_file)) {
+    char cmd[128 + 3 * MAX_PATH];
+    double sun_angles[2];
+    char tested_file_name[L_tmpnam_s];
+#ifdef COMPILER_CL
+    const char* exe_name = "..\\Debug\\solstice.exe";
+#else
+    const char* exe_name = "../Debug/solstice.exe";
+#endif
+
+    res = get_dir_and_counts(ref_file, sun_angles, &c1, &realisation_count);
+    if (res != RES_OK) goto end;
+
+    res = create_tmp_file_name(tested_file_name);
+    if (res != RES_OK) goto end;
+
+    snprintf(cmd, sizeof(cmd),
+      "%s -o %s -f -D %g,%g -n %zu -R %s%s_receiver.yaml %s%s.yaml",
+      exe_name, tested_file_name, SPLIT2(sun_angles), realisation_count,
+      dir, base_name, dir, base_name);
+    if (system(cmd)) {
+      res = RES_BAD_ARG;
+      goto end;
+    }
+    res = check_references(ref_file, tested_file_name);
+    if (res != RES_OK) {
+      goto end;
+    }
+  }
+end:
+  if (ref_file) fclose(ref_file);
+  return res;
+}
+
+int
+main(int argc, char** argv)
+{
+  int err = 0;
+
+  if (argc != 2) goto usage;
+
+  if (RES_OK != do_check(argv[1]))
+    goto error;
+
+exit:
+  return err;
+usage:
+  printf("Usage: %s <file_base_name>\n", argv[0]);
+error:
+  err = 1;
+  goto exit;
+}
+
