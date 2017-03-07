@@ -14,6 +14,7 @@
 * along with this program. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <rsys/rsys.h>
+#include <rsys/math.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -123,6 +124,7 @@ is_compatible_with
    const double test_E,
    const double test_SE)
 {
+  double SE;
   ASSERT(POSITIVE_OR_M_ONE(ref_E) && POSITIVE_OR_M_ONE(ref_SE)
     && POSITIVE_OR_M_ONE(test_E) && POSITIVE_OR_M_ONE(test_SE));
   if (ref_E == -1) {
@@ -130,7 +132,8 @@ is_compatible_with
     return (test_E == -1 && test_SE == -1);
   }
   ASSERT(ref_SE != -1);
-  return (fabs(ref_E - test_E) <= 2 * ref_SE && test_SE <= 2 * ref_SE);
+  SE = ref_SE > 0 ? 2 * ref_SE : (ref_E > 0 ? ref_E * 1e-6 : 1e-6);
+  return (fabs(ref_E - test_E) <= SE && test_SE <= SE);
 }
 
 static res_T 

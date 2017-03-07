@@ -46,6 +46,11 @@ add_executable(test_model ${TESTMODEL_FILES_SRC})
 ################################################################################
 if(NOT NO_TEST)
   add_test(test_beam_down test_model beam_down)
+  add_test(test_01 test_model test01)
+  add_test(test_02 test_model test02)
+  add_test(test_03 test_model test03)
+  add_test(test_04 test_model test04)
+  add_test(test_05 test_model test05)
 
   rcmake_copy_runtime_libraries(test_model)
 
