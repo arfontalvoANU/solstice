@@ -60,6 +60,12 @@ file_exists(const char* name)
 }
 
 #define MAX_LINE_LEN 2048
+
+static const char 
+sundir_header [] = "#--- Sun direction:";
+
+#define IS_NEW_BLOC(Line, Header) (!strncmp((Line), (Header), strlen(Header)))
+
 static res_T
 get_dir_and_counts
   (FILE* ref_file,
@@ -67,12 +73,11 @@ get_dir_and_counts
    size_t* recv_count,
    size_t* realisation_count)
 {
-  const char sundir_header [] = "#--- Sun direction:";
   char line[MAX_LINE_LEN];
 
   ASSERT(ref_file);
   if (!fgets(line, sizeof(line), ref_file)) return RES_BAD_ARG;
-  if (0 != strncmp(line, sundir_header, strlen(sundir_header)))
+  if (!IS_NEW_BLOC(line, sundir_header))
     return RES_BAD_ARG;
   /* get sun dir */
   if (3 != sscanf(line + strlen(sundir_header),
@@ -130,21 +135,16 @@ is_compatible_with
 
 static res_T 
 check_1_reference
-  (const char* tested_file_name,
+  (FILE* tested_file,
    const char* rcv_name,
    const double* reference_E,
    const double* reference_SE)
 {
   res_T res = RES_OK;
-  ASSERT(tested_file_name && rcv_name && reference_E && reference_SE);
-  FILE* tested_file = fopen(tested_file_name, "r");
+  ASSERT(tested_file && rcv_name && reference_E && reference_SE);
   double d[3];
   size_t c1, c2;
 
-  if (!tested_file) {
-    res = RES_IO_ERR;
-    goto end;
-  }
   res = get_dir_and_counts(tested_file, d, &c1, &c2); /* skip headers */
   if (res != RES_OK) goto error;
   while(!feof(tested_file)) {
@@ -170,7 +170,6 @@ check_1_reference
   }
   res = RES_BAD_ARG; /* could not find data */
 end:
-  if (tested_file) fclose(tested_file);
   return res;
 error:
   goto end;
@@ -178,26 +177,19 @@ error:
 
 static res_T
 check_1_global
-  (const char* tested_file_name,
+  (FILE* tested_file,
    const double reference_E,
    const double reference_SE,
    const unsigned rank)
 {
   res_T res = RES_OK;
   char line[MAX_LINE_LEN];
-  FILE* tested_file;
   double d[3];
   size_t recv_count, r2;
   unsigned i;
   int nb;
   double tested_E, tested_SE;
 
-  ASSERT(tested_file_name);
-  tested_file = fopen(tested_file_name, "r");
-  if (!tested_file) {
-    res = RES_IO_ERR;
-    goto end;
-  }
   res = get_dir_and_counts(tested_file, d, &recv_count, &r2);
   if (res != RES_OK) goto error;
   /* skip receivers */
@@ -226,12 +218,10 @@ check_1_global
   }
 
 end:
-  if (tested_file) fclose(tested_file);
   return res;
 error:
   goto end;
 }
-
 
 static res_T
 check_references
@@ -240,20 +230,36 @@ check_references
   res_T res = RES_OK;
   char line[MAX_LINE_LEN];
   int nb_global = 0;
+  FILE* tested_file;
 
   ASSERT(ref_file && tested_file_name);
+  tested_file = fopen(tested_file_name, "r");
+  if (!tested_file) {
+    res = RES_IO_ERR;
+    goto error;
+  }
   for ( ; ; ) {
     int nb = 0;
     double val, std;
+    fpos_t pos;
+    
+    CHECK(fgetpos(ref_file, &pos), 0);
     if (!fgets(line, sizeof(line), ref_file)) {
       if (feof(ref_file)) goto end;
       res = RES_BAD_ARG;
       goto error;
     }
+    if (IS_NEW_BLOC(line, sundir_header)) {
+      /* keep the header as a part of the following bloc */
+      CHECK(fsetpos(ref_file, &pos), 0);
+      goto end;
+    }
     nb = sscanf(line, "%lg%lg", &val, &std);
+    if (nb == EOF) goto end;
+    rewind(tested_file);
     ASSERT(nb == 0 || nb == 2);
     if (nb != 0) {
-      res = check_1_global(tested_file_name, val, std, nb_global);
+      res = check_1_global(tested_file, val, std, nb_global);
       if (res != RES_OK) goto error;
       nb_global++;
     }
@@ -262,12 +268,13 @@ check_references
       double reference_E[MAX_RESULTS_COUNT__], reference_SE[MAX_RESULTS_COUNT__];
       READ_RECV(ref_name, reference_E, reference_SE);
       res = 
-        check_1_reference(tested_file_name, ref_name, reference_E, reference_SE);
+        check_1_reference(tested_file, ref_name, reference_E, reference_SE);
       if (res != RES_OK) goto error;
     }
   };
 
 end:
+  if (tested_file) CHECK(fclose(tested_file), 0);
   CHECK(remove(tested_file_name), 0);
   return res;
 error:
@@ -298,9 +305,10 @@ do_check(const char* base_name)
   FILE* ref_file;
   char ref_file_name[MAX_PATH];
   size_t c1, realisation_count;
+  const char* dir = "../../yaml/";
 
   ASSERT(base_name);
-  snprintf(ref_file_name, MAX_PATH, "../../yaml/%s.ref", base_name);
+  snprintf(ref_file_name, MAX_PATH, "%s%s.ref", dir, base_name);
   ref_file = fopen(ref_file_name, "r");
   if (!ref_file) {
     res = RES_IO_ERR;
@@ -312,9 +320,9 @@ do_check(const char* base_name)
     double sun_dir[3];
     char tested_file_name[L_tmpnam_s];
 #ifdef COMPILER_CL
-    char* exe_name = "..\\Debug\\solstice.exe";
+    const char* exe_name = "..\\Debug\\solstice.exe";
 #else
-    char* exe_name = "../Debug/solstice.exe";
+    const char* exe_name = "../Debug/solstice.exe";
 #endif
 
     res = get_dir_and_counts(ref_file, sun_dir, &c1, &realisation_count);
@@ -324,8 +332,9 @@ do_check(const char* base_name)
     if (res != RES_OK) goto end;
 
     snprintf(cmd, sizeof(cmd),
-      "%s -o %s -f -3 %lg,%lg,%lg -n %zu -R ../../yaml/%s_receiver.yaml ../../yaml/%s.yaml",
-      exe_name, tested_file_name, SPLIT3(sun_dir), realisation_count, base_name, base_name);
+      "%s -o %s -f -3 %lg,%lg,%lg -n %zu -R %s%s_receiver.yaml %s%s.yaml",
+      exe_name, tested_file_name, SPLIT3(sun_dir), realisation_count, 
+      dir, base_name, dir, base_name);
     if (system(cmd)) {
       res = RES_BAD_ARG;
       goto end;
@@ -340,9 +349,6 @@ end:
   return res;
 }
 
-/*
- * FIXME: does not manage multiple sun directions
- */
 int
 main(int argc, char** argv)
 {
