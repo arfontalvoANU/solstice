@@ -200,6 +200,27 @@ parse_image_definition
 }
 
 static res_T
+parse_render_mode(const char* str, enum solstice_args_render_mode* mode)
+{
+  res_T res = RES_OK;
+  ASSERT(str && mode);
+
+  if(!strcmp(str, "draft")) {
+    *mode = SOLSTICE_ARGS_RENDER_DRAFT;
+  } else if(!strcmp(str, "pt")) {
+    *mode = SOLSTICE_ARGS_RENDER_PATH_TRACING;
+  } else {
+    fprintf(stderr, "Invalid render mode `%s'.\n", str);
+    res = RES_BAD_ARG;
+    goto error;
+  }
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+static res_T
 parse_rendering_option(const char* str, struct solstice_args* args)
 {
   char buf[128];
@@ -241,6 +262,9 @@ parse_rendering_option(const char* str, struct solstice_args* args)
       goto error;
     }
     args->camera.auto_look_at = 0; /* Disable auto look at */
+  } else if(!strcmp(key, "rmode")) { /* Render mode */
+    res = parse_render_mode(val, &args->render_mode);
+    if(res != RES_OK) goto error;
   } else if(!strcmp(key, "spp")) { /*# Samples per pixel */
     res = cstr_to_uint(val, &args->img.spp);
     if(res == RES_OK && !args->img.spp) res = RES_BAD_ARG;

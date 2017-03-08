@@ -599,6 +599,7 @@ solstice_init
     if(res != RES_OK) goto error;
     res = setup_framebuffer(solstice, args);
     if(res != RES_OK) goto error;
+    solstice->render_mode = args->render_mode;
     solstice->spp = args->img.spp;
   }
 
@@ -654,6 +655,14 @@ solstice_run(struct solstice* solstice)
   draw = solstice->framebuffer != NULL;
 
   if(!nsun_dirs) {
+    const double sun_dir[3] = {0, 0, -1};
+
+    res = ssol_sun_set_direction(solstice->sun, sun_dir);
+    if(res != RES_OK) {
+      fprintf(stderr, "Could not update the sun direction.\n");
+      goto error;
+    }
+
     if(dump) {
       res = solstice_dump(solstice);
       if(res != RES_OK) goto error;

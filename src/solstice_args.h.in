@@ -35,6 +35,11 @@ enum solstice_args_dump_split_mode {
   SOLSTICE_ARGS_DUMP_SPLIT_OBJECT
 };
 
+enum solstice_args_render_mode {
+  SOLSTICE_ARGS_RENDER_DRAFT,
+  SOLSTICE_ARGS_RENDER_PATH_TRACING
+};
+
 struct solstice_args {
   const char* output_filename;
   const char* input_filename; /* May be NULL <=> read data from stdin */
@@ -59,6 +64,8 @@ struct solstice_args {
     unsigned long height;
     unsigned spp; /* Samples per pixel */
   } img;
+
+  enum solstice_args_render_mode render_mode;
 
   enum solstice_args_dump_format dump_format;
   enum solstice_args_dump_split_mode dump_split_mode;
@@ -96,6 +103,8 @@ static const struct solstice_args SOLSTICE_ARGS_NULL = SOLSTICE_ARGS_NULL__;
     @SOLSTICE_ARGS_DEFAULT_IMG_HEIGHT@,                                        \
     @SOLSTICE_ARGS_DEFAULT_IMG_SPP@                                            \
   },                                                                           \
+                                                                               \
+  SOLSTICE_ARGS_RENDER_DRAFT, /* Render mode */                                \
                                                                                \
   SOLSTICE_ARGS_DUMP_NONE, /* Dump format */                                   \
   SOLSTICE_ARGS_DUMP_SPLIT_NONE, /* Dump split mode */                         \

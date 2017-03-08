@@ -76,8 +76,17 @@ solstice_draw(struct solstice* solstice)
     goto error;
   }
 
-  res = ssol_draw_draft(solstice->scene, solstice->camera, layout.width,
-    layout.height, solstice->spp, ssol_image_write, solstice->framebuffer);
+  switch(solstice->render_mode) {
+    case SOLSTICE_ARGS_RENDER_DRAFT:
+      res = ssol_draw_draft(solstice->scene, solstice->camera, layout.width,
+        layout.height, solstice->spp, ssol_image_write, solstice->framebuffer);
+      break;
+    case SOLSTICE_ARGS_RENDER_PATH_TRACING:
+      res = ssol_draw_pt(solstice->scene, solstice->camera, layout.width,
+        layout.height, solstice->spp, ssol_image_write, solstice->framebuffer);
+      break;
+    default: FATAL("Unreachable code.\n");
+  }
   if(res != RES_OK) {
     fprintf(stderr, "Rendering error\n");
     goto error;

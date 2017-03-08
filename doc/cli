@@ -37,7 +37,7 @@ solstice -g format=obj:split-group=1
   <rendering-option>[:<rendering-option> ... ]
 
 <rendering-option> ::=
-  <fov> | <img> | <position> | <samples-per-pixel> | <target> | <up>
+  <fov> | <img> | <position> | <render-mode> | <samples-per-pixel> | <target> | <up>
 
 <dump> ::=
   format=<dump-format>[:split=<split-mode>]
@@ -56,6 +56,12 @@ solstice -g format=obj:split-group=1
 
 <position> ::=
   pos=<real3>
+
+<render-mode> ::=
+  rmode=<render-algorithm>
+
+<render-algorithm> ::=
+  draft | pt # path tracing
 
 <samples-per-pixel> ::=
   spp=<INTEGER>

@@ -18,7 +18,7 @@
 
 #include "parser/solparser_material.h"
 #include "receivers/srcvl.h"
-#include "solstice_args.h" 
+#include "solstice_args.h"
 
 #include <rsys/dynamic_array_double.h>
 #include <rsys/hash_table.h>
@@ -86,6 +86,7 @@ struct solstice {
   /* Rendering */
   struct ssol_camera* camera;
   struct ssol_image* framebuffer;
+  enum solstice_args_render_mode render_mode;
   unsigned spp; /* #Samples per pixel */
 
   /* Dump geometry */
