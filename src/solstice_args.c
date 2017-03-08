@@ -241,7 +241,14 @@ parse_rendering_option(const char* str, struct solstice_args* args)
       goto error;
     }
     args->camera.auto_look_at = 0; /* Disable auto look at */
-  } else if(!strcmp(key, "tgt")) {
+  } else if(!strcmp(key, "spp")) { /*# Samples per pixel */
+    res = cstr_to_uint(val, &args->img.spp);
+    if(res == RES_OK && !args->img.spp) res = RES_BAD_ARG;
+    if(res != RES_OK) {
+      fprintf(stderr, "Invalid number of samples per pixel `%s'.\n", val);
+      goto error;
+    }
+  } else if(!strcmp(key, "tgt")) { /* Camera target */
     res = cstr_to_list_double(val, ',', args->camera.tgt, &len, 3);
     if(res == RES_OK && len != 3) res = RES_BAD_ARG;
     if(res != RES_OK) {
@@ -258,9 +265,6 @@ parse_rendering_option(const char* str, struct solstice_args* args)
     }
   } else {
     fprintf(stderr, "Invalid rendering option `%s'.\n", val);
-    /* TODO remove this. The man page will be sufficient */
-    fprintf(stderr,
-"Valid options are: fov=FOV:img=WIDTHxHEIGHT:pos=X,Y,Z:tgt=X,Y,Z:up=X,Y,Z\n");
     res = RES_BAD_ARG;
     goto error;
   }

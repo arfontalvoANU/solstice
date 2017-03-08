@@ -86,6 +86,7 @@ struct solstice {
   /* Rendering */
   struct ssol_camera* camera;
   struct ssol_image* framebuffer;
+  unsigned spp; /* #Samples per pixel */
 
   /* Dump geometry */
   enum solstice_args_dump_format dump_format;

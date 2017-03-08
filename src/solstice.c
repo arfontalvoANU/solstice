@@ -599,6 +599,7 @@ solstice_init
     if(res != RES_OK) goto error;
     res = setup_framebuffer(solstice, args);
     if(res != RES_OK) goto error;
+    solstice->spp = args->img.spp;
   }
 
 exit:
