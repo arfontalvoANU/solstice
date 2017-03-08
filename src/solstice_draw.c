@@ -76,8 +76,8 @@ solstice_draw(struct solstice* solstice)
     goto error;
   }
 
-  res = ssol_draw(solstice->scene, solstice->camera, layout.width,
-    layout.height, ssol_image_write, solstice->framebuffer);
+  res = ssol_draw_draft(solstice->scene, solstice->camera, layout.width,
+    layout.height, 1, ssol_image_write, solstice->framebuffer);
   if(res != RES_OK) {
     fprintf(stderr, "Rendering error\n");
     goto error;

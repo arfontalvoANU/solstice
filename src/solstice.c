@@ -668,6 +668,12 @@ solstice_run(struct solstice* solstice)
       res = solstice_update_entities(solstice, sun_dir);
       if(res != RES_OK) goto error;
 
+      res = ssol_sun_set_direction(solstice->sun, sun_dir);
+      if(res != RES_OK) {
+        fprintf(stderr, "Could not update the sun direction.\n");
+        goto error;
+      }
+
       if(draw) {
         res = solstice_draw(solstice);
         if(res != RES_OK) goto error;
@@ -675,11 +681,6 @@ solstice_run(struct solstice* solstice)
         res = solstice_dump(solstice);
         if(res != RES_OK) goto error;
       } else {
-        res = ssol_sun_set_direction(solstice->sun, sun_dir);
-        if(res != RES_OK) {
-          fprintf(stderr, "Could not update the sun direction.\n");
-          goto error;
-        }
         res = solstice_solve(solstice);
         if(res != RES_OK) goto error;
       }
