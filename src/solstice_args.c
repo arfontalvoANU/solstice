@@ -182,6 +182,7 @@ parse_image_definition
 
   tk = strtok_r(buf, "x", &ctx);
   res = cstr_to_ulong(tk, width);
+  if(res == RES_OK && !*width) res = RES_BAD_ARG;
   if(res != RES_OK) {
     fprintf(stderr, "Invalid image width `%s'\n", tk);
     return res;
@@ -189,6 +190,7 @@ parse_image_definition
 
   tk = strtok_r(NULL, "", &ctx);
   res = cstr_to_ulong(tk, height);
+  if(res == RES_OK && !*height) res = RES_BAD_ARG;
   if(res != RES_OK) {
     fprintf(stderr, "Invalid image height `%s'\n", tk);
     return res;
@@ -225,13 +227,13 @@ parse_rendering_option(const char* str, struct solstice_args* args)
     goto error;
   }
 
-  if(!strcmp(key, "fov")) {
+  if(!strcmp(key, "fov")) { /* Camera horizontal field of view in degrees */
     res = parse_fov(val, &args->camera.fov_x);
     if(res != RES_OK) goto error;
-  } else if(!strcmp(key, "img")) {
+  } else if(!strcmp(key, "img")) { /* Image definition */
     res = parse_image_definition(val, &args->img.width, &args->img.height);
     if(res != RES_OK) goto error;
-  } else if(!strcmp(key, "pos")) {
+  } else if(!strcmp(key, "pos")) { /* Camera position */
     res = cstr_to_list_double(val, ',', args->camera.pos, &len, 3);
     if(res == RES_OK && len != 3) res = RES_BAD_ARG;
     if(res != RES_OK ) {
@@ -247,7 +249,7 @@ parse_rendering_option(const char* str, struct solstice_args* args)
       goto error;
     }
     args->camera.auto_look_at = 0; /* Disable auto look at */
-  } else if(!strcmp(key, "up")) {
+  } else if(!strcmp(key, "up")) { /* Camera up vector */
     res = cstr_to_list_double(val, ',', args->camera.up, &len, 3);
     if(res == RES_OK && len != 3) res = RES_BAD_ARG;
     if(res != RES_OK) {
@@ -294,6 +296,7 @@ parse_rendering_options(const char* str, struct solstice_args* args)
   tk = strtok_r(buf, ":", &ctx);
   do {
     res = parse_rendering_option(tk, args);
+    if(res != RES_OK) goto error;
     tk = strtok_r(NULL, ":", &ctx);
   } while(tk);
 

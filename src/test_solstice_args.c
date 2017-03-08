@@ -90,6 +90,7 @@ test_rendering(void)
   CHECK(args.camera.fov_x, SOLSTICE_ARGS_DEFAULT.camera.fov_x);
   CHECK(args.img.width, 1280);
   CHECK(args.img.height, 720);
+  CHECK(args.img.spp, SOLSTICE_ARGS_DEFAULT.img.spp);
   CHECK(args.quiet, 0);
   CHECK(args.output_filename, NULL);
   solstice_args_release(&args);
@@ -104,6 +105,7 @@ test_rendering(void)
   CHECK(d3_eq(args.camera.up, SOLSTICE_ARGS_DEFAULT.camera.up), 1);
   CHECK(args.img.width, 640);
   CHECK(args.img.height, 480);
+  CHECK(args.img.spp, SOLSTICE_ARGS_DEFAULT.img.spp);
   CHECK(args.quiet, 1);
   CHECK(eq_eps(args.camera.fov_x, 70, 1.e-6), 1);
   CHECK(args.output_filename, NULL);
@@ -118,9 +120,22 @@ test_rendering(void)
   CHECK(d3_eq(args.camera.up, d3(tmp, 0, 0, 1)), 1);
   CHECK(args.img.width, SOLSTICE_ARGS_DEFAULT.img.width);
   CHECK(args.img.height, SOLSTICE_ARGS_DEFAULT.img.height);
+  CHECK(args.img.spp, SOLSTICE_ARGS_DEFAULT.img.spp);
   CHECK(args.rendering, 1);
   CHECK(args.quiet, 0);
   CHECK(args.output_filename, NULL);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-r", "up=0,0,1:spp=4", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.nrealisations, SOLSTICE_ARGS_DEFAULT.nrealisations);
+  CHECK(d3_eq(args.camera.up, d3(tmp, 0, 0, 1)), 1);
+  CHECK(args.img.width, SOLSTICE_ARGS_DEFAULT.img.width);
+  CHECK(args.img.height, SOLSTICE_ARGS_DEFAULT.img.height);
+  CHECK(args.rendering, 1);
+  CHECK(args.output_filename, NULL);
+  CHECK(args.img.spp, 4);
   solstice_args_release(&args);
   cmd_delete(cmd);
 
@@ -130,6 +145,12 @@ test_rendering(void)
   CHECK(args.rendering, 1);
   CHECK(args.quiet, 0);
   CHECK(strcmp(args.output_filename, "my_output"),  0);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-r", "spp=16", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.img.spp, 16);
   solstice_args_release(&args);
   cmd_delete(cmd);
 
@@ -151,11 +172,27 @@ test_rendering(void)
   solstice_args_release(&args);
   cmd_delete(cmd);
 
+  cmd = cmd_create(0, "test", "-r", "spp=0", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
   cmd = cmd_create(0, "test", "-r", "img=32X32", NULL);
   CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
   cmd_delete(cmd);
 
   cmd = cmd_create(0, "test", "-r", "img=32x32@12", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-r", "img=0x64", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-r", "img=64x0", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-r", "img=32x32@12:up=0,0,1", NULL);
   CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
   cmd_delete(cmd);
 
