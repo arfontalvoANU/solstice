@@ -35,12 +35,8 @@
   #define open _open
   #define close _close
   #define fdopen _fdopen
-  #define O_CREAT _O_CREAT
-  #define O_WRONLY _O_WRONLY
-  #define O_EXCL _O_EXCL
-  #define O_TRUNC _O_TRUNC
-  #define S_IRUSR _S_IREAD
-  #define S_IWUSR _S_IWRITE
+  #define S_IRUSR S_IREAD
+  #define S_IWUSR S_IWRITE
 #else
   /* open/close functions */
   #include <unistd.h>
