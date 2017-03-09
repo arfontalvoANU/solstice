@@ -37,7 +37,7 @@ update_instance_transform
 
 static res_T
 merge_name
-  (struct str* RESTRICT output,
+  (struct str* output,
    const struct str* name0,
    const struct str* name1)
 {

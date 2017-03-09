@@ -25,6 +25,13 @@ static const char* input[] = {
   "- geometry: &cylinder2\n",
   "    - cylinder: { radius: 1, height: 10 }\n",
   "      material: *lambertian\n",
+  "- geometry: &hyperbol1\n",
+  "    - hyperbol:\n",
+  "        focals: &hyp1_focals { real: 4, image: 1 }\n",
+  "        clip:\n",
+  "        - operation : AND\n",
+  "          vertices : [[1, 2],[3, 4],[6, 7]]\n",
+  "      material: *lambertian\n",
   "- sun: \n",
   "    dni: 1\n",
   "    spectrum: [{wavelength: 1, data: 1}]\n",
@@ -37,6 +44,8 @@ static const char* input[] = {
   "        position: [1, 2, 3]\n",
   "      - name: anchor1\n",
   "        position: [4, 5, 6]\n",
+  "      - name: anchor2\n",
+  "        hyperboloid_image_focals: *hyp1_focals\n",
   "    children:\n",
   "      - name: entity0a\n",
   "        primary: 1\n",
@@ -49,6 +58,9 @@ static const char* input[] = {
   "            position: [4, 5, 6]\n",
   "          - name: entity0b\n",
   "            position: [7, 8, 9]\n",
+  "      - name: entity0c\n",
+  "        primary: 0\n",
+  "        geometry: *hyperbol1\n",
   "- entity:\n",
   "    name: entity1\n",
   "    x_pivot:\n",
@@ -60,6 +72,11 @@ static const char* input[] = {
   "      spacing: 1\n",
   "      ref_point: [1, 2, 3]\n",
   "      target: { anchor: \"entity0.entity0b.anchor0\" }\n",
+  "- entity:\n",
+  "    name: entity3\n",
+  "    x_pivot:\n",
+  "      ref_point: [4, 2, 3]\n",
+  "      target: { anchor: \"entity0.anchor2\" }\n",
   NULL
 };
 
@@ -120,8 +137,8 @@ check_entity0
   matte = solparser_get_material_matte(parser, mtl->data.matte);
   CHECK(matte->reflectivity, 0.5);
 
-  CHECK(solparser_entity_get_children_count(entity0), 2);
-  CHECK(solparser_entity_get_anchors_count(entity0), 2);
+  CHECK(solparser_entity_get_children_count(entity0), 3);
+  CHECK(solparser_entity_get_anchors_count(entity0), 3);
 
   anchor_id = solparser_entity_get_anchor(entity0, 0);
   entity0_anchor0 = solparser_get_anchor(parser, anchor_id);
@@ -186,13 +203,14 @@ check_entity1
   CHECK(solparser_entity_get_children_count(entity1), 0);
 
   x_pivot = solparser_get_x_pivot(parser, entity1->data.x_pivot);
+  NCHECK(x_pivot, NULL);
   CHECK(d3_eq(x_pivot->ref_point, d3(tmp, 1, 2, 3)), 1);
   CHECK(x_pivot->target.type, SOLPARSER_TARGET_ANCHOR);
 }
 
 static void
 check_entity2
-(struct solparser* parser, const struct solparser_entity* entity2)
+  (struct solparser* parser, const struct solparser_entity* entity2)
 {
   double tmp[3];
 
@@ -205,9 +223,30 @@ check_entity2
   CHECK(solparser_entity_get_children_count(entity2), 0);
 
   zx_pivot = solparser_get_zx_pivot(parser, entity2->data.zx_pivot);
+  NCHECK(zx_pivot, NULL);
   CHECK(zx_pivot->spacing, 1);
   CHECK(d3_eq(zx_pivot->ref_point, d3(tmp, 1, 2, 3)), 1);
   CHECK(zx_pivot->target.type, SOLPARSER_TARGET_ANCHOR);
+}
+
+static void
+check_entity3
+  (struct solparser* parser, const struct solparser_entity* entity3)
+{
+  double tmp[3];
+
+  NCHECK(parser, NULL);
+  NCHECK(entity3, NULL);
+
+  CHECK(strcmp(str_cget(&entity3->name), "entity3"), 0);
+  CHECK(entity3->type, SOLPARSER_ENTITY_X_PIVOT);
+  CHECK(solparser_entity_get_anchors_count(entity3), 0);
+  CHECK(solparser_entity_get_children_count(entity3), 0);
+
+  x_pivot = solparser_get_x_pivot(parser, entity3->data.x_pivot);
+  NCHECK(x_pivot, NULL);
+  CHECK(d3_eq(x_pivot->ref_point, d3(tmp, 4, 2, 3)), 1);
+  CHECK(x_pivot->target.type, SOLPARSER_TARGET_ANCHOR);
 }
 
 int
@@ -256,6 +295,9 @@ main(int argc, char** argv)
     }
     else if(!strcmp(str_cget(&entity->name), "entity2")) {
       check_entity2(parser, entity);
+    }
+    else if (!strcmp(str_cget(&entity->name), "entity3")) {
+      check_entity3(parser, entity);
     } else {
       FATAL("Unexpected entity name.\n");
     }

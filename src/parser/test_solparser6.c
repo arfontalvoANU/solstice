@@ -31,6 +31,9 @@ main(int argc, char** argv)
   const struct solparser_material* mtl;
   const struct solparser_object* obj;
   const struct solparser_shape* shape;
+  const struct solparser_shape_sphere* sphere;
+  const struct solparser_shape_paraboloid* parabol;
+  const struct solparser_shape_hyperboloid* hyperbol;
   FILE* stream;
   (void)argc, (void)argv;
 
@@ -45,8 +48,20 @@ main(int argc, char** argv)
   fprintf(stream, "    name: test\n");
   fprintf(stream, "    primary: 0\n"); 
   fprintf(stream, "    geometry:\n");
-  fprintf(stream, "      - sphere: { radius: 1 }\n");
-  fprintf(stream, "        material: { ?virtual }\n");
+  fprintf(stream, "    - sphere: { radius: 1 }\n");
+  fprintf(stream, "      material: { ?virtual }\n");
+  fprintf(stream, "    - parabol:\n");
+  fprintf(stream, "        focal: 10\n");
+  fprintf(stream, "        clip :\n");
+  fprintf(stream, "        - operation : AND\n");
+  fprintf(stream, "          vertices : [[1, 2], [3, 4], [6, 7]]\n");
+  fprintf(stream, "      material: { ?virtual }\n");
+  fprintf(stream, "    - hyperbol:\n");
+  fprintf(stream, "        focals: { real: 10, image: 2 }\n");
+  fprintf(stream, "        clip :\n");
+  fprintf(stream, "          - operation : AND\n");
+  fprintf(stream, "            vertices : [[1, 2], [3, 4], [6, 7]]\n");
+  fprintf(stream, "      material: { ?virtual }\n");
   rewind(stream);
 
   CHECK(solparser_setup(parser, NULL, stream), RES_OK);
@@ -63,11 +78,31 @@ main(int argc, char** argv)
   CHECK(solparser_entity_get_children_count(entity), 0);
   CHECK(entity->type, SOLPARSER_ENTITY_GEOMETRY);
   geom = solparser_get_geometry(parser, entity->data.geometry);
-  CHECK(solparser_geometry_get_objects_count(geom), 1);
+  CHECK(solparser_geometry_get_objects_count(geom), 3);
+
   obj_id = solparser_geometry_get_object(geom, 0);
   obj = solparser_get_object(parser, obj_id);
   shape = solparser_get_shape(parser, obj->shape);
   CHECK(shape->type, SOLPARSER_SHAPE_SPHERE);
+  sphere = solparser_get_shape_sphere(parser, shape->data.sphere);
+  CHECK(sphere->radius, 1);
+  CHECK(sphere->nslices, 16);
+
+  obj_id = solparser_geometry_get_object(geom, 1);
+  obj = solparser_get_object(parser, obj_id);
+  shape = solparser_get_shape(parser, obj->shape);
+  CHECK(shape->type, SOLPARSER_SHAPE_PARABOL);
+  parabol = solparser_get_shape_parabol(parser, shape->data.parabol);
+  CHECK(parabol->focal, 10);
+
+  obj_id = solparser_geometry_get_object(geom, 2);
+  obj = solparser_get_object(parser, obj_id);
+  shape = solparser_get_shape(parser, obj->shape);
+  CHECK(shape->type, SOLPARSER_SHAPE_HYPERBOL);
+  hyperbol = solparser_get_shape_hyperbol(parser, shape->data.hyperbol);
+  CHECK(hyperbol->focals.real, 10);
+  CHECK(hyperbol->focals.image, 2);
+
   mtl2 = solparser_get_material_double_sided(parser, obj->mtl2);
   CHECK(mtl2->front.i, mtl2->back.i);
   mtl = solparser_get_material(parser, mtl2->front);

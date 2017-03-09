@@ -32,6 +32,7 @@ enum solparser_shape_type {
   SOLPARSER_SHAPE_OBJ, /* Imported Alias Wavefront obj */
   SOLPARSER_SHAPE_PARABOL,
   SOLPARSER_SHAPE_PARABOLIC_CYLINDER,
+  SOLPARSER_SHAPE_HYPERBOL,
   SOLPARSER_SHAPE_PLANE,
   SOLPARSER_SHAPE_SPHERE,
   SOLPARSER_SHAPE_STL /* Imported STereo Lithography */
@@ -198,6 +199,58 @@ solparser_shape_paraboloid_copy_and_release
 }
 
 /*******************************************************************************
+* Hyperboloid shape
+******************************************************************************/
+struct hyperboloid_focals {
+  double real, image;
+};
+
+#define HYPERBOLOID_FOCALS_NULL__ { 0, 0 }
+static const struct hyperboloid_focals 
+HYPERBOLOID_FOCALS_NULL = HYPERBOLOID_FOCALS_NULL__;
+
+struct solparser_shape_hyperboloid {
+  struct hyperboloid_focals focals;
+  struct darray_polyclip polyclips;
+};
+
+static INLINE void
+solparser_shape_hyperboloid_init
+  (struct mem_allocator* allocator,
+   struct solparser_shape_hyperboloid* hyperboloid)
+{
+  ASSERT(hyperboloid);
+  darray_polyclip_init(allocator, &hyperboloid->polyclips);
+}
+
+static INLINE void
+solparser_shape_hyperboloid_release(struct solparser_shape_hyperboloid* hyperboloid)
+{
+  ASSERT(hyperboloid);
+  darray_polyclip_release(&hyperboloid->polyclips);
+}
+
+static INLINE res_T
+solparser_shape_hyperboloid_copy
+  (struct solparser_shape_hyperboloid* dst,
+   const struct solparser_shape_hyperboloid* src)
+{
+  ASSERT(dst && src);
+  dst->focals = src->focals;
+  return darray_polyclip_copy(&dst->polyclips, &src->polyclips);
+}
+
+static INLINE res_T
+solparser_shape_hyperboloid_copy_and_release
+  (struct solparser_shape_hyperboloid* dst,
+   struct solparser_shape_hyperboloid* src)
+{
+  ASSERT(dst && src);
+  dst->focals = src->focals;
+  return darray_polyclip_copy_and_release(&dst->polyclips, &src->polyclips);
+}
+
+/*******************************************************************************
  * Plane shape
  ******************************************************************************/
 struct solparser_shape_plane {
@@ -260,6 +313,7 @@ struct solparser_shape_cuboid_id { size_t i; };
 struct solparser_shape_cylinder_id { size_t i; };
 struct solparser_shape_imported_geometry_id { size_t i; };
 struct solparser_shape_paraboloid_id { size_t i; };
+struct solparser_shape_hyperboloid_id { size_t i; };
 struct solparser_shape_plane_id { size_t i; };
 struct solparser_shape_sphere_id { size_t i; };
 
@@ -271,6 +325,7 @@ struct solparser_shape {
     struct solparser_shape_imported_geometry_id obj;
     struct solparser_shape_paraboloid_id parabol;
     struct solparser_shape_paraboloid_id parabolic_cylinder;
+    struct solparser_shape_hyperboloid_id hyperbol;
     struct solparser_shape_plane_id plane;
     struct solparser_shape_sphere_id sphere;
     struct solparser_shape_imported_geometry_id stl;

@@ -434,6 +434,29 @@ create_parabolic_cylinder
 }
 
 static res_T
+create_hyperbol
+  (struct solstice* solstice,
+   const double transform[12],
+   const struct solparser_shape_hyperboloid_id id,
+   struct ssol_shape** out_ssol_shape)
+{
+  const struct solparser_shape_hyperboloid* hyperboloid;
+  struct ssol_quadric quadric = SSOL_QUADRIC_DEFAULT;
+  ASSERT(solstice);
+
+  hyperboloid = solparser_get_shape_hyperbol(solstice->parser, id);
+
+  quadric.type = SSOL_QUADRIC_HYPERBOL;
+  quadric.data.hyperbol.real_focal = hyperboloid->focals.real;
+  quadric.data.hyperbol.img_focal = hyperboloid->focals.image;
+  d33_set(quadric.transform, transform);
+  d3_set(quadric.transform + 9, transform + 9);
+
+  return create_ssol_shape_punched_surface
+  (solstice, &hyperboloid->polyclips, &quadric, out_ssol_shape);
+}
+
+static res_T
 create_plane
   (struct solstice* solstice,
    const double transform[12],
@@ -502,6 +525,9 @@ create_shaded_shape
     case SOLPARSER_SHAPE_PARABOLIC_CYLINDER:
       res = create_parabolic_cylinder
         (solstice, transform, shape->data.parabol, ssol_shape);
+      break;
+    case SOLPARSER_SHAPE_HYPERBOL:
+      res = create_hyperbol(solstice, transform, shape->data.hyperbol, ssol_shape);
       break;
     case SOLPARSER_SHAPE_PLANE:
       res = create_plane(solstice, transform, shape->data.plane, ssol_shape);

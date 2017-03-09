@@ -162,6 +162,11 @@ solparser_get_shape_parabolic_cylinder
   (const struct solparser* parser,
    const struct solparser_shape_paraboloid_id paraboloid);
 
+extern LOCAL_SYM const struct solparser_shape_hyperboloid*
+solparser_get_shape_hyperbol
+  (const struct solparser* parser,
+   const struct solparser_shape_hyperboloid_id hyperboloid);
+
 extern LOCAL_SYM const struct solparser_shape_plane*
 solparser_get_shape_plane
   (const struct solparser* parser,

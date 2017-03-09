@@ -104,6 +104,16 @@ struct target_alias {
   solparser_shape_paraboloid_copy_and_release
 #include <rsys/dynamic_array.h>
 
+/* Declare the array of hyperboloids */
+#define DARRAY_NAME hyperboloid
+#define DARRAY_DATA struct solparser_shape_hyperboloid
+#define DARRAY_FUNCTOR_INIT solparser_shape_hyperboloid_init
+#define DARRAY_FUNCTOR_RELEASE solparser_shape_hyperboloid_release
+#define DARRAY_FUNCTOR_COPY solparser_shape_hyperboloid_copy
+#define DARRAY_FUNCTOR_COPY_AND_RELEASE \
+  solparser_shape_hyperboloid_copy_and_release
+#include <rsys/dynamic_array.h>
+
 /* Declare the array of planes */
 #define DARRAY_NAME plane
 #define DARRAY_DATA struct solparser_shape_plane
@@ -192,6 +202,7 @@ struct solparser {
   struct darray_impgeom objs;
   struct darray_paraboloid parabols;
   struct darray_paraboloid parabolic_cylinders;
+  struct darray_hyperboloid hyperbols;
   struct darray_plane planes;
   struct darray_sphere spheres;
   struct darray_impgeom stls;
@@ -389,6 +400,7 @@ parser_clear(struct solparser* parser)
   darray_impgeom_clear(&parser->objs);
   darray_paraboloid_clear(&parser->parabols);
   darray_paraboloid_clear(&parser->parabolic_cylinders);
+  darray_hyperboloid_clear(&parser->hyperbols);
   darray_plane_clear(&parser->planes);
   darray_sphere_clear(&parser->spheres);
   darray_impgeom_clear(&parser->stls);
@@ -440,6 +452,7 @@ parser_release(ref_T* ref)
   darray_impgeom_release(&parser->objs);
   darray_paraboloid_release(&parser->parabols);
   darray_paraboloid_release(&parser->parabolic_cylinders);
+  darray_hyperboloid_release(&parser->hyperbols);
   darray_plane_release(&parser->planes);
   darray_sphere_release(&parser->spheres);
   darray_impgeom_release(&parser->stls);
@@ -1925,6 +1938,170 @@ error:
 }
 
 static res_T
+parse_focals_description
+  (struct solparser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* desc,
+   struct hyperboloid_focals* focals)
+{
+  enum { REAL, IMAGE };
+  intptr_t i, n;
+  int mask = 0; /* Register the parsed attributes */
+  res_T res = RES_OK;
+  ASSERT(doc && desc && focals);
+
+  if (desc->type != YAML_MAPPING_NODE) {
+    log_err(parser, desc, "expect a mapping of focal parameters.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  n = desc->data.mapping.pairs.top - desc->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, desc->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, desc->data.mapping.pairs.start[i].value);
+    if (key->type != YAML_SCALAR_NODE) {
+      log_err(parser, key, "expect focal parameters.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(parser, key,                                                   \
+          "the focal parameter `"Name"' is already defined.\n");               \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if (!strcmp((char*) key->data.scalar.value, "real")) {
+      SETUP_MASK(REAL, "real");
+      res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &focals->real);
+    }
+    else if (!strcmp((char*) key->data.scalar.value, "image")) {
+      SETUP_MASK(IMAGE, "image");
+      res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &focals->image);
+    }
+    if (res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
+  }
+  #undef SETUP_MASK
+  #define CHECK_PARAM(Flag, Name)                                              \
+    if(!(mask & BIT(Flag))) {                                                  \
+      log_err(parser, desc,                                                    \
+        "the focal parameter `"Name"' is missing.\n");                         \
+      res = RES_BAD_ARG;                                                       \
+      goto error;                                                              \
+    } (void)0
+  CHECK_PARAM(REAL, "real");
+  CHECK_PARAM(IMAGE, "image");
+  #undef CHECK_PARAM
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+static res_T
+parse_hyperboloid
+  (struct solparser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* hyperboloid,
+   struct solparser_shape_hyperboloid_id* out_ishape)
+{
+  enum { CLIP, FOCAL };
+  struct solparser_shape_hyperboloid* shape = NULL;
+  size_t ishape = SIZE_MAX;
+  intptr_t i, n;
+  int mask = 0; /* Register the parsed attributes */
+  res_T res = RES_OK;
+  ASSERT(doc && hyperboloid && out_ishape);
+
+  if (hyperboloid->type != YAML_MAPPING_NODE) {
+    log_err(parser, hyperboloid, "expect a mapping of hyperbol parameters.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  /* Allocate a hyperboloid shape */
+  ishape = darray_hyperboloid_size_get(&parser->hyperbols);
+  res = darray_hyperboloid_resize(&parser->hyperbols, ishape + 1);
+  if (res != RES_OK) {
+    log_err(parser, hyperboloid, "could not allocate the hyperbol shape.\n");
+    goto error;
+  }
+  shape = darray_hyperboloid_data_get(&parser->hyperbols) + ishape;
+
+  n = hyperboloid->data.mapping.pairs.top - hyperboloid->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, hyperboloid->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, hyperboloid->data.mapping.pairs.start[i].value);
+    if (key->type != YAML_SCALAR_NODE) {
+      log_err(parser, key, "expect hyperbol parameters.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(parser, key,                                                   \
+          "the hyperbol parameter `"Name"' is already defined.\n");            \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if (!strcmp((char*) key->data.scalar.value, "clip")) {
+      SETUP_MASK(CLIP, "clip");
+      res = parse_clip(parser, doc, val, &shape->polyclips);
+    }
+    else if (!strcmp((char*) key->data.scalar.value, "focals")) {
+      SETUP_MASK(FOCAL, "focals");
+      res = parse_focals_description(parser, doc, val, &shape->focals);
+    }
+    else {
+      log_err(parser, key, "unknown hyperbol parameter `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    if (res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
+    #undef SETUP_MASK
+  }
+  #define CHECK_PARAM(Flag, Name)                                              \
+    if(!(mask & BIT(Flag))) {                                                  \
+      log_err(parser, hyperboloid,                                             \
+        "the hyperbol parameter `"Name"' is missing.\n");                      \
+      res = RES_BAD_ARG;                                                       \
+      goto error;                                                              \
+    } (void)0
+  CHECK_PARAM(CLIP, "clip");
+  CHECK_PARAM(FOCAL, "focals");
+  #undef CHECK_PARAM
+
+exit :
+  out_ishape->i = ishape;
+  return res;
+error:
+  if (shape) {
+    darray_hyperboloid_pop_back(&parser->hyperbols);
+    ishape = SIZE_MAX;
+  }
+  goto exit;
+}
+
+static res_T
 parse_plane
   (struct solparser* parser,
    yaml_document_t* doc,
@@ -2197,6 +2374,11 @@ parse_object
       shape->type = SOLPARSER_SHAPE_PARABOLIC_CYLINDER;
       res = parse_paraboloid
         (parser, doc, val, shape->type, &shape->data.parabolic_cylinder);
+    }
+    else if (!strcmp((char*) key->data.scalar.value, "hyperbol")) {
+      SETUP_MASK(SHAPE, "shape");
+      shape->type = SOLPARSER_SHAPE_HYPERBOL;
+      res = parse_hyperboloid(parser, doc, val, &shape->data.hyperbol);
     } else if(!strcmp((char*)key->data.scalar.value, "plane")) {
       SETUP_MASK(SHAPE, "shape");
       shape->type = SOLPARSER_SHAPE_PLANE;
@@ -2466,8 +2648,16 @@ parse_anchor
       SETUP_MASK(NAME, "name");
       res = parse_identifier_string(parser, val, &solanchor->name);
     } else if(!strcmp((char*)key->data.scalar.value, "position")) {
-      SETUP_MASK(POSITION, "position");
+      SETUP_MASK(POSITION, "position description");
       res = parse_real3(parser, doc, val, -DBL_MAX, DBL_MAX, solanchor->position);
+    }
+    else if (!strcmp((char*) key->data.scalar.value, "hyperboloid_image_focals"))
+    {
+      struct hyperboloid_focals focals;
+      SETUP_MASK(POSITION, "position description");
+      res = parse_focals_description(parser, doc, val, &focals);
+      if (res != RES_OK) goto error;
+      d3(solanchor->position, 0, 0, focals.image);
     } else {
       log_err(parser, key, "unknown anchor parameter `%s'.\n",
         key->data.scalar.value);
@@ -2488,7 +2678,7 @@ parse_anchor
       goto error;                                                              \
     } (void)0
   CHECK_PARAM(NAME, "name");
-  CHECK_PARAM(POSITION, "position");
+  CHECK_PARAM(POSITION, "position description");
   #undef CHECK_PARAM
 
   res = anchor_register_name(parser, anchor, htable, isolanchor);
@@ -3442,6 +3632,7 @@ solparser_create
   darray_impgeom_init(mem_allocator, &parser->objs);
   darray_paraboloid_init(mem_allocator, &parser->parabols);
   darray_paraboloid_init(mem_allocator, &parser->parabolic_cylinders);
+  darray_hyperboloid_init(mem_allocator, &parser->hyperbols);
   darray_plane_init(mem_allocator, &parser->planes);
   darray_sphere_init(mem_allocator, &parser->spheres);
   darray_impgeom_init(mem_allocator, &parser->stls);
@@ -3872,6 +4063,15 @@ solparser_get_shape_parabolic_cylinder
   ASSERT(parser);
   ASSERT(paraboloid.i<darray_paraboloid_size_get(&parser->parabolic_cylinders));
   return darray_paraboloid_cdata_get(&parser->parabolic_cylinders)+paraboloid.i;
+}
+
+const struct solparser_shape_hyperboloid*
+solparser_get_shape_hyperbol
+  (const struct solparser* parser,
+   const struct solparser_shape_hyperboloid_id hyperboloid)
+{
+  ASSERT(parser && hyperboloid.i < darray_hyperboloid_size_get(&parser->hyperbols));
+  return darray_hyperboloid_cdata_get(&parser->hyperbols) + hyperboloid.i;
 }
 
 const struct solparser_shape_plane*
