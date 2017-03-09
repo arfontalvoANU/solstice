@@ -59,7 +59,6 @@ include_directories(
 ################################################################################
 add_subdirectory(parser)
 add_subdirectory(receivers)
-add_subdirectory(test_model)
 
 ################################################################################
 # Generate files
@@ -139,6 +138,22 @@ if(NOT NO_TEST)
   endfunction()
 
   new_test(test_solstice_args)
+
+  build_test(test_solstice_simulation)
+  function(add_test_simulation _name)
+    add_test(NAME test_solstice_simulation_${_name}
+      COMMAND test_solstice_simulation 
+        $<TARGET_FILE:solstice>
+        ${SOLSTICE_SOURCE_DIR}/../yaml/
+        ${_name})
+  endfunction()
+
+  add_test_simulation(beam_down)
+  add_test_simulation(test01)
+  add_test_simulation(test02)
+  add_test_simulation(test03)
+  add_test_simulation(test04)
+  add_test_simulation(test05)
 
 endif()
 
