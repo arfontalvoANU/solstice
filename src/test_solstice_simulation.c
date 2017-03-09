@@ -26,7 +26,110 @@
 #ifdef COMPILER_CL
   /* Wrap POSIX functions and constants */
   #include <io.h>
+  #include <fcntl.h>
+  #include <sys/stat.h>
   #define fdopen _fdopen
+  #define open _open
+  #define mktemp _mktemp
+
+  /* mkstemp extracted from libc/sysdeps/posix/tempname.c.  Copyright
+  (C) 1991-1999, 2000, 2001, 2006 Free Software Foundation, Inc.
+
+  The GNU C Library is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation; either
+  version 2.1 of the License, or (at your option) any later version. */
+
+  static const char letters [] =
+  "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+  /* Generate a temporary file name based on TMPL.  TMPL must match the
+  rules for mk[s]temp (i.e. end in "XXXXXX").  The name constructed
+  does not exist at the time of the call to mkstemp.  TMPL is
+  overwritten with the result.  */
+  int
+  mkstemp(char *tmpl)
+  {
+    size_t len;
+    char *XXXXXX;
+    static unsigned long long value;
+    unsigned long long random_time_bits;
+    unsigned int count;
+    int fd = -1;
+    int save_errno = errno;
+
+    /* A lower bound on the number of temporary files to attempt to
+    generate.  The maximum total number of temporary file names that
+    can exist for a given template is 62**6.  It should never be
+    necessary to try all these combinations.  Instead if a reasonable
+    number of names is tried (we define reasonable as 62**3) fail to
+    give the system administrator the chance to remove the problems. */
+    #define ATTEMPTS_MIN (62 * 62 * 62)
+
+    /* The number of times to attempt to generate a temporary file.  To
+    conform to POSIX, this must be no smaller than TMP_MAX. */
+    #if ATTEMPTS_MIN < TMP_MAX
+      unsigned int attempts = TMP_MAX;
+    #else
+      unsigned int attempts = ATTEMPTS_MIN;
+    #endif
+
+    len = strlen(tmpl);
+    if (len < 6 || strcmp(&tmpl[len - 6], "XXXXXX")) {
+      errno = EINVAL;
+      return -1;
+    }
+
+    /* This is where the Xs start. */
+    XXXXXX = &tmpl[len - 6];
+
+    /* Get some more or less random data. */
+    {
+      SYSTEMTIME stNow;
+      FILETIME ftNow;
+
+      /* get system time */
+      GetSystemTime(&stNow);
+      stNow.wMilliseconds = 500;
+      if (!SystemTimeToFileTime(&stNow, &ftNow)) {
+        errno = -1;
+        return -1;
+      }
+
+      random_time_bits = (((unsigned long long)ftNow.dwHighDateTime << 32)
+        | (unsigned long long)ftNow.dwLowDateTime);
+    }
+    value += random_time_bits ^ (unsigned long long)GetCurrentThreadId();
+
+    for (count = 0; count < attempts; value += 7777, ++count) {
+      unsigned long long v = value;
+
+      /* Fill in the random bits.  */
+      XXXXXX[0] = letters[v % 62];
+      v /= 62;
+      XXXXXX[1] = letters[v % 62];
+      v /= 62;
+      XXXXXX[2] = letters[v % 62];
+      v /= 62;
+      XXXXXX[3] = letters[v % 62];
+      v /= 62;
+      XXXXXX[4] = letters[v % 62];
+      v /= 62;
+      XXXXXX[5] = letters[v % 62];
+  
+      fd = open(tmpl, O_RDWR|O_CREAT|O_EXCL, S_IREAD|S_IWRITE);
+      if (fd >= 0) {
+        errno = save_errno;
+        return fd;
+      }
+      else if (errno != EEXIST)
+        return -1;
+    }
+
+    /* We got out of the loop because we ran out of combinations to try. */
+    errno = EEXIST;
+    return -1;
+  }
 #endif
 
 enum side {
@@ -153,7 +256,7 @@ check_1_reference
    const double* reference_SE)
 {
   double a[2];
-  size_t c1, c2;
+  unsigned long c1, c2;
   int found = 0;
 
   NCHECK(tested_file, NULL);
@@ -192,7 +295,7 @@ check_1_global
 {
   char line[MAX_LINE_LEN];
   double a[2];
-  size_t recv_count, r2;
+  unsigned long recv_count, r2;
   unsigned i;
   int nb;
   double tested_E, tested_SE;
@@ -251,7 +354,7 @@ check_references(FILE* ref_file, FILE* tested_file)
 }
 
 static FINLINE int
-create_tmp_file_name(char* name, const size_t max_sizeof_name)
+create_tmp_file(char* name, const size_t max_sizeof_name)
 {
   const char* template = "solstice_tmp_file_XXXXXX";
   int fd;
@@ -287,7 +390,7 @@ do_check(const char* binary, const char* dir, const char* base_name)
 
     get_dir_and_counts(ref_file, sun_angles, &c1, &realisation_count);
 
-    fd = create_tmp_file_name(tested_file_name, sizeof(tested_file_name));
+    fd = create_tmp_file(tested_file_name, sizeof(tested_file_name));
     fp = fdopen(fd, "r");
     NCHECK(fp, NULL);
 
