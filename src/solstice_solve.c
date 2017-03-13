@@ -73,21 +73,21 @@ write_global_mc(struct solstice* solstice, struct ssol_estimator* estimator)
     switch(rcv->side) {
       case SRCVL_FRONT:
         SSOL(estimator_get_mc_receiver(estimator, inst, SSOL_FRONT, &front));
-        f_eff_E = front.integrated_irradiance.E * irradiance_factor;
-        f_eff_SE = front.integrated_irradiance.SE * irradiance_factor;
+        f_eff_E = front.integrated_absorbed_irradiance.E * irradiance_factor;
+        f_eff_SE = front.integrated_absorbed_irradiance.SE * irradiance_factor;
         break;
       case SRCVL_BACK:
         SSOL(estimator_get_mc_receiver(estimator, inst, SSOL_BACK, &back));
-        b_eff_E = back.integrated_irradiance.E * irradiance_factor;
-        b_eff_SE = back.integrated_irradiance.SE * irradiance_factor;
+        b_eff_E = back.integrated_absorbed_irradiance.E * irradiance_factor;
+        b_eff_SE = back.integrated_absorbed_irradiance.SE * irradiance_factor;
         break;
       case SRCVL_FRONT_AND_BACK:
         SSOL(estimator_get_mc_receiver(estimator, inst, SSOL_FRONT, &front));
         SSOL(estimator_get_mc_receiver(estimator, inst, SSOL_BACK, &back));
-        f_eff_E = front.integrated_irradiance.E * irradiance_factor;
-        f_eff_SE = front.integrated_irradiance.SE * irradiance_factor;
-        b_eff_E = back.integrated_irradiance.E * irradiance_factor;
-        b_eff_SE = back.integrated_irradiance.SE * irradiance_factor;
+        f_eff_E = front.integrated_absorbed_irradiance.E * irradiance_factor;
+        f_eff_SE = front.integrated_absorbed_irradiance.SE * irradiance_factor;
+        b_eff_E = back.integrated_absorbed_irradiance.E * irradiance_factor;
+        b_eff_SE = back.integrated_absorbed_irradiance.SE * irradiance_factor;
         break;
       default: FATAL("Unreachable code.\n"); break;
     }

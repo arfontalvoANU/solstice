@@ -3,12 +3,12 @@
 0 0 # Shadowing
 0 0 # Missing
 0.92387953251128675612818318939679 0.1 # Cos
-tower.secondary.hyperbol 10   FRONT: 465.464 0.00509812   465.464 0.00509812   0 0   0 0   0.930847 1.01954e-05   BACK: 0 0   0 0   0 0   0 0   0 0
+tower.secondary.hyperbol 10   FRONT: 0 0   465.464 0.00509812   0 0   0 0   0 0   BACK: 0 0   0 0   0 0   0 0   0 0
 tower.receptor 14   FRONT: 465.464 0.00509812   465.464 0.00509812   0 0   0 0   0.930847 1.01954e-05   BACK: -1 -1   -1 -1   -1 -1   -1 -1   -1 -1
 #--- Sun direction: 50 50 (-0.413176 -0.492404 -0.766044)
 2 10000
 0 0 # Shadowing
 0 0 # Missing
 0.8 0.1 # Cos
-tower.secondary.hyperbol 10   FRONT: 400.231 0.107226   400.231 0.107226   0 0   0 0   0.800393 0.000214433   BACK: 0 0   0 0   0 0   0 0   0 0
+tower.secondary.hyperbol 10   FRONT: 0 0   400.231 0.107226   0 0   0 0   0 0   BACK: 0 0   0 0   0 0   0 0   0 0
 tower.receptor 14   FRONT: 136.51 1.90718   136.51 1.90718   0 0   0 0   0.272997 0.00381404   BACK: -1 -1   -1 -1   -1 -1   -1 -1   -1 -1

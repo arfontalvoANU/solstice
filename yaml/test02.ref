@@ -3,4 +3,4 @@
 0 0 # Shadowing
 99 0.0313065 # Missing
 1 0 # Cos
-square_receiver 2   FRONT: -1 -1   -1 -1   -1 -1   -1 -1   -1 -1   BACK: 0 0   1 0.0313065   0 0   0 0   0.01003 0.000315109
+square_receiver 2   FRONT: -1 -1   -1 -1   -1 -1   -1 -1   -1 -1   BACK: 0 0   1 0.0313065   0 0   0 0   0 0
