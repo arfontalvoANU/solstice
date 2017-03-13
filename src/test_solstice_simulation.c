@@ -138,7 +138,8 @@ enum side {
 };
 
 enum result_type {
-  FRONT_INTEGRATED_ABSORBED_IRRADIANCE,
+  FIRST_RESULT, 
+  FRONT_INTEGRATED_ABSORBED_IRRADIANCE = FIRST_RESULT,
   FRONT_INTEGRATED_IRRADIANCE,
   FRONT_REFLECTIVITY_LOSS,
   FRONT_ABSORPTIVITY_LOSS,
@@ -285,7 +286,7 @@ check_1_receiver
     read_recv(line, test_rcv_name, test_E, test_SE);
     if(strcmp(rcv_name, test_rcv_name)) continue;
 
-    FOR_EACH(r, FRONT_INTEGRATED_IRRADIANCE, MAX_RESULTS_COUNT__) {
+    FOR_EACH(r, FIRST_RESULT, MAX_RESULTS_COUNT__) {
       CHECK(is_compatible_with
         (reference_E[r], reference_SE[r], test_E[r], test_SE[r]), 1);
     }
