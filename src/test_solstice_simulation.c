@@ -144,8 +144,6 @@ enum result_type {
   BACK_REFLECTIVITY_LOSS,
   FRONT_ABSORPTIVITY_LOSS,
   BACK_ABSORPTIVITY_LOSS,
-  FRONT_COS_LOSS,
-  BACK_COS_LOSS,
   FRONT_EFFICIENCY,
   BACK_EFFICIENCY,
   MAX_RESULTS_COUNT__
@@ -206,7 +204,7 @@ read_recv(const char* line, char name[], double E[], double SE[])
   NCHECK(SE, NULL);
 
   n = sscanf(line,
-    "%s%*u%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg",
+    "%s%*u%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg",
      name,
      &E[FRONT_INTEGRATED_IRRADIANCE], &SE[FRONT_INTEGRATED_IRRADIANCE],
      &E[BACK_INTEGRATED_IRRADIANCE], &SE[BACK_INTEGRATED_IRRADIANCE],
@@ -214,8 +212,6 @@ read_recv(const char* line, char name[], double E[], double SE[])
      &E[BACK_REFLECTIVITY_LOSS], &SE[BACK_REFLECTIVITY_LOSS],
      &E[FRONT_ABSORPTIVITY_LOSS], &SE[FRONT_ABSORPTIVITY_LOSS],
      &E[BACK_ABSORPTIVITY_LOSS], &SE[BACK_ABSORPTIVITY_LOSS],
-     &E[FRONT_COS_LOSS], &SE[FRONT_COS_LOSS],
-     &E[BACK_COS_LOSS], &SE[BACK_COS_LOSS],
      &E[FRONT_EFFICIENCY], &SE[FRONT_EFFICIENCY],
      &E[BACK_EFFICIENCY], &SE[BACK_EFFICIENCY]);
 
