@@ -50,6 +50,13 @@ write_global_mc(struct solstice* solstice, struct ssol_estimator* estimator)
     (unsigned long)htable_receiver_size_get(&solstice->receivers),
     (unsigned long)nexperiments);
 
+  fprintf(solstice->output, "%g %g # Shadowing\n",
+    mc_global.shadowed.E, mc_global.shadowed.SE);
+  fprintf(solstice->output, "%g %g # Missing\n",
+    mc_global.missing.E, mc_global.missing.SE);
+  fprintf(solstice->output, "%g %g # Cos\n",
+    mc_global.cos_factor.E, mc_global.cos_factor.SE);
+
   htable_receiver_begin(&solstice->receivers, &it);
   htable_receiver_end(&solstice->receivers, &end);
   while(!htable_receiver_iterator_eq(&it, &end)) {
@@ -96,11 +103,6 @@ write_global_mc(struct solstice* solstice, struct ssol_estimator* estimator)
       back.absorptivity_loss.E, back.absorptivity_loss.SE,
       f_eff_E, f_eff_SE, b_eff_E, b_eff_SE);
   }
-
-  fprintf(solstice->output, "%g %g\n",
-    mc_global.shadowed.E, mc_global.shadowed.SE);
-  fprintf(solstice->output, "%g %g\n",
-    mc_global.missing.E, mc_global.missing.SE);
 }
 
 /*******************************************************************************

@@ -167,7 +167,7 @@ read_line(char* line, size_t max_line_len, FILE* stream)
 }
 
 static void
-get_dir_and_counts
+get_angles_and_counts
   (FILE* ref_file,
    double angles[2],
    unsigned long* recv_count,
@@ -245,7 +245,7 @@ is_compatible_with
 }
 
 static void
-check_1_reference
+check_1_receiver
   (FILE* tested_file,
    const char* rcv_name,
    const double* reference_E,
@@ -260,16 +260,22 @@ check_1_reference
   NCHECK(reference_E, NULL);
   NCHECK(reference_SE, NULL);
 
-  get_dir_and_counts(tested_file, a, &c1, &c2); /* Skip headers */
+  get_angles_and_counts(tested_file, a, &c1, &c2); /* Skip headers */
 
   while(!feof(tested_file) && !found) {
     char line[MAX_LINE_LEN];
     char tested_rcv_name[MAX_LINE_LEN];
     double tested_E[MAX_RESULTS_COUNT__], tested_SE[MAX_RESULTS_COUNT__];
+    double v, s;
+    size_t nb;
     enum result_type r;
 
     CHECK(read_line(line, sizeof(line), tested_file), 1);
 
+    nb = sscanf(line, "%lg %lg # %s", &v, &s, tested_rcv_name);
+    CHECK(nb == 0 || nb == 3, 1);
+
+    if(nb == 3) continue; /* skip global */
     read_recv(line, tested_rcv_name, tested_E, tested_SE);
     if(strcmp(rcv_name, tested_rcv_name)) continue;
 
@@ -287,32 +293,29 @@ check_1_global
   (FILE* tested_file,
    const double reference_E,
    const double reference_SE,
-   const unsigned rank)
+   const char* ref_name)
 {
-  char line[MAX_LINE_LEN];
+  char line[MAX_LINE_LEN], tested_name[MAX_LINE_LEN];
   double a[2];
-  unsigned long recv_count, r2;
-  unsigned i;
+  unsigned long r1, r2;
   int nb;
   double tested_E, tested_SE;
 
-  get_dir_and_counts(tested_file, a, &recv_count, &r2);
+  get_angles_and_counts(tested_file, a, &r1, &r2);
 
-  /* Skip receivers */
-  while(recv_count--) CHECK(read_line(line, sizeof(line), tested_file), 1);
+  do {
+    CHECK(read_line(line, sizeof(line), tested_file), 1);
+    nb = sscanf(line, "%lg %lg # %s", &tested_E, &tested_SE, tested_name);
+  } while (nb != 3 || strcmp(ref_name, tested_name));
 
-  /* Read the rank th global data */
-  FOR_EACH(i, 0, rank+1) CHECK(read_line(line, sizeof(line), tested_file), 1);
-
-  nb = sscanf(line, "%lg%lg", &tested_E, &tested_SE);
-  CHECK(nb, 2);
+  CHECK(strcmp(ref_name, tested_name), 0);
   CHECK(is_compatible_with(reference_E, reference_SE, tested_E, tested_SE), 1);
 }
 
 static void
 check_references(FILE* ref_file, FILE* tested_file)
 {
-  char line[MAX_LINE_LEN];
+  char line[MAX_LINE_LEN], g_name[MAX_LINE_LEN];
   unsigned nb_global = 0;
   fpos_t pos;
 
@@ -330,19 +333,19 @@ check_references(FILE* ref_file, FILE* tested_file)
       break;
     }
 
-    nb = sscanf(line, "%lg%lg", &val, &std);
-    CHECK(nb == 0 || nb == 2, 1);
+    nb = sscanf(line, "%lg %lg # %s", &val, &std, g_name);
+    CHECK(nb == 0 || nb == 3, 1);
 
     rewind(tested_file);
     if(nb != 0) {
-      check_1_global(tested_file, val, std, nb_global);
+      check_1_global(tested_file, val, std, g_name);
       nb_global++;
     } else {
       char ref_name[MAX_LINE_LEN];
       double reference_E[MAX_RESULTS_COUNT__];
       double reference_SE[MAX_RESULTS_COUNT__];
       read_recv(line, ref_name, reference_E, reference_SE);
-      check_1_reference(tested_file, ref_name, reference_E, reference_SE);
+      check_1_receiver(tested_file, ref_name, reference_E, reference_SE);
     }
 
     CHECK(fgetpos(ref_file, &pos), 0);
@@ -384,7 +387,7 @@ do_check(const char* binary, const char* dir, const char* base_name)
     FILE* fp = NULL;
     int fd = -1;
 
-    get_dir_and_counts(ref_file, sun_angles, &c1, &realisation_count);
+    get_angles_and_counts(ref_file, sun_angles, &c1, &realisation_count);
 
     fd = create_tmp_file(tested_file_name, sizeof(tested_file_name));
     fp = fdopen(fd, "r");
