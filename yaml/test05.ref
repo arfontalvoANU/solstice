@@ -3,4 +3,4 @@
 0 0 # Shadowing
 0 0 # Missing
 1 0 # Cos
-spherical_receiver 2   -1 -1 1 0   -1 -1 0 0   -1 -1 0 0   -1 -1 1 0
+spherical_receiver 2   FRONT: -1 -1   -1 -1   -1 -1   -1 -1   -1 -1   BACK: 0 0   1 0   0 0   0 0   1 0

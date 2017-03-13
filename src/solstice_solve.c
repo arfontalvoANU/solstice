@@ -93,15 +93,20 @@ write_global_mc(struct solstice* solstice, struct ssol_estimator* estimator)
     }
     SSOL(instance_get_id(inst, &id));
     fprintf(solstice->output,
-      "%s %u   %g %g %g %g   %g %g %g %g   %g %g %g %g   %g %g %g %g\n",
+      "%s %u   "
+      "FRONT: %g %g   %g %g   %g %g   %g %g   %g %g   "
+      "BACK: %g %g   %g %g   %g %g   %g %g   %g %g\n",
       str_cget(name), (unsigned) id,
+      front.integrated_absorbed_irradiance.E, front.integrated_absorbed_irradiance.SE,
       front.integrated_irradiance.E, front.integrated_irradiance.SE,
-      back.integrated_irradiance.E, back.integrated_irradiance.SE,
       front.reflectivity_loss.E, front.reflectivity_loss.SE,
-      back.reflectivity_loss.E, back.reflectivity_loss.SE,
       front.absorptivity_loss.E, front.absorptivity_loss.SE,
+      f_eff_E, f_eff_SE,
+      back.integrated_absorbed_irradiance.E, back.integrated_absorbed_irradiance.SE,
+      back.integrated_irradiance.E, back.integrated_irradiance.SE,
+      back.reflectivity_loss.E, back.reflectivity_loss.SE,
       back.absorptivity_loss.E, back.absorptivity_loss.SE,
-      f_eff_E, f_eff_SE, b_eff_E, b_eff_SE);
+      b_eff_E, b_eff_SE);
   }
 }
 
