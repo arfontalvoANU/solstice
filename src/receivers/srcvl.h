@@ -27,6 +27,7 @@ enum srcvl_side {
 struct srcvl_receiver {
   const char* name;
   enum srcvl_side side;
+  int per_primitive; /* Define if per primitive receiver is enabled */
 };
 
 struct mem_allocator;
