@@ -35,6 +35,7 @@ struct sanim_node;
 struct solstice_receiver {
   struct solstice_node* node;
   enum srcvl_side side;
+  int per_primitive;
 };
 
 #define DARRAY_NAME nodes

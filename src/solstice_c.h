@@ -129,7 +129,8 @@ solstice_node_geometry_set_primary
 extern LOCAL_SYM res_T
 solstice_node_geometry_set_receiver
   (struct solstice_node* node,
-   const int mask); /* Combination of ssol_side_flag */
+   const int mask, /* Combination of ssol_side_flag */
+   const int per_primitive); /* Enable the per primitive integration */
 
 extern LOCAL_SYM void
 solstice_node_target_get_tracking
