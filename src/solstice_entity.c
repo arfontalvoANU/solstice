@@ -19,6 +19,8 @@
 #include <solstice/ssol.h>
 #include <solstice/sanim.h>
 
+#include <rsys/double33.h>
+
 /*******************************************************************************
  * Helper function
  ******************************************************************************/
@@ -26,13 +28,27 @@ static res_T
 update_instance_transform
   (const struct sanim_node* n, const double transform[12], void* data)
 {
+  res_T res = RES_OK;
   struct solstice_node* node;
-  ASSERT(n && transform);
-  (void)data;
+  struct solstice_primary* prim;
+  struct solstice* solstice = data;
+  ASSERT(n && transform && data);
 
   node = CONTAINER_OF(n, struct solstice_node, anim);
   if(node->type != SOLSTICE_NODE_GEOMETRY) return RES_OK;
-  return ssol_instance_set_transform(node->instance, transform);
+  res = ssol_instance_set_transform(node->instance, transform);
+  if(res != RES_OK) goto error;
+
+  prim = htable_primary_find(&solstice->primaries, &node->name);
+  if(prim) {
+    d3(prim->n, 0, 0, 1);
+    //SSOL(xxx_get_normal(prim->node->instance, n));
+    d33_muld3(prim->n, transform, prim->n);
+  }
+exit:
+  return res;
+error:
+  goto exit;
 }
 
 static res_T
@@ -328,6 +344,16 @@ create_node
         str_cget(&entity->name));
       goto error;
     }
+    if (entity->primary) {
+      struct solstice_primary p;
+      p.node = node;
+      res = htable_primary_set(&solstice->primaries, name, &p);
+      if (res != RES_OK) {
+        fprintf(stderr, "Could not define the entity `%s' as primary.\n",
+          str_cget(&entity->name));
+        goto error;
+      }
+    }
   }
 
   /* Setup the entity receiver flags */
@@ -448,7 +474,7 @@ solstice_setup_entities(struct solstice* solstice)
 
     /* Initialialised the world space position of the entity geometry */
     res = sanim_node_visit_tree
-      (&root->anim, dummy_sun_dir, NULL, update_instance_transform);
+      (&root->anim, dummy_sun_dir, solstice, update_instance_transform);
     if(res != RES_OK) {
       fprintf(stderr,
         "Could not setup the transformation of the entity geometries.\n");
@@ -486,7 +512,7 @@ solstice_update_entities(struct solstice* solstice, const double sun_dir[3])
 
     /* Initialialised the world space position of the entity geometry */
     res = sanim_node_visit_tree
-      (&node->anim, sun_dir, NULL, update_instance_transform);
+      (&node->anim, sun_dir, solstice, update_instance_transform);
     if(res != RES_OK) {
       fprintf(stderr,
         "Could not update the transformation of the entity geometries.\n");

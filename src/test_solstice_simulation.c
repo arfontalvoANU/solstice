@@ -174,7 +174,9 @@ get_angles_and_counts
   (FILE* ref_file,
    double angles[2],
    unsigned long* recv_count,
-   unsigned long* realisation_count)
+   unsigned long* primary_count,
+   unsigned long* realisation_count,
+   unsigned long* failed_count)
 {
   char line[MAX_LINE_LEN];
   int n;
@@ -182,7 +184,9 @@ get_angles_and_counts
   NCHECK(ref_file, NULL);
   NCHECK(angles, NULL);
   NCHECK(recv_count, NULL);
+  NCHECK(primary_count, NULL);
   NCHECK(realisation_count, NULL);
+  NCHECK(failed_count, NULL);
 
   /* Get sun dir */
   CHECK(read_line(line, sizeof(line), ref_file), 1);
@@ -190,10 +194,10 @@ get_angles_and_counts
   n = sscanf(line+strlen(sundir_header), "%lg%lg", &angles[0], &angles[1]);
   CHECK(n, 2);
 
-  /* Get #receivers and #realisations */
+  /* Get counts */
   CHECK(read_line(line, sizeof(line), ref_file), 1);
-  n = sscanf(line, "%lu%lu", recv_count, realisation_count);
-  CHECK(n, 2);
+  n = sscanf(line, "%lu%lu%lu%lu", recv_count, primary_count, realisation_count, failed_count);
+  CHECK(n, 4);
 }
 
 static void
@@ -259,7 +263,7 @@ check_1_receiver
    const double* reference_SE)
 {
   double a[2];
-  unsigned long c1, c2;
+  unsigned long c1, c2, c3, c4;
   int found = 0;
 
   NCHECK(test_file, NULL);
@@ -267,7 +271,7 @@ check_1_receiver
   NCHECK(reference_E, NULL);
   NCHECK(reference_SE, NULL);
 
-  get_angles_and_counts(test_file, a, &c1, &c2); /* Skip headers */
+  get_angles_and_counts(test_file, a, &c1, &c2, &c3, &c4); /* Skip headers */
 
   while(!feof(test_file) && !found) {
     char line[MAX_LINE_LEN];
@@ -304,11 +308,11 @@ check_1_global
 {
   char line[MAX_LINE_LEN], test_name[MAX_LINE_LEN];
   double a[2];
-  unsigned long r1, r2;
+  unsigned long c1, c2, c3, c4;
   int nb;
   double test_E, test_SE;
 
-  get_angles_and_counts(test_file, a, &r1, &r2);
+  get_angles_and_counts(test_file, a, &c1, &c2, &c3, &c4);
 
   do {
     CHECK(read_line(line, sizeof(line), test_file), 1);
@@ -377,7 +381,7 @@ do_check(const char* binary, const char* dir, const char* base_name)
 {
   char ref_file_name[128];
   FILE* ref_file;
-  unsigned long c1, realisation_count;
+  unsigned long c1, c2, realisation_count, c4;
   int n;
   ASSERT(base_name);
 
@@ -394,7 +398,7 @@ do_check(const char* binary, const char* dir, const char* base_name)
     FILE* fp = NULL;
     int fd = -1;
 
-    get_angles_and_counts(ref_file, sun_angles, &c1, &realisation_count);
+    get_angles_and_counts(ref_file, sun_angles, &c1, &c2, &realisation_count, &c4);
 
     fd = create_tmp_file(test_file_name, sizeof(test_file_name));
     fp = fdopen(fd, "r");

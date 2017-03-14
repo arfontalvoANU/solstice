@@ -37,6 +37,11 @@ struct solstice_receiver {
   enum srcvl_side side;
 };
 
+struct solstice_primary {
+  struct solstice_node* node;
+  double n[3];
+};
+
 #define DARRAY_NAME nodes
 #define DARRAY_DATA struct solstice_node*
 #include <rsys/dynamic_array.h>
@@ -68,6 +73,17 @@ struct solstice_receiver {
 #define HTABLE_DATA struct solstice_receiver
 #include <rsys/hash_table.h>
 
+#define HTABLE_NAME primary
+#define HTABLE_KEY struct str
+#define HTABLE_KEY_FUNCTOR_INIT str_init
+#define HTABLE_KEY_FUNCTOR_RELEASE str_release
+#define HTABLE_KEY_FUNCTOR_COPY str_copy
+#define HTABLE_KEY_FUNCTOR_COPY_AND_RELEASE str_copy_and_release
+#define HTABLE_KEY_FUNCTOR_EQ str_eq
+#define HTABLE_KEY_FUNCTOR_HASH str_hash
+#define HTABLE_DATA struct solstice_primary
+#include <rsys/hash_table.h>
+
 struct solstice {
   struct ssol_device* ssol;
   struct ssol_scene* scene;
@@ -79,6 +95,7 @@ struct solstice {
   struct htable_object objects;
   struct htable_anchor anchors;
   struct htable_receiver receivers;
+  struct htable_primary primaries;
   struct darray_nodes roots;
   struct darray_nodes pivots;
   struct ssol_material* mtl_virtual; /* Shared virtual material */
