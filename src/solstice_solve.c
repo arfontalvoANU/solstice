@@ -41,7 +41,7 @@ write_global_mc(struct solstice* solstice, struct ssol_estimator* estimator)
 
   /* get global information */
   SSOL(estimator_get_mc_global(estimator, &mc_global));
-  SSOL(estimator_get_count(estimator, &nexperiments));
+  SSOL(estimator_get_realisation_count(estimator, &nexperiments));
   SSOL(estimator_get_sampled_area(estimator, &irradiance_factor));
   solparser_sun = solparser_get_sun(solstice->parser);
   irradiance_factor = 1.0 / (solparser_sun->dni * irradiance_factor);
