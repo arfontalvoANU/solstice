@@ -25,19 +25,20 @@
 static void
 write_global_mc(struct solstice* solstice, struct ssol_estimator* estimator)
 {
-  #define MC_RECEIVER_NULL {                                                   \
-    { -1, -1, -1 }, /* integrated_irradiance */                                \
-    { -1, -1, -1 }, /* absorptivity_loss */                                    \
-    { -1, -1, -1 }, /* reflectivity_loss */                                    \
-    { -1, -1, -1 }, /* coss_loss */                                            \
-    0, NULL                                                                    \
-  }
   struct ssol_mc_global mc_global;
   struct htable_receiver_iterator it, end;
   const struct solparser_sun* solparser_sun = NULL;
   size_t nexperiments;
   double irradiance_factor;
   ASSERT(solstice && estimator);
+
+  #define MC_RCV_NONE {                                                        \
+    { -1, -1, -1 }, /* Integrated irradiance  */                               \
+    { -1, -1, -1 }, /* Absorptivity loss */                                    \
+    { -1, -1, -1 }, /* Reflectivity loss */                                    \
+    { -1, -1, -1 }, /* Cos loss */                                             \
+    0, NULL, NULL                                                              \
+  }
 
   /* get global information */
   SSOL(estimator_get_mc_global(estimator, &mc_global));
@@ -56,8 +57,8 @@ write_global_mc(struct solstice* solstice, struct ssol_estimator* estimator)
     const struct str* name = htable_receiver_iterator_key_get(&it);
     struct solstice_receiver* rcv = htable_receiver_iterator_data_get(&it);
     struct ssol_instance* inst = rcv->node->instance;
-    struct ssol_mc_receiver front = MC_RECEIVER_NULL;
-    struct ssol_mc_receiver back = MC_RECEIVER_NULL;
+    struct ssol_mc_receiver front = MC_RCV_NONE;
+    struct ssol_mc_receiver back = MC_RCV_NONE;
     double f_eff_E = -1, f_eff_SE = -1; /* Front efficiency */
     double b_eff_E = -1, b_eff_SE = -1; /* Back efficiency */
     uint32_t id;
