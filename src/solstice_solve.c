@@ -88,7 +88,7 @@ write_global_mc(struct solstice* solstice, struct ssol_estimator* estimator)
     SSOL(instance_get_id(inst, &id));
     fprintf(solstice->output,
       "%s %u   %g %g %g %g   %g %g %g %g   %g %g %g %g   %g %g %g %g   %g %g %g %g\n",
-      str_cget(name), (unsigned) id,
+      str_cget(name), (unsigned)id,
       front.integrated_irradiance.E, front.integrated_irradiance.SE,
       back.integrated_irradiance.E, back.integrated_irradiance.SE,
       front.reflectivity_loss.E, front.reflectivity_loss.SE,
@@ -104,6 +104,72 @@ write_global_mc(struct solstice* solstice, struct ssol_estimator* estimator)
     mc_global.shadowed.E, mc_global.shadowed.SE);
   fprintf(solstice->output, "%g %g\n",
     mc_global.missing.E, mc_global.missing.SE);
+}
+
+static void
+dump_shaded_shape
+  (struct solstice* solstice,
+   struct ssol_estimator* estimator,
+   struct ssol_instantiated_shaded_shape* inst_sshape,
+   const char* name)
+{
+  unsigned ivert, nverts;
+  unsigned itri, ntris;
+  ASSERT(solstice && estimator && inst_sshape && name);
+
+  /* Write the header */
+  fprintf(solstice->output, "# vtk DataFile Version 2.0\n");
+  fprintf(solstice->output, "%s\n", name);
+  fprintf(solstice->output, "ASCII\n");
+  fprintf(solstice->output, "DATASET POLYDATA\n");
+
+  /* Write vertex position */
+  SSOL(shape_get_vertices_count(inst_sshape->shape, &nverts));
+  fprintf(solstice->output, "POINTS %u float\n", nverts);
+  FOR_EACH(ivert, 0, nverts) {
+    double pos[3];
+    SSOL(instantiated_shaded_shape_get_vertex_attrib
+      (inst_sshape, ivert, SSOL_POSITION, pos));
+    fprintf(solstice->output, "%f %f %f\n", SPLIT3(pos));
+  }
+
+  /* Write triangles */
+  SSOL(shape_get_triangles_count(inst_sshape->shape, &ntris));
+  fprintf(solstice->output, "POLYGONS %u %u\n", ntris, ntris*4);
+  FOR_EACH(itri, 0, ntris) {
+    unsigned ids[3];
+    SSOL(shape_get_triangle_indices(inst_sshape->shape, itri, ids));
+    fprintf(solstice->output, "3 %u %u %u\n", SPLIT3(ids));
+  }
+
+  /* TODO Write estimated values */
+}
+
+static void
+write_per_receiver_primitive_mc
+  (struct solstice* solstice, struct ssol_estimator* estimator)
+{
+  struct htable_receiver_iterator it, end;
+  ASSERT(solstice && estimator);
+
+  htable_receiver_begin(&solstice->receivers, &it);
+  htable_receiver_end(&solstice->receivers, &end);
+  while(!htable_receiver_iterator_eq(&it, &end)) {
+    const struct str* name = htable_receiver_iterator_key_get(&it);
+    struct solstice_receiver* rcv = htable_receiver_iterator_data_get(&it);
+    struct ssol_instance* inst = rcv->node->instance;
+    size_t nshapes;
+    size_t ishape;
+
+    htable_receiver_iterator_next(&it);
+
+    SSOL(instance_get_shaded_shapes_count(inst, &nshapes));
+    FOR_EACH(ishape, 0, nshapes) {
+      struct ssol_instantiated_shaded_shape inst_sshape;
+      SSOL(instance_get_shaded_shape(inst, ishape, &inst_sshape));
+      dump_shaded_shape(solstice, estimator, &inst_sshape, str_cget(name));
+    }
+  }
 }
 
 /*******************************************************************************
