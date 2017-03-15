@@ -225,14 +225,14 @@ get_angles_and_counts
   CHECK(read_line(line, sizeof(line), file), 1);
   CHECK(
     sscanf(line,
-      "%lu%lu%lu%lu%lu",
+      "%lu %lu %lu %lu %lu",
       &counts->global, &counts->receiver, &counts->primary,
       &counts->realisation, &counts->failed),
     5);
   return 1;
 }
 
-static FINLINE void
+static void
 read_global(FILE* file, char name [], double* E, double* SE)
 {
   char line[MAX_LINE_LEN];
@@ -274,11 +274,18 @@ read_recv(FILE* file, char name[], double E[], double SE[])
     2 * RECEIVER_RESULTS_COUNT__ + 1);
 }
 
-static FINLINE void
+static void
 read_primary
   (FILE* file, char name[], double* area, double* cos, double E[], double SE[])
 {
   char line[MAX_LINE_LEN];
+
+  NCHECK(file, NULL);
+  NCHECK(area, NULL);
+  NCHECK(cos, NULL);
+  NCHECK(E, NULL);
+  NCHECK(SE, NULL);
+
   CHECK(read_line(line, sizeof(line), file), 1);
   CHECK(
     sscanf(line,
@@ -291,9 +298,45 @@ read_primary
     2 * PRIMARY_RESULTS_COUNT__ + 3);
 }
 
+static void
+read_recvXprim
+  (FILE* file,
+   unsigned long* rcv_id,
+   unsigned long* prim_id,
+   double E[],
+   double SE[])
+{
+  char line[MAX_LINE_LEN];
+
+  NCHECK(file, NULL);
+  NCHECK(rcv_id, NULL);
+  NCHECK(prim_id, NULL);
+  NCHECK(E, NULL);
+  NCHECK(SE, NULL);
+
+  CHECK(read_line(line, sizeof(line), file), 1);
+  CHECK(
+    sscanf(line,
+      "%lu %lu  "
+      "FRONT: %lg %lg   %lg %lg   %lg %lg   %lg %lg  "
+      " BACK: %lg %lg   %lg %lg   %lg %lg   %lg %lg",
+      rcv_id, prim_id,
+      &E[FRONT_INTEGRATED_ABSORBED_IRRADIANCE],
+      &SE[FRONT_INTEGRATED_ABSORBED_IRRADIANCE],
+      &E[FRONT_INTEGRATED_IRRADIANCE], &SE[FRONT_INTEGRATED_IRRADIANCE],
+      &E[FRONT_REFLECTIVITY_LOSS], &SE[FRONT_REFLECTIVITY_LOSS],
+      &E[FRONT_ABSORPTIVITY_LOSS], &SE[FRONT_ABSORPTIVITY_LOSS],
+      &E[BACK_INTEGRATED_ABSORBED_IRRADIANCE],
+      &SE[BACK_INTEGRATED_ABSORBED_IRRADIANCE],
+      &E[BACK_INTEGRATED_IRRADIANCE], &SE[BACK_INTEGRATED_IRRADIANCE],
+      &E[BACK_REFLECTIVITY_LOSS], &SE[BACK_REFLECTIVITY_LOSS],
+      &E[BACK_ABSORPTIVITY_LOSS], &SE[BACK_ABSORPTIVITY_LOSS]),
+    2 * (RECEIVER_RESULTS_COUNT__ - 2 /* efficiencies not read */) + 2);
+}
+
 #define POSITIVE_OR_M_ONE(x) ((x) == -1 || (x) >= 0)
 
-static FINLINE int
+static int
 is_compatible_with
   (const double ref_E,
    const double ref_SE,
@@ -373,7 +416,28 @@ check_1_reference
     CHECK(strcmp(ref_prim_name, test_prim_name), 0);
     FOR_EACH(r, FIRST_RECEIVER_RESULT, PRIMARY_RESULTS_COUNT__) {
       CHECK(is_compatible_with
-      (reference_E[r], reference_SE[r], test_E[r], test_SE[r]), 1);
+        (reference_E[r], reference_SE[r], test_E[r], test_SE[r]), 1);
+    }
+  }
+  for (n = 0; n < counts->receiver * counts->primary; n++) {
+    double reference_E[RECEIVER_RESULTS_COUNT__];
+    double reference_SE[RECEIVER_RESULTS_COUNT__];
+    double test_E[RECEIVER_RESULTS_COUNT__];
+    double test_SE[RECEIVER_RESULTS_COUNT__];
+    unsigned long ref_rcv_id, ref_prim_id;
+    unsigned long test_rcv_id, test_prim_id;
+
+    enum receiver_result_type r;
+    read_recvXprim(ref_file, &ref_rcv_id, &ref_prim_id, reference_E, reference_SE);
+    read_recvXprim(test_file, &test_rcv_id, &test_prim_id, test_E, test_SE);
+    /* we rely on the order of outputs */
+    CHECK(ref_rcv_id, test_rcv_id);
+    CHECK(ref_prim_id, test_prim_id);
+    FOR_EACH(r, FIRST_RECEIVER_RESULT, RECEIVER_RESULTS_COUNT__) {
+      if (r == FRONT_EFFICIENCY || r == BACK_EFFICIENCY)
+        continue; /* not read */
+      CHECK(is_compatible_with
+        (reference_E[r], reference_SE[r], test_E[r], test_SE[r]), 1);
     }
   }
 }

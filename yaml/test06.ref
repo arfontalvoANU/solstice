@@ -5,3 +5,4 @@
 1 0 # Cos
 reflector.ground.pivot.small_square 10   FRONT: -1 -1   -1 -1   -1 -1   -1 -1   -1 -1   BACK: 0 0   100 0   0 0   0 0   0 0
 reflector.ground.pivot.parabol 6   111.97 1 10000   0 0
+10 6   FRONT: -1 -1   -1 -1   -1 -1   -1 -1   BACK: 0 0   100 0   0 0   0 0

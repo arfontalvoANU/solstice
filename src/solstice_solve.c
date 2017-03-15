@@ -143,6 +143,59 @@ write_global_mc(struct solstice* solstice, struct ssol_estimator* estimator)
       sampled.shadowed.E, sampled.shadowed.SE
     );
   }
+
+  /* ReceiverXprimarys' data */
+  htable_receiver_begin(&solstice->receivers, &r_it);
+  htable_receiver_end(&solstice->receivers, &r_end);
+  while (!htable_receiver_iterator_eq(&r_it, &r_end)) {
+    struct solstice_receiver* rcv = htable_receiver_iterator_data_get(&r_it);
+    struct ssol_instance* rcv_inst = rcv->node->instance;
+    uint32_t rcv_id, prim_id;
+
+    SSOL(instance_get_id(rcv_inst, &rcv_id));
+    htable_primary_begin(&solstice->primaries, &p_it);
+    htable_primary_end(&solstice->primaries, &p_end);
+    while (!htable_primary_iterator_eq(&p_it, &p_end)) {
+      struct solstice_primary* prim = htable_primary_iterator_data_get(&p_it);
+      struct ssol_instance* prim_inst = prim->node->instance;
+      struct ssol_mc_receiver front = MC_RCV_NONE;
+      struct ssol_mc_receiver back = MC_RCV_NONE;
+
+      SSOL(instance_get_id(prim_inst, &prim_id));
+      switch (rcv->side) {
+      case SRCVL_FRONT:
+        SSOL(estimator_get_mc_sampled_x_receiver
+          (estimator, prim_inst, rcv_inst, SSOL_FRONT, &front));
+        break;
+      case SRCVL_BACK:
+        SSOL(estimator_get_mc_sampled_x_receiver
+          (estimator, prim_inst, rcv_inst, SSOL_BACK, &back));
+        break;
+      case SRCVL_FRONT_AND_BACK:
+        SSOL(estimator_get_mc_sampled_x_receiver
+          (estimator, prim_inst, rcv_inst, SSOL_FRONT, &front));
+        SSOL(estimator_get_mc_sampled_x_receiver
+          (estimator, prim_inst, rcv_inst, SSOL_BACK, &back));
+        break;
+      default: FATAL("Unreachable code.\n"); break;
+      }
+      fprintf(solstice->output,
+        "%u %u   "
+        "FRONT: %g %g   %g %g   %g %g   %g %g   "
+        "BACK: %g %g   %g %g   %g %g   %g %g\n",
+        (unsigned) rcv_id, (unsigned) prim_id,
+        front.integrated_absorbed_irradiance.E, front.integrated_absorbed_irradiance.SE,
+        front.integrated_irradiance.E, front.integrated_irradiance.SE,
+        front.reflectivity_loss.E, front.reflectivity_loss.SE,
+        front.absorptivity_loss.E, front.absorptivity_loss.SE,
+        back.integrated_absorbed_irradiance.E, back.integrated_absorbed_irradiance.SE,
+        back.integrated_irradiance.E, back.integrated_irradiance.SE,
+        back.reflectivity_loss.E, back.reflectivity_loss.SE,
+        back.absorptivity_loss.E, back.absorptivity_loss.SE);
+      htable_primary_iterator_next(&p_it);
+    }
+    htable_receiver_iterator_next(&r_it);
+  }
 }
 
 /*******************************************************************************
