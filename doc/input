@@ -1,7 +1,6 @@
 #--------------------------------------------------------------------------------
 # 1/ Example
 #--------------------------------------------------------------------------------
-
 # Declare materials
 - material: &lambertian
     matte:
@@ -157,7 +156,7 @@
     clip: <polyclip-list>
     # By default slices is automatically compute with respect to the parabol
     # curvature
-[   slices: INTEGER ] # in [1, INF)
+[   slices: INTEGER ] # in [4, 4096)
 
 <parabolic-cylinder> ::=
   parabolic-cylinder: # y^2 - 4*focal*z = 0
@@ -165,7 +164,7 @@
     clip: <polyclip-list>
     # By default slices is automatically compute with respect to the hyperbol
     # curvature
-[   slices: INTEGER ] # in [1, INF)
+[   slices: INTEGER ] # in [4, 4096)
 
 # (x^2 + y^2) / a^2 - (z + z0 - g/2)^2 / b^2 + 1 = 0
 #      with g = img_focal + real_focal; f = real_focal / g;
@@ -176,7 +175,7 @@
     clip: <polyclip-list>
     # By default slices is automatically compute with respect to the hyperbol
     # curvature
-[   slices: INTEGER ] # in [1, INF)
+[   slices: INTEGER ] # in [4, 4096)
 
 <hyperboloid_focals> ::=
   real: REAL # in ]0, INF)
@@ -185,7 +184,7 @@
 <plane> ::=
   plane:
     clip: <polyclip-list>
-[   slices: INTEGER ] # in [1, INF). Default 1
+[   slices: INTEGER ] # in [1, 4096). Default 1
 
 <sphere> ::=
   sphere:

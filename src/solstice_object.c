@@ -284,21 +284,21 @@ create_stl
   ASSERT(str_cget(&stl->filename));
 
   res = sstl_create(NULL, solstice->allocator, 0, &tmp_stl);
-  if (res != RES_OK) {
+  if(res != RES_OK) {
     fprintf(stderr, "Could not create a Solstice Solver STL shape.\n");
     goto error;
   }
   res = sstl_load(tmp_stl, str_cget(&stl->filename));
-  if (res != RES_OK) goto error;
+  if(res != RES_OK) goto error;
   res = sstl_get_desc(tmp_stl, &tmp_desc);
-  if (res != RES_OK) goto error;
+  if(res != RES_OK) goto error;
   ASSERT(tmp_desc.triangles_count <= UINT_MAX);
   ASSERT(tmp_desc.vertices_count <= UINT_MAX);
   mesh_ctx.transform = transform;
   mesh_ctx.desc = tmp_desc;
 
   res = ssol_shape_create_mesh(solstice->ssol, &ssol_shape);
-  if (res != RES_OK) {
+  if(res != RES_OK) {
     fprintf(stderr, "Could not create the STL mesh shape.\n");
     goto error;
   }
@@ -308,20 +308,17 @@ create_stl
   res = ssol_mesh_setup(ssol_shape, (unsigned)tmp_desc.triangles_count,
     mesh_ctx_sstl_get_ids, (unsigned)tmp_desc.vertices_count, &vertex_data, 1,
     &mesh_ctx);
-  if (res != RES_OK) {
+  if(res != RES_OK) {
     fprintf(stderr, "Could not setup STL mesh.\n");
     goto error;
   }
 
 exit:
-  if (tmp_stl) {
-    SSTL(ref_put(tmp_stl));
-    tmp_stl = NULL;
-  }
+  if(tmp_stl) SSTL(ref_put(tmp_stl));
   *out_stl = ssol_shape;
   return res;
 error:
-  if (ssol_shape) {
+  if(ssol_shape) {
     SSOL(shape_ref_put(ssol_shape));
     ssol_shape = NULL;
   }
@@ -405,7 +402,9 @@ create_parabol
   quadric.data.parabol.focal = paraboloid->focal;
   d33_set(quadric.transform, transform);
   d3_set(quadric.transform+9, transform+9);
-
+  if(paraboloid->nslices > 0) { /* nslices is set */
+    quadric.slices_count_hint = (size_t)paraboloid->nslices;
+  }
   return create_ssol_shape_punched_surface
     (solstice, &paraboloid->polyclips, &quadric, out_ssol_shape);
 }
@@ -427,6 +426,9 @@ create_parabolic_cylinder
   quadric.data.parabolic_cylinder.focal = paraboloid->focal;
   d33_set(quadric.transform, transform);
   d3_set(quadric.transform+9, transform+9);
+  if(paraboloid->nslices > 0) { /* nslices is set */
+    quadric.slices_count_hint = (size_t)paraboloid->nslices;
+  }
 
   return create_ssol_shape_punched_surface
     (solstice, &paraboloid->polyclips, &quadric, out_ssol_shape);
@@ -451,6 +453,9 @@ create_hyperbol
   quadric.data.hyperbol.img_focal = hyperboloid->focals.image;
   d33_set(quadric.transform, transform);
   d3_set(quadric.transform + 9, transform + 9);
+  if(hyperboloid->nslices > 0) { /* nslices is set */
+    quadric.slices_count_hint = (size_t)hyperboloid->nslices;
+  }
 
   return create_ssol_shape_punched_surface
   (solstice, &hyperboloid->polyclips, &quadric, out_ssol_shape);
@@ -468,8 +473,10 @@ create_plane
   ASSERT(solstice);
 
   plane = solparser_get_shape_plane(solstice->parser, id);
+  ASSERT(plane->nslices > 0);
 
   quadric.type = SSOL_QUADRIC_PLANE;
+  quadric.slices_count_hint = (size_t)plane->nslices;
   d33_set(quadric.transform, transform);
   d3_set(quadric.transform+9, transform+9);
 
