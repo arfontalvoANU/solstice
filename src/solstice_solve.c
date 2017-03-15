@@ -107,15 +107,48 @@ write_global_mc(struct solstice* solstice, struct ssol_estimator* estimator)
 }
 
 static void
+dump_primitive_mc
+  (struct solstice* solstice,
+   struct ssol_shape* shape,
+   const enum srcvl_side side,
+   struct ssol_mc_receiver* mc_rcv)
+{
+  struct ssol_mc_shape mc_shape;
+  const char* name;
+  unsigned itri, ntris;
+  ASSERT(solstice && shape && mc_rcv);
+
+  switch(side) {
+    case SRCVL_FRONT: name = "Front_faces"; break;
+    case SRCVL_BACK: name = "Back_faces"; break;
+    default: FATAL("Unreachable code.\n"); break;
+  }
+
+  fprintf(solstice->output, "SCALARS %s float 2\n", name);
+  fprintf(solstice->output, "LOOKUP_TABLE default\n");
+
+  SSOL(mc_receiver_get_mc_shape(mc_rcv, shape, &mc_shape));
+  SSOL(shape_get_triangles_count(shape, &ntris));
+  FOR_EACH(itri, 0, ntris) {
+    struct ssol_mc_primitive mc_prim;
+    SSOL(mc_shape_get_mc_primitive(&mc_shape, itri, &mc_prim));
+    fprintf(solstice->output, "%g %g\n",
+      mc_prim.integrated_irradiance.E,
+      mc_prim.integrated_irradiance.SE);
+  }
+}
+
+static void
 dump_shaded_shape
   (struct solstice* solstice,
-   struct ssol_estimator* estimator,
    struct ssol_instantiated_shaded_shape* inst_sshape,
-   const char* name)
+   const char* name,
+   struct ssol_mc_receiver* front, /* May be NULL */
+   struct ssol_mc_receiver* back) /* May be NULL */
 {
   unsigned ivert, nverts;
   unsigned itri, ntris;
-  ASSERT(solstice && estimator && inst_sshape && name);
+  ASSERT(solstice && inst_sshape && name && (front || back));
 
   /* Write the header */
   fprintf(solstice->output, "# vtk DataFile Version 2.0\n");
@@ -123,7 +156,7 @@ dump_shaded_shape
   fprintf(solstice->output, "ASCII\n");
   fprintf(solstice->output, "DATASET POLYDATA\n");
 
-  /* Write vertex position */
+  /* Write vertex positions */
   SSOL(shape_get_vertices_count(inst_sshape->shape, &nverts));
   fprintf(solstice->output, "POINTS %u float\n", nverts);
   FOR_EACH(ivert, 0, nverts) {
@@ -142,7 +175,10 @@ dump_shaded_shape
     fprintf(solstice->output, "3 %u %u %u\n", SPLIT3(ids));
   }
 
-  /* TODO Write estimated values */
+  /* Write per triangle estimations */
+  fprintf(solstice->output, "CELL_DATA %u\n", ntris);
+  if(front) dump_primitive_mc(solstice, inst_sshape->shape, SRCVL_FRONT, front);
+  if(back) dump_primitive_mc(solstice, inst_sshape->shape, SRCVL_BACK, back);
 }
 
 static void
@@ -166,8 +202,29 @@ write_per_receiver_primitive_mc
     SSOL(instance_get_shaded_shapes_count(inst, &nshapes));
     FOR_EACH(ishape, 0, nshapes) {
       struct ssol_instantiated_shaded_shape inst_sshape;
+      struct ssol_mc_receiver* pfront = NULL, front;
+      struct ssol_mc_receiver* pback = NULL, back;
+
+      switch(rcv->side) {
+        case SRCVL_FRONT:
+          SSOL(estimator_get_mc_receiver(estimator, inst, SSOL_FRONT, &front));
+          pfront = &front;
+          break;
+        case SRCVL_BACK:
+          SSOL(estimator_get_mc_receiver(estimator, inst, SSOL_BACK, &back));
+          pback = &back;
+          break;
+        case SRCVL_FRONT_AND_BACK:
+          SSOL(estimator_get_mc_receiver(estimator, inst, SSOL_FRONT, &front));
+          SSOL(estimator_get_mc_receiver(estimator, inst, SSOL_BACK, &back));
+          pfront = &front;
+          pback = &back;
+          break;
+        default: FATAL("Unreachable code.\n"); break;
+      }
+
       SSOL(instance_get_shaded_shape(inst, ishape, &inst_sshape));
-      dump_shaded_shape(solstice, estimator, &inst_sshape, str_cget(name));
+      dump_shaded_shape(solstice, &inst_sshape, str_cget(name), pfront, pback);
     }
   }
 }
@@ -209,6 +266,7 @@ solstice_solve(struct solstice* solstice)
   }
 
   write_global_mc(solstice, estimator);
+  write_per_receiver_primitive_mc(solstice, estimator);
 
   if(solstice->output_hits) {
     sz = (size_t)ftell(bin_stream);
