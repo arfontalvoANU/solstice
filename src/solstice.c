@@ -417,6 +417,7 @@ setup_receivers(struct solstice* solstice, struct srcvl* srcvl)
 
     receiver.node = NULL;
     receiver.side = rcv.side;
+    receiver.per_primitive = rcv.per_primitive;
 
     res = htable_receiver_set(&solstice->receivers, &name, &receiver);
     if(res != RES_OK) {

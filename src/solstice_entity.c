@@ -361,7 +361,7 @@ create_node
     const int mask = srcvl_side_to_ssol_mask(rcv->side);
     ASSERT(rcv->node == NULL); /* Receiver is not attached to a node */
 
-    res = solstice_node_geometry_set_receiver(node, mask);
+    res = solstice_node_geometry_set_receiver(node, mask, rcv->per_primitive);
     if(res != RES_OK) {
       fprintf(stderr, "Could not define the entity `%s' as a receiver.\n",
         str_cget(&entity->name));

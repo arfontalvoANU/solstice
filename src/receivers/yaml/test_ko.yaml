@@ -18,3 +18,11 @@
 ---
 - name: test
 - 
+---
+- name: test
+  per_primitive: hop
+---
+- name: test
+  per_primitive: 
+--- 
+- per_primitive: 1

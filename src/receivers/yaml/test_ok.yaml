@@ -13,4 +13,6 @@
   {name: test},
   {side: FRONT_AND_BACK, name: "Hello world"},
   {name: Hello world, side: BACK}
+  {name: hop, per_primitive: 1}
+  {per_primitive: 0, name: test}
 ]

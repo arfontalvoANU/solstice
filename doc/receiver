@@ -12,6 +12,7 @@
 <receiver> ::=
   name: <entity-identifier>
   side: <BACK|FRONT|FRONT_AND_BACK>
+[ per_primitive: INTEGER ] # in [0, 1]
 
 <entity-identifier>
   STRING[.STRING ... ]

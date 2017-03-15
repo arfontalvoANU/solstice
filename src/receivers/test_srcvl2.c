@@ -39,31 +39,48 @@ main(int argc, char** argv)
   fprintf(stream, "- { name: entity3, side: BACK }\n");
   fprintf(stream, "- name: entity4\n");
   fprintf(stream, "  side: FRONT_AND_BACK\n");
+  fprintf(stream, "- { name: entity5, side: BACK, per_primitive: 1 }\n");
+  fprintf(stream, "- { name: entity6, per_primitive: 0, side: FRONT }\n");
   rewind(stream);
 
   CHECK(srcvl_setup_stream(srcvl, NULL, stream), RES_OK);
   CHECK(srcvl_load(srcvl), RES_OK);
-  CHECK(srcvl_count(srcvl), 5);
+  CHECK(srcvl_count(srcvl), 7);
 
   srcvl_get(srcvl, 0, &receiver);
   CHECK(strcmp(receiver.name, "entity0"), 0);
   CHECK(receiver.side, SRCVL_FRONT_AND_BACK);
+  CHECK(receiver.per_primitive, 0);
 
   srcvl_get(srcvl, 1, &receiver);
   CHECK(strcmp(receiver.name, "entity1"), 0);
   CHECK(receiver.side, SRCVL_FRONT_AND_BACK);
+  CHECK(receiver.per_primitive, 0);
 
   srcvl_get(srcvl, 2, &receiver);
   CHECK(strcmp(receiver.name, "entity2"), 0);
   CHECK(receiver.side, SRCVL_FRONT);
+  CHECK(receiver.per_primitive, 0);
 
   srcvl_get(srcvl, 3, &receiver);
   CHECK(strcmp(receiver.name, "entity3"), 0);
   CHECK(receiver.side, SRCVL_BACK);
+  CHECK(receiver.per_primitive, 0);
 
   srcvl_get(srcvl, 4, &receiver);
   CHECK(strcmp(receiver.name, "entity4"), 0);
   CHECK(receiver.side, SRCVL_FRONT_AND_BACK);
+  CHECK(receiver.per_primitive, 0);
+
+  srcvl_get(srcvl, 5, &receiver);
+  CHECK(strcmp(receiver.name, "entity5"), 0);
+  CHECK(receiver.side, SRCVL_BACK);
+  CHECK(receiver.per_primitive, 1);
+
+  srcvl_get(srcvl, 6, &receiver);
+  CHECK(strcmp(receiver.name, "entity6"), 0);
+  CHECK(receiver.side, SRCVL_FRONT);
+  CHECK(receiver.per_primitive, 0);
 
   CHECK(srcvl_load(srcvl), RES_BAD_OP);
 
