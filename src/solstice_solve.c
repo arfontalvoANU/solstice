@@ -50,7 +50,8 @@ write_global_mc(struct solstice* solstice, struct ssol_estimator* estimator)
   irradiance_factor = 1.0 / (solparser_sun->dni * irradiance_factor);
 
   /* Counts */
-  fprintf(solstice->output, "%lu %lu %lu %lu\n",
+  fprintf(solstice->output, "%lu %lu %lu %lu %lu\n",
+    3, /* #global results count */
     (unsigned long)htable_receiver_size_get(&solstice->receivers),
     (unsigned long)nprimary,
     (unsigned long)nexperiments,
@@ -135,7 +136,7 @@ write_global_mc(struct solstice* solstice, struct ssol_estimator* estimator)
     SSOL(instance_get_area(prim->node->instance, &a));
     fprintf(solstice->output,
       "%s %u   "
-      "%g %g %lu   %lg %lg\n",
+      "%g %g %lu   %g %g\n",
       str_cget(name), (unsigned) id,
       a, c, (unsigned long)sampled.nb_samples,
       sampled.shadowed.E, sampled.shadowed.SE
