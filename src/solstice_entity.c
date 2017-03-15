@@ -41,9 +41,8 @@ update_instance_transform
 
   prim = htable_primary_find(&solstice->primaries, &node->name);
   if(prim) {
-    d3(prim->n, 0, 0, 1);
-    //SSOL(xxx_get_normal(prim->node->instance, n));
-    d33_muld3(prim->n, transform, prim->n);
+    SSOL(instance_get_normal(prim->node->instance, prim->n));
+    d3_normalize(prim->n, prim->n);
   }
 exit:
   return res;
