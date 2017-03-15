@@ -1,0 +1,7 @@
+#--- Sun direction: 0 63 (-0.45399 -0 -0.891007)
+3 1 1 10000 0
+0 0 # Shadowing
+0 0 # Missing
+1 0 # Cos
+reflector.ground.pivot.small_square 10   FRONT: -1 -1   -1 -1   -1 -1   -1 -1   -1 -1   BACK: 0 0   100 0   0 0   0 0   0 0
+reflector.ground.pivot.parabol 6   111.97 1 10000   0 0
