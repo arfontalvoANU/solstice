@@ -95,7 +95,7 @@
   | <entity>
   | <template>
 
-----------------------------------------
+#----------------------------------------
 <geometry> ::=
   geometry:
     - <object>
@@ -124,7 +124,7 @@
   | position: <real3>
   | <sun>
 
-----------------------------------------
+#----------------------------------------
 <shape> ::=
     <cuboid>
   | <cylinder>
@@ -152,23 +152,31 @@
 
 # x^2 + y^2 - 4*focal*z = 0
 <parabol> ::=
-  parabol: 
+  parabol:
     focal: REAL # in ]0, INF)
     clip: <polyclip-list>
+    # By default slices is automatically compute with respect to the parabol
+    # curvature
+[   slices: INTEGER ] # in [1, INF)
 
 <parabolic-cylinder> ::=
   parabolic-cylinder: # y^2 - 4*focal*z = 0
     focal: REAL # in ]0, INF)
     clip: <polyclip-list>
+    # By default slices is automatically compute with respect to the hyperbol
+    # curvature
+[   slices: INTEGER ] # in [1, INF)
 
 # (x^2 + y^2) / a^2 - (z + z0 - g/2)^2 / b^2 + 1 = 0
 #      with g = img_focal + real_focal; f = real_focal / g;
 #      a^2 = g^2(f - f^2); b = g(f - 1/2); z0 = |b| + g/2
-<hyperbol> ::= 
-  hyperbol:    
+<hyperbol> ::=
+  hyperbol:
     focals: <hyperboloid_focals>
     clip: <polyclip-list>
-[   slices: INTEGER ] # in
+    # By default slices is automatically compute with respect to the hyperbol
+    # curvature
+[   slices: INTEGER ] # in [1, INF)
 
 <hyperboloid_focals> ::=
   real: REAL # in ]0, INF)
@@ -177,6 +185,7 @@
 <plane> ::=
   plane:
     clip: <polyclip-list>
+[   slices: INTEGER ] # in [1, INF). Default 1
 
 <sphere> ::=
   sphere:
@@ -187,7 +196,7 @@
   stl:
     path: PATH
 
-----------------------------------------
+#----------------------------------------
 <polyclip-list> ::=
   - <polyclip>
 [ - <polyclip> ... ]
@@ -202,7 +211,7 @@
   - <real2>
 [ - <real2> ... ]
 
-----------------------------------------
+#----------------------------------------
 <material> ::=
   <material-descriptor> | <double-sided-material>
 
@@ -231,7 +240,7 @@
     thickness: REAL # in [0, INF)
     refractive_index: REAL # in ]0, INF)
 
-----------------------------------------
+#----------------------------------------
 <entity> ::=
   entity:
     <entity-data>
@@ -275,7 +284,7 @@
 <anchor-identifier> ::=
   <entity-identifier>.STRING
 
-----------------------------------------
+#----------------------------------------
 <sun> ::=
   sun:
     dni: REAL # Direct Normal Irradiance in ]0, INF)
@@ -293,7 +302,7 @@
   pillbox:
     aperture: REAL # in ]0, 90]
 
-----------------------------------------
+#----------------------------------------
 <transform> ::=
   transform:
     translation: <real3>
