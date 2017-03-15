@@ -52,12 +52,14 @@ main(int argc, char** argv)
   fprintf(stream, "      material: { ?virtual }\n");
   fprintf(stream, "    - parabol:\n");
   fprintf(stream, "        focal: 10\n");
+  fprintf(stream, "        slices : 10\n");
   fprintf(stream, "        clip :\n");
   fprintf(stream, "        - operation : AND\n");
   fprintf(stream, "          vertices : [[1, 2], [3, 4], [6, 7]]\n");
   fprintf(stream, "      material: { ?virtual }\n");
   fprintf(stream, "    - hyperbol:\n");
   fprintf(stream, "        focals: { real: 10, image: 2 }\n");
+  fprintf(stream, "        slices : 20\n");
   fprintf(stream, "        clip :\n");
   fprintf(stream, "          - operation : AND\n");
   fprintf(stream, "            vertices : [[1, 2], [3, 4], [6, 7]]\n");

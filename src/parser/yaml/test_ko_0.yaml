@@ -570,6 +570,33 @@
           - operation: AND
             vertices: [ [1, 2], [3, 4], [6, 7] ]
 ---
+# invalid slices
+- geometry:
+    - parabol:
+        slices: 1
+        focal: 1
+        clip:
+          - operation: AND
+            vertices: [ [1, 2], [3, 4], [6, 7] ]
+---
+# invalid slices
+- geometry:
+    - parabol:
+        slices: 0
+        focal: 1
+        clip:
+          - operation: AND
+            vertices: [ [1, 2], [3, 4], [6, 7] ]
+---
+# invalid slices
+- geometry:
+    - parabol:
+        slices: 4097
+        focal: 1
+        clip:
+          - operation: AND
+            vertices: [ [1, 2], [3, 4], [6, 7] ]
+---
 
 #
 # <parabolic-cylinder> ::=
@@ -634,7 +661,7 @@
 # <hyperboloid_focals> ::=
 #       real: REAL # in ]0, INF)
 #       image: REAL # in ]0, INF)
-# 
+#
 # missing hyperbol definition
 - geometry: [ { hyperbol: } ]
 ---
@@ -735,7 +762,31 @@
           - operation: AND
             vertices: [ [1, 2], [3, 4], [6, 7] ]
 ---
+# invalid slices
+- geometry: &target
+  - plane:
+      slices: 0
+      clip:
+       - operation: AND
+         vertices:
+         - [-0.50, -0.50]
+         - [-0.50, 0.50]
+         - [0.50, 0.50]
+         - [0.50, -0.50]              
+---
+# invalid slices
+- geometry: &target
+  - plane:
+      slices: 4097
+      clip:
+       - operation: AND
+         vertices:
+         - [-0.50, -0.50]
+         - [-0.50, 0.50]
+         - [0.50, 0.50]
+         - [0.50, -0.50]              
 
+---
 #
 # <sphere> ::=
 #   sphere:
@@ -1160,7 +1211,7 @@
 #
 # <position-description> ::=
 #   position: <real3> | hyperboloid_image_focals: <hyperboloid_focals>
-# 
+#
 
 # missing anchors definition
 - entity:
