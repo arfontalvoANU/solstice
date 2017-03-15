@@ -201,16 +201,17 @@ solparser_shape_paraboloid_copy_and_release
 /*******************************************************************************
 * Hyperboloid shape
 ******************************************************************************/
-struct hyperboloid_focals {
-  double real, image;
+struct solparser_hyperboloid_focals {
+  double real;
+  double image;
 };
 
-#define HYPERBOLOID_FOCALS_NULL__ { 0, 0 }
-static const struct hyperboloid_focals 
-HYPERBOLOID_FOCALS_NULL = HYPERBOLOID_FOCALS_NULL__;
+#define SOLPARSER_HYPERBOLOID_FOCALS_NULL__ { 0, 0 }
+static const struct solparser_hyperboloid_focals 
+SOLPARSER_HYPERBOLOID_FOCALS_NULL = SOLPARSER_HYPERBOLOID_FOCALS_NULL__;
 
 struct solparser_shape_hyperboloid {
-  struct hyperboloid_focals focals;
+  struct solparser_hyperboloid_focals focals;
   struct darray_polyclip polyclips;
 };
 

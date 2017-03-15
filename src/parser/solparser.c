@@ -1942,7 +1942,7 @@ parse_focals_description
   (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* desc,
-   struct hyperboloid_focals* focals)
+   struct solparser_hyperboloid_focals* focals)
 {
   enum { REAL, IMAGE };
   intptr_t i, n;
@@ -1980,8 +1980,7 @@ parse_focals_description
     if (!strcmp((char*) key->data.scalar.value, "real")) {
       SETUP_MASK(REAL, "real");
       res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &focals->real);
-    }
-    else if (!strcmp((char*) key->data.scalar.value, "image")) {
+    } else if (!strcmp((char*) key->data.scalar.value, "image")) {
       SETUP_MASK(IMAGE, "image");
       res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &focals->image);
     }
@@ -2062,12 +2061,10 @@ parse_hyperboloid
     if (!strcmp((char*) key->data.scalar.value, "clip")) {
       SETUP_MASK(CLIP, "clip");
       res = parse_clip(parser, doc, val, &shape->polyclips);
-    }
-    else if (!strcmp((char*) key->data.scalar.value, "focals")) {
+    } else if (!strcmp((char*) key->data.scalar.value, "focals")) {
       SETUP_MASK(FOCAL, "focals");
       res = parse_focals_description(parser, doc, val, &shape->focals);
-    }
-    else {
+    } else {
       log_err(parser, key, "unknown hyperbol parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
@@ -2374,8 +2371,7 @@ parse_object
       shape->type = SOLPARSER_SHAPE_PARABOLIC_CYLINDER;
       res = parse_paraboloid
         (parser, doc, val, shape->type, &shape->data.parabolic_cylinder);
-    }
-    else if (!strcmp((char*) key->data.scalar.value, "hyperbol")) {
+    } else if (!strcmp((char*) key->data.scalar.value, "hyperbol")) {
       SETUP_MASK(SHAPE, "shape");
       shape->type = SOLPARSER_SHAPE_HYPERBOL;
       res = parse_hyperboloid(parser, doc, val, &shape->data.hyperbol);
@@ -2650,10 +2646,8 @@ parse_anchor
     } else if(!strcmp((char*)key->data.scalar.value, "position")) {
       SETUP_MASK(POSITION, "position description");
       res = parse_real3(parser, doc, val, -DBL_MAX, DBL_MAX, solanchor->position);
-    }
-    else if (!strcmp((char*) key->data.scalar.value, "hyperboloid_image_focals"))
-    {
-      struct hyperboloid_focals focals;
+    } else if (!strcmp((char*) key->data.scalar.value, "hyperboloid_image_focals")) {
+      struct solparser_hyperboloid_focals focals;
       SETUP_MASK(POSITION, "position description");
       res = parse_focals_description(parser, doc, val, &focals);
       if (res != RES_OK) goto error;
