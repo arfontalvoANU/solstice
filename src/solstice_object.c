@@ -464,7 +464,7 @@ create_plane
    struct ssol_shape** out_ssol_shape)
 {
   const struct solparser_shape_plane* plane;
-  struct ssol_quadric quadric;
+  struct ssol_quadric quadric = SSOL_QUADRIC_DEFAULT;
   ASSERT(solstice);
 
   plane = solparser_get_shape_plane(solstice->parser, id);
