@@ -675,6 +675,8 @@ solstice_run(struct solstice* solstice)
       goto error;
     }
 
+    fprintf(solstice->output, "#--- No Sun direction\n");
+
     if(dump) {
       res = solstice_dump(solstice);
       if(res != RES_OK) goto error;
