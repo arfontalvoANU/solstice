@@ -424,7 +424,7 @@ create_parabolic_cylinder
   paraboloid = solparser_get_shape_parabolic_cylinder(solstice->parser, id);
 
   quadric.type = SSOL_QUADRIC_PARABOLIC_CYLINDER;
-  quadric.data.parabol.focal = paraboloid->focal;
+  quadric.data.parabolic_cylinder.focal = paraboloid->focal;
   d33_set(quadric.transform, transform);
   d3_set(quadric.transform+9, transform+9);
 
