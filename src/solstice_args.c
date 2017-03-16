@@ -59,6 +59,8 @@ print_help(const char* program)
 "  -o OUTPUT        write results to OUTPUT. If not defined, write results to\n"
 "                   standard output.\n");
   printf(
+"  -p               switch in dump radiative paths mode.\n");
+  printf(
 "  -q               do not print the helper message when no FILE is submitted.\n");
   printf(
 "  -R RECEIVERS     define the file from which the list of receivers are read.\n");
@@ -469,7 +471,7 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
   *args = SOLSTICE_ARGS_DEFAULT;
 
   optind = 0;
-  while((opt = getopt(argc, argv, "D:fg:Hhn:o:qR:r:t:")) != -1) {
+  while((opt = getopt(argc, argv, "D:fg:Hhn:o:pqR:r:t:")) != -1) {
     switch(opt) {
       case 'D':
         res = parse_sun_dir_list(optarg, args);
@@ -487,6 +489,7 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
         break;
       case 'g': res = parse_dump_options(optarg, args); break;
       case 'o': args->output_filename = optarg; break;
+      case 'p': args->dump_paths = 1; break;
       case 'q': args->quiet = 1; break;
       case 'R': args->receivers_filename = optarg; break;
       case 'r': res = parse_rendering_options(optarg, args); break;

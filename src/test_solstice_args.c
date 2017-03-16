@@ -567,6 +567,29 @@ test_dump(void)
   cmd_delete(cmd);
 }
 
+static void
+test_dump_paths(void)
+{
+  struct solstice_args args = SOLSTICE_ARGS_NULL;
+  char** cmd = NULL;
+
+  cmd = cmd_create(0, "test", "-D", "0,90", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.dump_paths, 0);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "0,90", "-p", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.dump_paths, 1);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-p", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+}
+
 int
 main(int argc, char** argv)
 {
@@ -581,6 +604,7 @@ main(int argc, char** argv)
   test_receivers();
   test_input();
   test_dump();
+  test_dump_paths();
   CHECK(mem_allocated_size(), 0);
   return 0;
 }

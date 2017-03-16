@@ -6,6 +6,7 @@ solstice
   -h # Short help and exit
   -g <dump> # Switch in dump geometry
   -o OUTPUT # defaulting to stdout if not defined
+  -p # Switch in dump paths mode
   -q # don't print a message if no INPUT is submitted
   -n INTEGER # Realisations count
   -r <rendering> # Switch in rendering mode
