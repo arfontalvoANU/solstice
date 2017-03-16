@@ -602,6 +602,7 @@ solstice_init
   solstice->output_hits = args->output_hits;
   solstice->dump_format = args->dump_format;
   solstice->dump_split_mode = args->dump_split_mode;
+  solstice->dump_paths = args->dump_paths;
 
   if(args->rendering) {
     res = setup_camera(solstice, args);

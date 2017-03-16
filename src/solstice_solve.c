@@ -270,6 +270,85 @@ write_per_receiver_mc_primitive
   }
 }
 
+static void
+dump_path_positions(struct solstice* solstice, const struct ssol_path* path)
+{
+  size_t ivert, nverts;
+  ASSERT(solstice && path);
+
+  SSOL(path_get_vertices_count(path, &nverts));
+  FOR_EACH(ivert, 0, nverts) {
+    struct ssol_path_vertex vertex;
+    SSOL(path_get_vertex(path, ivert, &vertex));
+    fprintf(solstice->output, "%f %f %f\n", SPLIT3(vertex.pos));
+  }
+}
+
+static void
+dump_path_segments
+  (struct solstice* solstice,
+   const struct ssol_path* path,
+   const size_t offset)
+{
+  size_t i, nverts;
+  ASSERT(solstice && path);
+
+  SSOL(path_get_vertices_count(path, &nverts));
+  ASSERT(nverts);
+
+  fprintf(solstice->output, "%lu", (unsigned long)nverts);
+  FOR_EACH(i, 0, nverts) {
+    fprintf(solstice->output, " %lu", (unsigned long)i + offset);
+  }
+  fprintf(solstice->output, "\n");
+}
+
+static void
+write_paths(struct solstice* solstice, struct ssol_estimator* estimator)
+{
+  struct ssol_path path;
+  size_t ipath, npaths;
+  size_t nverts, nlines;
+  size_t offset;
+  ASSERT(solstice && estimator);
+
+  /* Write the header */
+  fprintf(solstice->output, "# vtk DataFile Version 2.0\n");
+  fprintf(solstice->output, "Radiative paths\n");
+  fprintf(solstice->output, "ASCII\n");
+  fprintf(solstice->output, "DATASET POLYDATA\n");
+
+  /* Compute the overall number of path vertices & segments */
+  nverts = 0;
+  SSOL(estimator_get_tracked_paths_count(estimator, &npaths));
+  FOR_EACH(ipath, 0, npaths) {
+    size_t n;
+    SSOL(estimator_get_tracked_path(estimator, ipath, &path));
+    SSOL(path_get_vertices_count(&path, &n));
+    nverts += n;
+    nlines += n - 1;
+  }
+
+  /* Write the positions of the tracked paths */
+  fprintf(solstice->output, "POINTS %lu float\n", (unsigned long)nverts);
+  FOR_EACH(ipath, 0, npaths) {
+    SSOL(estimator_get_tracked_path(estimator, ipath, &path));
+    dump_path_positions(solstice, &path);
+  }
+
+  /* Write the segment of the tracked paths */
+  offset = 0;
+  fprintf(solstice->output, "LINES %lu %lu\n",
+    (unsigned long)npaths, (unsigned long)nverts + npaths);
+  FOR_EACH(ipath, 0, npaths) {
+    size_t n;
+    SSOL(estimator_get_tracked_path(estimator, ipath, &path));
+    SSOL(path_get_vertices_count(&path, &n));
+    dump_path_segments(solstice, &path, offset);
+    offset += n;
+  }
+}
+
 /*******************************************************************************
  * Local functions
  ******************************************************************************/
@@ -299,33 +378,37 @@ solstice_solve(struct solstice* solstice)
     }
   }
 
-  res = ssol_solve(solstice->scene, rng, solstice->nrealisations, 0,
-    bin_stream, &estimator);
+  res = ssol_solve(solstice->scene, rng, solstice->nrealisations,
+    solstice->dump_paths, bin_stream, &estimator);
   if(res != RES_OK) {
     fprintf(stderr, "Error in integrating the solar flux.\n");
     goto error;
   }
 
-  write_mc_global(solstice, estimator);
-  write_per_receiver_mc_primitive(solstice, estimator);
+  if(solstice->dump_paths) {
+    write_paths(solstice, estimator);
+  } else {
+    write_mc_global(solstice, estimator);
+    write_per_receiver_mc_primitive(solstice, estimator);
 
-  if(solstice->output_hits) {
-    sz = (size_t)ftell(bin_stream);
-    rewind(bin_stream);
+    if(solstice->output_hits) {
+      sz = (size_t)ftell(bin_stream);
+      rewind(bin_stream);
 
-    while(sz) {
-      const size_t read_sz = MMIN(sz, sizeof(buf));
-      if(fread(buf, 1, read_sz, bin_stream) != read_sz) {
-        fprintf(stderr, "Could not read the output binary stream.\n");
-        res = RES_IO_ERR;
-        goto error;
+      while(sz) {
+        const size_t read_sz = MMIN(sz, sizeof(buf));
+        if(fread(buf, 1, read_sz, bin_stream) != read_sz) {
+          fprintf(stderr, "Could not read the output binary stream.\n");
+          res = RES_IO_ERR;
+          goto error;
+        }
+        if(fwrite(buf, 1, read_sz, solstice->output) != read_sz) {
+          fprintf(stderr, "Could not write the output binary stream.\n");
+          res = RES_IO_ERR;
+          goto error;
+        }
+        sz -= read_sz;
       }
-      if(fwrite(buf, 1, read_sz, solstice->output) != read_sz) {
-        fprintf(stderr, "Could not write the output binary stream.\n");
-        res = RES_IO_ERR;
-        goto error;
-      }
-      sz -= read_sz;
     }
   }
 
