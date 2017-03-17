@@ -159,7 +159,8 @@ solparser_shape_imported_geometry_copy_and_release
  ******************************************************************************/
 struct solparser_shape_paraboloid {
   double focal;
-  struct darray_polyclip polyclips; 
+  long nslices; /* < 0 if not defined */
+  struct darray_polyclip polyclips;
 };
 
 static INLINE void
@@ -168,6 +169,7 @@ solparser_shape_paraboloid_init
    struct solparser_shape_paraboloid* paraboloid)
 {
   ASSERT(paraboloid);
+  paraboloid->nslices = -1;
   darray_polyclip_init(allocator, &paraboloid->polyclips);
 }
 
@@ -185,6 +187,7 @@ solparser_shape_paraboloid_copy
 {
   ASSERT(dst && src);
   dst->focal = src->focal;
+  dst->nslices = src->nslices;
   return darray_polyclip_copy(&dst->polyclips, &src->polyclips);
 }
 
@@ -195,23 +198,26 @@ solparser_shape_paraboloid_copy_and_release
 {
   ASSERT(dst && src);
   dst->focal = src->focal;
+  dst->nslices = src->nslices;
   return darray_polyclip_copy_and_release(&dst->polyclips, &src->polyclips);
 }
 
 /*******************************************************************************
 * Hyperboloid shape
 ******************************************************************************/
-struct hyperboloid_focals {
-  double real, image;
+struct solparser_hyperboloid_focals {
+  double real;
+  double image;
 };
 
-#define HYPERBOLOID_FOCALS_NULL__ { 0, 0 }
-static const struct hyperboloid_focals 
-HYPERBOLOID_FOCALS_NULL = HYPERBOLOID_FOCALS_NULL__;
+#define SOLPARSER_HYPERBOLOID_FOCALS_NULL__ { 0, 0 }
+static const struct solparser_hyperboloid_focals
+SOLPARSER_HYPERBOLOID_FOCALS_NULL = SOLPARSER_HYPERBOLOID_FOCALS_NULL__;
 
 struct solparser_shape_hyperboloid {
-  struct hyperboloid_focals focals;
+  struct solparser_hyperboloid_focals focals;
   struct darray_polyclip polyclips;
+  long nslices; /* < 0 if not defined */
 };
 
 static INLINE void
@@ -220,6 +226,7 @@ solparser_shape_hyperboloid_init
    struct solparser_shape_hyperboloid* hyperboloid)
 {
   ASSERT(hyperboloid);
+  hyperboloid->nslices = -1;
   darray_polyclip_init(allocator, &hyperboloid->polyclips);
 }
 
@@ -237,6 +244,7 @@ solparser_shape_hyperboloid_copy
 {
   ASSERT(dst && src);
   dst->focals = src->focals;
+  dst->nslices = src->nslices;
   return darray_polyclip_copy(&dst->polyclips, &src->polyclips);
 }
 
@@ -247,6 +255,7 @@ solparser_shape_hyperboloid_copy_and_release
 {
   ASSERT(dst && src);
   dst->focals = src->focals;
+  dst->nslices = src->nslices;
   return darray_polyclip_copy_and_release(&dst->polyclips, &src->polyclips);
 }
 
@@ -255,6 +264,7 @@ solparser_shape_hyperboloid_copy_and_release
  ******************************************************************************/
 struct solparser_shape_plane {
   struct darray_polyclip polyclips;
+  long nslices;
 };
 
 static INLINE void
@@ -263,6 +273,7 @@ solparser_shape_plane_init
    struct solparser_shape_plane* plane)
 {
   ASSERT(plane);
+  plane->nslices = 1;
   darray_polyclip_init(allocator, &plane->polyclips);
 }
 
@@ -279,6 +290,7 @@ solparser_shape_plane_copy
    const struct solparser_shape_plane* src)
 {
   ASSERT(dst && src);
+  dst->nslices = src->nslices;
   return darray_polyclip_copy(&dst->polyclips, &src->polyclips);
 }
 
@@ -288,6 +300,7 @@ solparser_shape_plane_copy_and_release
    struct solparser_shape_plane* src)
 {
   ASSERT(dst && src);
+  dst->nslices = src->nslices;
   return darray_polyclip_copy_and_release(&dst->polyclips, &src->polyclips);
 }
 

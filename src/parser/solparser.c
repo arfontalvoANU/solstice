@@ -1839,7 +1839,7 @@ parse_paraboloid
    const enum solparser_shape_type type,
    struct solparser_shape_paraboloid_id* out_ishape)
 {
-  enum { CLIP, FOCAL };
+  enum { CLIP, FOCAL, SLICES };
   struct solparser_shape_paraboloid* shape = NULL;
   struct darray_paraboloid* paraboloids;
   const char* name;
@@ -1903,6 +1903,9 @@ parse_paraboloid
     } else if(!strcmp((char*)key->data.scalar.value, "focal")) {
       SETUP_MASK(FOCAL, "focal");
       res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &shape->focal);
+    } else if(!strcmp((char*)key->data.scalar.value, "slices")) {
+      SETUP_MASK(SLICES, "slices");
+      res = parse_integer(parser, val, 4, 4096, &shape->nslices);
     } else {
       log_err(parser, key, "unknown %s parameter `%s'.\n",
         name, key->data.scalar.value);
@@ -1942,7 +1945,7 @@ parse_focals_description
   (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* desc,
-   struct hyperboloid_focals* focals)
+   struct solparser_hyperboloid_focals* focals)
 {
   enum { REAL, IMAGE };
   intptr_t i, n;
@@ -1950,7 +1953,7 @@ parse_focals_description
   res_T res = RES_OK;
   ASSERT(doc && desc && focals);
 
-  if (desc->type != YAML_MAPPING_NODE) {
+  if(desc->type != YAML_MAPPING_NODE) {
     log_err(parser, desc, "expect a mapping of focal parameters.\n");
     res = RES_BAD_ARG;
     goto error;
@@ -1963,7 +1966,7 @@ parse_focals_description
 
     key = yaml_document_get_node(doc, desc->data.mapping.pairs.start[i].key);
     val = yaml_document_get_node(doc, desc->data.mapping.pairs.start[i].value);
-    if (key->type != YAML_SCALAR_NODE) {
+    if(key->type != YAML_SCALAR_NODE) {
       log_err(parser, key, "expect focal parameters.\n");
       res = RES_BAD_ARG;
       goto error;
@@ -1977,15 +1980,14 @@ parse_focals_description
       }                                                                        \
       mask |= BIT(Flag);                                                       \
     } (void)0
-    if (!strcmp((char*) key->data.scalar.value, "real")) {
+    if(!strcmp((char*) key->data.scalar.value, "real")) {
       SETUP_MASK(REAL, "real");
       res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &focals->real);
-    }
-    else if (!strcmp((char*) key->data.scalar.value, "image")) {
+    } else if(!strcmp((char*) key->data.scalar.value, "image")) {
       SETUP_MASK(IMAGE, "image");
       res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &focals->image);
     }
-    if (res != RES_OK) {
+    if(res != RES_OK) {
       log_node(parser, key);
       goto error;
     }
@@ -2015,7 +2017,7 @@ parse_hyperboloid
    const yaml_node_t* hyperboloid,
    struct solparser_shape_hyperboloid_id* out_ishape)
 {
-  enum { CLIP, FOCAL };
+  enum { CLIP, FOCAL, SLICES };
   struct solparser_shape_hyperboloid* shape = NULL;
   size_t ishape = SIZE_MAX;
   intptr_t i, n;
@@ -2023,7 +2025,7 @@ parse_hyperboloid
   res_T res = RES_OK;
   ASSERT(doc && hyperboloid && out_ishape);
 
-  if (hyperboloid->type != YAML_MAPPING_NODE) {
+  if(hyperboloid->type != YAML_MAPPING_NODE) {
     log_err(parser, hyperboloid, "expect a mapping of hyperbol parameters.\n");
     res = RES_BAD_ARG;
     goto error;
@@ -2032,7 +2034,7 @@ parse_hyperboloid
   /* Allocate a hyperboloid shape */
   ishape = darray_hyperboloid_size_get(&parser->hyperbols);
   res = darray_hyperboloid_resize(&parser->hyperbols, ishape + 1);
-  if (res != RES_OK) {
+  if(res != RES_OK) {
     log_err(parser, hyperboloid, "could not allocate the hyperbol shape.\n");
     goto error;
   }
@@ -2045,7 +2047,7 @@ parse_hyperboloid
 
     key = yaml_document_get_node(doc, hyperboloid->data.mapping.pairs.start[i].key);
     val = yaml_document_get_node(doc, hyperboloid->data.mapping.pairs.start[i].value);
-    if (key->type != YAML_SCALAR_NODE) {
+    if(key->type != YAML_SCALAR_NODE) {
       log_err(parser, key, "expect hyperbol parameters.\n");
       res = RES_BAD_ARG;
       goto error;
@@ -2059,21 +2061,22 @@ parse_hyperboloid
       }                                                                        \
       mask |= BIT(Flag);                                                       \
     } (void)0
-    if (!strcmp((char*) key->data.scalar.value, "clip")) {
+    if(!strcmp((char*) key->data.scalar.value, "clip")) {
       SETUP_MASK(CLIP, "clip");
       res = parse_clip(parser, doc, val, &shape->polyclips);
-    }
-    else if (!strcmp((char*) key->data.scalar.value, "focals")) {
+    } else if(!strcmp((char*)key->data.scalar.value, "focals")) {
       SETUP_MASK(FOCAL, "focals");
       res = parse_focals_description(parser, doc, val, &shape->focals);
-    }
-    else {
+    } else if(!strcmp((char*)key->data.scalar.value, "slices")) {
+      SETUP_MASK(SLICES, "slices");
+      res = parse_integer(parser, val, 4, 4096, &shape->nslices);
+    } else {
       log_err(parser, key, "unknown hyperbol parameter `%s'.\n",
         key->data.scalar.value);
       res = RES_BAD_ARG;
       goto error;
     }
-    if (res != RES_OK) {
+    if(res != RES_OK) {
       log_node(parser, key);
       goto error;
     }
@@ -2094,7 +2097,7 @@ exit :
   out_ishape->i = ishape;
   return res;
 error:
-  if (shape) {
+  if(shape) {
     darray_hyperboloid_pop_back(&parser->hyperbols);
     ishape = SIZE_MAX;
   }
@@ -2108,7 +2111,7 @@ parse_plane
    const yaml_node_t* plane,
    struct solparser_shape_plane_id* out_ishape)
 {
-  enum { CLIP };
+  enum { CLIP, SLICES };
   struct solparser_shape_plane* shape = NULL;
   size_t ishape = SIZE_MAX;
   intptr_t i, n;
@@ -2143,14 +2146,22 @@ parse_plane
       res = RES_BAD_ARG;
       goto error;
     }
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(parser, key,                                                   \
+          "the plane parameter `"Name"' is already defined.\n");               \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+
     if(!strcmp((char*)key->data.scalar.value, "clip")) {
-      if(mask & BIT(CLIP)) {
-        log_err(parser, key, "the plane clipping is already defined.\n");
-        res = RES_BAD_ARG;
-        goto error;
-      }
-      mask |= BIT(CLIP);
+      SETUP_MASK(CLIP, "clip");
       res = parse_clip(parser, doc, val, &shape->polyclips);
+    } else if(!strcmp((char*)key->data.scalar.value, "slices")) {
+      SETUP_MASK(SLICES, "slices");
+      res = parse_integer(parser, val, 1, 4096, &shape->nslices);
     } else {
       log_err(parser, key, "unknown plane parameter `%s'.\n",
         key->data.scalar.value);
@@ -2161,6 +2172,7 @@ parse_plane
       log_node(parser, key);
       goto error;
     }
+    #undef SETUP_MASK
   }
   if(!(mask & BIT(CLIP))) {
     log_err(parser, plane, "the plane parameter `clip' is missing.\n");
@@ -2374,8 +2386,7 @@ parse_object
       shape->type = SOLPARSER_SHAPE_PARABOLIC_CYLINDER;
       res = parse_paraboloid
         (parser, doc, val, shape->type, &shape->data.parabolic_cylinder);
-    }
-    else if (!strcmp((char*) key->data.scalar.value, "hyperbol")) {
+    } else if(!strcmp((char*) key->data.scalar.value, "hyperbol")) {
       SETUP_MASK(SHAPE, "shape");
       shape->type = SOLPARSER_SHAPE_HYPERBOL;
       res = parse_hyperboloid(parser, doc, val, &shape->data.hyperbol);
@@ -2650,13 +2661,11 @@ parse_anchor
     } else if(!strcmp((char*)key->data.scalar.value, "position")) {
       SETUP_MASK(POSITION, "position description");
       res = parse_real3(parser, doc, val, -DBL_MAX, DBL_MAX, solanchor->position);
-    }
-    else if (!strcmp((char*) key->data.scalar.value, "hyperboloid_image_focals"))
-    {
-      struct hyperboloid_focals focals;
+    } else if(!strcmp((char*) key->data.scalar.value, "hyperboloid_image_focals")) {
+      struct solparser_hyperboloid_focals focals;
       SETUP_MASK(POSITION, "position description");
       res = parse_focals_description(parser, doc, val, &focals);
-      if (res != RES_OK) goto error;
+      if(res != RES_OK) goto error;
       d3(solanchor->position, 0, 0, focals.image);
     } else {
       log_err(parser, key, "unknown anchor parameter `%s'.\n",
@@ -2848,7 +2857,7 @@ parse_entity
     } else if(!strcmp((char*)key->data.scalar.value, "name")) {
       SETUP_MASK(NAME, "name");
       res = parse_identifier_string(parser, val, &solent.name);
-      if (!strcmp(str_get(&solent.name), "self")) {
+      if(!strcmp(str_get(&solent.name), "self")) {
         /* self is a reserved keyword */
         log_err(parser, key, "Reserved keywords cannot be used as names: %s.\n",
           str_get(&solent.name));

@@ -1,0 +1,108 @@
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
+- entity:
+    name: entity
+    primary: 1
+    geometry:
+      - material: { mirror: { reflectivity: 0, roughness: 0.5 } }
+        plane:
+          slices: 4
+          clip:
+          - operation: AND
+            vertices:
+            - [-0.50, -0.50]
+            - [-0.50, 0.50]
+            - [0.50, 0.50]
+            - [0.50, -0.50]
+---
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
+- entity:
+    name: entity
+    primary: 1
+    geometry:
+      - material: { mirror: { reflectivity: 0, roughness: 0.5 } }
+        plane:
+          clip:
+          - operation: AND
+            vertices:
+            - [-0.50, -0.50]
+            - [-0.50, 0.50]
+            - [0.50, 0.50]
+            - [0.50, -0.50]
+---
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
+- entity:
+    name: entity
+    primary: 1
+    geometry:
+      - material: { mirror: { reflectivity: 0, roughness: 0.5 } }
+        parabol:
+          slices: 40
+          focal: 18
+          clip:
+          - operation: AND
+            vertices: [[-30.0, -20.0], [-30.0, 20.0], [30.0, 20.0], [30.0, -20.0]]
+---
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
+- entity:
+    name: entity
+    primary: 1
+    geometry:
+      - material: { mirror: { reflectivity: 0, roughness: 0.5 } }
+        parabol:
+          focal: 18
+          clip:
+          - operation: AND
+            vertices: [[-30.0, -20.0], [-30.0, 20.0], [30.0, 20.0], [30.0, -20.0]]
+---
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
+- entity:
+    name: entity
+    primary: 1
+    geometry:
+      - material: { mirror: { reflectivity: 0, roughness: 0.5 } }
+        parabolic-cylinder:
+          slices: 40
+          focal: 18
+          clip:
+          - operation: AND
+            vertices: [[-30.0, -20.0], [-30.0, 20.0], [30.0, 20.0], [30.0, -20.0]]
+---
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
+- entity:
+    name: entity
+    primary: 1
+    geometry:
+      - material: { mirror: { reflectivity: 0, roughness: 0.5 } }
+        parabolic-cylinder:
+          focal: 18
+          clip:
+          - operation: AND
+            vertices: [[-30.0, -20.0], [-30.0, 20.0], [30.0, 20.0], [30.0, -20.0]]
+
+---
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
+- entity:
+    name: entity
+    primary: 1
+    geometry:
+      - material: { mirror: { reflectivity: 0, roughness: 0.5 } }
+        hyperbol:
+          slices: 40
+          focals: { real: 1, image: 1 }
+          clip:
+          - operation: AND
+            vertices: [[-30.0, -20.0], [-30.0, 20.0], [30.0, 20.0], [30.0, -20.0]]
+---
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
+- entity:
+    name: entity
+    primary: 1
+    geometry:
+      - material: { mirror: { reflectivity: 0, roughness: 0.5 } }
+        hyperbol:
+          focals: { real: 1, image: 1 }
+          clip:
+          - operation: AND
+            vertices: [[-30.0, -20.0], [-30.0, 20.0], [30.0, 20.0], [30.0, -20.0]]
+
+

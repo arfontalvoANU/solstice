@@ -68,8 +68,6 @@ if(NOT NO_TEST)
   endfunction()
 
   build_test(test_solparser)
-  add_test(test_grammar_example test_solparser
-    ${PROJECT_SOURCE_DIR}/../../doc/input)
   add_test(test_solparser_ok_0 test_solparser
     ${SOLPARSER_SOURCE_DIR}/yaml/test_ok_0.yaml)
   add_test(test_solparser_ok_1 test_solparser
@@ -82,6 +80,8 @@ if(NOT NO_TEST)
     ${SOLPARSER_SOURCE_DIR}/yaml/test_ok_4.yaml)
   add_test(test_solparser_ok_5 test_solparser
     ${SOLPARSER_SOURCE_DIR}/yaml/test_ok_5.yaml)
+  add_test(test_solparser_ok_6 test_solparser
+    ${SOLPARSER_SOURCE_DIR}/yaml/test_ok_6.yaml)
   add_test(test_solparser_ko test_solparser -e
     ${SOLPARSER_SOURCE_DIR}/yaml/test_ko_0.yaml)
 
