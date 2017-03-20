@@ -347,6 +347,26 @@ write_paths(struct solstice* solstice, struct ssol_estimator* estimator)
     dump_path_segments(solstice, &path, offset);
     offset += n;
   }
+
+  /* Write path type */
+  fprintf(solstice->output, "CELL_DATA %lu\n", (unsigned long)npaths);
+  fprintf(solstice->output, "SCALARS Radiative_path_type float 1\n");
+  fprintf(solstice->output, "LOOKUP_TABLE path_type\n");
+  FOR_EACH(ipath, 0, npaths) {
+    enum ssol_path_type type;
+    SSOL(estimator_get_tracked_path(estimator, ipath, &path));
+    SSOL(path_get_type(&path, &type));
+    switch(type) {
+      case SSOL_PATH_MISSING: fprintf(solstice->output, "1.0\n"); break;
+      case SSOL_PATH_SUCCESS: fprintf(solstice->output, "0.5\n"); break;
+      case SSOL_PATH_SHADOW: fprintf(solstice->output, "0.0\n"); break;
+      default: FATAL("Unreachable code.\n"); break;
+    }
+  }
+  fprintf(solstice->output, "LOOKUP_TABLE path_type 3\n");
+  fprintf(solstice->output, "1.0 0.0 0.0 1.0\n");
+  fprintf(solstice->output, "0.0 0.0 1.0 1.0\n");
+  fprintf(solstice->output, "1.0 1.0 0.0 1.0\n");
 }
 
 /*******************************************************************************
