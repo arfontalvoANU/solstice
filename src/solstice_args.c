@@ -59,7 +59,7 @@ print_help(const char* program)
 "  -o OUTPUT        write results to OUTPUT. If not defined, write results to\n"
 "                   standard output.\n");
   printf(
-"  -p               switch in dump radiative paths mode.\n");
+"  -p <dump-paths>  switch in dump radiative paths mode and configure it.\n");
   printf(
 "  -q               do not print the helper message when no FILE is submitted.\n");
   printf(
@@ -429,6 +429,12 @@ parse_dump_paths_option(const char* str, struct solstice_args* args)
   res_T res = RES_OK;
   ASSERT(str && args);
 
+  if(!strcmp(str, "default")) {
+    args->infinite_ray_length = SOLSTICE_ARGS_DEFAULT.infinite_ray_length;
+    args->sun_ray_length = SOLSTICE_ARGS_DEFAULT.sun_ray_length;
+    goto exit;
+  }
+
   if(strlen(str) >= sizeof(buf) - 1/*NULL char*/) {
     fprintf(stderr,
 "Could not duplicate the dump radiative paths option string `%s'.\n", str);
@@ -485,7 +491,6 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
 
   *args = SOLSTICE_ARGS_DEFAULT;
 
-  opterr = 0;
   optind = 0;
   while((opt = getopt(argc, argv, "D:fg:Hhn:o:p:qR:r:t:")) != -1) {
     switch(opt) {
@@ -525,16 +530,6 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
       case 't': /* Submit an hint on the number of threads to use */
         res = cstr_to_uint(optarg, &args->nthreads);
         if(res == RES_OK && !args->nthreads) res = RES_BAD_ARG;
-        break;
-      case '?': /* Option with optionnal arguments */
-        switch(optopt) {
-          case 'p': args->dump_paths = 1; break;
-          default:
-            fprintf(stderr, "%s: option requires an argument -- '%c'\n",
-              argv[0], optopt);
-            res = RES_BAD_ARG;
-            break;
-        }
         break;
       default: res = RES_BAD_ARG; break;
     }

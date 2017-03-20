@@ -579,7 +579,7 @@ test_dump_paths(void)
   solstice_args_release(&args);
   cmd_delete(cmd);
 
-  cmd = cmd_create(0, "test", "-D", "0,90", "-p", NULL);
+  cmd = cmd_create(0, "test", "-D", "0,90", "-p", "default", NULL);
   CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
   CHECK(args.dump_paths, 1);
   CHECK(args.infinite_ray_length, SOLSTICE_ARGS_DEFAULT.infinite_ray_length);
@@ -611,6 +611,22 @@ test_dump_paths(void)
   solstice_args_release(&args);
   cmd_delete(cmd);
 
+  cmd = cmd_create(0, "test", "-D", "0,90", "-p", "srlen=3.14:default", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.dump_paths, 1);
+  CHECK(args.infinite_ray_length, SOLSTICE_ARGS_DEFAULT.infinite_ray_length);
+  CHECK(args.sun_ray_length, SOLSTICE_ARGS_DEFAULT.sun_ray_length);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "0,90", "-p", "default:srlen=1:irlen=2:", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.dump_paths, 1);
+  CHECK(args.sun_ray_length, 1);
+  CHECK(args.infinite_ray_length, 2);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
   cmd = cmd_create(0, "test", "-D", "0,90", "-p", "srlen=", NULL);
   CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
   cmd_delete(cmd);
@@ -628,6 +644,10 @@ test_dump_paths(void)
   cmd_delete(cmd);
 
   cmd = cmd_create(0, "test", "-D", "0,90", "-p", "=abcd", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "0,90", "-p", NULL);
   CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
   cmd_delete(cmd);
 }
