@@ -565,6 +565,14 @@ test_dump(void)
   cmd = cmd_create(0, "test", "-g", "format=obj:split", NULL);
   CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
   cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-g", "format=obj", "-r", "up=0,0,1", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-g", "format=obj", "-p", "default", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
 }
 
 static void
@@ -648,6 +656,16 @@ test_dump_paths(void)
   cmd_delete(cmd);
 
   cmd = cmd_create(0, "test", "-D", "0,90", "-p", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "0,90", "-p", "default:srlen=1:irlen=2:",
+    "-r", "up=0,0,1", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "0,90", "-p", "default:srlen=1:irlen=2:",
+    "-g", "format=obj", NULL);
   CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
   cmd_delete(cmd);
 }

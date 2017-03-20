@@ -551,7 +551,19 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
   }
 
   if(args->dump_format != SOLSTICE_ARGS_DUMP_NONE && args->rendering) {
-    fprintf(stderr, "The '-g' and '-r' options are exclusive\n");
+    fprintf(stderr, "The '-g' and '-r' options are exclusives.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  if(args->dump_format != SOLSTICE_ARGS_DUMP_NONE && args->dump_paths) {
+    fprintf(stderr, "The '-g' and '-p' options are exclusives.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  if(args->dump_paths && args->rendering) {
+    fprintf(stderr, "The '-p' and '-r' options are exclusives.\n");
     res = RES_BAD_ARG;
     goto error;
   }
