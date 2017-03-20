@@ -94,6 +94,9 @@ struct solstice {
   enum solstice_args_dump_format dump_format;
   enum solstice_args_dump_split_mode dump_split_mode;
 
+  /* Dump radiative paths mode */
+  struct ssol_path_tracker path_tracker;
+
   struct darray_double sun_dirs; /* List of double3 */
   struct darray_double sun_angles;
 

@@ -604,6 +604,10 @@ solstice_init
   solstice->dump_split_mode = args->dump_split_mode;
   solstice->dump_paths = args->dump_paths;
 
+  solstice->path_tracker = SSOL_PATH_TRACKER_DEFAULT;
+  solstice->path_tracker.infinite_ray_length = args->infinite_ray_length;
+  solstice->path_tracker.sun_ray_length = args->sun_ray_length;
+
   if(args->rendering) {
     res = setup_camera(solstice, args);
     if(res != RES_OK) goto error;
