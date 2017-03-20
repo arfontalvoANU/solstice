@@ -51,13 +51,15 @@ print_help(const char* program)
   printf(
 "  -h               display this help and exit.\n");
   printf(
-"  -n REALISATIONS  number of realisations. Default is %lu.\n",
-    SOLSTICE_ARGS_DEFAULT.nrealisations);
+"  -n EXPERIMENTS   number of Monte Carlo experiments. Default is %lu.\n",
+    SOLSTICE_ARGS_DEFAULT.nexperiments);
   printf(
 "  -g <dump>        switch in dump geometry mode and configure it.\n");
   printf(
 "  -o OUTPUT        write results to OUTPUT. If not defined, write results to\n"
 "                   standard output.\n");
+  printf(
+"  -p <dump-paths>  switch in dump radiative paths mode and configure it.\n");
   printf(
 "  -q               do not print the helper message when no FILE is submitted.\n");
   printf(
@@ -95,6 +97,37 @@ parse_fov(const char* str, double* out_fov)
   return RES_OK;
 }
 
+static res_T
+parse_multiple_options
+  (const char* str,
+   struct solstice_args* args,
+   res_T (*parse_option)(const char* str, struct solstice_args* args))
+{
+  char buf[512];
+  char* tk;
+  char* ctx;
+  res_T res = RES_OK;
+  ASSERT(args && str);
+
+  if(strlen(str) >= sizeof(buf) - 1/*NULL char*/) {
+    fprintf(stderr, "Could not duplicate the option string `%s'.\n", str);
+    res = RES_MEM_ERR;
+    goto error;
+  }
+  strncpy(buf, str, sizeof(buf));
+
+  tk = strtok_r(buf, ":", &ctx);
+  do {
+    res = parse_option(tk, args);
+    if(res != RES_OK) goto error;
+    tk = strtok_r(NULL, ":", &ctx);
+  } while(tk);
+
+exit:
+  return res;
+error:
+  goto exit;
+}
 
 static res_T
 parse_sun_dir_list(const char* str, struct solstice_args* args)
@@ -292,41 +325,6 @@ parse_rendering_option(const char* str, struct solstice_args* args)
     res = RES_BAD_ARG;
     goto error;
   }
-  args->rendering = 1;
-
-exit:
-  return res;
-error:
-  goto exit;
-}
-
-static res_T
-parse_rendering_options(const char* str, struct solstice_args* args)
-{
-  char buf[512];
-  char* tk;
-  char* ctx;
-  res_T res = RES_OK;
-  ASSERT(args && str);
-
-  /* Setup default values of the rendering parameters */
-  args->camera = SOLSTICE_ARGS_DEFAULT.camera;
-  args->img = SOLSTICE_ARGS_DEFAULT.img;
-
-  if(strlen(str) >= sizeof(buf) - 1/*NULL char*/) {
-    fprintf(stderr,
-      "Could not duplicate the rendering options string `%s'.\n", str);
-    res = RES_MEM_ERR;
-    goto error;
-  }
-  strncpy(buf, str, sizeof(buf));
-
-  tk = strtok_r(buf, ":", &ctx);
-  do {
-    res = parse_rendering_option(tk, args);
-    if(res != RES_OK) goto error;
-    tk = strtok_r(NULL, ":", &ctx);
-  } while(tk);
 
 exit:
   return res;
@@ -415,12 +413,6 @@ parse_dump_option(const char* str, struct solstice_args* args)
   }
   if(res != RES_OK) goto error;
 
-  if(args->dump_format == SOLSTICE_ARGS_DUMP_NONE) {
-    fprintf(stderr, "No dump format is defined.\n");
-    res = RES_BAD_ARG;
-    goto error;
-  }
-
 exit:
   return res;
 error:
@@ -428,27 +420,58 @@ error:
 }
 
 static res_T
-parse_dump_options(const char* str, struct solstice_args* args)
+parse_dump_paths_option(const char* str, struct solstice_args* args)
 {
-  char buf[512];
-  char* tk;
+  char buf[128];
+  char* key;
+  char* val;
   char* ctx;
   res_T res = RES_OK;
-  ASSERT(args && str);
-  (void)str, (void)args;
+  ASSERT(str && args);
+
+  if(!strcmp(str, "default")) {
+    args->infinite_ray_length = SOLSTICE_ARGS_DEFAULT.infinite_ray_length;
+    args->sun_ray_length = SOLSTICE_ARGS_DEFAULT.sun_ray_length;
+    goto exit;
+  }
 
   if(strlen(str) >= sizeof(buf) - 1/*NULL char*/) {
     fprintf(stderr,
-      "Could not duplicate the dump geometry options string `%s'.\n", str);
+"Could not duplicate the dump radiative paths option string `%s'.\n", str);
     res = RES_MEM_ERR;
     goto error;
   }
+
   strncpy(buf, str, sizeof(buf));
-  tk = strtok_r(buf, ":", &ctx);
-  do {
-    res = parse_dump_option(tk, args);
-    tk = strtok_r(NULL, ":", &ctx);
-  } while(tk);
+
+  key = strtok_r(buf, "=", &ctx);
+  val = strtok_r(NULL, "", &ctx);
+
+  if(!val) {
+    fprintf(stderr,
+      "Missing a value to the dump radiative paths option `%s'.\n", key);
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  if(!strcmp(key, "irlen")) {
+    res = cstr_to_double(val, &args->infinite_ray_length);
+    if(res != RES_OK) {
+      fprintf(stderr, "Invalid infinite ray length `%s'.\n", val);
+      goto error;
+    }
+  } else if(!strcmp(key, "srlen")) {
+    res = cstr_to_double(val, &args->sun_ray_length);
+    if(res != RES_OK) {
+      fprintf(stderr, "Invalid sun ray length `%s'.\n", val);
+      goto error;
+    }
+  } else {
+    fprintf(stderr, "Invalid dump radiative paths option `%s'.\n", val);
+    res = RES_BAD_ARG;
+    goto error;
+  }
+  if(res != RES_OK) goto error;
 
 exit:
   return res;
@@ -469,28 +492,42 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
   *args = SOLSTICE_ARGS_DEFAULT;
 
   optind = 0;
-  while((opt = getopt(argc, argv, "D:fg:Hhn:o:qR:r:t:")) != -1) {
+  while((opt = getopt(argc, argv, "D:fg:Hhn:o:p:qR:r:t:")) != -1) {
     switch(opt) {
-      case 'D':
+      case 'D': /* Sun directions */
         res = parse_sun_dir_list(optarg, args);
         break;
       case 'f': args->force_overwriting = 1; break;
       case 'H': args->output_hits = 1; break;
-      case 'h':
+      case 'h': /* Print short help and exit */
         print_help(argv[0]);
         solstice_args_release(args);
         args->quit = 1;
         goto exit;
-      case 'n':
-        res = cstr_to_ulong(optarg, &args->nrealisations);
-        if(res == RES_OK && !args->nrealisations) res = RES_BAD_ARG;
+      case 'n': /* Define the number of experiments */
+        res = cstr_to_ulong(optarg, &args->nexperiments);
+        if(res == RES_OK && !args->nexperiments) res = RES_BAD_ARG;
         break;
-      case 'g': res = parse_dump_options(optarg, args); break;
+      case 'g': /* Switch in dump geometry mode and configure it */
+        res = parse_multiple_options(optarg, args, parse_dump_option);
+        if(res == RES_OK && args->dump_format == SOLSTICE_ARGS_DUMP_NONE) {
+          fprintf(stderr, "%s: missing a dump format -- `%s'.\n",
+            argv[0], optarg);
+          res = RES_BAD_ARG;
+        }
+        break;
       case 'o': args->output_filename = optarg; break;
+      case 'p': /* Switch in dump radiative paths mode and configure it */
+        args->dump_paths = 1;
+        res = parse_multiple_options(optarg, args, parse_dump_paths_option);
+        break;
       case 'q': args->quiet = 1; break;
       case 'R': args->receivers_filename = optarg; break;
-      case 'r': res = parse_rendering_options(optarg, args); break;
-      case 't':
+      case 'r':  /* Switch in rendering mode and configure it */
+        args->rendering = 1;
+        res = parse_multiple_options(optarg, args, parse_rendering_option);
+        break;
+      case 't': /* Submit an hint on the number of threads to use */
         res = cstr_to_uint(optarg, &args->nthreads);
         if(res == RES_OK && !args->nthreads) res = RES_BAD_ARG;
         break;
@@ -514,7 +551,19 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
   }
 
   if(args->dump_format != SOLSTICE_ARGS_DUMP_NONE && args->rendering) {
-    fprintf(stderr, "The '-g' and '-r' options are exclusive\n");
+    fprintf(stderr, "The '-g' and '-r' options are exclusives.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  if(args->dump_format != SOLSTICE_ARGS_DUMP_NONE && args->dump_paths) {
+    fprintf(stderr, "The '-g' and '-p' options are exclusives.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  if(args->dump_paths && args->rendering) {
+    fprintf(stderr, "The '-p' and '-r' options are exclusives.\n");
     res = RES_BAD_ARG;
     goto error;
   }
