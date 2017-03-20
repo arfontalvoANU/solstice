@@ -6,7 +6,7 @@ solstice
   -h # Short help and exit
   -g <dump> # Switch in dump geometry
   -o OUTPUT # defaulting to stdout if not defined
-  -p # Switch in dump paths mode
+  -p [ <dump-radiative-path> ] # Switch in dump radiative paths mode
   -q # don't print a message if no INPUT is submitted
   -n INTEGER # Realisations count
   -r <rendering> # Switch in rendering mode
@@ -42,6 +42,18 @@ solstice -g format=obj:split-group=1
 
 <dump> ::=
   format=<dump-format>[:split=<split-mode>]
+
+<dump-radiative-path> ::=
+  <dump-path-option>[:<dump-path-option> ... ]
+
+<dump-path-option> ::=
+  <sun-ray-len> | <inf-ray-len>
+
+<sun-ray-len> ::=
+  srlen=REAL
+
+<inf-ray-len> ::= # Length of the rays going to infinite
+  irlen=REAL
 
 <dump-format> ::=
   obj

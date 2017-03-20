@@ -97,7 +97,7 @@ struct solstice {
   struct darray_double sun_dirs; /* List of double3 */
   struct darray_double sun_angles;
 
-  size_t nrealisations; /* # realisations */
+  size_t nexperiments; /* # MC experiments */
   FILE* output; /* Output stream */
   int output_hits; /* Output per receiver hits */
   int dump_paths;

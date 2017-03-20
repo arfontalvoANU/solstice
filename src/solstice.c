@@ -598,7 +598,7 @@ solstice_init
     goto error;
   }
 
-  solstice->nrealisations = args->nrealisations;
+  solstice->nexperiments = args->nexperiments;
   solstice->output_hits = args->output_hits;
   solstice->dump_format = args->dump_format;
   solstice->dump_split_mode = args->dump_split_mode;
