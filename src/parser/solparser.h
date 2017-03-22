@@ -102,6 +102,11 @@ solparser_get_material_double_sided
   (const struct solparser* parser,
    const struct solparser_material_double_sided_id mtl2);
 
+extern LOCAL_SYM const struct solparser_material_dielectric*
+solparser_get_material_dielectric
+  (const struct solparser* parser,
+   const struct solparser_material_dielectric_id dielectric);
+
 extern LOCAL_SYM const struct solparser_material_matte*
 solparser_get_material_matte
   (const struct solparser* parser,

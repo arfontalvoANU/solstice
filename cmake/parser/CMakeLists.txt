@@ -91,6 +91,7 @@ if(NOT NO_TEST)
   new_test(test_solparser5)
   new_test(test_solparser6)
   new_test(test_solparser7)
+  new_test(test_solparser8)
 
   rcmake_copy_runtime_libraries(test_solparser)
 endif()

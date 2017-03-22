@@ -245,6 +245,38 @@
 # invalid refractive index
 - material:
     thin_dielectric: { absorption: 0, thickness: 0,  refractive_index: -0.0001 }
+
+---
+
+#
+# <dielectric> ::=
+#   dielectric:
+#     eta_i: REAL # in ]0, INF)
+#     eta_t: REAL # in ]0, INF)
+#
+
+# invalid eta_i
+- material:
+    dielectric: { eta_i: -1, eta_t: 1 }
+---
+- material:
+    dielectric: { eta_i: 0, eta_t: 1 }
+---
+# invalid eta_t
+- material:
+    dielectric: { eta_i: 1, eta_t: -1 }
+---
+# invalid eta_t
+- material:
+    dielectric: { eta_i: 1, eta_t: 0 }
+---
+# missing eta_t
+- material:
+    dielectric: { eta_i: 1 }
+---
+# missing eta_i
+- material:
+    dielectric: { eta_t: 1 }
 ---
 
 #
@@ -772,7 +804,7 @@
          - [-0.50, -0.50]
          - [-0.50, 0.50]
          - [0.50, 0.50]
-         - [0.50, -0.50]              
+         - [0.50, -0.50]
 ---
 # invalid slices
 - geometry: &target
@@ -784,7 +816,7 @@
          - [-0.50, -0.50]
          - [-0.50, 0.50]
          - [0.50, 0.50]
-         - [0.50, -0.50]              
+         - [0.50, -0.50]
 
 ---
 #

@@ -219,16 +219,21 @@
   back: <material-descriptor>
 
 <material-descriptor> ::=
-  <mirror> | <matte> | <thin-dielectric> | <virtual>
+  <dielectric> | <matte> | <mirror> | thin-dielectric> | <virtual>
+
+<dielectric> ::=
+  dielectric:
+    eta_i: REAL # in ]0, INF)
+    eta_t: REAL # in ]0, INF)
+
+<matte> ::=
+  matte:
+    reflectivity: REAL # in [0, 1]
 
 <mirror> ::=
   mirror:
     reflectivity: REAL # in [0, 1]
     roughness: REAL # in [0, 1]
-
-<matte> ::=
-  matte:
-    reflectivity: REAL # in [0, 1]
 
 <virtual> ::=
   virtual: EMPTY-STRING

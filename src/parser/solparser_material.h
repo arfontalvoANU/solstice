@@ -19,11 +19,19 @@
 #include <stddef.h>
 
 enum solparser_material_type {
+  SOLPARSER_MATERIAL_DIELECTRIC,
   SOLPARSER_MATERIAL_MATTE,
   SOLPARSER_MATERIAL_MIRROR,
   SOLPARSER_MATERIAL_THIN_DIELECTRIC,
   SOLPARSER_MATERIAL_VIRTUAL
 };
+
+struct solparser_material_dielectric {
+  double eta_i; /* Refractive index of the medium the material "looks at" */
+  double eta_t; /* Refractive index of the opposite medium */
+};
+
+struct solparser_material_dielectric_id { size_t i; };
 
 struct solparser_material_matte {
   double reflectivity; /* In [0, 1] */
@@ -49,6 +57,7 @@ struct solparser_material_thin_dielectric_id { size_t i; };
 struct solparser_material {
   enum solparser_material_type type;
   union {
+    struct solparser_material_dielectric_id dielectric;
     struct solparser_material_matte_id matte;
     struct solparser_material_mirror_id mirror;
     struct solparser_material_thin_dielectric_id thin_dielectric;
