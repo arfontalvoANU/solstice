@@ -40,7 +40,6 @@ struct solstice_receiver {
 
 struct solstice_primary {
   struct solstice_node* node;
-  double n[3];
 };
 
 #define DARRAY_NAME nodes

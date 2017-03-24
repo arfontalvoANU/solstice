@@ -30,20 +30,13 @@ update_instance_transform
 {
   res_T res = RES_OK;
   struct solstice_node* node;
-  struct solstice_primary* prim;
-  struct solstice* solstice = data;
   ASSERT(n && transform && data);
-
+  (void)data;
   node = CONTAINER_OF(n, struct solstice_node, anim);
   if(node->type != SOLSTICE_NODE_GEOMETRY) return RES_OK;
   res = ssol_instance_set_transform(node->instance, transform);
   if(res != RES_OK) goto error;
 
-  prim = htable_primary_find(&solstice->primaries, &node->name);
-  if(prim) {
-    SSOL(instance_get_normal(prim->node->instance, prim->n));
-    d3_normalize(prim->n, prim->n);
-  }
 exit:
   return res;
 error:

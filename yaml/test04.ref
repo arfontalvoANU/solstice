@@ -1,5 +1,6 @@
 #--- Sun direction: 0 45 (-0.707107 -0 -0.707107)
-3 1 1 10000 0
+4 1 1 10000 0
+1 0 # Potential
 0 0 # Shadowing
 0 0 # Missing
 0.707107 0 # Cos

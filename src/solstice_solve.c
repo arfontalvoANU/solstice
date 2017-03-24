@@ -30,7 +30,7 @@ write_mc_global(struct solstice* solstice, struct ssol_estimator* estimator)
   struct htable_primary_iterator p_it, p_end;
   const struct solparser_sun* solparser_sun = NULL;
   size_t nexperiments, nfailed, nprimary;
-  double irradiance_factor;
+  double area, potential, irradiance_factor;
   ASSERT(solstice && estimator);
 
   #define MC_RCV_NONE {                                                        \
@@ -46,25 +46,34 @@ write_mc_global(struct solstice* solstice, struct ssol_estimator* estimator)
   SSOL(estimator_get_realisation_count(estimator, &nexperiments));
   SSOL(estimator_get_sampled_count(estimator, &nprimary));
   SSOL(estimator_get_failed_count(estimator, &nfailed));
-  SSOL(estimator_get_sampled_area(estimator, &irradiance_factor));
+  SSOL(estimator_get_sampled_area(estimator, &area));
   solparser_sun = solparser_get_sun(solstice->parser);
-  irradiance_factor = 1.0 / (solparser_sun->dni * irradiance_factor);
+  potential = solparser_sun->dni * area;
+  irradiance_factor = 1 / potential;
 
   /* Counts */
   fprintf(solstice->output, "%lu %lu %lu %lu %lu\n",
-    3, /* #global results count */
+    7, /* #global results count */
     (unsigned long)htable_receiver_size_get(&solstice->receivers),
     (unsigned long)nprimary,
     (unsigned long)nexperiments,
     (unsigned long)nfailed);
 
   /* Global data */
+  fprintf(solstice->output, "%g %g # Potential\n",
+    potential, 0.);
+  fprintf(solstice->output, "%g %g # Absorbed\n",
+    mc_global.absorbed.E, mc_global.absorbed.SE);
+  fprintf(solstice->output, "%g %g # Cos\n",
+    mc_global.cos_factor.E, mc_global.cos_factor.SE);
   fprintf(solstice->output, "%g %g # Shadowing\n",
     mc_global.shadowed.E, mc_global.shadowed.SE);
   fprintf(solstice->output, "%g %g # Missing\n",
     mc_global.missing.E, mc_global.missing.SE);
-  fprintf(solstice->output, "%g %g # Cos\n",
-    mc_global.cos_factor.E, mc_global.cos_factor.SE);
+  fprintf(solstice->output, "%g %g # Atmosphere\n",
+    mc_global.atmosphere.E, mc_global.atmosphere.SE);
+  fprintf(solstice->output, "%g %g # Reflectivity\n",
+    mc_global.reflectivity.E, mc_global.reflectivity.SE);
 
   /* Receivers' data */
   htable_receiver_begin(&solstice->receivers, &r_it);
@@ -102,11 +111,12 @@ write_mc_global(struct solstice* solstice, struct ssol_estimator* estimator)
       default: FATAL("Unreachable code.\n"); break;
     }
     SSOL(instance_get_id(inst, &id));
+    SSOL(instance_get_area(inst, &area));
     fprintf(solstice->output,
-      "%s %u   "
+      "%s %u %g   "
       "FRONT: %g %g   %g %g   %g %g   %g %g   %g %g   "
       "BACK: %g %g   %g %g   %g %g   %g %g   %g %g\n",
-      str_cget(name), (unsigned)id,
+      str_cget(name), (unsigned)id, area,
       front.integrated_absorbed_irradiance.E, front.integrated_absorbed_irradiance.SE,
       front.integrated_irradiance.E, front.integrated_irradiance.SE,
       front.reflectivity_loss.E, front.reflectivity_loss.SE,
@@ -126,20 +136,17 @@ write_mc_global(struct solstice* solstice, struct ssol_estimator* estimator)
     const struct str* name = htable_primary_iterator_key_get(&p_it);
     struct solstice_primary* prim = htable_primary_iterator_data_get(&p_it);
     struct ssol_mc_sampled sampled;
-    double a, c, sun[3];
     uint32_t id;
 
-    SSOL(sun_get_direction(solstice->sun, sun));
-    c = -d3_dot(prim->n, sun);
     htable_primary_iterator_next(&p_it);
     SSOL(estimator_get_mc_sampled(estimator, prim->node->instance, &sampled));
     SSOL(instance_get_id(prim->node->instance, &id));
-    SSOL(instance_get_area(prim->node->instance, &a));
+    SSOL(instance_get_area(prim->node->instance, &area));
     fprintf(solstice->output,
-      "%s %u   "
-      "%g %g %lu   %g %g\n",
-      str_cget(name), (unsigned) id,
-      a, c, (unsigned long)sampled.nb_samples,
+      "%s %u %g %lu   "
+      "%g %g   %g %g\n",
+      str_cget(name), (unsigned) id, area, (unsigned long)sampled.nb_samples,
+      sampled.cos_factor.E, sampled.cos_factor.SE,
       sampled.shadowed.E, sampled.shadowed.SE
     );
   }

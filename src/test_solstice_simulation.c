@@ -39,6 +39,7 @@ enum side {
 };
 
 enum global_result_type {
+  GLOBAL_POTENTIAL,
   GLOBAL_SHADOW,
   GLOBAL_MISSING,
   GLOBAL_COS,
