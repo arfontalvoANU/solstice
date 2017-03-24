@@ -226,10 +226,6 @@
     medium_i: <dielectric-medium>
     medium_t: <dielectric-medium>
 
-<dielectric-medium> ::=
-    refractive_index: REAL # in ]0, INF)
-    absorptivity: REAL # in [0, INF)
-
 <matte> ::=
   matte:
     reflectivity: REAL # in [0, 1]
@@ -244,9 +240,13 @@
 
 <thin-dielectric> ::=
   thin_dielectric:
-    absorption: REAL # in [0, INF)
     thickness: REAL # in [0, INF)
+    medium_i: <dielectric-medium>
+    medium_t: <dielectric-medium>
+
+<dielectric-medium> ::=
     refractive_index: REAL # in ]0, INF)
+    absorptivity: REAL # in [0, INF)
 
 #----------------------------------------
 <entity> ::=

@@ -1,8 +1,7 @@
 - sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 
-- material: &thin_dielectric
-    thin_dielectric:
-      thickness: 1
+- material: &dielectric
+    dielectric:
       medium_i: { absorptivity: 0, refractive_index: 1.00027 }
       medium_t: { absorptivity: 0.1, refractive_index: 1.5 }
 
@@ -10,14 +9,13 @@
     name: "entity"
     primary: 0
     geometry:
-      - material: *thin_dielectric
+      - material: *dielectric
         cylinder: { height: 1, radius: 1 }
 ---
 - sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 
-- material: &thin_dielectric
-    thin_dielectric:
-      thickness: 0
+- material: &dielectric
+    dielectric:
       medium_i: { absorptivity: 0, refractive_index: 0.00027 }
       medium_t: { absorptivity: 0.1, refractive_index: 1.5 }
 
@@ -25,7 +23,7 @@
     name: "entity"
     primary: 0
     geometry:
-      - material: *thin_dielectric
+      - material: *dielectric
         cylinder: { height: 1, radius: 1 }
 
 ---
@@ -36,8 +34,7 @@
     geometry:
       - cylinder: { height: 1, radius: 1 }
         material:
-          thin_dielectric:
-            thickness: 10
+          dielectric:
             medium_i: { absorptivity: 0, refractive_index: 1 }
             medium_t: { absorptivity: 20, refractive_index: 1.5 }
 

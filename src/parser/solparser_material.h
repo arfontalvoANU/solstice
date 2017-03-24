@@ -54,8 +54,8 @@ struct solparser_material_mirror {
 struct solparser_material_mirror_id { size_t i; };
 
 struct solparser_material_thin_dielectric {
-  double absorption;
-  double refractive_index;
+  struct solparser_medium_id medium_i; /* Outside medium */
+  struct solparser_medium_id medium_t; /* Medium of the slab */
   double thickness;
 };
 
