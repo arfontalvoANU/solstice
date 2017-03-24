@@ -44,7 +44,7 @@ struct solstice_args {
   const char* output_filename;
   const char* input_filename; /* May be NULL <=> read data from stdin */
   const char* receivers_filename;
-  unsigned long nrealisations; /* #realisations */
+  unsigned long nexperiments; /* #experiments */
   unsigned nthreads; /* #threads */
 
   /* List of sun directions */
@@ -67,10 +67,16 @@ struct solstice_args {
 
   enum solstice_args_render_mode render_mode;
 
+  /* Dump geometry mode */
   enum solstice_args_dump_format dump_format;
   enum solstice_args_dump_split_mode dump_split_mode;
 
+  /* Dump radiative paths options. */
+  double sun_ray_length; /* Length of the sun rays. */
+  double infinite_ray_length; /* Length of the rays going to infinity. */
+
   int force_overwriting;
+  int dump_paths; /* Dump radiative paths */
   int rendering;
   int output_hits; /* Output the per receiver hits */
   int quiet;
@@ -109,7 +115,11 @@ static const struct solstice_args SOLSTICE_ARGS_NULL = SOLSTICE_ARGS_NULL__;
   SOLSTICE_ARGS_DUMP_NONE, /* Dump format */                                   \
   SOLSTICE_ARGS_DUMP_SPLIT_NONE, /* Dump split mode */                         \
                                                                                \
+  -1, /* Sun ray length */                                                     \
+  -1, /* Infinite ray length */                                                \
+                                                                               \
   0, /* Force overwriting */                                                   \
+  0, /* Dump radiative paths */                                                \
   0, /* Rendering */                                                           \
   0, /* Output hits */                                                         \
   0, /* Quiet */                                                               \
