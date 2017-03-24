@@ -18,11 +18,6 @@
 
 #include <solstice/ssol.h>
 
-struct dielectric_param {
-  double eta_i;
-  double eta_t;
-};
-
 struct matte_param {
   double reflectivity;
 };
@@ -57,40 +52,6 @@ mtl_get_normal
   val[0] = Ns[0];
   val[1] = Ns[1];
   val[2] = Ns[2];
-}
-
-static void
-dielectric_get_eta_i
-  (struct ssol_device* dev,
-   struct ssol_param_buffer* buf,
-   const double wavelength,
-   const double P[3],
-   const double Ng[3],
-   const double Ns[3],
-   const double uv[2],
-   const double w[3],
-   double* val)
-{
-  const struct dielectric_param* param = ssol_param_buffer_get(buf);
-  (void)dev, (void)wavelength, (void)P, (void)Ng, (void)Ns, (void)uv, (void)w;
-  *val = param->eta_i;
-}
-
-static void
-dielectric_get_eta_t
-  (struct ssol_device* dev,
-   struct ssol_param_buffer* buf,
-   const double wavelength,
-   const double P[3],
-   const double Ng[3],
-   const double Ns[3],
-   const double uv[2],
-   const double w[3],
-   double* val)
-{
-  const struct dielectric_param* param = ssol_param_buffer_get(buf);
-  (void)dev, (void)wavelength, (void)P, (void)Ng, (void)Ns, (void)uv, (void)w;
-  *val = param->eta_t;
 }
 
 static void
@@ -201,10 +162,10 @@ create_material_dielectric
    const struct solparser_material_dielectric* dielectric,
    struct ssol_material** out_mtl)
 {
+  const struct solparser_medium* medium_i;
+  const struct solparser_medium* medium_t;
   struct ssol_dielectric_shader shader = SSOL_DIELECTRIC_SHADER_NULL;
   struct ssol_material* mtl = NULL;
-  struct ssol_param_buffer* pbuf = NULL;
-  struct dielectric_param* param;
   res_T res = RES_OK;
   ASSERT(solstice && dielectric && out_mtl);
 
@@ -215,32 +176,16 @@ create_material_dielectric
     goto error;
   }
 
-  res = ssol_param_buffer_create
-    (solstice->ssol, sizeof(struct dielectric_param), &pbuf);
-  if(res != RES_OK) {
-    fprintf(stderr, "Could not create the Solstice Solver parameter buffer.\n");
-    goto error;
-  }
-
-  param = ssol_param_buffer_allocate(pbuf, sizeof(struct dielectric_param),
-    ALIGNOF(struct dielectric_param));
-  if(!param) {
-    fprintf(stderr, "Could not allocate the dielectric parameters.\n");
-    res = RES_MEM_ERR;
-    goto error;
-  }
-
-  param->eta_i = dielectric->eta_i;
-  param->eta_t = dielectric->eta_t;
-
+  medium_i = solparser_get_medium(solstice->parser, dielectric->medium_i);
+  medium_t = solparser_get_medium(solstice->parser, dielectric->medium_t);
   shader.normal = mtl_get_normal;
-  shader.eta_i = dielectric_get_eta_i;
-  shader.eta_t = dielectric_get_eta_t;
-  SSOL(dielectric_set_shader(mtl, &shader));
-  SSOL(material_set_param_buffer(mtl, pbuf));
+  SSOL(dielectric_setup(mtl, &shader, 
+    medium_i->refractive_index,
+    medium_t->refractive_index,
+    medium_i->absorptivity,
+    medium_t->absorptivity));
 
 exit:
-  if(pbuf) SSOL(param_buffer_ref_put(pbuf));
   *out_mtl = mtl;
   return res;
 error:

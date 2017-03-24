@@ -251,32 +251,43 @@
 #
 # <dielectric> ::=
 #   dielectric:
-#     eta_i: REAL # in ]0, INF)
-#     eta_t: REAL # in ]0, INF)
+#    medium_i: <dielectric-medium>
+#    medium_t: <dielectric-medium>
 #
 
-# invalid eta_i
+# invalid refractive_index
 - material:
-    dielectric: { eta_i: -1, eta_t: 1 }
+    dielectric:
+      medium_i: &m { refractive_index: 0, absorptivity: 0 }
+      medium_t: *m
 ---
+# invalid absorptivity
 - material:
-    dielectric: { eta_i: 0, eta_t: 1 }
+    dielectric:
+      medium_i: &m { refractive_index: 1, absorptivity: -1 }
+      medium_t: *m
 ---
-# invalid eta_t
+# missing refractive_index
 - material:
-    dielectric: { eta_i: 1, eta_t: -1 }
+    dielectric:
+      medium_i: &m { absorptivity: 0 }
+      medium_t: *m
 ---
-# invalid eta_t
+# missing absorptivity
 - material:
-    dielectric: { eta_i: 1, eta_t: 0 }
+    dielectric:
+      medium_i: &m { refractive_index: 1 }
+      medium_t: *m
 ---
-# missing eta_t
+# missing medium_i
 - material:
-    dielectric: { eta_i: 1 }
+    dielectric:
+      medium_t: { refractive_index: 1, absorptivity: 0 }
 ---
-# missing eta_i
+# missing medium_t
 - material:
-    dielectric: { eta_t: 1 }
+    dielectric:
+      medium_i: { refractive_index: 1, absorptivity: 0 }
 ---
 
 #

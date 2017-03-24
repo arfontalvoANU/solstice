@@ -223,8 +223,12 @@
 
 <dielectric> ::=
   dielectric:
-    eta_i: REAL # in ]0, INF)
-    eta_t: REAL # in ]0, INF)
+    medium_i: <dielectric-medium>
+    medium_t: <dielectric-medium>
+
+<dielectric-medium> ::=
+    refractive_index: REAL # in ]0, INF)
+    absorptivity: REAL # in [0, INF)
 
 <matte> ::=
   matte:

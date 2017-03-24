@@ -26,9 +26,16 @@ enum solparser_material_type {
   SOLPARSER_MATERIAL_VIRTUAL
 };
 
+struct solparser_medium {
+  double refractive_index;
+  double absorptivity;
+};
+
+struct solparser_medium_id { size_t i; };
+
 struct solparser_material_dielectric {
-  double eta_i; /* Refractive index of the medium the material "looks at" */
-  double eta_t; /* Refractive index of the opposite medium */
+  struct solparser_medium_id medium_i; /* Medium the material "looks at" */
+  struct solparser_medium_id medium_t; /* Opposite medium */
 };
 
 struct solparser_material_dielectric_id { size_t i; };
