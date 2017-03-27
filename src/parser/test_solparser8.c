@@ -27,10 +27,10 @@ main(int argc, char** argv)
   struct solparser_object_id obj_id;
   const struct solparser_entity* entity;
   const struct solparser_geometry* geom;
+  const struct solparser_medium* medium;
   const struct solparser_material_double_sided* mtl2;
   const struct solparser_material* mtl;
-  const struct solparser_material_thin_dielectric* thin;
-  const struct solparser_medium* medium;
+  const struct solparser_material_dielectric* dielec;
   const struct solparser_object* obj;
   const struct solparser_shape* shape;
   FILE* stream;
@@ -49,14 +49,18 @@ main(int argc, char** argv)
   fprintf(stream, "    geometry:\n");
   fprintf(stream, "      - sphere: { radius: 1 }\n");
   fprintf(stream, "        material:\n");
-  fprintf(stream, "          thin_dielectric:\n");
-  fprintf(stream, "            thickness: 0.123\n");
-  fprintf(stream, "            medium_i: &outside\n");
-  fprintf(stream, "              refractive_index: 1\n");
-  fprintf(stream, "              absorptivity: 0\n");
-  fprintf(stream, "            medium_t: &inside\n");
-  fprintf(stream, "              refractive_index: 1.5\n");
-  fprintf(stream, "              absorptivity: 20\n");
+  fprintf(stream, "          front:\n");
+  fprintf(stream, "            dielectric:\n");
+  fprintf(stream, "              medium_i: &outside\n");
+  fprintf(stream, "                refractive_index: 1\n");
+  fprintf(stream, "                absorptivity: 0\n");
+  fprintf(stream, "              medium_t: &inside\n");
+  fprintf(stream, "                refractive_index: 1.5\n");
+  fprintf(stream, "                absorptivity: 20\n");
+  fprintf(stream, "          back:\n");
+  fprintf(stream, "            dielectric:\n");
+  fprintf(stream, "              medium_i: *inside\n");
+  fprintf(stream, "              medium_t: *outside\n");
   rewind(stream);
 
   CHECK(solparser_setup(parser, NULL, stream), RES_OK);
@@ -79,19 +83,27 @@ main(int argc, char** argv)
   shape = solparser_get_shape(parser, obj->shape);
   CHECK(shape->type, SOLPARSER_SHAPE_SPHERE);
   mtl2 = solparser_get_material_double_sided(parser, obj->mtl2);
-  CHECK(mtl2->front.i, mtl2->back.i);
-  mtl = solparser_get_material(parser, mtl2->front);
-  CHECK(mtl->type, SOLPARSER_MATERIAL_THIN_DIELECTRIC);
-  thin = solparser_get_material_thin_dielectric
-    (parser, mtl->data.thin_dielectric);
-  CHECK(thin->thickness, 0.123);
+  NCHECK(mtl2->front.i, mtl2->back.i);
 
-  medium = solparser_get_medium(parser, thin->medium_i);
+  mtl = solparser_get_material(parser, mtl2->front);
+  CHECK(mtl->type, SOLPARSER_MATERIAL_DIELECTRIC);
+  dielec = solparser_get_material_dielectric(parser, mtl->data.dielectric);
+  medium = solparser_get_medium(parser, dielec->medium_i);
   CHECK(medium->refractive_index, 1);
   CHECK(medium->absorptivity, 0);
-  medium = solparser_get_medium(parser, thin->medium_t);
+  medium = solparser_get_medium(parser, dielec->medium_t);
   CHECK(medium->refractive_index, 1.5);
   CHECK(medium->absorptivity, 20);
+
+  mtl = solparser_get_material(parser, mtl2->back);
+  CHECK(mtl->type, SOLPARSER_MATERIAL_DIELECTRIC);
+  dielec = solparser_get_material_dielectric(parser, mtl->data.dielectric);
+  medium = solparser_get_medium(parser, dielec->medium_i);
+  CHECK(medium->refractive_index, 1.5);
+  CHECK(medium->absorptivity, 20);
+  medium = solparser_get_medium(parser, dielec->medium_t);
+  CHECK(medium->refractive_index, 1);
+  CHECK(medium->absorptivity, 0);
 
   CHECK(solparser_load(parser), RES_BAD_OP);
   solparser_ref_put(parser);
@@ -103,3 +115,4 @@ main(int argc, char** argv)
   CHECK(mem_allocated_size(), 0);
   return 0;
 }
+

@@ -44,6 +44,16 @@ struct target_alias {
 #define DARRAY_DATA struct target_alias
 #include <rsys/dynamic_array.h>
 
+/* Declare the array of mediums */
+#define DARRAY_NAME medium
+#define DARRAY_DATA struct solparser_medium
+#include <rsys/dynamic_array.h>
+
+/* Declare the array of dielectric materials */
+#define DARRAY_NAME dielectric
+#define DARRAY_DATA struct solparser_material_dielectric
+#include <rsys/dynamic_array.h>
+
 /* Declare the array of matte materials */
 #define DARRAY_NAME matte
 #define DARRAY_DATA struct solparser_material_matte
@@ -188,6 +198,8 @@ struct solparser {
   struct htable_yaml2sols yaml2mtls; /* Cache of materials */
   struct darray_material mtls;
   struct darray_material2 mtls2; /* Double sided materials */
+  struct darray_medium mediums;
+  struct darray_dielectric dielectrics;
   struct darray_matte mattes;
   struct darray_mirror mirrors;
   struct darray_thin_dielectric thin_dielectrics;
@@ -386,6 +398,8 @@ parser_clear(struct solparser* parser)
   htable_yaml2sols_clear(&parser->yaml2mtls);
   darray_material_clear(&parser->mtls);
   darray_material2_clear(&parser->mtls2);
+  darray_medium_clear(&parser->mediums);
+  darray_dielectric_clear(&parser->dielectrics);
   darray_matte_clear(&parser->mattes);
   darray_mirror_clear(&parser->mirrors);
   darray_thin_dielectric_clear(&parser->thin_dielectrics);
@@ -438,6 +452,8 @@ parser_release(ref_T* ref)
   htable_yaml2sols_release(&parser->yaml2mtls);
   darray_material_release(&parser->mtls);
   darray_material2_release(&parser->mtls2);
+  darray_medium_release(&parser->mediums);
+  darray_dielectric_release(&parser->dielectrics);
   darray_matte_release(&parser->mattes);
   darray_mirror_release(&parser->mirrors);
   darray_thin_dielectric_release(&parser->thin_dielectrics);
@@ -859,6 +875,192 @@ error:
  * Material
  ******************************************************************************/
 static res_T
+parse_medium
+  (struct solparser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* medium,
+   struct solparser_medium_id* out_imedium)
+{
+  enum { ABSORPTIVITY, REFRACTIVE_INDEX };
+  struct solparser_medium* mdm = NULL;
+  size_t imedium = SIZE_MAX;
+  int mask = 0; /* Register the parsed attributes */
+  intptr_t i, n;
+  res_T res = RES_OK;
+  ASSERT(doc && medium && out_imedium);
+
+  if(medium->type != YAML_MAPPING_NODE) {
+    log_err(parser, medium, "expect a mapping of medium attributes.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  /* Allocate the medium */
+  imedium = darray_medium_size_get(&parser->mediums);
+  res = darray_medium_resize(&parser->mediums, imedium + 1);
+  if(res != RES_OK) {
+    log_err(parser, medium, "could not allocate the medium.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+  mdm = darray_medium_data_get(&parser->mediums) + imedium;
+
+  n = medium->data.mapping.pairs.top - medium->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, medium->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, medium->data.mapping.pairs.start[i].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(parser, key, "expect a medium parameter.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+         log_err(parser, key,"the "Name" of the medium is already defined.\n");\
+         res = RES_BAD_ARG;                                                    \
+         goto error;                                                           \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if(!strcmp((char*)key->data.scalar.value, "absorptivity")) {
+      SETUP_MASK(ABSORPTIVITY, "absorptivity");
+      res = parse_real(parser, val, 0, DBL_MAX, &mdm->absorptivity);
+    } else if(!strcmp((char*)key->data.scalar.value, "refractive_index")) {
+      SETUP_MASK(REFRACTIVE_INDEX, "refractive_index");
+      res = parse_real
+        (parser, val, nextafter(0, 1), DBL_MAX, &mdm->refractive_index);
+    } else {
+      log_err(parser, key, "unknown medium parameter `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    if(res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
+    #undef SETUP_MASK
+  }
+
+  #define CHECK_PARAM(Flag, Name)                                              \
+  if(!(mask & BIT(Flag))) {                                                    \
+    log_err(parser, medium, "the "Name" of the medium is missing.\n");         \
+    res = RES_BAD_ARG;                                                         \
+    goto error;                                                                \
+  } (void)0
+  CHECK_PARAM(ABSORPTIVITY, "absorptivity");
+  CHECK_PARAM(REFRACTIVE_INDEX, "refractive_index");
+  #undef CHECK_PARAM
+
+exit:
+  out_imedium->i = imedium;
+  return res;
+error:
+  if(imedium) {
+    darray_medium_pop_back(&parser->mediums);
+    imedium = SIZE_MAX;
+  }
+  goto exit;
+}
+
+static res_T
+parse_material_dielectric
+  (struct solparser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* dielec,
+   struct solparser_material_dielectric_id* out_imtl)
+{
+  enum { MEDIUM_I, MEDIUM_T };
+  struct solparser_material_dielectric* mtl = NULL;
+  size_t imtl = SIZE_MAX;
+  int mask = 0; /* Register the parsed attributes */
+  intptr_t i, n;
+  res_T res = RES_OK;
+  ASSERT(doc && dielec && out_imtl);
+
+  if(dielec->type != YAML_MAPPING_NODE) {
+    log_err(parser, dielec,
+      "expect a mapping of dielec material attributes.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  /* Allocate the dielec material */
+  imtl = darray_dielectric_size_get(&parser->dielectrics);
+  res = darray_dielectric_resize(&parser->dielectrics, imtl + 1);
+  if(res != RES_OK) {
+    log_err(parser, dielec,
+      "could not allocate the dielec material.\n");
+    goto error;
+  }
+  mtl = darray_dielectric_data_get(&parser->dielectrics) + imtl;
+
+  n = dielec->data.mapping.pairs.top - dielec->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, dielec->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, dielec->data.mapping.pairs.start[i].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(parser, key, "expect a dielec material parameter.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(parser, key,                                                   \
+          "the "Name" of the dielectric material is already defined.\n");      \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if(!strcmp((char*)key->data.scalar.value, "medium_i")) {
+      SETUP_MASK(MEDIUM_I, "medium_i");
+      res = parse_medium(parser, doc, val, &mtl->medium_i);
+    } else if(!strcmp((char*)key->data.scalar.value, "medium_t")) {
+      SETUP_MASK(MEDIUM_T, "medium_t");
+      res = parse_medium(parser, doc, val, &mtl->medium_t);
+    } else {
+      log_err(parser, key, "unknown dielectric parameter `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    if(res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
+    #undef SETUP_MASK
+  }
+
+  #define CHECK_PARAM(Flag, Name)                                              \
+    if(!(mask & BIT(Flag))) {                                                  \
+      log_err(parser, dielec,                                                  \
+        "the "Name" of the dielectric material is missing.\n");                \
+      res = RES_BAD_ARG;                                                       \
+      goto error;                                                              \
+    } (void)0
+  CHECK_PARAM(MEDIUM_I, "medium_i");
+  CHECK_PARAM(MEDIUM_T, "medium_t");
+  #undef CHECK_PARAM
+
+exit:
+  out_imtl->i = imtl;
+  return res;
+error:
+  if(imtl) {
+    darray_dielectric_pop_back(&parser->dielectrics);
+    imtl = SIZE_MAX;
+  }
+  goto exit;
+}
+
+static res_T
 parse_material_matte
   (struct solparser* parser,
    yaml_document_t* doc,
@@ -1038,7 +1240,7 @@ parse_material_thin_dielectric
    yaml_node_t* thin,
    struct solparser_material_thin_dielectric_id* out_imtl)
 {
-  enum { ABSORPTION, REFRACTIVE_INDEX, THICKNESS };
+  enum { MEDIUM_I, MEDIUM_T, THICKNESS };
   struct solparser_material_thin_dielectric* mtl = NULL;
   size_t imtl = SIZE_MAX;
   int mask = 0; /* Register the parsed attributes */
@@ -1048,7 +1250,7 @@ parse_material_thin_dielectric
 
   if(thin->type != YAML_MAPPING_NODE) {
     log_err(parser, thin,
-      "expect a mapping of thin material attributes.\n");
+      "expect a mapping of thin dielectric material attributes.\n");
     res = RES_BAD_ARG;
     goto error;
   }
@@ -1085,13 +1287,12 @@ parse_material_thin_dielectric
       }                                                                        \
       mask |= BIT(Flag);                                                       \
     } (void)0
-    if(!strcmp((char*)key->data.scalar.value, "absorption")) {
-      SETUP_MASK(ABSORPTION, "absorption");
-      res = parse_real(parser, val, 0, DBL_MAX, &mtl->absorption);
-    } else if(!strcmp((char*)key->data.scalar.value, "refractive_index")) {
-      SETUP_MASK(REFRACTIVE_INDEX, "refractive_index");
-      res = parse_real
-        (parser, val, nextafter(0, 1), DBL_MAX, &mtl->refractive_index);
+    if(!strcmp((char*)key->data.scalar.value, "medium_i")) {
+      SETUP_MASK(MEDIUM_I, "medium_i");
+      res = parse_medium(parser, doc, val, &mtl->medium_i);
+    } else if(!strcmp((char*)key->data.scalar.value, "medium_t")) {
+      SETUP_MASK(MEDIUM_T, "medium_t");
+      res = parse_medium(parser, doc, val, &mtl->medium_t);
     } else if(!strcmp((char*)key->data.scalar.value, "thickness")) {
       SETUP_MASK(THICKNESS, "thickness");
       res = parse_real(parser, val, 0, DBL_MAX, &mtl->thickness);
@@ -1115,8 +1316,8 @@ parse_material_thin_dielectric
       res = RES_BAD_ARG;                                                       \
       goto error;                                                              \
     } (void)0
-  CHECK_PARAM(ABSORPTION, "absorption");
-  CHECK_PARAM(REFRACTIVE_INDEX, "refractive_index");
+  CHECK_PARAM(MEDIUM_I, "medium_i");
+  CHECK_PARAM(MEDIUM_T, "medium_t");
   CHECK_PARAM(THICKNESS, "thickness");
   #undef CHECK_PARAM
 
@@ -1211,7 +1412,11 @@ parse_material_descriptor
       }                                                                        \
       mask |= BIT(Flag);                                                       \
     } (void)0
-    if(!strcmp((char*)key->data.scalar.value, "matte")) {
+    if(!strcmp((char*)key->data.scalar.value, "dielectric")) {
+      SETUP_MASK(DESCRIPTOR, "descriptor");
+      mtl->type = SOLPARSER_MATERIAL_DIELECTRIC;
+      res = parse_material_dielectric(parser, doc, val, &mtl->data.dielectric);
+    } else if(!strcmp((char*)key->data.scalar.value, "matte")) {
       SETUP_MASK(DESCRIPTOR, "descriptor");
       mtl->type = SOLPARSER_MATERIAL_MATTE;
       res = parse_material_matte(parser, doc, val, &mtl->data.matte);
@@ -3627,6 +3832,8 @@ solparser_create
   htable_yaml2sols_init(mem_allocator, &parser->yaml2mtls);
   darray_material_init(mem_allocator, &parser->mtls);
   darray_material2_init(mem_allocator, &parser->mtls2);
+  darray_medium_init(mem_allocator, &parser->mediums);
+  darray_dielectric_init(mem_allocator, &parser->dielectrics);
   darray_matte_init(mem_allocator, &parser->mattes);
   darray_mirror_init(mem_allocator, &parser->mirrors);
   darray_thin_dielectric_init(mem_allocator, &parser->thin_dielectrics);
@@ -3946,6 +4153,15 @@ solparser_get_geometry
   return darray_geometry_cdata_get(&parser->geometries) + geom.i;
 }
 
+const struct solparser_medium*
+solparser_get_medium
+  (const struct solparser* parser,
+   const struct solparser_medium_id medium)
+{
+  ASSERT(parser && medium.i < darray_medium_size_get(&parser->mediums));
+  return darray_medium_cdata_get(&parser->mediums) + medium.i;
+}
+
 const struct solparser_material*
 solparser_get_material
   (const struct solparser* parser,
@@ -3962,6 +4178,16 @@ solparser_get_material_double_sided
 {
   ASSERT(parser && mtl2.i < darray_material2_size_get(&parser->mtls2));
   return darray_material2_cdata_get(&parser->mtls2) + mtl2.i;
+}
+
+const struct solparser_material_dielectric*
+solparser_get_material_dielectric
+  (const struct solparser* parser,
+   const struct solparser_material_dielectric_id dielectric)
+{
+  ASSERT(parser);
+  ASSERT(dielectric.i < darray_dielectric_size_get(&parser->dielectrics));
+  return darray_dielectric_cdata_get(&parser->dielectrics) + dielectric.i;
 }
 
 const struct solparser_material_matte*

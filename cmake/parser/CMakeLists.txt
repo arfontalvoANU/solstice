@@ -82,6 +82,8 @@ if(NOT NO_TEST)
     ${SOLPARSER_SOURCE_DIR}/yaml/test_ok_5.yaml)
   add_test(test_solparser_ok_6 test_solparser
     ${SOLPARSER_SOURCE_DIR}/yaml/test_ok_6.yaml)
+  add_test(test_solparser_ok_7 test_solparser
+    ${SOLPARSER_SOURCE_DIR}/yaml/test_ok_7.yaml)
   add_test(test_solparser_ko test_solparser -e
     ${SOLPARSER_SOURCE_DIR}/yaml/test_ko_0.yaml)
 
@@ -91,6 +93,7 @@ if(NOT NO_TEST)
   new_test(test_solparser5)
   new_test(test_solparser6)
   new_test(test_solparser7)
+  new_test(test_solparser8)
 
   rcmake_copy_runtime_libraries(test_solparser)
 endif()

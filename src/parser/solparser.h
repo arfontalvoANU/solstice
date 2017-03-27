@@ -92,6 +92,11 @@ solparser_get_geometry
   (const struct solparser* parser,
    const struct solparser_geometry_id geom);
 
+extern LOCAL_SYM const struct solparser_medium*
+solparser_get_medium
+  (const struct solparser* parser,
+   const struct solparser_medium_id medium);
+
 extern LOCAL_SYM const struct solparser_material*
 solparser_get_material
   (const struct solparser* parser,
@@ -101,6 +106,11 @@ extern LOCAL_SYM const struct solparser_material_double_sided*
 solparser_get_material_double_sided
   (const struct solparser* parser,
    const struct solparser_material_double_sided_id mtl2);
+
+extern LOCAL_SYM const struct solparser_material_dielectric*
+solparser_get_material_dielectric
+  (const struct solparser* parser,
+   const struct solparser_material_dielectric_id dielectric);
 
 extern LOCAL_SYM const struct solparser_material_matte*
 solparser_get_material_matte

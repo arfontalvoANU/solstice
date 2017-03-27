@@ -219,25 +219,34 @@
   back: <material-descriptor>
 
 <material-descriptor> ::=
-  <mirror> | <matte> | <thin-dielectric> | <virtual>
+  <dielectric> | <matte> | <mirror> | thin-dielectric> | <virtual>
+
+<dielectric> ::=
+  dielectric:
+    medium_i: <dielectric-medium>
+    medium_t: <dielectric-medium>
+
+<matte> ::=
+  matte:
+    reflectivity: REAL # in [0, 1]
 
 <mirror> ::=
   mirror:
     reflectivity: REAL # in [0, 1]
     roughness: REAL # in [0, 1]
 
-<matte> ::=
-  matte:
-    reflectivity: REAL # in [0, 1]
-
 <virtual> ::=
   virtual: EMPTY-STRING
 
 <thin-dielectric> ::=
   thin_dielectric:
-    absorption: REAL # in [0, INF)
     thickness: REAL # in [0, INF)
+    medium_i: <dielectric-medium>
+    medium_t: <dielectric-medium>
+
+<dielectric-medium> ::=
     refractive_index: REAL # in ]0, INF)
+    absorptivity: REAL # in [0, INF)
 
 #----------------------------------------
 <entity> ::=
