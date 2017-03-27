@@ -35,6 +35,33 @@ update_instance_transform
   return ssol_instance_set_transform(node->instance, transform);
 }
 
+static res_T
+merge_name
+  (struct str* output,
+   const struct str* name0,
+   const struct str* name1)
+{
+  res_T res = RES_OK;
+  ASSERT(output && name0 && name1);
+  ASSERT(output != name0 && output != name1);
+
+  res = str_copy(output, name0);
+  if(res != RES_OK) goto error;
+
+  res = str_append_char(output, '.');
+  if(res != RES_OK) goto error;
+
+  res = str_append(output, str_cget(name1));
+  if(res != RES_OK) goto error;
+
+exit:
+  return res;
+error:
+  fprintf(stderr, "Could not build the name from `%s' and `%s'.\n",
+    str_cget(name0), str_cget(name1));
+  goto exit;
+}
+
 static INLINE int
 srcvl_side_to_ssol_mask(const enum srcvl_side side)
 {
@@ -97,6 +124,78 @@ error:
   goto exit;
 }
 
+static res_T
+get_anchor_node
+  (struct solstice* solstice,
+   const struct solparser_anchor_id anchor_id,
+   struct solstice_node** out_node)
+{
+  struct solstice_node* node = NULL;
+  struct solstice_node** pnode = NULL;
+  res_T res = RES_OK;
+  ASSERT(solstice && out_node);
+
+  pnode = htable_anchor_find(&solstice->anchors, &anchor_id.i);
+  if(pnode) {
+    node = *pnode;
+  } else {
+    res = solstice_node_target_create(solstice->allocator, &node);
+    if(res != RES_OK) goto error;
+    res = htable_anchor_set(&solstice->anchors, &anchor_id.i, &node);
+    if(res != RES_OK) goto error;
+  }
+
+exit:
+  *out_node = node;
+  return res;
+error:
+  if(node) solstice_node_ref_put(node);
+  goto exit;
+}
+
+static res_T
+setup_tracking
+  (struct solstice* solstice,
+   struct sanim_tracking* tracking,
+   const struct solparser_target* target)
+{
+  struct solstice_node* anchor_node = NULL;
+  struct str anchor_name;
+  res_T res = RES_OK;
+  ASSERT(solstice && tracking && target);
+
+  str_init(solstice->allocator, &anchor_name);
+
+  switch(target->type) {
+    case SOLPARSER_TARGET_ANCHOR:
+      tracking->policy = TRACKING_NODE_TARGET;
+      res = get_anchor_node(solstice, target->data.anchor, &anchor_node);
+      if(res != RES_OK) goto error;
+      solstice_node_target_get_tracking(anchor_node, tracking);
+      break;
+    case SOLPARSER_TARGET_DIRECTION:
+      tracking->policy = TRACKING_OUT_DIR;
+      d3_set(tracking->data.out_dir.u, target->data.direction);
+      break;
+    case SOLPARSER_TARGET_POSITION:
+      tracking->policy = TRACKING_POINT;
+      d3_set(tracking->data.point.target, target->data.position);
+      tracking->data.point.target_is_local = 0; /* TODO */
+      break;
+    case SOLPARSER_TARGET_SUN:
+      tracking->policy = TRACKING_SUN;
+      break;
+    default: FATAL("Unreachable code.\n"); break;
+  }
+
+exit:
+  str_release(&anchor_name);
+  return res;
+error:
+  goto exit;
+}
+
+
 static struct solstice_node*
 create_x_pivot_node
   (struct solstice* solstice,
@@ -104,7 +203,6 @@ create_x_pivot_node
 {
   double n[3];
   struct solstice_node* node = NULL;
-  struct solstice_node* target = NULL;
   const struct solparser_x_pivot* parser_x_pivot = NULL;
   struct sanim_pivot anim_pivot = SANIM_PIVOT_NULL;
   struct sanim_tracking anim_tracking = SANIM_TRACKING_NULL;
@@ -117,28 +215,8 @@ create_x_pivot_node
   d3_set(anim_pivot.data.pivot1.ref_normal, d3(n, 0, 0, 1));
   d3_set(anim_pivot.data.pivot1.ref_point, parser_x_pivot->ref_point);
 
-  /* Setup the tracking descriptor */
-  switch (parser_x_pivot->target.type) {
-    case SOLPARSER_TARGET_ANCHOR:
-      anim_tracking.policy = TRACKING_NODE_TARGET;
-      target = *htable_anchor_find
-        (&solstice->anchors, &parser_x_pivot->target.data.anchor.i);
-      solstice_node_target_get_tracking(target, &anim_tracking);
-      break;
-    case SOLPARSER_TARGET_DIRECTION:
-      anim_tracking.policy = TRACKING_OUT_DIR;
-      d3_set(anim_tracking.data.out_dir.u, parser_x_pivot->target.data.direction);
-      break;
-    case SOLPARSER_TARGET_POSITION:
-      anim_tracking.policy = TRACKING_POINT;
-      d3_set(anim_tracking.data.point.target, parser_x_pivot->target.data.position);
-      anim_tracking.data.point.target_is_local = 0; /* TODO */
-      break;
-    case SOLPARSER_TARGET_SUN:
-      anim_tracking.policy = TRACKING_SUN;
-      break;
-    default: FATAL("Unreachable code.\n"); break;
-  }
+  res = setup_tracking(solstice, &anim_tracking, &parser_x_pivot->target);
+  if(res != RES_OK) goto error;
 
   res = solstice_node_pivot_create
     (solstice->allocator, &anim_pivot, &anim_tracking, &node);
@@ -163,7 +241,6 @@ create_zx_pivot_node
    const struct solparser_entity* entity)
 {
   struct solstice_node* node = NULL;
-  struct solstice_node* target = NULL;
   const struct solparser_zx_pivot* parser_zx_pivot = NULL;
   struct sanim_pivot anim_pivot = SANIM_PIVOT_NULL;
   struct sanim_tracking anim_tracking = SANIM_TRACKING_NULL;
@@ -176,35 +253,15 @@ create_zx_pivot_node
   anim_pivot.data.pivot2.spacing = parser_zx_pivot->spacing;
   d3_set(anim_pivot.data.pivot2.ref_point, parser_zx_pivot->ref_point);
 
-  /* Setup the tracking descriptor */
-  switch (parser_zx_pivot->target.type) {
-  case SOLPARSER_TARGET_ANCHOR:
-    anim_tracking.policy = TRACKING_NODE_TARGET;
-    target = *htable_anchor_find
-    (&solstice->anchors, &parser_zx_pivot->target.data.anchor.i);
-    solstice_node_target_get_tracking(target, &anim_tracking);
-    break;
-  case SOLPARSER_TARGET_DIRECTION:
-    anim_tracking.policy = TRACKING_OUT_DIR;
-    d3_set(anim_tracking.data.out_dir.u, parser_zx_pivot->target.data.direction);
-    break;
-  case SOLPARSER_TARGET_POSITION:
-    anim_tracking.policy = TRACKING_POINT;
-    d3_set(anim_tracking.data.point.target, parser_zx_pivot->target.data.position);
-    anim_tracking.data.point.target_is_local = 0; /* TODO */
-    break;
-  case SOLPARSER_TARGET_SUN:
-    anim_tracking.policy = TRACKING_SUN;
-    break;
-  default: FATAL("Unreachable code.\n"); break;
-  }
+  res = setup_tracking(solstice, &anim_tracking, &parser_zx_pivot->target);
+  if(res != RES_OK) goto error;
 
   res = solstice_node_pivot_create
     (solstice->allocator, &anim_pivot, &anim_tracking, &node);
-  if (res != RES_OK) goto error;
+  if(res != RES_OK) goto error;
 
   res = darray_nodes_push_back(&solstice->pivots, &node);
-  if (res != RES_OK) goto error;
+  if(res != RES_OK) goto error;
 
 exit:
   return node;
@@ -223,16 +280,17 @@ create_node
    const struct str* name)
 {
   struct solstice_node* node = NULL;
-  struct solstice_node* tgt = NULL;
   struct solstice_node* child = NULL;
   struct solstice_receiver* rcv = NULL;
   struct str child_name;
+  struct str anchor_name;
   double rotation[3];
   size_t i;
   res_T res = RES_OK;
   ASSERT(solstice && entity && name);
 
   str_init(solstice->allocator, &child_name);
+  str_init(solstice->allocator, &anchor_name);
 
   /* Create the entity node */
   switch(entity->type) {
@@ -255,6 +313,12 @@ create_node
     goto error;
   }
 
+  res = solstice_node_set_name(node, str_cget(name));
+  if(res != RES_OK) {
+    fprintf(stderr, "Could not setup the solstice node name.\n");
+    goto error;
+  }
+
   /* Setup the primary parameter for the geometry entity */
   if(entity->type == SOLPARSER_ENTITY_GEOMETRY) {
     res = solstice_node_geometry_set_primary(node, entity->primary);
@@ -272,7 +336,7 @@ create_node
     const int mask = srcvl_side_to_ssol_mask(rcv->side);
     ASSERT(rcv->node == NULL); /* Receiver is not attached to a node */
 
-    res = solstice_node_geometry_set_receiver(node, mask);
+    res = solstice_node_geometry_set_receiver(node, mask, rcv->per_primitive);
     if(res != RES_OK) {
       fprintf(stderr, "Could not define the entity `%s' as a receiver.\n",
         str_cget(&entity->name));
@@ -290,16 +354,17 @@ create_node
 
   /* Register entity anchors */
   FOR_EACH(i, 0, solparser_entity_get_anchors_count(entity)) {
+    struct solstice_node* tgt = NULL;
     struct solparser_anchor_id id;
-    const struct solparser_anchor* anchor = NULL;
-
-    res = solstice_node_target_create(solstice->allocator, &tgt);
-    if(res != RES_OK) goto error;
+    const struct solparser_anchor* anchor;
 
     id = solparser_entity_get_anchor(entity, i);
     anchor = solparser_get_anchor(solstice->parser, id);
 
-    res = htable_anchor_set(&solstice->anchors, &id.i, &tgt);
+    res = merge_name(&anchor_name, name, &anchor->name);
+    if(res != RES_OK) goto error;
+
+    res = get_anchor_node(solstice, id, &tgt);
     if(res != RES_OK) goto error;
 
     solstice_node_set_translation(tgt, anchor->position);
@@ -319,15 +384,8 @@ create_node
     id = solparser_entity_get_child(entity, i);
     child_entity = solparser_get_entity(solstice->parser, id);
 
-    #define CALL(Func)                                                         \
-      if(RES_OK != (res = Func)) {                                             \
-        fprintf(stderr, "Could not build the absolute entity name.\n");        \
-        goto error;                                                            \
-      } (void)0
-    CALL(str_copy(&child_name, name));
-    CALL(str_append_char(&child_name, '.'));
-    CALL(str_append(&child_name, str_cget(&child_entity->name)));
-    #undef CALL
+    res = merge_name(&child_name, name, &child_entity->name);
+    if(res != RES_OK) goto error;
 
     child = create_node(solstice, child_entity, &child_name);
     if(!child) goto error;
@@ -341,9 +399,9 @@ create_node
 
 exit:
   str_release(&child_name);
+  str_release(&anchor_name);
   return node;
 error:
-  if(tgt) solstice_node_ref_put(tgt);
   if(child) solstice_node_ref_put(child);
   if(node) solstice_node_ref_put(node);
   node = NULL;

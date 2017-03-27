@@ -4,8 +4,9 @@ solstice
   -D <sun-dir-list>
   -f # Force output overwrite
   -h # Short help and exit
-  -O # Switch in dump mode
+  -g <dump> # Switch in dump geometry
   -o OUTPUT # defaulting to stdout if not defined
+  -p <dump-radiative-path> # Switch in dump radiative paths mode
   -q # don't print a message if no INPUT is submitted
   -n INTEGER # Realisations count
   -r <rendering> # Switch in rendering mode
@@ -13,7 +14,8 @@ solstice
   -t INTEGER # Threads count
   INPUT # Input scene in YAML
 
-solstice -r img=1280x720:pos=0,100,0:tgt=0,0,0:up=0,1,0:fov=70
+solstice -r img=1280x720:pos=0,100,0:tgt=0,0,0:up=0,1,0:fov=70:spp=1
+solstice -g format=obj:split-group=1
 
 -d and -D are exclusive
 
@@ -36,7 +38,28 @@ solstice -r img=1280x720:pos=0,100,0:tgt=0,0,0:up=0,1,0:fov=70
   <rendering-option>[:<rendering-option> ... ]
 
 <rendering-option> ::=
-  <fov> | <img> | <position> | <target> | <up>
+  <fov> | <img> | <position> | <render-mode> | <samples-per-pixel> | <target> | <up>
+
+<dump> ::=
+  format=<dump-format>[:split=<split-mode>]
+
+<dump-radiative-path> ::=
+  <dump-path-option>[:<dump-path-option> ... ]
+
+<dump-path-option> ::=
+  <sun-ray-len> | <inf-ray-len> | default
+
+<sun-ray-len> ::=
+  srlen=REAL
+
+<inf-ray-len> ::= # Length of the rays going to infinite
+  irlen=REAL
+
+<dump-format> ::=
+  obj
+
+<split-mode> ::=
+  geometry | object | none
 
 <fov> ::=
   fov=<real3>
@@ -46,6 +69,15 @@ solstice -r img=1280x720:pos=0,100,0:tgt=0,0,0:up=0,1,0:fov=70
 
 <position> ::=
   pos=<real3>
+
+<render-mode> ::=
+  rmode=<render-algorithm>
+
+<render-algorithm> ::=
+  draft | pt # path tracing
+
+<samples-per-pixel> ::=
+  spp=<INTEGER>
 
 <target> ::=
   tgt=<real3>

@@ -37,6 +37,7 @@ node_create
   }
 
   ref_init(&node->ref);
+  str_init(allocator, &node->name);
   node->type = type;
   node->anim = SANIM_NODE_NULL;
   node->allocator = allocator;
@@ -61,6 +62,7 @@ node_release(ref_T* ref)
 
   node = CONTAINER_OF(ref, struct solstice_node, ref);
   if(node->instance) SSOL(instance_ref_put(node->instance));
+  str_release(&node->name);
 
   SANIM(node_is_initialized(&node->anim, &is_init));
   if(is_init) {
@@ -222,6 +224,20 @@ solstice_node_ref_put(struct solstice_node* node)
 }
 
 res_T
+solstice_node_set_name(struct solstice_node* node, const char* name)
+{
+  ASSERT(node);
+  return str_set(&node->name, name);
+}
+
+const char*
+solstice_node_get_name(const struct solstice_node* node)
+{
+  ASSERT(node);
+  return str_cget(&node->name);
+}
+
+res_T
 solstice_node_geometry_set_primary
   (struct solstice_node* node, const int is_primary)
 {
@@ -230,10 +246,11 @@ solstice_node_geometry_set_primary
 }
 
 res_T
-solstice_node_geometry_set_receiver(struct solstice_node* node, const int mask)
+solstice_node_geometry_set_receiver
+  (struct solstice_node* node, const int mask, const int per_primitive)
 {
   ASSERT(node && node->type == SOLSTICE_NODE_GEOMETRY);
-  return ssol_instance_set_receiver(node->instance, mask);
+  return ssol_instance_set_receiver(node->instance, mask, per_primitive);
 }
 
 void

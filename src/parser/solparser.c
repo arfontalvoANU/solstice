@@ -44,6 +44,16 @@ struct target_alias {
 #define DARRAY_DATA struct target_alias
 #include <rsys/dynamic_array.h>
 
+/* Declare the array of mediums */
+#define DARRAY_NAME medium
+#define DARRAY_DATA struct solparser_medium
+#include <rsys/dynamic_array.h>
+
+/* Declare the array of dielectric materials */
+#define DARRAY_NAME dielectric
+#define DARRAY_DATA struct solparser_material_dielectric
+#include <rsys/dynamic_array.h>
+
 /* Declare the array of matte materials */
 #define DARRAY_NAME matte
 #define DARRAY_DATA struct solparser_material_matte
@@ -52,6 +62,11 @@ struct target_alias {
 /* Declare the array of mirror materials */
 #define DARRAY_NAME mirror
 #define DARRAY_DATA struct solparser_material_mirror
+#include <rsys/dynamic_array.h>
+
+/* Declare the array of thin_dielectric materials */
+#define DARRAY_NAME thin_dielectric
+#define DARRAY_DATA struct solparser_material_thin_dielectric
 #include <rsys/dynamic_array.h>
 
 /* Declare the array of materials  */
@@ -97,6 +112,16 @@ struct target_alias {
 #define DARRAY_FUNCTOR_COPY solparser_shape_paraboloid_copy
 #define DARRAY_FUNCTOR_COPY_AND_RELEASE \
   solparser_shape_paraboloid_copy_and_release
+#include <rsys/dynamic_array.h>
+
+/* Declare the array of hyperboloids */
+#define DARRAY_NAME hyperboloid
+#define DARRAY_DATA struct solparser_shape_hyperboloid
+#define DARRAY_FUNCTOR_INIT solparser_shape_hyperboloid_init
+#define DARRAY_FUNCTOR_RELEASE solparser_shape_hyperboloid_release
+#define DARRAY_FUNCTOR_COPY solparser_shape_hyperboloid_copy
+#define DARRAY_FUNCTOR_COPY_AND_RELEASE \
+  solparser_shape_hyperboloid_copy_and_release
 #include <rsys/dynamic_array.h>
 
 /* Declare the array of planes */
@@ -173,8 +198,11 @@ struct solparser {
   struct htable_yaml2sols yaml2mtls; /* Cache of materials */
   struct darray_material mtls;
   struct darray_material2 mtls2; /* Double sided materials */
+  struct darray_medium mediums;
+  struct darray_dielectric dielectrics;
   struct darray_matte mattes;
   struct darray_mirror mirrors;
+  struct darray_thin_dielectric thin_dielectrics;
 
   /* Use to deferred the setup of the anchor targeted by a pivot */
   struct darray_tgtalias tgtaliases;
@@ -186,6 +214,7 @@ struct solparser {
   struct darray_impgeom objs;
   struct darray_paraboloid parabols;
   struct darray_paraboloid parabolic_cylinders;
+  struct darray_hyperboloid hyperbols;
   struct darray_plane planes;
   struct darray_sphere spheres;
   struct darray_impgeom stls;
@@ -200,7 +229,6 @@ struct solparser {
   struct solparser_sun sun; /* The loaded sun */
 
   /* Entity */
-  struct htable_yaml2sols yaml2entities; /* Cache of entities */
   struct htable_str2sols str2entities;
   struct darray_entity entities;
 
@@ -370,8 +398,11 @@ parser_clear(struct solparser* parser)
   htable_yaml2sols_clear(&parser->yaml2mtls);
   darray_material_clear(&parser->mtls);
   darray_material2_clear(&parser->mtls2);
+  darray_medium_clear(&parser->mediums);
+  darray_dielectric_clear(&parser->dielectrics);
   darray_matte_clear(&parser->mattes);
   darray_mirror_clear(&parser->mirrors);
+  darray_thin_dielectric_clear(&parser->thin_dielectrics);
 
   /* Deferred targeted anchors */
   darray_tgtalias_clear(&parser->tgtaliases);
@@ -383,6 +414,7 @@ parser_clear(struct solparser* parser)
   darray_impgeom_clear(&parser->objs);
   darray_paraboloid_clear(&parser->parabols);
   darray_paraboloid_clear(&parser->parabolic_cylinders);
+  darray_hyperboloid_clear(&parser->hyperbols);
   darray_plane_clear(&parser->planes);
   darray_sphere_clear(&parser->spheres);
   darray_impgeom_clear(&parser->stls);
@@ -397,7 +429,6 @@ parser_clear(struct solparser* parser)
   parser->sun_key = 0;
 
   /* Entities */
-  htable_yaml2sols_clear(&parser->yaml2entities);
   htable_str2sols_clear(&parser->str2entities);
   darray_entity_clear(&parser->entities);
 
@@ -421,8 +452,11 @@ parser_release(ref_T* ref)
   htable_yaml2sols_release(&parser->yaml2mtls);
   darray_material_release(&parser->mtls);
   darray_material2_release(&parser->mtls2);
+  darray_medium_release(&parser->mediums);
+  darray_dielectric_release(&parser->dielectrics);
   darray_matte_release(&parser->mattes);
   darray_mirror_release(&parser->mirrors);
+  darray_thin_dielectric_release(&parser->thin_dielectrics);
 
   /* Deferred targeted anchors */
   darray_tgtalias_release(&parser->tgtaliases);
@@ -434,6 +468,7 @@ parser_release(ref_T* ref)
   darray_impgeom_release(&parser->objs);
   darray_paraboloid_release(&parser->parabols);
   darray_paraboloid_release(&parser->parabolic_cylinders);
+  darray_hyperboloid_release(&parser->hyperbols);
   darray_plane_release(&parser->planes);
   darray_sphere_release(&parser->spheres);
   darray_impgeom_release(&parser->stls);
@@ -447,7 +482,6 @@ parser_release(ref_T* ref)
   solparser_sun_release(&parser->sun);
 
   /* Entities */
-  htable_yaml2sols_release(&parser->yaml2entities);
   htable_str2sols_release(&parser->str2entities);
   darray_entity_release(&parser->entities);
 
@@ -841,6 +875,192 @@ error:
  * Material
  ******************************************************************************/
 static res_T
+parse_medium
+  (struct solparser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* medium,
+   struct solparser_medium_id* out_imedium)
+{
+  enum { ABSORPTIVITY, REFRACTIVE_INDEX };
+  struct solparser_medium* mdm = NULL;
+  size_t imedium = SIZE_MAX;
+  int mask = 0; /* Register the parsed attributes */
+  intptr_t i, n;
+  res_T res = RES_OK;
+  ASSERT(doc && medium && out_imedium);
+
+  if(medium->type != YAML_MAPPING_NODE) {
+    log_err(parser, medium, "expect a mapping of medium attributes.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  /* Allocate the medium */
+  imedium = darray_medium_size_get(&parser->mediums);
+  res = darray_medium_resize(&parser->mediums, imedium + 1);
+  if(res != RES_OK) {
+    log_err(parser, medium, "could not allocate the medium.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+  mdm = darray_medium_data_get(&parser->mediums) + imedium;
+
+  n = medium->data.mapping.pairs.top - medium->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, medium->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, medium->data.mapping.pairs.start[i].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(parser, key, "expect a medium parameter.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+         log_err(parser, key,"the "Name" of the medium is already defined.\n");\
+         res = RES_BAD_ARG;                                                    \
+         goto error;                                                           \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if(!strcmp((char*)key->data.scalar.value, "absorptivity")) {
+      SETUP_MASK(ABSORPTIVITY, "absorptivity");
+      res = parse_real(parser, val, 0, DBL_MAX, &mdm->absorptivity);
+    } else if(!strcmp((char*)key->data.scalar.value, "refractive_index")) {
+      SETUP_MASK(REFRACTIVE_INDEX, "refractive_index");
+      res = parse_real
+        (parser, val, nextafter(0, 1), DBL_MAX, &mdm->refractive_index);
+    } else {
+      log_err(parser, key, "unknown medium parameter `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    if(res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
+    #undef SETUP_MASK
+  }
+
+  #define CHECK_PARAM(Flag, Name)                                              \
+  if(!(mask & BIT(Flag))) {                                                    \
+    log_err(parser, medium, "the "Name" of the medium is missing.\n");         \
+    res = RES_BAD_ARG;                                                         \
+    goto error;                                                                \
+  } (void)0
+  CHECK_PARAM(ABSORPTIVITY, "absorptivity");
+  CHECK_PARAM(REFRACTIVE_INDEX, "refractive_index");
+  #undef CHECK_PARAM
+
+exit:
+  out_imedium->i = imedium;
+  return res;
+error:
+  if(imedium) {
+    darray_medium_pop_back(&parser->mediums);
+    imedium = SIZE_MAX;
+  }
+  goto exit;
+}
+
+static res_T
+parse_material_dielectric
+  (struct solparser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* dielec,
+   struct solparser_material_dielectric_id* out_imtl)
+{
+  enum { MEDIUM_I, MEDIUM_T };
+  struct solparser_material_dielectric* mtl = NULL;
+  size_t imtl = SIZE_MAX;
+  int mask = 0; /* Register the parsed attributes */
+  intptr_t i, n;
+  res_T res = RES_OK;
+  ASSERT(doc && dielec && out_imtl);
+
+  if(dielec->type != YAML_MAPPING_NODE) {
+    log_err(parser, dielec,
+      "expect a mapping of dielec material attributes.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  /* Allocate the dielec material */
+  imtl = darray_dielectric_size_get(&parser->dielectrics);
+  res = darray_dielectric_resize(&parser->dielectrics, imtl + 1);
+  if(res != RES_OK) {
+    log_err(parser, dielec,
+      "could not allocate the dielec material.\n");
+    goto error;
+  }
+  mtl = darray_dielectric_data_get(&parser->dielectrics) + imtl;
+
+  n = dielec->data.mapping.pairs.top - dielec->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, dielec->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, dielec->data.mapping.pairs.start[i].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(parser, key, "expect a dielec material parameter.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(parser, key,                                                   \
+          "the "Name" of the dielectric material is already defined.\n");      \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if(!strcmp((char*)key->data.scalar.value, "medium_i")) {
+      SETUP_MASK(MEDIUM_I, "medium_i");
+      res = parse_medium(parser, doc, val, &mtl->medium_i);
+    } else if(!strcmp((char*)key->data.scalar.value, "medium_t")) {
+      SETUP_MASK(MEDIUM_T, "medium_t");
+      res = parse_medium(parser, doc, val, &mtl->medium_t);
+    } else {
+      log_err(parser, key, "unknown dielectric parameter `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    if(res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
+    #undef SETUP_MASK
+  }
+
+  #define CHECK_PARAM(Flag, Name)                                              \
+    if(!(mask & BIT(Flag))) {                                                  \
+      log_err(parser, dielec,                                                  \
+        "the "Name" of the dielectric material is missing.\n");                \
+      res = RES_BAD_ARG;                                                       \
+      goto error;                                                              \
+    } (void)0
+  CHECK_PARAM(MEDIUM_I, "medium_i");
+  CHECK_PARAM(MEDIUM_T, "medium_t");
+  #undef CHECK_PARAM
+
+exit:
+  out_imtl->i = imtl;
+  return res;
+error:
+  if(imtl) {
+    darray_dielectric_pop_back(&parser->dielectrics);
+    imtl = SIZE_MAX;
+  }
+  goto exit;
+}
+
+static res_T
 parse_material_matte
   (struct solparser* parser,
    yaml_document_t* doc,
@@ -1014,6 +1234,105 @@ error:
 }
 
 static res_T
+parse_material_thin_dielectric
+  (struct solparser* parser,
+   yaml_document_t* doc,
+   yaml_node_t* thin,
+   struct solparser_material_thin_dielectric_id* out_imtl)
+{
+  enum { MEDIUM_I, MEDIUM_T, THICKNESS };
+  struct solparser_material_thin_dielectric* mtl = NULL;
+  size_t imtl = SIZE_MAX;
+  int mask = 0; /* Register the parsed attributes */
+  intptr_t i, n;
+  res_T res = RES_OK;
+  ASSERT(doc && thin && out_imtl);
+
+  if(thin->type != YAML_MAPPING_NODE) {
+    log_err(parser, thin,
+      "expect a mapping of thin dielectric material attributes.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  /* Allocate the thin dielectric material */
+  imtl = darray_thin_dielectric_size_get(&parser->thin_dielectrics);
+  res = darray_thin_dielectric_resize(&parser->thin_dielectrics, imtl + 1);
+  if(res != RES_OK) {
+    log_err(parser, thin,
+      "could not allocate the thin dielectric material.\n");
+    goto error;
+  }
+  mtl = darray_thin_dielectric_data_get(&parser->thin_dielectrics) + imtl;
+
+  n = thin->data.mapping.pairs.top - thin->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, thin->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, thin->data.mapping.pairs.start[i].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(parser, key, "expect a thin dielectric material parameter.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(parser, key,                                                   \
+          "the "Name" of the thin dielectric material is already defined.\n"); \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if(!strcmp((char*)key->data.scalar.value, "medium_i")) {
+      SETUP_MASK(MEDIUM_I, "medium_i");
+      res = parse_medium(parser, doc, val, &mtl->medium_i);
+    } else if(!strcmp((char*)key->data.scalar.value, "medium_t")) {
+      SETUP_MASK(MEDIUM_T, "medium_t");
+      res = parse_medium(parser, doc, val, &mtl->medium_t);
+    } else if(!strcmp((char*)key->data.scalar.value, "thickness")) {
+      SETUP_MASK(THICKNESS, "thickness");
+      res = parse_real(parser, val, 0, DBL_MAX, &mtl->thickness);
+    } else {
+      log_err(parser, key, "unknown thin dielectric parameter `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    if(res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
+    #undef SETUP_MASK
+  }
+
+  #define CHECK_PARAM(Flag, Name)                                              \
+    if(!(mask & BIT(Flag))) {                                                  \
+      log_err(parser, thin,                                                    \
+        "the "Name" of the thin dielectric material is missing.\n");           \
+      res = RES_BAD_ARG;                                                       \
+      goto error;                                                              \
+    } (void)0
+  CHECK_PARAM(MEDIUM_I, "medium_i");
+  CHECK_PARAM(MEDIUM_T, "medium_t");
+  CHECK_PARAM(THICKNESS, "thickness");
+  #undef CHECK_PARAM
+
+exit:
+  out_imtl->i = imtl;
+  return res;
+error:
+  if(mtl) {
+    darray_thin_dielectric_pop_back(&parser->thin_dielectrics);
+    imtl = SIZE_MAX;
+  }
+  goto exit;
+}
+
+static res_T
 parse_material_virtual(struct solparser* parser, yaml_node_t* virtual)
 {
   res_T res = RES_OK;
@@ -1093,7 +1412,11 @@ parse_material_descriptor
       }                                                                        \
       mask |= BIT(Flag);                                                       \
     } (void)0
-    if(!strcmp((char*)key->data.scalar.value, "matte")) {
+    if(!strcmp((char*)key->data.scalar.value, "dielectric")) {
+      SETUP_MASK(DESCRIPTOR, "descriptor");
+      mtl->type = SOLPARSER_MATERIAL_DIELECTRIC;
+      res = parse_material_dielectric(parser, doc, val, &mtl->data.dielectric);
+    } else if(!strcmp((char*)key->data.scalar.value, "matte")) {
       SETUP_MASK(DESCRIPTOR, "descriptor");
       mtl->type = SOLPARSER_MATERIAL_MATTE;
       res = parse_material_matte(parser, doc, val, &mtl->data.matte);
@@ -1101,8 +1424,13 @@ parse_material_descriptor
       SETUP_MASK(DESCRIPTOR, "descriptor");
       mtl->type = SOLPARSER_MATERIAL_MIRROR;
       res = parse_material_mirror(parser, doc, val, &mtl->data.mirror);
+    } else if(!strcmp((char*)key->data.scalar.value, "thin_dielectric")) {
+      SETUP_MASK(DESCRIPTOR, "descriptor");
+      mtl->type = SOLPARSER_MATERIAL_THIN_DIELECTRIC;
+      res = parse_material_thin_dielectric
+        (parser, doc, val, &mtl->data.thin_dielectric);
     } else if(!strcmp((char*)key->data.scalar.value, "virtual")) {
-      SETUP_MASK(DESCRIPTOR, "virtual");
+      SETUP_MASK(DESCRIPTOR, "descriptor");
       mtl->type = SOLPARSER_MATERIAL_VIRTUAL;
       res = parse_material_virtual(parser, val);
     } else {
@@ -1607,7 +1935,7 @@ parse_cylinder
       *(Ptr) = Value;                                                          \
     } (void)0
   DEFAULT_PARAM(SLICES, &shape->nslices, 16);
- #undef DEFAULT_PARAM
+  #undef DEFAULT_PARAM
 
 exit:
   out_ishape->i = ishape;
@@ -1716,7 +2044,7 @@ parse_paraboloid
    const enum solparser_shape_type type,
    struct solparser_shape_paraboloid_id* out_ishape)
 {
-  enum { CLIP, FOCAL };
+  enum { CLIP, FOCAL, SLICES };
   struct solparser_shape_paraboloid* shape = NULL;
   struct darray_paraboloid* paraboloids;
   const char* name;
@@ -1780,6 +2108,9 @@ parse_paraboloid
     } else if(!strcmp((char*)key->data.scalar.value, "focal")) {
       SETUP_MASK(FOCAL, "focal");
       res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &shape->focal);
+    } else if(!strcmp((char*)key->data.scalar.value, "slices")) {
+      SETUP_MASK(SLICES, "slices");
+      res = parse_integer(parser, val, 4, 4096, &shape->nslices);
     } else {
       log_err(parser, key, "unknown %s parameter `%s'.\n",
         name, key->data.scalar.value);
@@ -1815,13 +2146,177 @@ error:
 }
 
 static res_T
+parse_focals_description
+  (struct solparser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* desc,
+   struct solparser_hyperboloid_focals* focals)
+{
+  enum { REAL, IMAGE };
+  intptr_t i, n;
+  int mask = 0; /* Register the parsed attributes */
+  res_T res = RES_OK;
+  ASSERT(doc && desc && focals);
+
+  if(desc->type != YAML_MAPPING_NODE) {
+    log_err(parser, desc, "expect a mapping of focal parameters.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  n = desc->data.mapping.pairs.top - desc->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, desc->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, desc->data.mapping.pairs.start[i].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(parser, key, "expect focal parameters.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(parser, key,                                                   \
+          "the focal parameter `"Name"' is already defined.\n");               \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if(!strcmp((char*) key->data.scalar.value, "real")) {
+      SETUP_MASK(REAL, "real");
+      res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &focals->real);
+    } else if(!strcmp((char*) key->data.scalar.value, "image")) {
+      SETUP_MASK(IMAGE, "image");
+      res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &focals->image);
+    }
+    if(res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
+  }
+  #undef SETUP_MASK
+  #define CHECK_PARAM(Flag, Name)                                              \
+    if(!(mask & BIT(Flag))) {                                                  \
+      log_err(parser, desc,                                                    \
+        "the focal parameter `"Name"' is missing.\n");                         \
+      res = RES_BAD_ARG;                                                       \
+      goto error;                                                              \
+    } (void)0
+  CHECK_PARAM(REAL, "real");
+  CHECK_PARAM(IMAGE, "image");
+  #undef CHECK_PARAM
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+static res_T
+parse_hyperboloid
+  (struct solparser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* hyperboloid,
+   struct solparser_shape_hyperboloid_id* out_ishape)
+{
+  enum { CLIP, FOCAL, SLICES };
+  struct solparser_shape_hyperboloid* shape = NULL;
+  size_t ishape = SIZE_MAX;
+  intptr_t i, n;
+  int mask = 0; /* Register the parsed attributes */
+  res_T res = RES_OK;
+  ASSERT(doc && hyperboloid && out_ishape);
+
+  if(hyperboloid->type != YAML_MAPPING_NODE) {
+    log_err(parser, hyperboloid, "expect a mapping of hyperbol parameters.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  /* Allocate a hyperboloid shape */
+  ishape = darray_hyperboloid_size_get(&parser->hyperbols);
+  res = darray_hyperboloid_resize(&parser->hyperbols, ishape + 1);
+  if(res != RES_OK) {
+    log_err(parser, hyperboloid, "could not allocate the hyperbol shape.\n");
+    goto error;
+  }
+  shape = darray_hyperboloid_data_get(&parser->hyperbols) + ishape;
+
+  n = hyperboloid->data.mapping.pairs.top - hyperboloid->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, hyperboloid->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, hyperboloid->data.mapping.pairs.start[i].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(parser, key, "expect hyperbol parameters.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(parser, key,                                                   \
+          "the hyperbol parameter `"Name"' is already defined.\n");            \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if(!strcmp((char*) key->data.scalar.value, "clip")) {
+      SETUP_MASK(CLIP, "clip");
+      res = parse_clip(parser, doc, val, &shape->polyclips);
+    } else if(!strcmp((char*)key->data.scalar.value, "focals")) {
+      SETUP_MASK(FOCAL, "focals");
+      res = parse_focals_description(parser, doc, val, &shape->focals);
+    } else if(!strcmp((char*)key->data.scalar.value, "slices")) {
+      SETUP_MASK(SLICES, "slices");
+      res = parse_integer(parser, val, 4, 4096, &shape->nslices);
+    } else {
+      log_err(parser, key, "unknown hyperbol parameter `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    if(res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
+    #undef SETUP_MASK
+  }
+  #define CHECK_PARAM(Flag, Name)                                              \
+    if(!(mask & BIT(Flag))) {                                                  \
+      log_err(parser, hyperboloid,                                             \
+        "the hyperbol parameter `"Name"' is missing.\n");                      \
+      res = RES_BAD_ARG;                                                       \
+      goto error;                                                              \
+    } (void)0
+  CHECK_PARAM(CLIP, "clip");
+  CHECK_PARAM(FOCAL, "focals");
+  #undef CHECK_PARAM
+
+exit :
+  out_ishape->i = ishape;
+  return res;
+error:
+  if(shape) {
+    darray_hyperboloid_pop_back(&parser->hyperbols);
+    ishape = SIZE_MAX;
+  }
+  goto exit;
+}
+
+static res_T
 parse_plane
   (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* plane,
    struct solparser_shape_plane_id* out_ishape)
 {
-  enum { CLIP };
+  enum { CLIP, SLICES };
   struct solparser_shape_plane* shape = NULL;
   size_t ishape = SIZE_MAX;
   intptr_t i, n;
@@ -1856,14 +2351,22 @@ parse_plane
       res = RES_BAD_ARG;
       goto error;
     }
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(parser, key,                                                   \
+          "the plane parameter `"Name"' is already defined.\n");               \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+
     if(!strcmp((char*)key->data.scalar.value, "clip")) {
-      if(mask & BIT(CLIP)) {
-        log_err(parser, key, "the plane clipping is already defined.\n");
-        res = RES_BAD_ARG;
-        goto error;
-      }
-      mask |= BIT(CLIP);
+      SETUP_MASK(CLIP, "clip");
       res = parse_clip(parser, doc, val, &shape->polyclips);
+    } else if(!strcmp((char*)key->data.scalar.value, "slices")) {
+      SETUP_MASK(SLICES, "slices");
+      res = parse_integer(parser, val, 1, 4096, &shape->nslices);
     } else {
       log_err(parser, key, "unknown plane parameter `%s'.\n",
         key->data.scalar.value);
@@ -1874,6 +2377,7 @@ parse_plane
       log_node(parser, key);
       goto error;
     }
+    #undef SETUP_MASK
   }
   if(!(mask & BIT(CLIP))) {
     log_err(parser, plane, "the plane parameter `clip' is missing.\n");
@@ -2087,6 +2591,10 @@ parse_object
       shape->type = SOLPARSER_SHAPE_PARABOLIC_CYLINDER;
       res = parse_paraboloid
         (parser, doc, val, shape->type, &shape->data.parabolic_cylinder);
+    } else if(!strcmp((char*) key->data.scalar.value, "hyperbol")) {
+      SETUP_MASK(SHAPE, "shape");
+      shape->type = SOLPARSER_SHAPE_HYPERBOL;
+      res = parse_hyperboloid(parser, doc, val, &shape->data.hyperbol);
     } else if(!strcmp((char*)key->data.scalar.value, "plane")) {
       SETUP_MASK(SHAPE, "shape");
       shape->type = SOLPARSER_SHAPE_PLANE;
@@ -2356,8 +2864,14 @@ parse_anchor
       SETUP_MASK(NAME, "name");
       res = parse_identifier_string(parser, val, &solanchor->name);
     } else if(!strcmp((char*)key->data.scalar.value, "position")) {
-      SETUP_MASK(POSITION, "position");
+      SETUP_MASK(POSITION, "position description");
       res = parse_real3(parser, doc, val, -DBL_MAX, DBL_MAX, solanchor->position);
+    } else if(!strcmp((char*) key->data.scalar.value, "hyperboloid_image_focals")) {
+      struct solparser_hyperboloid_focals focals;
+      SETUP_MASK(POSITION, "position description");
+      res = parse_focals_description(parser, doc, val, &focals);
+      if(res != RES_OK) goto error;
+      d3(solanchor->position, 0, 0, focals.image);
     } else {
       log_err(parser, key, "unknown anchor parameter `%s'.\n",
         key->data.scalar.value);
@@ -2378,7 +2892,7 @@ parse_anchor
       goto error;                                                              \
     } (void)0
   CHECK_PARAM(NAME, "name");
-  CHECK_PARAM(POSITION, "position");
+  CHECK_PARAM(POSITION, "position description");
   #undef CHECK_PARAM
 
   res = anchor_register_name(parser, anchor, htable, isolanchor);
@@ -2487,7 +3001,6 @@ parse_entity
   enum { ANCHORS, CHILDREN, DATA, NAME, TRANSFORM, PRIMARY };
   struct solparser_entity solent;
   struct solparser_entity* psolent;
-  const size_t *pisolent;
   size_t isolent = SIZE_MAX;
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
@@ -2495,14 +3008,6 @@ parse_entity
   ASSERT(doc && entity && htable && out_isolent);
 
   solparser_entity_init(parser->allocator, &solent);
-
-  pisolent = htable_yaml2sols_find(&parser->yaml2entities, &entity);
-  if(pisolent) {
-    isolent = *pisolent;
-    res = entity_register_name(parser, entity, htable, *pisolent);
-    if(res != RES_OK) goto error;
-    goto exit;
-  }
 
   if(entity->type != YAML_MAPPING_NODE) {
     log_err(parser, entity, "expect an entity definition.\n");
@@ -2557,6 +3062,13 @@ parse_entity
     } else if(!strcmp((char*)key->data.scalar.value, "name")) {
       SETUP_MASK(NAME, "name");
       res = parse_identifier_string(parser, val, &solent.name);
+      if(!strcmp(str_get(&solent.name), "self")) {
+        /* self is a reserved keyword */
+        log_err(parser, key, "Reserved keywords cannot be used as names: %s.\n",
+          str_get(&solent.name));
+        res = RES_BAD_ARG;
+        goto error;
+      }
     } else if(!strcmp((char*)key->data.scalar.value, "x_pivot")) {
       SETUP_MASK(DATA, "data");
       solent.type = SOLPARSER_ENTITY_X_PIVOT;
@@ -2617,12 +3129,6 @@ parse_entity
   }
   res = entity_register_name(parser, entity, htable, isolent);
   if(res != RES_OK) goto error;
-
-  res = htable_yaml2sols_set(&parser->yaml2entities, &entity, &isolent);
-  if(res != RES_OK) {
-    log_err(parser, entity, "could not register the entity.\n");
-    goto error;
-  }
 
 exit:
   solparser_entity_release(&solent);
@@ -2941,7 +3447,7 @@ parse_zx_pivot
         parser, doc, val, -DBL_MAX, DBL_MAX, solxzpivot->ref_point);
     } else if(!strcmp((char*) key->data.scalar.value, "target")) {
       struct solparser_pivot_id pivot_id;
-      pivot_id.i = 
+      pivot_id.i =
         (size_t) (solxzpivot - darray_zx_pivot_cdata_get(&parser->zx_pivots));
       SETUP_MASK(TARGET, "target");
       res = parse_target(parser, doc, val, &solxzpivot->target, pivot_id);
@@ -3326,8 +3832,11 @@ solparser_create
   htable_yaml2sols_init(mem_allocator, &parser->yaml2mtls);
   darray_material_init(mem_allocator, &parser->mtls);
   darray_material2_init(mem_allocator, &parser->mtls2);
+  darray_medium_init(mem_allocator, &parser->mediums);
+  darray_dielectric_init(mem_allocator, &parser->dielectrics);
   darray_matte_init(mem_allocator, &parser->mattes);
   darray_mirror_init(mem_allocator, &parser->mirrors);
+  darray_thin_dielectric_init(mem_allocator, &parser->thin_dielectrics);
 
   /* Deferred targeted anchors */
   darray_tgtalias_init(mem_allocator, &parser->tgtaliases);
@@ -3339,6 +3848,7 @@ solparser_create
   darray_impgeom_init(mem_allocator, &parser->objs);
   darray_paraboloid_init(mem_allocator, &parser->parabols);
   darray_paraboloid_init(mem_allocator, &parser->parabolic_cylinders);
+  darray_hyperboloid_init(mem_allocator, &parser->hyperbols);
   darray_plane_init(mem_allocator, &parser->planes);
   darray_sphere_init(mem_allocator, &parser->spheres);
   darray_impgeom_init(mem_allocator, &parser->stls);
@@ -3352,7 +3862,6 @@ solparser_create
   solparser_sun_init(mem_allocator, &parser->sun);
 
   /* Entities */
-  htable_yaml2sols_init(mem_allocator, &parser->yaml2entities);
   htable_str2sols_init(mem_allocator, &parser->str2entities);
   darray_entity_init(mem_allocator, &parser->entities);
 
@@ -3644,6 +4153,15 @@ solparser_get_geometry
   return darray_geometry_cdata_get(&parser->geometries) + geom.i;
 }
 
+const struct solparser_medium*
+solparser_get_medium
+  (const struct solparser* parser,
+   const struct solparser_medium_id medium)
+{
+  ASSERT(parser && medium.i < darray_medium_size_get(&parser->mediums));
+  return darray_medium_cdata_get(&parser->mediums) + medium.i;
+}
+
 const struct solparser_material*
 solparser_get_material
   (const struct solparser* parser,
@@ -3662,6 +4180,16 @@ solparser_get_material_double_sided
   return darray_material2_cdata_get(&parser->mtls2) + mtl2.i;
 }
 
+const struct solparser_material_dielectric*
+solparser_get_material_dielectric
+  (const struct solparser* parser,
+   const struct solparser_material_dielectric_id dielectric)
+{
+  ASSERT(parser);
+  ASSERT(dielectric.i < darray_dielectric_size_get(&parser->dielectrics));
+  return darray_dielectric_cdata_get(&parser->dielectrics) + dielectric.i;
+}
+
 const struct solparser_material_matte*
 solparser_get_material_matte
   (const struct solparser* parser,
@@ -3678,6 +4206,16 @@ solparser_get_material_mirror
 {
   ASSERT(parser && mirror.i < darray_mirror_size_get(&parser->mirrors));
   return darray_mirror_cdata_get(&parser->mirrors) + mirror.i;
+}
+
+const struct solparser_material_thin_dielectric*
+solparser_get_material_thin_dielectric
+  (const struct solparser* parser,
+   const struct solparser_material_thin_dielectric_id thin)
+{
+  ASSERT(parser);
+  ASSERT(thin.i < darray_thin_dielectric_size_get(&parser->thin_dielectrics));
+  return darray_thin_dielectric_cdata_get(&parser->thin_dielectrics) + thin.i;
 }
 
 const struct solparser_object*
@@ -3760,6 +4298,15 @@ solparser_get_shape_parabolic_cylinder
   ASSERT(parser);
   ASSERT(paraboloid.i<darray_paraboloid_size_get(&parser->parabolic_cylinders));
   return darray_paraboloid_cdata_get(&parser->parabolic_cylinders)+paraboloid.i;
+}
+
+const struct solparser_shape_hyperboloid*
+solparser_get_shape_hyperbol
+  (const struct solparser* parser,
+   const struct solparser_shape_hyperboloid_id hyperboloid)
+{
+  ASSERT(parser && hyperboloid.i < darray_hyperboloid_size_get(&parser->hyperbols));
+  return darray_hyperboloid_cdata_get(&parser->hyperbols) + hyperboloid.i;
 }
 
 const struct solparser_shape_plane*

@@ -20,6 +20,8 @@
 #include "solstice_args.h"
 #include "parser/solparser.h"
 
+#include <rsys/double2.h>
+
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -33,17 +35,12 @@
   #define open _open
   #define close _close
   #define fdopen _fdopen
-  #define O_CREAT _O_CREAT
-  #define O_WRONLY _O_WRONLY
-  #define O_EXCL _O_EXCL
-  #define O_TRUNC _O_TRUNC
-  #define S_IRUSR _S_IREAD
-  #define S_IWUSR _S_IWRITE
+  #define S_IRUSR S_IREAD
+  #define S_IWUSR S_IWRITE
 #else
   /* open/close functions */
   #include <unistd.h>
 #endif
-
 
 #include <solstice/ssol.h>
 
@@ -95,10 +92,99 @@ clear_nodes(struct darray_nodes* nodes)
 }
 
 static res_T
+auto_look_at
+  (struct ssol_scene* scn,
+   const double fov_x, /* Horizontal field of view in radian */
+   const double proj_ratio, /* Width / height */
+   const double up[3], /* Up vector */
+   double position[3],
+   double target[3])
+{
+  float flower[3], fupper[3];
+  double lower[3], upper[3];
+  double up_abs[3];
+  double axis_min[3];
+  double axis_x[3];
+  double axis_z[3];
+  double tmp[3];
+  double radius;
+  double depth;
+  res_T res;
+  ASSERT(scn && fov_x && proj_ratio && up);
+
+  res = ssol_scene_compute_aabb(scn, flower, fupper);
+  if(res != RES_OK) {
+    fprintf(stderr, "Couldn't compute the scene bounding box.\n");
+    goto error;
+  }
+
+  if(flower[0] > fupper[0]
+  || flower[1] > fupper[1]
+  || flower[2] > fupper[2]) { /* Empty scene */
+    d3_set(position, SOLSTICE_ARGS_DEFAULT.camera.pos);
+    d3_set(target, SOLSTICE_ARGS_DEFAULT.camera.tgt);
+    goto exit;
+  }
+
+  d3_set_f3(upper, fupper);
+  d3_set_f3(lower, flower);
+
+  /* The target is the scene centroid */
+  d3_muld(target, d3_add(target, lower, upper), 0.5);
+
+  /* Define which up dimension is minimal and use its unit vector to compute a
+   * vector orthogonal to `up'. This ensures that the unit vector and `up' are
+   * not collinear and thus that their cross product is not a zero vector. */
+  up_abs[0] = fabs(up[0]);
+  up_abs[1] = fabs(up[1]);
+  up_abs[2] = fabs(up[2]);
+  if(up_abs[0] < up_abs[1]) {
+    if(up_abs[0] < up_abs[2]) d3(axis_min, 1, 0, 0);
+    else d3(axis_min, 0, 0, 1);
+  } else {
+    if(up_abs[1] < up_abs[2]) d3(axis_min, 0, 1, 0);
+    else d3(axis_min, 0, 0, 1);
+  }
+  d3_normalize(axis_x, d3_cross(axis_x, up, axis_min));
+  d3_normalize(axis_z, d3_cross(axis_z, up, axis_x));
+
+  /* Approximate whether on the XYZ or the ZYX basis the visible part of the
+   * model is maximise */
+  if(fabs(d3_dot(axis_x, upper)) < fabs(d3_dot(axis_z, upper))) {
+    SWAP(double, axis_x[0], axis_z[0]);
+    SWAP(double, axis_x[1], axis_z[1]);
+    SWAP(double, axis_x[2], axis_z[2]);
+  }
+
+  /* Ensure that the whole model is visible */
+  radius = d3_len(d3_sub(tmp, upper, lower)) * 0.5;
+  if(proj_ratio < 1) {
+    depth = radius / sin(fov_x/2.0);
+  } else {
+    depth = radius / sin(fov_x/(2.0*proj_ratio));
+  }
+
+  /* Define the camera position */
+  d3_sub(position, target, d3_muld(tmp, axis_z, depth));
+
+  /* Empirically move the position to find a better point of view */
+  d3_add(position, position, d3_muld(tmp, up, radius)); /*Empirical offset*/
+  d3_add(position, position, d3_muld(tmp, axis_x, radius)); /*Empirical offset*/
+  d3_normalize(tmp, d3_sub(tmp, target, position));
+  d3_sub(position, target, d3_muld(tmp, tmp, depth));
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+static res_T
 setup_camera(struct solstice* solstice, const struct solstice_args* args)
 {
   struct ssol_camera* cam = NULL;
   double proj_ratio = 0;
+  double pos[3], tgt[3];
   res_T res = RES_OK;
   ASSERT(solstice && args);
 
@@ -122,8 +208,16 @@ setup_camera(struct solstice* solstice, const struct solstice_args* args)
     goto error;
   }
 
-  res = ssol_camera_look_at
-    (cam, args->camera.pos, args->camera.tgt, args->camera.up);
+  if(!args->camera.auto_look_at) {
+    d3_set(pos, args->camera.pos);
+    d3_set(tgt, args->camera.tgt);
+  } else {
+    res = auto_look_at(solstice->scene, MDEG2RAD(args->camera.fov_x),
+      proj_ratio, args->camera.up, pos, tgt);
+    if(res != RES_OK) goto error;
+  }
+
+  res = ssol_camera_look_at(cam, pos, tgt, args->camera.up);
   if(res != RES_OK) {
     fprintf(stderr,
 "Invalid camera point of view:\n"
@@ -210,6 +304,7 @@ static res_T
 setup_sun_dirs(struct solstice* solstice, const struct solstice_args* args)
 {
   double* sun_dirs = NULL;
+  double* sun_angles = NULL;
   size_t i;
   res_T res = RES_OK;
   ASSERT(solstice && args);
@@ -220,18 +315,26 @@ setup_sun_dirs(struct solstice* solstice, const struct solstice_args* args)
       "Could not reserve the list of %lu sun directions.\n",
       (unsigned long)args->nsun_dirs);
     goto error;
-
   }
-
+  res = darray_double_resize(&solstice->sun_angles, args->nsun_dirs*2/*#dims*/);
+  if (res != RES_OK) {
+    fprintf(stderr,
+      "Could not reserve the list of %lu sun angles.\n",
+      (unsigned long)args->nsun_dirs);
+    goto error;
+  }
   sun_dirs = darray_double_data_get(&solstice->sun_dirs);
+  sun_angles = darray_double_data_get(&solstice->sun_angles);
   FOR_EACH(i, 0, args->nsun_dirs) {
     spherical_to_cartesian_sun_dir(args->sun_dirs + i, sun_dirs + i*3/*#dims*/);
+    d2(sun_angles + i*2, args->sun_dirs[i].azimuth, args->sun_dirs[i].elevation);
   }
 
 exit:
   return res;
 error:
   darray_double_clear(&solstice->sun_dirs);
+  darray_double_clear(&solstice->sun_angles);
   goto exit;
 }
 
@@ -314,6 +417,7 @@ setup_receivers(struct solstice* solstice, struct srcvl* srcvl)
 
     receiver.node = NULL;
     receiver.side = rcv.side;
+    receiver.per_primitive = rcv.per_primitive;
 
     res = htable_receiver_set(&solstice->receivers, &name, &receiver);
     if(res != RES_OK) {
@@ -368,56 +472,44 @@ error:
   goto exit;
 }
 
-static int
-prompt_yes_no(void)
+static res_T
+open_output_stream(const char* name, const int force_overwriting, FILE** stream)
 {
-  int val[2];
-
-  do {
-    fprintf(stderr, "(y/n) ");
-
-    val[0] = getc(stdin);
-    if(val[0] != '\n' && val[0] != '\r') {
-      val[1] = getc(stdin);
-    }
-    if(val[1] != '\n' && val[1] != '\r') {
-      while(getc(stdin) != '\n'); /* Flush stdin */
-    }
-  } while((val[1] != '\n' && val[1] != '\r') || (val[0] != 'y' && val[0] != 'n'));
-
-  return val[0] == 'y';
-}
-
-static FILE*
-open_output_stream(const char* name, const int force_overwriting)
-{
+  res_T res = RES_OK;
   int fd = -1;
   FILE* fp = NULL;
   ASSERT(name);
 
   if(force_overwriting) {
     fp = fopen(name, "w");
-    if(!fp) goto error;
+    if(!fp) {
+      fprintf(stderr, "Could not open the output file `%s'.\n", name);
+      goto error;
+    }
   } else {
     fd = open(name, O_CREAT|O_WRONLY|O_EXCL|O_TRUNC, S_IRUSR|S_IWUSR);
     if(fd >= 0) {
       fp = fdopen(fd, "w");
-      if(fp == NULL) goto error;
-    } else if(errno == EEXIST) {
-      fprintf(stderr, "The output file `%s' already exist. Overwrite it? ", name);
-      if(!prompt_yes_no()) return NULL;
-
-      fd = open(name, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IRUSR);
-      if(fd >= 0) {
-        fp = fdopen(fd, "w");
-        if(!fp) goto error;
+      if(fp == NULL) {
+        fprintf(stderr, "Could not open the output file `%s'.\n", name);
+        goto error;
       }
+    } else if(errno == EEXIST) {
+      fprintf(stderr,
+        "The output file `%s' already exists. Use -f to overwrite it.\n", name);
+      goto error;
+    } else {
+      fprintf(stderr,
+        "Unexpected error while opening the output file `%s'.\n", name);
+      goto error;
     }
   }
 
 exit:
-  return fp;
+  *stream = fp;
+  return res;
 error:
+  res = RES_IO_ERR;
   if(fp) {
     CHECK(fclose(fp), 0);
     fp = NULL;
@@ -447,6 +539,7 @@ solstice_init
   darray_nodes_init(allocator, &solstice->roots);
   darray_nodes_init(allocator, &solstice->pivots);
   darray_double_init(allocator, &solstice->sun_dirs);
+  darray_double_init(allocator, &solstice->sun_angles);
 
   solstice->allocator = allocator ? allocator : &mem_default_allocator;
 
@@ -474,27 +567,15 @@ solstice_init
     goto error;
   }
 
-  if(args->rendering) {
-    res = setup_camera(solstice, args);
-    if(res != RES_OK) goto error;
-    res = setup_framebuffer(solstice, args);
-    if(res != RES_OK) goto error;
-  }
-
   res = setup_sun_dirs(solstice, args);
   if(res != RES_OK) goto error;
 
   if(!args->output_filename) {
     solstice->output = stdout;
   } else {
-    solstice->output = open_output_stream
-      (args->output_filename, args->force_overwriting);
-    if(!solstice->output) {
-      fprintf(stderr, "Could not open the output file `%s'.\n",
-        args->output_filename);
-      res = RES_IO_ERR;
-      goto error;
-    }
+    res = open_output_stream(args->output_filename, args->force_overwriting,
+      &solstice->output);
+    if(res != RES_OK) goto error;
   }
 
   res = load_data(solstice, args);
@@ -517,8 +598,24 @@ solstice_init
     goto error;
   }
 
-  solstice->nrealisations = args->nrealisations;
+  solstice->nexperiments = args->nexperiments;
   solstice->output_hits = args->output_hits;
+  solstice->dump_format = args->dump_format;
+  solstice->dump_split_mode = args->dump_split_mode;
+  solstice->dump_paths = args->dump_paths;
+
+  solstice->path_tracker = SSOL_PATH_TRACKER_DEFAULT;
+  solstice->path_tracker.infinite_ray_length = args->infinite_ray_length;
+  solstice->path_tracker.sun_ray_length = args->sun_ray_length;
+
+  if(args->rendering) {
+    res = setup_camera(solstice, args);
+    if(res != RES_OK) goto error;
+    res = setup_framebuffer(solstice, args);
+    if(res != RES_OK) goto error;
+    solstice->render_mode = args->render_mode;
+    solstice->spp = args->img.spp;
+  }
 
 exit:
   return res;
@@ -550,50 +647,74 @@ solstice_release(struct solstice* solstice)
   darray_nodes_release(&solstice->roots);
   darray_nodes_release(&solstice->pivots);
   darray_double_release(&solstice->sun_dirs);
+  darray_double_release(&solstice->sun_angles);
 }
 
 res_T
 solstice_run(struct solstice* solstice)
 {
   const double* sun_dirs = NULL;
+  const double* sun_angles = NULL;
   size_t nsun_dirs = 0;
   size_t i;
+  int dump;
+  int draw;
   res_T res = RES_OK;
   ASSERT(solstice);
 
   sun_dirs = darray_double_cdata_get(&solstice->sun_dirs);
+  sun_angles = darray_double_cdata_get(&solstice->sun_angles);
   nsun_dirs = darray_double_size_get(&solstice->sun_dirs);
   ASSERT(nsun_dirs%3 == 0);
   nsun_dirs /= 3/*#dims*/;
 
-  if(!solstice->framebuffer) { /* Solstice integration */
+  dump = solstice->dump_format != SOLSTICE_ARGS_DUMP_NONE;
+  draw = solstice->framebuffer != NULL;
+
+  if(!nsun_dirs) {
+    const double sun_dir[3] = {0, 0, -1};
+
+    res = ssol_sun_set_direction(solstice->sun, sun_dir);
+    if(res != RES_OK) {
+      fprintf(stderr, "Could not update the sun direction.\n");
+      goto error;
+    }
+
+    fprintf(solstice->output, "#--- No Sun direction\n");
+
+    if(dump) {
+      res = solstice_dump(solstice);
+      if(res != RES_OK) goto error;
+    } else {
+      ASSERT(draw);
+      res = solstice_draw(solstice);
+      if(res != RES_OK) goto error;
+    }
+  } else {
     FOR_EACH(i, 0, nsun_dirs) {
       const double* sun_dir = sun_dirs + i*3/*#dims*/;
+      fprintf(solstice->output, "#--- Sun direction: %g %g (%g %g %g)\n",
+        SPLIT2(sun_angles), SPLIT3(sun_dir));
+
+      res = solstice_update_entities(solstice, sun_dir);
+      if(res != RES_OK) goto error;
+
       res = ssol_sun_set_direction(solstice->sun, sun_dir);
       if(res != RES_OK) {
         fprintf(stderr, "Could not update the sun direction.\n");
         goto error;
       }
-      res = solstice_update_entities(solstice, sun_dir);
-      if(res != RES_OK) goto error;
-      res = solstice_solve(solstice);
-      if(res != RES_OK) goto error;
-    }
-  } else if(!nsun_dirs) {
-    res = solstice_draw(solstice);
-    if(res != RES_OK) goto error;
-  } else {
-    FOR_EACH(i, 0, nsun_dirs) {
-      const double* sun_dir = sun_dirs + i*3/*#dims*/;
 
-      res = solstice_update_entities(solstice, sun_dir);
-      if(res != RES_OK) goto error;
-
-      res = solstice_draw(solstice);
-      if(res != RES_OK) goto error;
-
-      fprintf(solstice->output,
-        "# Sun direction: %g %g %g\n", SPLIT3(sun_dir));
+      if(draw) {
+        res = solstice_draw(solstice);
+        if(res != RES_OK) goto error;
+      } else if(dump) {
+        res = solstice_dump(solstice);
+        if(res != RES_OK) goto error;
+      } else {
+        res = solstice_solve(solstice);
+        if(res != RES_OK) goto error;
+      }
     }
   }
 

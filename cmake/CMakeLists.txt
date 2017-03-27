@@ -70,6 +70,7 @@ set(SOLSTICE_ARGS_DEFAULT_CAMERA_UP "0,1,0")
 set(SOLSTICE_ARGS_DEFAULT_CAMERA_FOV "70") # In degrees
 set(SOLSTICE_ARGS_DEFAULT_IMG_WIDTH  "800")
 set(SOLSTICE_ARGS_DEFAULT_IMG_HEIGHT "600")
+set(SOLSTICE_ARGS_DEFAULT_IMG_SPP "1")
 
 configure_file(${SOLSTICE_SOURCE_DIR}/solstice_args.h.in
   ${CMAKE_CURRENT_BINARY_DIR}/solstice_args.h @ONLY)
@@ -86,6 +87,7 @@ set(SOLSTICE_FILES_SRC
   solstice.c
   solstice_args.c
   solstice_draw.c
+  solstice_dump.c
   solstice_entity.c
   solstice_material.c
   solstice_node.c
@@ -137,6 +139,22 @@ if(NOT NO_TEST)
   endfunction()
 
   new_test(test_solstice_args)
+
+  build_test(test_solstice_simulation)
+  function(add_test_simulation _name)
+    add_test(NAME test_solstice_simulation_${_name}
+      COMMAND test_solstice_simulation 
+        $<TARGET_FILE:solstice>
+        ${SOLSTICE_SOURCE_DIR}/../yaml/
+        ${_name})
+  endfunction()
+
+  add_test_simulation(beam_down)
+  add_test_simulation(test01)
+  add_test_simulation(test02)
+  add_test_simulation(test03)
+  add_test_simulation(test04)
+  add_test_simulation(test05)
 
 endif()
 

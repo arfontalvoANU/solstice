@@ -18,6 +18,7 @@
 
 #include "parser/solparser_material.h"
 #include "receivers/srcvl.h"
+#include "solstice_args.h"
 
 #include <rsys/dynamic_array_double.h>
 #include <rsys/hash_table.h>
@@ -25,7 +26,6 @@
 #include <rsys/str.h>
 
 struct solparser;
-struct solstice_args;
 struct solstice_node;
 struct ssol_device;
 struct ssol_material;
@@ -35,6 +35,7 @@ struct sanim_node;
 struct solstice_receiver {
   struct solstice_node* node;
   enum srcvl_side side;
+  int per_primitive;
 };
 
 #define DARRAY_NAME nodes
@@ -86,12 +87,23 @@ struct solstice {
   /* Rendering */
   struct ssol_camera* camera;
   struct ssol_image* framebuffer;
+  enum solstice_args_render_mode render_mode;
+  unsigned spp; /* #Samples per pixel */
+
+  /* Dump geometry */
+  enum solstice_args_dump_format dump_format;
+  enum solstice_args_dump_split_mode dump_split_mode;
+
+  /* Dump radiative paths mode */
+  struct ssol_path_tracker path_tracker;
 
   struct darray_double sun_dirs; /* List of double3 */
+  struct darray_double sun_angles;
 
-  size_t nrealisations; /* # realisations */
+  size_t nexperiments; /* # MC experiments */
   FILE* output; /* Output stream */
   int output_hits; /* Output per receiver hits */
+  int dump_paths;
 
   struct mem_allocator* allocator;
 };

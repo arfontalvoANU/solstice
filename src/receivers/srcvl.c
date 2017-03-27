@@ -15,6 +15,7 @@
 
 #include "srcvl.h"
 
+#include <rsys/cstr.h>
 #include <rsys/dynamic_array.h>
 #include <rsys/mem_allocator.h>
 #include <rsys/ref_count.h>
@@ -27,6 +28,7 @@
 struct receiver {
   struct str name;
   enum srcvl_side side;
+  int per_primitive;
 };
 
 static INLINE void
@@ -35,6 +37,7 @@ receiver_init(struct mem_allocator* allocator, struct receiver* receiver)
   ASSERT(receiver);
   str_init(allocator, &receiver->name);
   receiver->side = SRCVL_FRONT_AND_BACK;
+  receiver->per_primitive = 0;
 }
 
 static INLINE void
@@ -49,15 +52,16 @@ receiver_copy(struct receiver* dst, const struct receiver* src)
 {
   ASSERT(dst && src);
   dst->side = src->side;
+  dst->per_primitive = src->per_primitive;
   return str_copy(&dst->name, &src->name);
 }
-
 
 static INLINE res_T
 receiver_copy_and_release(struct receiver* dst, struct receiver* src)
 {
   ASSERT(dst && src);
   dst->side = src->side;
+  dst->per_primitive = src->per_primitive;
   return str_copy_and_release(&dst->name, &src->name);
 }
 
@@ -152,11 +156,38 @@ parse_side
   } else if(!strcmp((char*)side->data.scalar.value, "FRONT_AND_BACK")) {
     *out_side = SRCVL_FRONT_AND_BACK;
   } else {
-    log_err(srcvl, side, "unknown side valie `%s'.\n",
+    log_err(srcvl, side, "unknown side value `%s'.\n",
       side->data.scalar.value);
     res = RES_BAD_ARG;
     goto error;
   }
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+static res_T
+parse_integer(struct srcvl* srcvl, yaml_node_t* integer, int* dst)
+{
+  res_T res = RES_OK;
+  ASSERT(integer && dst);
+
+  if(integer->type != YAML_SCALAR_NODE
+  || !strlen((char*)integer->data.scalar.value)) {
+    log_err(srcvl, integer, "expect an integer.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  res = cstr_to_int((char*)integer->data.scalar.value, dst);
+  if(res != RES_OK) {
+    log_err(srcvl, integer, "invalid integer `%s'.\n",
+      integer->data.scalar.value);
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
 exit:
   return res;
 error:
@@ -169,7 +200,7 @@ parse_receiver
    yaml_document_t* doc,
    const yaml_node_t* receiver)
 {
-  enum { NAME, SIDE };
+  enum { NAME, PER_PRIMITIVE, SIDE };
   struct receiver* solreceiver = NULL;
   size_t isolreceiver;
   intptr_t i, n;
@@ -218,6 +249,9 @@ parse_receiver
     } else if(!strcmp((char*)key->data.scalar.value, "side")) {
       SETUP_MASK(SIDE, "side");
       res = parse_side(srcvl, val, &solreceiver->side);
+    } else if(!strcmp((char*)key->data.scalar.value, "per_primitive")) {
+      SETUP_MASK(PER_PRIMITIVE, "per_primitive");
+      res = parse_integer(srcvl, val, &solreceiver->per_primitive);
     } else {
       log_err(srcvl, key, "unknown receiver parameter `%s'.\n",
         key->data.scalar.value);
@@ -427,5 +461,6 @@ srcvl_get
   r = darray_receiver_cdata_get(&srcvl->receivers) + i;
   receiver->name = str_cget(&r->name);
   receiver->side = r->side;
+  receiver->per_primitive = r->per_primitive;
 }
 

@@ -65,6 +65,7 @@ if(NOT NO_TEST)
     ${SRCVL_SOURCE_DIR}/yaml/test_ko.yaml)
 
   new_test(test_srcvl2)
+  rcmake_copy_runtime_libraries(test_srcvl)
 
 endif()
 

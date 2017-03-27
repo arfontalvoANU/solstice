@@ -1,0 +1,44 @@
+- sun: &sun
+    dni: 1
+    spectrum: [{wavelength: 1, data: 1}]
+
+- material: &lambertian
+    front:
+      matte: { reflectivity: 1 }
+    back:
+      matte: { reflectivity: 1 }
+      
+- geometry: &small_square
+    - material: *lambertian
+      plane:
+        clip:
+          - operation: AND
+            vertices:
+              - [-0.50, -0.50]
+              - [-0.50, 0.50]
+              - [0.50, 0.50]
+              - [0.50, -0.50]
+              
+- geometry: &big_sphere
+    - material:  { virtual: }
+      sphere:
+        radius: 2.0
+        slices: 128
+      
+    
+- entity:
+    name: "reflector"
+    primary: 1
+    transform: { rotation: [0, 0, 0], translation: [0, 0, 0] }
+    geometry: *small_square
+    
+
+    
+- entity:
+    name: "spherical_receiver"
+    primary: 0
+    transform: { rotation: [0, 0, 0], translation: [0, 0, 0] }
+    geometry: *big_sphere
+    
+    
+    

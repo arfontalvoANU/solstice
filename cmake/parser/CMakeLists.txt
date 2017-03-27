@@ -39,7 +39,7 @@ set(SOLPARSER_FILES_INC
   solparser_shape.h
   solparser_sun.h)
 
-# Prepend each file in the `SOLSTICE_FILES_<SRC|INC>' list by `SOLSTICE_SOURCE_DIR'
+# Prepend each file in the `SOLPARSER_FILES_<SRC|INC>' list by `SOLPARSER_SOURCE_DIR'
 rcmake_prepend_path(SOLPARSER_FILES_SRC ${SOLPARSER_SOURCE_DIR})
 rcmake_prepend_path(SOLPARSER_FILES_INC ${SOLPARSER_SOURCE_DIR})
 rcmake_prepend_path(SOLPARSER_FILES_DOC ${PROJECT_SOURCE_DIR}/../)
@@ -68,8 +68,6 @@ if(NOT NO_TEST)
   endfunction()
 
   build_test(test_solparser)
-  add_test(test_grammar_example test_solparser
-    ${PROJECT_SOURCE_DIR}/../../doc/input)
   add_test(test_solparser_ok_0 test_solparser
     ${SOLPARSER_SOURCE_DIR}/yaml/test_ok_0.yaml)
   add_test(test_solparser_ok_1 test_solparser
@@ -80,6 +78,12 @@ if(NOT NO_TEST)
     ${SOLPARSER_SOURCE_DIR}/yaml/test_ok_3.yaml)
   add_test(test_solparser_ok_4 test_solparser
     ${SOLPARSER_SOURCE_DIR}/yaml/test_ok_4.yaml)
+  add_test(test_solparser_ok_5 test_solparser
+    ${SOLPARSER_SOURCE_DIR}/yaml/test_ok_5.yaml)
+  add_test(test_solparser_ok_6 test_solparser
+    ${SOLPARSER_SOURCE_DIR}/yaml/test_ok_6.yaml)
+  add_test(test_solparser_ok_7 test_solparser
+    ${SOLPARSER_SOURCE_DIR}/yaml/test_ok_7.yaml)
   add_test(test_solparser_ko test_solparser -e
     ${SOLPARSER_SOURCE_DIR}/yaml/test_ko_0.yaml)
 
@@ -88,6 +92,8 @@ if(NOT NO_TEST)
   new_test(test_solparser4)
   new_test(test_solparser5)
   new_test(test_solparser6)
+  new_test(test_solparser7)
+  new_test(test_solparser8)
 
   rcmake_copy_runtime_libraries(test_solparser)
 endif()

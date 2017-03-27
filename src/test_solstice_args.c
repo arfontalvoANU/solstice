@@ -83,13 +83,15 @@ test_rendering(void)
   cmd = cmd_create(0, "test", "-r", "img=1280x720", NULL);
   CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
   CHECK(args.rendering, 1);
-  CHECK(args.nrealisations, SOLSTICE_ARGS_DEFAULT.nrealisations);
+  CHECK(args.nexperiments, SOLSTICE_ARGS_DEFAULT.nexperiments);
   CHECK(d3_eq(args.camera.pos, SOLSTICE_ARGS_DEFAULT.camera.pos), 1);
   CHECK(d3_eq(args.camera.tgt, SOLSTICE_ARGS_DEFAULT.camera.tgt), 1);
   CHECK(d3_eq(args.camera.up, SOLSTICE_ARGS_DEFAULT.camera.up), 1);
   CHECK(args.camera.fov_x, SOLSTICE_ARGS_DEFAULT.camera.fov_x);
   CHECK(args.img.width, 1280);
   CHECK(args.img.height, 720);
+  CHECK(args.img.spp, SOLSTICE_ARGS_DEFAULT.img.spp);
+  CHECK(args.render_mode, SOLSTICE_ARGS_DEFAULT.render_mode);
   CHECK(args.quiet, 0);
   CHECK(args.output_filename, NULL);
   solstice_args_release(&args);
@@ -98,29 +100,46 @@ test_rendering(void)
   cmd = cmd_create(0, "test", "-q", "-r", "img=640x480:fov=70:pos=1,2,3", NULL);
   CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
   CHECK(args.rendering, 1);
-  CHECK(args.nrealisations, SOLSTICE_ARGS_DEFAULT.nrealisations);
+  CHECK(args.nexperiments, SOLSTICE_ARGS_DEFAULT.nexperiments);
   CHECK(d3_eq(args.camera.pos, d3(tmp, 1, 2, 3)), 1);
   CHECK(d3_eq(args.camera.tgt, SOLSTICE_ARGS_DEFAULT.camera.tgt), 1);
   CHECK(d3_eq(args.camera.up, SOLSTICE_ARGS_DEFAULT.camera.up), 1);
   CHECK(args.img.width, 640);
   CHECK(args.img.height, 480);
+  CHECK(args.img.spp, SOLSTICE_ARGS_DEFAULT.img.spp);
+  CHECK(args.render_mode, SOLSTICE_ARGS_DEFAULT.render_mode);
   CHECK(args.quiet, 1);
   CHECK(eq_eps(args.camera.fov_x, 70, 1.e-6), 1);
   CHECK(args.output_filename, NULL);
   solstice_args_release(&args);
   cmd_delete(cmd);
 
-  cmd = cmd_create(0, "test", "-r", "up=0,0,1:tgt=0,-10,0", NULL);
+  cmd = cmd_create(0, "test", "-r", "up=0,0,1:tgt=0,-10,0:rmode=draft", NULL);
   CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
-  CHECK(args.nrealisations, SOLSTICE_ARGS_DEFAULT.nrealisations);
+  CHECK(args.nexperiments, SOLSTICE_ARGS_DEFAULT.nexperiments);
   CHECK(d3_eq(args.camera.pos, SOLSTICE_ARGS_DEFAULT.camera.pos), 1);
   CHECK(d3_eq(args.camera.tgt, d3(tmp, 0,-10, 0)), 1);
   CHECK(d3_eq(args.camera.up, d3(tmp, 0, 0, 1)), 1);
   CHECK(args.img.width, SOLSTICE_ARGS_DEFAULT.img.width);
   CHECK(args.img.height, SOLSTICE_ARGS_DEFAULT.img.height);
+  CHECK(args.img.spp, SOLSTICE_ARGS_DEFAULT.img.spp);
+  CHECK(args.render_mode, SOLSTICE_ARGS_RENDER_DRAFT);
   CHECK(args.rendering, 1);
   CHECK(args.quiet, 0);
   CHECK(args.output_filename, NULL);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-r", "up=0,0,1:rmode=pt:spp=4", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.nexperiments, SOLSTICE_ARGS_DEFAULT.nexperiments);
+  CHECK(d3_eq(args.camera.up, d3(tmp, 0, 0, 1)), 1);
+  CHECK(args.img.width, SOLSTICE_ARGS_DEFAULT.img.width);
+  CHECK(args.img.height, SOLSTICE_ARGS_DEFAULT.img.height);
+  CHECK(args.rendering, 1);
+  CHECK(args.output_filename, NULL);
+  CHECK(args.img.spp, 4);
+  CHECK(args.render_mode, SOLSTICE_ARGS_RENDER_PATH_TRACING);
   solstice_args_release(&args);
   cmd_delete(cmd);
 
@@ -132,6 +151,21 @@ test_rendering(void)
   CHECK(strcmp(args.output_filename, "my_output"),  0);
   solstice_args_release(&args);
   cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-r", "spp=16", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.img.spp, 16);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-r", "rmode=none", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-r", "rmode", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
 
   cmd = cmd_create(0, "test", "-r", "up=0,1", NULL);
   CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
@@ -151,6 +185,10 @@ test_rendering(void)
   solstice_args_release(&args);
   cmd_delete(cmd);
 
+  cmd = cmd_create(0, "test", "-r", "spp=0", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
   cmd = cmd_create(0, "test", "-r", "img=32X32", NULL);
   CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
   cmd_delete(cmd);
@@ -159,11 +197,39 @@ test_rendering(void)
   CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
   cmd_delete(cmd);
 
+  cmd = cmd_create(0, "test", "-r", "img=0x64", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-r", "img=64x0", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-r", "img=32x32@12:up=0,0,1", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
   cmd = cmd_create(0, "test", "-r", "tgt=1,1,1:img=32x32:12", NULL);
   CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
   cmd_delete(cmd);
 
   cmd = cmd_create(0, "test", "-r", "fov=123a", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-r", "up", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-r", "img=", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-r", "fov::::", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-r", "::tgt", NULL);
   CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
   cmd_delete(cmd);
 }
@@ -251,19 +317,19 @@ test_realisations_count(void)
 
   cmd = cmd_create(0, "test", "-D", "0,90", "-n", "1", NULL);
   CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
-  CHECK(args.nrealisations, 1);
+  CHECK(args.nexperiments, 1);
   solstice_args_release(&args);
   cmd_delete(cmd);
 
   cmd = cmd_create(0, "test", "-D", "0,90", NULL);
   CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
-  CHECK(args.nrealisations, SOLSTICE_ARGS_DEFAULT.nrealisations);
+  CHECK(args.nexperiments, SOLSTICE_ARGS_DEFAULT.nexperiments);
   solstice_args_release(&args);
   cmd_delete(cmd);
 
   cmd = cmd_create(0, "test", "-D", "0,90", "-n", "123", NULL);
   CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
-  CHECK(args.nrealisations, 123);
+  CHECK(args.nexperiments, 123);
   solstice_args_release(&args);
   cmd_delete(cmd);
 
@@ -443,6 +509,167 @@ test_input(void)
   cmd_delete(cmd);
 }
 
+static void
+test_dump(void)
+{
+  struct solstice_args args = SOLSTICE_ARGS_NULL;
+  char** cmd = NULL;
+
+  cmd = cmd_create(0, "test", "-D", "0,90", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.dump_format, SOLSTICE_ARGS_DUMP_NONE);
+  CHECK(args.dump_split_mode, SOLSTICE_ARGS_DUMP_SPLIT_NONE);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-g", "format=obj", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.dump_format, SOLSTICE_ARGS_DUMP_OBJ);
+  CHECK(args.dump_split_mode, SOLSTICE_ARGS_DUMP_SPLIT_NONE);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-g", "split=geometry:format=obj", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.dump_format, SOLSTICE_ARGS_DUMP_OBJ);
+  CHECK(args.dump_split_mode, SOLSTICE_ARGS_DUMP_SPLIT_GEOMETRY);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-g", "format=obj:split=object", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.dump_format, SOLSTICE_ARGS_DUMP_OBJ);
+  CHECK(args.dump_split_mode, SOLSTICE_ARGS_DUMP_SPLIT_OBJECT);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-g", "format=obj::::split=none", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.dump_format, SOLSTICE_ARGS_DUMP_OBJ);
+  CHECK(args.dump_split_mode, SOLSTICE_ARGS_DUMP_SPLIT_NONE);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-g", "split=object", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-g", "format=stl", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-g", "format=obj:dummy", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-g", "format=obj:split", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-g", "format=obj", "-r", "up=0,0,1", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-g", "format=obj", "-p", "default", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+}
+
+static void
+test_dump_paths(void)
+{
+  struct solstice_args args = SOLSTICE_ARGS_NULL;
+  char** cmd = NULL;
+
+  cmd = cmd_create(0, "test", "-D", "0,90", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.dump_paths, 0);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "0,90", "-p", "default", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.dump_paths, 1);
+  CHECK(args.infinite_ray_length, SOLSTICE_ARGS_DEFAULT.infinite_ray_length);
+  CHECK(args.sun_ray_length, SOLSTICE_ARGS_DEFAULT.sun_ray_length);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "0,90", "-p", "irlen=3.14:srlen=1.23", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.dump_paths, 1);
+  CHECK(eq_eps(args.infinite_ray_length, 3.14, 1.e-6), 1);
+  CHECK(eq_eps(args.sun_ray_length, 1.23, 1.e-6), 1);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "0,90", "-p", "irlen=0", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.dump_paths, 1);
+  CHECK(eq_eps(args.infinite_ray_length, 0, 1.e-6), 1);
+  CHECK(args.sun_ray_length, SOLSTICE_ARGS_DEFAULT.sun_ray_length);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "0,90", "-p", "srlen=-4", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.dump_paths, 1);
+  CHECK(args.infinite_ray_length, SOLSTICE_ARGS_DEFAULT.infinite_ray_length);
+  CHECK(eq_eps(args.sun_ray_length, -4, 1.e-6), 1);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "0,90", "-p", "srlen=3.14:default", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.dump_paths, 1);
+  CHECK(args.infinite_ray_length, SOLSTICE_ARGS_DEFAULT.infinite_ray_length);
+  CHECK(args.sun_ray_length, SOLSTICE_ARGS_DEFAULT.sun_ray_length);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "0,90", "-p", "default:srlen=1:irlen=2:", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.dump_paths, 1);
+  CHECK(args.sun_ray_length, 1);
+  CHECK(args.infinite_ray_length, 2);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "0,90", "-p", "srlen=", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "0,90", "-p", "irlen=", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "0,90", "-p", "srlen=abcd", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "0,90", "-p", "irlen", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "0,90", "-p", "=abcd", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "0,90", "-p", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "0,90", "-p", "default:srlen=1:irlen=2:",
+    "-r", "up=0,0,1", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "0,90", "-p", "default:srlen=1:irlen=2:",
+    "-g", "format=obj", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_BAD_ARG);
+  cmd_delete(cmd);
+}
+
 int
 main(int argc, char** argv)
 {
@@ -456,6 +683,8 @@ main(int argc, char** argv)
   test_quiet();
   test_receivers();
   test_input();
+  test_dump();
+  test_dump_paths();
   CHECK(mem_allocated_size(), 0);
   return 0;
 }

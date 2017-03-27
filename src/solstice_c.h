@@ -20,6 +20,8 @@
 #include "parser/solparser.h"
 
 #include <rsys/ref_count.h>
+#include <rsys/str.h>
+
 #include <solstice/sanim.h>
 
 enum solstice_node_type {
@@ -32,6 +34,7 @@ enum solstice_node_type {
 
 struct solstice_node {
   struct sanim_node anim;
+  struct str name;
   enum solstice_node_type type;
   struct ssol_instance* instance; /* Available for geometry nodes */
 
@@ -47,6 +50,10 @@ solstice_draw
 
 extern LOCAL_SYM res_T
 solstice_solve
+  (struct solstice* solstice);
+
+extern LOCAL_SYM res_T
+solstice_dump
   (struct solstice* solstice);
 
 extern LOCAL_SYM res_T
@@ -106,6 +113,15 @@ solstice_node_ref_put
   (struct solstice_node* node);
 
 extern LOCAL_SYM res_T
+solstice_node_set_name
+  (struct solstice_node* node,
+   const char* name);
+
+extern LOCAL_SYM const char*
+solstice_node_get_name
+  (const struct solstice_node* node);
+
+extern LOCAL_SYM res_T
 solstice_node_geometry_set_primary
   (struct solstice_node* node,
    const int is_primary);
@@ -113,7 +129,8 @@ solstice_node_geometry_set_primary
 extern LOCAL_SYM res_T
 solstice_node_geometry_set_receiver
   (struct solstice_node* node,
-   const int mask); /* Combination of ssol_side_flag */
+   const int mask, /* Combination of ssol_side_flag */
+   const int per_primitive); /* Enable the per primitive integration */
 
 extern LOCAL_SYM void
 solstice_node_target_get_tracking
