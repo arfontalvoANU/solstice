@@ -30,14 +30,23 @@ include_directories(
 # Configure and define targets
 ################################################################################
 set(SOLPARSER_FILES_SRC
-  solparser.c)
+  solparser.c
+  solparser_entity.c
+  solparser_geometry.c
+  solparser_material.c
+  solparser_pivot.c
+  solparser_sun.c
+  solparser_spectrum.c)
 set(SOLPARSER_FILES_INC
   solparser.h
+  solparser_c.h
   solparser_entity.h
+  solparser_geometry.h
   solparser_material.h
   solparser_pivot.h
   solparser_shape.h
-  solparser_sun.h)
+  solparser_sun.h
+  solparser_spectrum.h)
 
 # Prepend each file in the `SOLPARSER_FILES_<SRC|INC>' list by `SOLPARSER_SOURCE_DIR'
 rcmake_prepend_path(SOLPARSER_FILES_SRC ${SOLPARSER_SOURCE_DIR})
@@ -82,6 +91,8 @@ if(NOT NO_TEST)
     ${SOLPARSER_SOURCE_DIR}/yaml/test_ok_5.yaml)
   add_test(test_solparser_ok_6 test_solparser
     ${SOLPARSER_SOURCE_DIR}/yaml/test_ok_6.yaml)
+  add_test(test_solparser_ok_7 test_solparser
+    ${SOLPARSER_SOURCE_DIR}/yaml/test_ok_7.yaml)
   add_test(test_solparser_ko test_solparser -e
     ${SOLPARSER_SOURCE_DIR}/yaml/test_ko_0.yaml)
 
@@ -91,6 +102,7 @@ if(NOT NO_TEST)
   new_test(test_solparser5)
   new_test(test_solparser6)
   new_test(test_solparser7)
+  new_test(test_solparser8)
 
   rcmake_copy_runtime_libraries(test_solparser)
 endif()

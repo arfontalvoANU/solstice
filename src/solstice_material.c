@@ -18,19 +18,13 @@
 
 #include <solstice/ssol.h>
 
-struct mirror_param {
-  double reflectivity;
-  double roughness;
-};
-
 struct matte_param {
   double reflectivity;
 };
 
-struct thin_dielectric_param {
-  double absorption;
-  double thickness;
-  double refractive_index;
+struct mirror_param {
+  double reflectivity;
+  double roughness;
 };
 
 /*******************************************************************************
@@ -105,57 +99,44 @@ mirror_get_roughness
   *val = param->roughness;
 }
 
-static void
-thin_dielectric_get_absorption
-  (struct ssol_device* dev,
-   struct ssol_param_buffer* buf,
-   const double wavelength,
-   const double P[3],
-   const double Ng[3],
-   const double Ns[3],
-   const double uv[2],
-   const double w[3],
-   double* val)
+static res_T
+create_material_dielectric
+  (struct solstice* solstice,
+   const struct solparser_material_dielectric* dielectric,
+   struct ssol_material** out_mtl)
 {
-  const struct thin_dielectric_param* param = ssol_param_buffer_get(buf);
-  (void)dev, (void)wavelength, (void)P, (void)Ng, (void)Ns, (void)uv, (void)w;
-  *val = param->absorption;
-}
+  const struct solparser_medium* medium_i;
+  const struct solparser_medium* medium_t;
+  struct ssol_medium ssol_medium_i;
+  struct ssol_medium ssol_medium_t;
+  struct ssol_dielectric_shader shader = SSOL_DIELECTRIC_SHADER_NULL;
+  struct ssol_material* mtl = NULL;
+  res_T res = RES_OK;
+  ASSERT(solstice && dielectric && out_mtl);
 
-static void
-thin_dielectric_get_thickness
-  (struct ssol_device* dev,
-   struct ssol_param_buffer* buf,
-   const double wavelength,
-   const double P[3],
-   const double Ng[3],
-   const double Ns[3],
-   const double uv[2],
-   const double w[3],
-   double* val)
-{
-  const struct thin_dielectric_param* param = ssol_param_buffer_get(buf);
-  (void)dev, (void)wavelength, (void)P, (void)Ng, (void)Ns, (void)uv, (void)w;
-  *val = param->thickness;
-}
+  res = ssol_material_create_dielectric(solstice->ssol, &mtl);
+  if(res != RES_OK) {
+    fprintf(stderr,
+      "Could not allocate the Solstice Solver dielectric material.\n");
+    goto error;
+  }
 
-static void
-thin_dielectric_get_refractive_index
-  (struct ssol_device* dev,
-   struct ssol_param_buffer* buf,
-   const double wavelength,
-   const double P[3],
-   const double Ng[3],
-   const double Ns[3],
-   const double uv[2],
-   const double w[3],
-   double* val)
-{
-  const struct thin_dielectric_param* param = ssol_param_buffer_get(buf);
-  (void)dev, (void)wavelength, (void)P, (void)Ng, (void)Ns, (void)uv, (void)w;
-  *val = param->refractive_index;
-}
+  medium_i = solparser_get_medium(solstice->parser, dielectric->medium_i);
+  medium_t = solparser_get_medium(solstice->parser, dielectric->medium_t);
+  shader.normal = mtl_get_normal;
+  ssol_medium_i.refractive_index = medium_i->refractive_index;
+  ssol_medium_i.absorptivity = medium_i->absorptivity;
+  ssol_medium_t.refractive_index = medium_t->refractive_index;
+  ssol_medium_t.absorptivity = medium_t->absorptivity;
+  SSOL(dielectric_setup(mtl, &shader, &ssol_medium_i, &ssol_medium_t));
 
+exit:
+  *out_mtl = mtl;
+  return res;
+error:
+  if(mtl) SSOL(material_ref_put(mtl)), mtl = NULL;
+  goto exit;
+}
 
 static res_T
 create_material_matte
@@ -194,7 +175,7 @@ create_material_matte
 
   shader.normal = mtl_get_normal;
   shader.reflectivity = matte_get_reflectivity;
-  SSOL(matte_set_shader(mtl, &shader));
+  SSOL(matte_setup(mtl, &shader));
   SSOL(material_set_param_buffer(mtl, pbuf));
 
 exit:
@@ -245,7 +226,7 @@ create_material_mirror
   shader.normal = mtl_get_normal;
   shader.reflectivity = mirror_get_reflectivity;
   shader.roughness = mirror_get_roughness;
-  SSOL(mirror_set_shader(mtl, &shader));
+  SSOL(mirror_setup(mtl, &shader));
   SSOL(material_set_param_buffer(mtl, pbuf));
 
 exit:
@@ -264,9 +245,11 @@ create_material_thin_dielectric
    struct ssol_material** out_mtl)
 {
   struct ssol_thin_dielectric_shader shader = SSOL_THIN_DIELECTRIC_SHADER_NULL;
+  const struct solparser_medium* medium_i;
+  const struct solparser_medium* medium_t;
+  struct ssol_medium ssol_medium_i;
+  struct ssol_medium ssol_medium_t;
   struct ssol_material* mtl = NULL;
-  struct ssol_param_buffer* pbuf = NULL;
-  struct thin_dielectric_param* param;
   res_T res = RES_OK;
   ASSERT(solstice && thin && out_mtl);
 
@@ -277,34 +260,17 @@ create_material_thin_dielectric
     goto error;
   }
 
-  res = ssol_param_buffer_create
-    (solstice->ssol, sizeof(struct thin_dielectric_param), &pbuf);
-  if(res != RES_OK) {
-    fprintf(stderr, "Could not create the Solstice Solver parameter buffer.\n");
-    goto error;
-  }
-
-  param = ssol_param_buffer_allocate(pbuf,
-    sizeof(struct thin_dielectric_param), ALIGNOF(struct thin_dielectric_param));
-  if(!param) {
-    fprintf(stderr, "Could not allocate the thin dielectric parameters.\n");
-    res = RES_MEM_ERR;
-    goto error;
-  }
-
-  param->thickness = thin->thickness;
-  param->absorption = thin->absorption;
-  param->refractive_index = thin->refractive_index;
-
   shader.normal = mtl_get_normal;
-  shader.absorption = thin_dielectric_get_absorption;
-  shader.thickness = thin_dielectric_get_thickness;
-  shader.refractive_index = thin_dielectric_get_refractive_index;
-  SSOL(thin_dielectric_set_shader(mtl, &shader));
-  SSOL(material_set_param_buffer(mtl, pbuf));
+  medium_i = solparser_get_medium(solstice->parser, thin->medium_i);
+  medium_t = solparser_get_medium(solstice->parser, thin->medium_t);
+  ssol_medium_i.refractive_index = medium_i->refractive_index;
+  ssol_medium_t.refractive_index = medium_t->refractive_index;
+  ssol_medium_i.absorptivity = medium_i->absorptivity;
+  ssol_medium_t.absorptivity = medium_t->absorptivity;
+  SSOL(thin_dielectric_setup
+    (mtl, &shader, &ssol_medium_i, &ssol_medium_t, thin->thickness));
 
 exit:
-  if(pbuf) SSOL(param_buffer_ref_put(pbuf));
   *out_mtl = mtl;
   return res;
 error:
@@ -339,18 +305,26 @@ solstice_create_ssol_material
     if(pssol_mtl) {
       ssol_mtl = *pssol_mtl;
     } else {
+      const struct solparser_material_dielectric* dielectric;
       const struct solparser_material_matte* matte;
       const struct solparser_material_mirror* mirror;
       const struct solparser_material_thin_dielectric* thin_dielectric;
 
       switch(mtl->type) {
-        case SOLPARSER_MATERIAL_MIRROR:
-          mirror = solparser_get_material_mirror(solstice->parser, mtl->data.mirror);
-          res = create_material_mirror(solstice, mirror, &ssol_mtl);
+        case SOLPARSER_MATERIAL_DIELECTRIC:
+          dielectric = solparser_get_material_dielectric
+            (solstice->parser, mtl->data.dielectric);
+          res = create_material_dielectric(solstice, dielectric, &ssol_mtl);
           break;
         case SOLPARSER_MATERIAL_MATTE:
-          matte = solparser_get_material_matte(solstice->parser, mtl->data.matte);
+          matte = solparser_get_material_matte
+            (solstice->parser, mtl->data.matte);
           res = create_material_matte(solstice, matte, &ssol_mtl);
+          break;
+        case SOLPARSER_MATERIAL_MIRROR:
+          mirror = solparser_get_material_mirror
+            (solstice->parser, mtl->data.mirror);
+          res = create_material_mirror(solstice, mirror, &ssol_mtl);
           break;
         case SOLPARSER_MATERIAL_THIN_DIELECTRIC:
           thin_dielectric = solparser_get_material_thin_dielectric

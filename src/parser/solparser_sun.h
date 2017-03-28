@@ -16,6 +16,7 @@
 #ifndef SOLPARSER_SUN_H
 #define SOLPARSER_SUN_H
 
+#include "solparser_spectrum.h"
 #include <rsys/dynamic_array.h>
 
 enum solparser_sun_radang_distrib_type { /* Radial Angular distribution */
@@ -23,15 +24,6 @@ enum solparser_sun_radang_distrib_type { /* Radial Angular distribution */
   SOLPARSER_SUN_RADANG_DISTRIB_DIRECTIONAL,
   SOLPARSER_SUN_RADANG_DISTRIB_PILLBOX
 };
-
-struct solparser_spectrum_data {
-  double wavelength;
-  double data;
-};
-
-#define DARRAY_NAME spectrum_data
-#define DARRAY_DATA struct solparser_spectrum_data
-#include <rsys/dynamic_array.h>
 
 struct solparser_sun_buie { double csr; };
 struct solparser_sun_pillbox { double aperture; };
