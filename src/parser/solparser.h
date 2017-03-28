@@ -18,9 +18,12 @@
 
 #include "solparser_entity.h"
 #include <rsys/rsys.h>
+#include <stddef.h>
 
 struct mem_allocator;
 struct solparser;
+
+#define SOLPARSER_ID_IS_VALID(Id) ((Id).i != SIZE_MAX)
 
 struct solparser_entity_iterator {
   struct htable_str2sols_iterator it__; /* Internal data */

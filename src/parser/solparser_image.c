@@ -96,6 +96,7 @@ parse_image
 
 exit:
   out_iimg->i = isolimg;
+  return res;
 error:
   if(solimg) {
     darray_image_pop_back(&parser->images);
