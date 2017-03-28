@@ -32,6 +32,7 @@ include_directories(
 set(SOLPARSER_FILES_SRC
   solparser.c
   solparser_entity.c
+  solparser_image.c
   solparser_geometry.c
   solparser_material.c
   solparser_pivot.c
@@ -42,6 +43,7 @@ set(SOLPARSER_FILES_INC
   solparser_c.h
   solparser_entity.h
   solparser_geometry.h
+  solparser_image.h
   solparser_material.h
   solparser_pivot.h
   solparser_shape.h

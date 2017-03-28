@@ -214,7 +214,7 @@ parse_material_matte
    const yaml_node_t* matte,
    struct solparser_material_matte_id* out_imtl)
 {
-  enum { REFLECTIVITY };
+  enum { NORMAL_MAP, REFLECTIVITY };
   struct solparser_material_matte* mtl = NULL;
   size_t imtl = SIZE_MAX;
   intptr_t i, n;
@@ -250,13 +250,20 @@ parse_material_matte
       goto error;
     }
 
-    if(!strcmp((char*)key->data.scalar.value, "reflectivity")) {
-      if(mask & BIT(REFLECTIVITY)) {
-        log_err(parser, key, "the matte reflectivity is already defined.\n");
-        res = RES_BAD_ARG;
-        goto error;
-      }
-      mask |= BIT(REFLECTIVITY);
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(parser, key,                                                   \
+          "the "Name" of the matte material is already defined.\n");           \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if(!strcmp((char*)key->data.scalar.value, "normal_map")) {
+      SETUP_MASK(NORMAL_MAP, "normal_map");
+      res = parse_image(parser, doc, val, &mtl->normal_map);
+    } else if(!strcmp((char*)key->data.scalar.value, "reflectivity")) {
+      SETUP_MASK(REFLECTIVITY, "reflectivity");
       res = parse_real(parser, val, 0, 1, &mtl->reflectivity);
     } else {
       log_err(parser, key, "unknown matte parameter `%s'.\n",
@@ -268,6 +275,7 @@ parse_material_matte
       log_node(parser, key);
       goto error;
     }
+    #undef SETUP_MASK
   }
 
   if(!(mask & BIT(REFLECTIVITY))) {

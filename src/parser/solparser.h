@@ -87,15 +87,15 @@ solparser_get_entity
   (const struct solparser* parser,
    const struct solparser_entity_id entity);
 
+extern LOCAL_SYM const struct solparser_image*
+solparser_get_image
+  (const struct solparser* parser,
+   const struct solparser_image_id image);
+
 extern LOCAL_SYM const struct solparser_geometry*
 solparser_get_geometry
   (const struct solparser* parser,
    const struct solparser_geometry_id geom);
-
-extern LOCAL_SYM const struct solparser_medium*
-solparser_get_medium
-  (const struct solparser* parser,
-   const struct solparser_medium_id medium);
 
 extern LOCAL_SYM const struct solparser_material*
 solparser_get_material
@@ -127,20 +127,15 @@ solparser_get_material_thin_dielectric
   (const struct solparser* parser,
    const struct solparser_material_thin_dielectric_id thin_dielectric);
 
+extern LOCAL_SYM const struct solparser_medium*
+solparser_get_medium
+  (const struct solparser* parser,
+   const struct solparser_medium_id medium);
+
 extern LOCAL_SYM const struct solparser_object*
 solparser_get_object
   (const struct solparser* parser,
    const struct solparser_object_id obj);
-
-extern LOCAL_SYM const struct solparser_x_pivot*
-solparser_get_x_pivot
-  (const struct solparser* parser,
-   const struct solparser_pivot_id x_pivot);
-
-extern LOCAL_SYM const struct solparser_zx_pivot*
-solparser_get_zx_pivot
-  (const struct solparser* parser,
-   const struct solparser_pivot_id zx_pivot);
 
 extern LOCAL_SYM const struct solparser_shape*
 solparser_get_shape
@@ -195,6 +190,16 @@ solparser_get_shape_stl
 extern LOCAL_SYM const struct solparser_sun*
 solparser_get_sun
   (const struct solparser* parser);
+
+extern LOCAL_SYM const struct solparser_x_pivot*
+solparser_get_x_pivot
+  (const struct solparser* parser,
+   const struct solparser_pivot_id x_pivot);
+
+extern LOCAL_SYM const struct solparser_zx_pivot*
+solparser_get_zx_pivot
+  (const struct solparser* parser,
+   const struct solparser_pivot_id zx_pivot);
 
 /*******************************************************************************
  * Entity interator

@@ -229,6 +229,7 @@
 <matte> ::=
   matte:
     reflectivity: REAL # in [0, 1]
+[   <normal-map> ]
 
 <mirror> ::=
   mirror:
@@ -245,8 +246,11 @@
     medium_t: <dielectric-medium>
 
 <dielectric-medium> ::=
-    refractive_index: REAL # in ]0, INF)
-    absorptivity: REAL # in [0, INF)
+  refractive_index: REAL # in ]0, INF)
+  absorptivity: REAL # in [0, INF)
+
+<normal-map> ::=
+  normal_map: { path: PATH }
 
 #----------------------------------------
 <entity> ::=

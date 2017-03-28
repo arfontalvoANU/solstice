@@ -186,6 +186,7 @@ parser_clear(struct solparser* parser)
 
   /* Materials */
   htable_yaml2sols_clear(&parser->yaml2mtls);
+  darray_image_clear(&parser->images);
   darray_material_clear(&parser->mtls);
   darray_material2_clear(&parser->mtls2);
   darray_medium_clear(&parser->mediums);
@@ -240,6 +241,7 @@ parser_release(ref_T* ref)
 
   /* Materials */
   htable_yaml2sols_release(&parser->yaml2mtls);
+  darray_image_release(&parser->images);
   darray_material_release(&parser->mtls);
   darray_material2_release(&parser->mtls2);
   darray_medium_release(&parser->mediums);
@@ -568,6 +570,7 @@ solparser_create
 
   /* Materials */
   htable_yaml2sols_init(mem_allocator, &parser->yaml2mtls);
+  darray_image_init(mem_allocator, &parser->images);
   darray_material_init(mem_allocator, &parser->mtls);
   darray_material2_init(mem_allocator, &parser->mtls2);
   darray_medium_init(mem_allocator, &parser->mediums);
@@ -880,6 +883,15 @@ solparser_get_entity
 {
   ASSERT(parser && entity.i < darray_entity_size_get(&parser->entities));
   return darray_entity_cdata_get(&parser->entities) + entity.i;
+}
+
+const struct solparser_image*
+solparser_get_image
+  (const struct solparser* parser,
+   const struct solparser_image_id image)
+{
+  ASSERT(parser && image.i < darray_image_size_get(&parser->images));
+  return darray_image_cdata_get(&parser->images) + image.i;
 }
 
 const struct solparser_geometry*

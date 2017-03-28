@@ -16,6 +16,7 @@
 #ifndef SOLPARSER_MATERIAL_H
 #define SOLPARSER_MATERIAL_H
 
+#include "solparser_image.h"
 #include <stddef.h>
 
 enum solparser_material_type {
@@ -42,9 +43,20 @@ struct solparser_material_dielectric_id { size_t i; };
 
 struct solparser_material_matte {
   double reflectivity; /* In [0, 1] */
+  struct solparser_image_id normal_map;
 };
 
 struct solparser_material_matte_id { size_t i; };
+
+static INLINE void
+solparser_material_matte_init
+  (struct mem_allocator* allocator,
+   struct solparser_material_matte* matte)
+{
+  ASSERT(matte);
+  (void)allocator;
+  matte->normal_map.i = SIZE_MAX;
+}
 
 struct solparser_material_mirror {
   double roughness; /* In [0, 1] */
