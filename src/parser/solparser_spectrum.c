@@ -1,0 +1,145 @@
+/* Copyright (C) CNRS 2016-2017
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>. */
+
+#include "solparser_c.h"
+
+/*******************************************************************************
+ * Helper functions
+ ******************************************************************************/
+static res_T
+parse_spectrum_data
+  (struct solparser* parser,
+   yaml_document_t* doc,
+   const double lower_bound,
+   const double upper_bound,
+   const yaml_node_t* sdata,
+   struct solparser_spectrum_data* spectrum_data)
+{
+  enum { DATA, WAVELENGTH };
+  intptr_t i, n;
+  int mask = 0; /* Register the parsed attributes */
+  res_T res = RES_OK;
+  ASSERT(doc && sdata && lower_bound < upper_bound && spectrum_data);
+
+  if(sdata->type != YAML_MAPPING_NODE) {
+    log_err(parser, sdata, "expect the definition of a spectrum data.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  n = sdata->data.mapping.pairs.top - sdata->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, sdata->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, sdata->data.mapping.pairs.start[i].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(parser, key, "expect a spectrum data parameter.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(parser, key,                                                   \
+          "the `"Name"' of the spectrum data is already defined.\n");          \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if(!strcmp((char*)key->data.scalar.value, "data")) {
+      SETUP_MASK(DATA, "data");
+      res = parse_real(parser, val, lower_bound, upper_bound, &spectrum_data->data);
+    } else if(!strcmp((char*)key->data.scalar.value, "wavelength")) {
+      SETUP_MASK(WAVELENGTH, "wavelength");
+      res = parse_real(parser, val, 0, DBL_MAX, &spectrum_data->wavelength);
+    } else {
+      log_err(parser, key, "unknown spectrum data parameter `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    if(res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
+    #undef SETUP_MASK
+  }
+
+  #define CHECK_PARAM(Flag, Name)                                              \
+    if(!(mask & BIT(Flag))) {                                                  \
+      log_err(parser, sdata,"the "Name" of the spectrum data is missing.\n");  \
+      res = RES_BAD_ARG;                                                       \
+      goto error;                                                              \
+    } (void)0
+  CHECK_PARAM(DATA, "data");
+  CHECK_PARAM(WAVELENGTH, "wavelength");
+  #undef CHECK_PARAM
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+/*******************************************************************************
+ * Local functions
+ ******************************************************************************/
+res_T
+parse_spectrum
+  (struct solparser* parser,
+   yaml_document_t* doc,
+   const double lower_bound,
+   const double upper_bound,
+   const yaml_node_t* spectrum,
+   struct darray_spectrum_data* data)
+{
+  intptr_t i, n;
+  res_T res = RES_OK;
+  ASSERT(doc && spectrum && lower_bound < upper_bound && data);
+
+  if(spectrum->type != YAML_SEQUENCE_NODE) {
+    log_err(parser, spectrum, "expect a list of spectrum data.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  n = spectrum->data.sequence.items.top - spectrum->data.sequence.items.start;
+  res = darray_spectrum_data_resize(data, (size_t)n);
+  if(res != RES_OK) {
+    log_err(parser, spectrum, "could not allocate the list of spectrum data.\n");
+    goto error;
+  }
+
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* sdata;
+    struct solparser_spectrum_data* spectrum_data;
+
+    sdata = yaml_document_get_node(doc, spectrum->data.sequence.items.start[i]);
+    spectrum_data = darray_spectrum_data_data_get(data) + i;
+    res = parse_spectrum_data
+      (parser, doc, lower_bound, upper_bound, sdata, spectrum_data);
+    if(res != RES_OK) goto error;
+  }
+
+exit:
+  return res;
+error:
+  darray_spectrum_data_clear(data);
+  goto exit;
+}
+
