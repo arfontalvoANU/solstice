@@ -311,8 +311,14 @@ write_per_receiver_mc_primitive
     size_t ishape, nshapes;
     size_t nverts, ntris;
     size_t offset;
+    int mask, prim;
 
     htable_receiver_iterator_next(&it);
+
+    SSOL(instance_is_receiver(inst, &mask, &prim));
+    NCHECK(mask, 0);
+    if(!prim) continue;
+
     SSOL(instance_get_shaded_shapes_count(inst, &nshapes));
 
     /* Write the header */
