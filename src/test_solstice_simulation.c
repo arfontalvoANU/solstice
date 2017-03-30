@@ -40,9 +40,12 @@ enum side {
 
 enum global_result_type {
   GLOBAL_POTENTIAL,
+  GLOBAL_ABSORBED,
+  GLOBAL_COS,
   GLOBAL_SHADOW,
   GLOBAL_MISSING,
-  GLOBAL_COS,
+  GLOBAL_ATMOSPHERE,
+  GLOBAL_REFLECTIVITY,
   GLOBAL_RESULTS_COUNT__
 };
 
@@ -258,10 +261,10 @@ read_recv(FILE* file, char name[], double E[], double SE[])
   CHECK(read_line(line, sizeof(line), file), 1);
   CHECK(
     sscanf(line,
-      "%s %*lu  "
+      "%s %*lu %*lg   "
       "FRONT: %lg %lg   %lg %lg   %lg %lg   %lg %lg   %lg %lg  "
       " BACK: %lg %lg   %lg %lg   %lg %lg   %lg %lg   %lg %lg",
-      name, /* ID */
+      name, /* ID, area */
       &E[FRONT_INTEGRATED_ABSORBED_IRRADIANCE],
       &SE[FRONT_INTEGRATED_ABSORBED_IRRADIANCE],
       &E[FRONT_INTEGRATED_IRRADIANCE], &SE[FRONT_INTEGRATED_IRRADIANCE],

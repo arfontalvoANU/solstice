@@ -7,7 +7,9 @@
       
       
 - geometry: &small_square
-    - material: { virtual: }
+    - material: 
+        front: { virtual: }
+        back: { matte: { reflectivity: 0 } }
       plane:
         clip:
           - operation: AND
