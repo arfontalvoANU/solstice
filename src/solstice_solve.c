@@ -403,7 +403,7 @@ dump_path_segments
 
   fprintf(solstice->output, "%lu", (unsigned long)nverts);
   FOR_EACH(i, 0, nverts) {
-    fprintf(solstice->output, " %lu", (unsigned long)i + offset);
+    fprintf(solstice->output, " %lu", (unsigned long)(i + offset));
   }
   fprintf(solstice->output, "\n");
 }
@@ -443,7 +443,7 @@ write_paths(struct solstice* solstice, struct ssol_estimator* estimator)
   /* Write the segment of the tracked paths */
   offset = 0;
   fprintf(solstice->output, "LINES %lu %lu\n",
-    (unsigned long)npaths, (unsigned long)nverts + npaths);
+    (unsigned long)npaths, (unsigned long)(nverts + npaths));
   FOR_EACH(ipath, 0, npaths) {
     size_t n;
     SSOL(estimator_get_tracked_path(estimator, ipath, &path));
