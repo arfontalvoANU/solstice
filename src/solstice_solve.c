@@ -413,7 +413,7 @@ write_paths(struct solstice* solstice, struct ssol_estimator* estimator)
 {
   struct ssol_path path;
   size_t ipath, npaths;
-  size_t nverts, nlines;
+  size_t nverts;
   size_t offset;
   ASSERT(solstice && estimator);
 
@@ -431,7 +431,6 @@ write_paths(struct solstice* solstice, struct ssol_estimator* estimator)
     SSOL(estimator_get_tracked_path(estimator, ipath, &path));
     SSOL(path_get_vertices_count(&path, &n));
     nverts += n;
-    nlines += n - 1;
   }
 
   /* Write the positions of the tracked paths */
