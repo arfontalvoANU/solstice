@@ -1,12 +1,12 @@
 #--- Sun direction: 90 90 (-3.7494e-33 -6.12323e-17 -1)
 7 2 5 10000 0
 500.043 0 # Potential
-465.484 0.0183212 # Absorbed
-0.930883 3.66351e-05 # Cos
-0 0 # Shadowing
-0 0 # Missing
-0 0 # Atmosphere
-0 0 # Reflectivity
+465.484 0.0183212
+0.930883 3.66351e-05
+0 0
+0 0
+0 0
+0 0
 tower.secondary.hyperbol 10 421.957   FRONT: 0 0   465.484 0.0183212   0 0   0 0   0 0   BACK: 0 0   0 0   0 0   0 0   0 0
 tower.receptor 14 25   FRONT: 465.484 0.0183212   465.484 0.0183212   0 0   0 0   0.930888 3.66392e-05   BACK: -1 -1   -1 -1   -1 -1   -1 -1   -1 -1
 heliostat4.temp-heliostat150.pivot.reflector 6 100.009 1999   0 0   0 0
@@ -26,13 +26,13 @@ heliostat1.temp-heliostat150.pivot.reflector 34 100.009 2024   0 0   0 0
 14 34   FRONT: 94.0913 1.86784   94.0913 1.86784   0 0   0 0   BACK: -1 -1   -1 -1   -1 -1   -1 -1
 #--- Sun direction: 50 50 (-0.413176 -0.492404 -0.766044)
 7 2 5 10000 0
-500.043 0 # Potential
-136.561 1.90791 # Absorbed
-0.80038 0.000222269 # Cos
-0 0 # Shadowing
-244.012 1.94769 # Missing
-0 0 # Atmosphere
-0 0 # Reflectivity
+500.043 0
+136.561 1.90791
+0.80038 0.000222269
+0 0
+244.012 1.94769
+0 0
+0 0
 tower.secondary.hyperbol 10 421.957   FRONT: 0 0   400.227 0.111144   0 0   0 0   0 0   BACK: 0 0   0 0   0 0   0 0   0 0
 tower.receptor 14 25   FRONT: 136.561 1.90791   136.561 1.90791   0 0   0 0   0.273098 0.0038155   BACK: -1 -1   -1 -1   -1 -1   -1 -1   -1 -1
 heliostat4.temp-heliostat150.pivot.reflector 6 100.009 2045   0 0   0 0

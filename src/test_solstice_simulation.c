@@ -239,13 +239,13 @@ get_angles_and_counts
 }
 
 static void
-read_global(FILE* file, char name [], double* E, double* SE)
+read_global(FILE* file, double* E, double* SE)
 {
   char line[MAX_LINE_LEN];
   CHECK(read_line(line, sizeof(line), file), 1);
   CHECK(
-    sscanf(line, "%lg %lg # %s", E, SE, name),
-    3);
+    sscanf(line, "%lg %lg", E, SE),
+    2);
 }
 
 static void
@@ -381,12 +381,9 @@ check_1_reference
   /* both files' pointer are just past the new bloc header */
 
   for (n = 0; n < counts->global; n++) {
-    char ref_global_name[MAX_LINE_LEN], test_global_name[MAX_LINE_LEN];
     double reference_E, reference_SE, test_E, test_SE;
-
-    read_global(ref_file, ref_global_name, &reference_E, &reference_SE);
-    read_global(test_file, test_global_name, &test_E, &test_SE);
-    CHECK(strcmp(ref_global_name, test_global_name), 0);
+    read_global(ref_file, &reference_E, &reference_SE);
+    read_global(test_file, &test_E, &test_SE);
     CHECK(is_compatible_with(reference_E, reference_SE, test_E, test_SE), 1);
   }
   for (n = 0; n < counts->receiver; n++) {
