@@ -536,6 +536,7 @@ solstice_init
   htable_object_init(allocator, &solstice->objects);
   htable_anchor_init(allocator, &solstice->anchors);
   htable_receiver_init(allocator, &solstice->receivers);
+  htable_primary_init(allocator, &solstice->primaries);
   darray_nodes_init(allocator, &solstice->roots);
   darray_nodes_init(allocator, &solstice->pivots);
   darray_double_init(allocator, &solstice->sun_dirs);
@@ -644,6 +645,7 @@ solstice_release(struct solstice* solstice)
   htable_object_release(&solstice->objects);
   htable_anchor_release(&solstice->anchors);
   htable_receiver_release(&solstice->receivers);
+  htable_primary_release(&solstice->primaries);
   darray_nodes_release(&solstice->roots);
   darray_nodes_release(&solstice->pivots);
   darray_double_release(&solstice->sun_dirs);

@@ -17,6 +17,7 @@
 
 #include <rsys/rsys.h>
 #include <rsys/math.h>
+#include <rsys/double2.h>
 
 #include <math.h>
 #include <stdio.h>
@@ -37,19 +38,51 @@ enum side {
   BACK
 };
 
-enum result_type {
-  FRONT_INTEGRATED_IRRADIANCE,
-  BACK_INTEGRATED_IRRADIANCE,
-  FRONT_REFLECTIVITY_LOSS,
-  BACK_REFLECTIVITY_LOSS,
-  FRONT_ABSORPTIVITY_LOSS,
-  BACK_ABSORPTIVITY_LOSS,
-  FRONT_COS_LOSS,
-  BACK_COS_LOSS,
-  FRONT_EFFICIENCY,
-  BACK_EFFICIENCY,
-  MAX_RESULTS_COUNT__
+enum global_result_type {
+  GLOBAL_POTENTIAL,
+  GLOBAL_ABSORBED,
+  GLOBAL_COS,
+  GLOBAL_SHADOW,
+  GLOBAL_MISSING,
+  GLOBAL_ATMOSPHERE,
+  GLOBAL_REFLECTIVITY,
+  GLOBAL_RESULTS_COUNT__
 };
+
+enum receiver_result_type {
+  FIRST_RECEIVER_RESULT,
+  FRONT_INTEGRATED_ABSORBED_IRRADIANCE = FIRST_RECEIVER_RESULT,
+  FRONT_INTEGRATED_IRRADIANCE,
+  FRONT_REFLECTIVITY_LOSS,
+  FRONT_ABSORPTIVITY_LOSS,
+  FRONT_EFFICIENCY,
+  BACK_INTEGRATED_ABSORBED_IRRADIANCE,
+  BACK_INTEGRATED_IRRADIANCE,
+  BACK_REFLECTIVITY_LOSS,
+  BACK_ABSORPTIVITY_LOSS,
+  BACK_EFFICIENCY,
+  RECEIVER_RESULTS_COUNT__
+};
+
+enum primary_result_type {
+  FIRST_PRIMARY_RESULT,
+  PRIMARY_SHADOW = FIRST_PRIMARY_RESULT,
+  PRIMARY_RESULTS_COUNT__
+};
+
+struct counts {
+  unsigned long global, receiver, primary, realisation, failed;
+};
+
+static int
+counts_ok(const struct counts* ref, const struct counts* c)
+{
+  CHECK(ref->global, GLOBAL_RESULTS_COUNT__);
+  CHECK(c->global, GLOBAL_RESULTS_COUNT__);
+  return ref->receiver == c->receiver
+    && ref->primary == c->primary
+    && ref->failed >= c->failed;
+}
 
 #define MAX_LINE_LEN 2048
 
@@ -170,63 +203,146 @@ read_line(char* line, size_t max_line_len, FILE* stream)
   return 1;
 }
 
-static void
-get_dir_and_counts
-  (FILE* ref_file,
+static int
+get_angles_and_counts
+  (FILE* file,
    double angles[2],
-   unsigned long* recv_count,
-   unsigned long* realisation_count)
+   struct counts* counts)
 {
   char line[MAX_LINE_LEN];
-  int n;
+  int r;
 
-  NCHECK(ref_file, NULL);
+  NCHECK(file, NULL);
   NCHECK(angles, NULL);
-  NCHECK(recv_count, NULL);
-  NCHECK(realisation_count, NULL);
+  NCHECK(counts, NULL);
 
   /* Get sun dir */
-  CHECK(read_line(line, sizeof(line), ref_file), 1);
+  r = read_line(line, sizeof(line), file);
+  if (!r) {
+    CHECK(feof(file), 1);
+    return 0;
+  }
   CHECK(IS_NEW_BLOCK(line, sundir_header), 1);
-  n = sscanf(line+strlen(sundir_header), "%lg%lg", &angles[0], &angles[1]);
-  CHECK(n, 2);
+  CHECK(
+    sscanf(line+strlen(sundir_header), "%lg%lg", &angles[0], &angles[1]),
+    2);
 
-  /* Get #receivers and #realisations */
-  CHECK(read_line(line, sizeof(line), ref_file), 1);
-  n = sscanf(line, "%lu%lu", recv_count, realisation_count);
-  CHECK(n, 2);
+  /* Get counts */
+  CHECK(read_line(line, sizeof(line), file), 1);
+  CHECK(
+    sscanf(line,
+      "%lu %lu %lu %lu %lu",
+      &counts->global, &counts->receiver, &counts->primary,
+      &counts->realisation, &counts->failed),
+    5);
+  return 1;
 }
 
 static void
-read_recv(const char* line, char name[], double E[], double SE[])
+read_global(FILE* file, double* E, double* SE)
 {
-  int n;
+  char line[MAX_LINE_LEN];
+  CHECK(read_line(line, sizeof(line), file), 1);
+  CHECK(
+    sscanf(line, "%lg %lg", E, SE),
+    2);
+}
 
-  NCHECK(line, NULL);
+static void
+read_recv(FILE* file, char name[], double E[], double SE[])
+{
+  char line[MAX_LINE_LEN];
+
+  NCHECK(file, NULL);
   NCHECK(name, NULL);
   NCHECK(E, NULL);
   NCHECK(SE, NULL);
 
-  n = sscanf(line,
-    "%s%*u%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg%lg",
-     name,
-     &E[FRONT_INTEGRATED_IRRADIANCE], &SE[FRONT_INTEGRATED_IRRADIANCE],
-     &E[BACK_INTEGRATED_IRRADIANCE], &SE[BACK_INTEGRATED_IRRADIANCE],
-     &E[FRONT_REFLECTIVITY_LOSS], &SE[FRONT_REFLECTIVITY_LOSS],
-     &E[BACK_REFLECTIVITY_LOSS], &SE[BACK_REFLECTIVITY_LOSS],
-     &E[FRONT_ABSORPTIVITY_LOSS], &SE[FRONT_ABSORPTIVITY_LOSS],
-     &E[BACK_ABSORPTIVITY_LOSS], &SE[BACK_ABSORPTIVITY_LOSS],
-     &E[FRONT_COS_LOSS], &SE[FRONT_COS_LOSS],
-     &E[BACK_COS_LOSS], &SE[BACK_COS_LOSS],
-     &E[FRONT_EFFICIENCY], &SE[FRONT_EFFICIENCY],
-     &E[BACK_EFFICIENCY], &SE[BACK_EFFICIENCY]);
+  CHECK(read_line(line, sizeof(line), file), 1);
+  CHECK(
+    sscanf(line,
+      "%s %*lu %*lg   "
+      "FRONT: %lg %lg   %lg %lg   %lg %lg   %lg %lg   %lg %lg  "
+      " BACK: %lg %lg   %lg %lg   %lg %lg   %lg %lg   %lg %lg",
+      name, /* ID, area */
+      &E[FRONT_INTEGRATED_ABSORBED_IRRADIANCE],
+      &SE[FRONT_INTEGRATED_ABSORBED_IRRADIANCE],
+      &E[FRONT_INTEGRATED_IRRADIANCE], &SE[FRONT_INTEGRATED_IRRADIANCE],
+      &E[FRONT_REFLECTIVITY_LOSS], &SE[FRONT_REFLECTIVITY_LOSS],
+      &E[FRONT_ABSORPTIVITY_LOSS], &SE[FRONT_ABSORPTIVITY_LOSS],
+      &E[FRONT_EFFICIENCY], &SE[FRONT_EFFICIENCY],
+      &E[BACK_INTEGRATED_ABSORBED_IRRADIANCE],
+      &SE[BACK_INTEGRATED_ABSORBED_IRRADIANCE],
+      &E[BACK_INTEGRATED_IRRADIANCE], &SE[BACK_INTEGRATED_IRRADIANCE],
+      &E[BACK_REFLECTIVITY_LOSS], &SE[BACK_REFLECTIVITY_LOSS],
+      &E[BACK_ABSORPTIVITY_LOSS], &SE[BACK_ABSORPTIVITY_LOSS],
+      &E[BACK_EFFICIENCY], &SE[BACK_EFFICIENCY]),
+    2 * RECEIVER_RESULTS_COUNT__ + 1);
+}
 
-  CHECK(n,  2*MAX_RESULTS_COUNT__+1);
+static void
+read_primary
+  (FILE* file, char name[], double* area, double* cos, double E[], double SE[])
+{
+  char line[MAX_LINE_LEN];
+
+  NCHECK(file, NULL);
+  NCHECK(area, NULL);
+  NCHECK(cos, NULL);
+  NCHECK(E, NULL);
+  NCHECK(SE, NULL);
+
+  CHECK(read_line(line, sizeof(line), file), 1);
+  CHECK(
+    sscanf(line,
+      "%s %*lu   "
+      "%lg %lg %*lu   "
+      "%lg %lg\n",
+      name, /* ID */
+      area, cos, /* count */
+      &E[PRIMARY_SHADOW], &SE[PRIMARY_SHADOW]),
+    2 * PRIMARY_RESULTS_COUNT__ + 3);
+}
+
+static void
+read_recvXprim
+  (FILE* file,
+   unsigned long* rcv_id,
+   unsigned long* prim_id,
+   double E[],
+   double SE[])
+{
+  char line[MAX_LINE_LEN];
+
+  NCHECK(file, NULL);
+  NCHECK(rcv_id, NULL);
+  NCHECK(prim_id, NULL);
+  NCHECK(E, NULL);
+  NCHECK(SE, NULL);
+
+  CHECK(read_line(line, sizeof(line), file), 1);
+  CHECK(
+    sscanf(line,
+      "%lu %lu  "
+      "FRONT: %lg %lg   %lg %lg   %lg %lg   %lg %lg  "
+      " BACK: %lg %lg   %lg %lg   %lg %lg   %lg %lg",
+      rcv_id, prim_id,
+      &E[FRONT_INTEGRATED_ABSORBED_IRRADIANCE],
+      &SE[FRONT_INTEGRATED_ABSORBED_IRRADIANCE],
+      &E[FRONT_INTEGRATED_IRRADIANCE], &SE[FRONT_INTEGRATED_IRRADIANCE],
+      &E[FRONT_REFLECTIVITY_LOSS], &SE[FRONT_REFLECTIVITY_LOSS],
+      &E[FRONT_ABSORPTIVITY_LOSS], &SE[FRONT_ABSORPTIVITY_LOSS],
+      &E[BACK_INTEGRATED_ABSORBED_IRRADIANCE],
+      &SE[BACK_INTEGRATED_ABSORBED_IRRADIANCE],
+      &E[BACK_INTEGRATED_IRRADIANCE], &SE[BACK_INTEGRATED_IRRADIANCE],
+      &E[BACK_REFLECTIVITY_LOSS], &SE[BACK_REFLECTIVITY_LOSS],
+      &E[BACK_ABSORPTIVITY_LOSS], &SE[BACK_ABSORPTIVITY_LOSS]),
+    2 * (RECEIVER_RESULTS_COUNT__ - 2 /* efficiencies not read */) + 2);
 }
 
 #define POSITIVE_OR_M_ONE(x) ((x) == -1 || (x) >= 0)
 
-static FINLINE int
+static int
 is_compatible_with
   (const double ref_E,
    const double ref_SE,
@@ -252,106 +368,80 @@ is_compatible_with
 
 static void
 check_1_reference
-  (FILE* tested_file,
-   const char* rcv_name,
-   const double* reference_E,
-   const double* reference_SE)
+  (FILE* ref_file,
+   FILE* test_file,
+   const struct counts* counts)
 {
-  double a[2];
-  unsigned long c1, c2;
-  int found = 0;
-
-  NCHECK(tested_file, NULL);
-  NCHECK(rcv_name, NULL);
-  NCHECK(reference_E, NULL);
-  NCHECK(reference_SE, NULL);
-
-  get_dir_and_counts(tested_file, a, &c1, &c2); /* Skip headers */
-
-  while(!feof(tested_file) && !found) {
-    char line[MAX_LINE_LEN];
-    char tested_rcv_name[MAX_LINE_LEN];
-    double tested_E[MAX_RESULTS_COUNT__], tested_SE[MAX_RESULTS_COUNT__];
-    enum result_type r;
-
-    CHECK(read_line(line, sizeof(line), tested_file), 1);
-
-    read_recv(line, tested_rcv_name, tested_E, tested_SE);
-    if(strcmp(rcv_name, tested_rcv_name)) continue;
-
-    FOR_EACH(r, FRONT_INTEGRATED_IRRADIANCE, MAX_RESULTS_COUNT__) {
-      CHECK(is_compatible_with
-        (reference_E[r], reference_SE[r], tested_E[r], tested_SE[r]), 1);
-    }
-    found = 1;
-  }
-  CHECK(found, 1);
-}
-
-static void
-check_1_global
-  (FILE* tested_file,
-   const double reference_E,
-   const double reference_SE,
-   const unsigned rank)
-{
-  char line[MAX_LINE_LEN];
-  double a[2];
-  unsigned long recv_count, r2;
-  unsigned i;
-  int nb;
-  double tested_E, tested_SE;
-
-  get_dir_and_counts(tested_file, a, &recv_count, &r2);
-
-  /* Skip receivers */
-  while(recv_count--) CHECK(read_line(line, sizeof(line), tested_file), 1);
-
-  /* Read the rank th global data */
-  FOR_EACH(i, 0, rank+1) CHECK(read_line(line, sizeof(line), tested_file), 1);
-
-  nb = sscanf(line, "%lg%lg", &tested_E, &tested_SE);
-  CHECK(nb, 2);
-  CHECK(is_compatible_with(reference_E, reference_SE, tested_E, tested_SE), 1);
-}
-
-static void
-check_references(FILE* ref_file, FILE* tested_file)
-{
-  char line[MAX_LINE_LEN];
-  unsigned nb_global = 0;
-  fpos_t pos;
+  unsigned n;
 
   NCHECK(ref_file, NULL);
-  NCHECK(tested_file, NULL);
+  NCHECK(test_file, NULL);
+  NCHECK(counts, NULL);
 
-  CHECK(fgetpos(ref_file, &pos), 0);
-  while(read_line(line, sizeof(line), ref_file)) {
-    double val, std;
-    int nb = 0;
+  /* both files' pointer are just past the new bloc header */
 
-    if(IS_NEW_BLOCK(line, sundir_header)) {
-      /* Keep the header as a part of the following block */
-      CHECK(fsetpos(ref_file, &pos), 0);
-      break;
+  for (n = 0; n < counts->global; n++) {
+    double reference_E, reference_SE, test_E, test_SE;
+    read_global(ref_file, &reference_E, &reference_SE);
+    read_global(test_file, &test_E, &test_SE);
+    CHECK(is_compatible_with(reference_E, reference_SE, test_E, test_SE), 1);
+  }
+  for (n = 0; n < counts->receiver; n++) {
+    char ref_rcv_name[MAX_LINE_LEN], test_rcv_name[MAX_LINE_LEN];
+    double reference_E[RECEIVER_RESULTS_COUNT__];
+    double reference_SE[RECEIVER_RESULTS_COUNT__];
+    double test_E[RECEIVER_RESULTS_COUNT__];
+    double test_SE[RECEIVER_RESULTS_COUNT__];
+    enum receiver_result_type r;
+
+    read_recv(ref_file, ref_rcv_name, reference_E, reference_SE);
+    read_recv(test_file, test_rcv_name, test_E, test_SE);
+    CHECK(strcmp(ref_rcv_name, test_rcv_name), 0);
+    FOR_EACH(r, FIRST_RECEIVER_RESULT, RECEIVER_RESULTS_COUNT__) {
+      CHECK(is_compatible_with
+        (reference_E[r], reference_SE[r], test_E[r], test_SE[r]), 1);
     }
+  }
+  for (n = 0; n < counts->primary; n++) {
+    char ref_prim_name[MAX_LINE_LEN], test_prim_name[MAX_LINE_LEN];
+    double reference_E[PRIMARY_RESULTS_COUNT__];
+    double reference_SE[PRIMARY_RESULTS_COUNT__];
+    double test_E[PRIMARY_RESULTS_COUNT__];
+    double test_SE[PRIMARY_RESULTS_COUNT__];
+    double ref_area, ref_cos;
+    double test_area, test_cos;
+    enum primary_result_type r;
 
-    nb = sscanf(line, "%lg%lg", &val, &std);
-    CHECK(nb == 0 || nb == 2, 1);
-
-    rewind(tested_file);
-    if(nb != 0) {
-      check_1_global(tested_file, val, std, nb_global);
-      nb_global++;
-    } else {
-      char ref_name[MAX_LINE_LEN];
-      double reference_E[MAX_RESULTS_COUNT__];
-      double reference_SE[MAX_RESULTS_COUNT__];
-      read_recv(line, ref_name, reference_E, reference_SE);
-      check_1_reference(tested_file, ref_name, reference_E, reference_SE);
+    read_primary(ref_file, ref_prim_name, &ref_area, &ref_cos, reference_E, reference_SE);
+    read_primary(test_file, test_prim_name, &test_area, &test_cos, test_E, test_SE);
+    CHECK(is_compatible_with(ref_area, 0, test_area, 0), 1);
+    CHECK(is_compatible_with(ref_cos, 0, test_cos, 0), 1);
+    CHECK(strcmp(ref_prim_name, test_prim_name), 0);
+    FOR_EACH(r, FIRST_RECEIVER_RESULT, PRIMARY_RESULTS_COUNT__) {
+      CHECK(is_compatible_with
+        (reference_E[r], reference_SE[r], test_E[r], test_SE[r]), 1);
     }
+  }
+  for (n = 0; n < counts->receiver * counts->primary; n++) {
+    double reference_E[RECEIVER_RESULTS_COUNT__];
+    double reference_SE[RECEIVER_RESULTS_COUNT__];
+    double test_E[RECEIVER_RESULTS_COUNT__];
+    double test_SE[RECEIVER_RESULTS_COUNT__];
+    unsigned long ref_rcv_id, ref_prim_id;
+    unsigned long test_rcv_id, test_prim_id;
 
-    CHECK(fgetpos(ref_file, &pos), 0);
+    enum receiver_result_type r;
+    read_recvXprim(ref_file, &ref_rcv_id, &ref_prim_id, reference_E, reference_SE);
+    read_recvXprim(test_file, &test_rcv_id, &test_prim_id, test_E, test_SE);
+    /* we rely on the order of outputs */
+    CHECK(ref_rcv_id, test_rcv_id);
+    CHECK(ref_prim_id, test_prim_id);
+    FOR_EACH(r, FIRST_RECEIVER_RESULT, RECEIVER_RESULTS_COUNT__) {
+      if (r == FRONT_EFFICIENCY || r == BACK_EFFICIENCY)
+        continue; /* not read */
+      CHECK(is_compatible_with
+        (reference_E[r], reference_SE[r], test_E[r], test_SE[r]), 1);
+    }
   }
 }
 
@@ -373,7 +463,7 @@ do_check(const char* binary, const char* dir, const char* base_name)
 {
   char ref_file_name[128];
   FILE* ref_file;
-  unsigned long c1, realisation_count;
+  struct counts ref_counts, test_counts;
   int n;
   int err;
   ASSERT(base_name);
@@ -386,30 +476,34 @@ do_check(const char* binary, const char* dir, const char* base_name)
 
   while(!feof(ref_file)) {
     char cmd[512];
-    char tested_file_name[128];
-    double sun_angles[2];
-    FILE* fp = NULL;
+    char test_file_name[128];
+    double ref_sun_angles[2], test_sun_angles[2];
+    FILE* test_file = NULL;
     int fd = -1;
 
-    get_dir_and_counts(ref_file, sun_angles, &c1, &realisation_count);
+    if (!get_angles_and_counts(ref_file, ref_sun_angles, &ref_counts))
+      break; /* EOF */
 
-    fd = create_tmp_file(tested_file_name, sizeof(tested_file_name));
-    fp = fdopen(fd, "r");
-    NCHECK(fp, NULL);
+    fd = create_tmp_file(test_file_name, sizeof(test_file_name));
+    test_file = fdopen(fd, "r");
+    NCHECK(test_file, NULL);
 
     n = snprintf(cmd, sizeof(cmd),
       "%s -o %s -f -D %g,%g -n %lu -R %s%s_receiver.yaml %s%s.yaml",
-      binary, tested_file_name, SPLIT2(sun_angles), realisation_count,
+      binary, test_file_name, SPLIT2(ref_sun_angles), ref_counts.realisation,
       dir, base_name, dir, base_name);
     CHECK((unsigned)n < sizeof(cmd), 1);
 
     err = system(cmd);
     CHECK(err, 0);
 
-    check_references(ref_file, fp);
+    get_angles_and_counts(test_file, test_sun_angles, &test_counts);
+    CHECK(d2_eq(ref_sun_angles, test_sun_angles), 1);
+    CHECK(counts_ok(&ref_counts, &test_counts), 1);
+    check_1_reference(ref_file, test_file, &ref_counts);
 
-    fclose(fp);
-    remove(tested_file_name);
+    fclose(test_file);
+    remove(test_file_name);
   }
 }
 
