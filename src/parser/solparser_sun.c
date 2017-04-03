@@ -243,7 +243,6 @@ parse_sun
       goto error;                                                              \
     } (void)0
   CHECK_PARAM(DNI, "dni");
-  CHECK_PARAM(SPECTRUM, "spectrum");
   #undef CHECK_PARAM
 
 exit:
