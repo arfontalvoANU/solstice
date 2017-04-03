@@ -222,7 +222,7 @@ parse_sun
       res = parse_pillbox(parser, doc, val, &solsun->radang_distrib.pillbox);
     } else if(!strcmp((char*)key->data.scalar.value, "spectrum")) {
       SETUP_MASK(SPECTRUM, "spectrum");
-      res = parse_spectrum(parser, doc, 0, DBL_MAX, val, &solsun->spectrum);
+      res = parse_spectrum(parser, doc, val, &solsun->spectrum);
     } else {
       log_err(parser, key, "unknown sun parameter `%s'.\n",
         key->data.scalar.value);

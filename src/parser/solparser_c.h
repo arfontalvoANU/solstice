@@ -381,8 +381,6 @@ extern LOCAL_SYM res_T
 parse_spectrum
   (struct solparser* parser,
    yaml_document_t* doc,
-   const double lower_bound,
-   const double upper_bound,
    const yaml_node_t* spectrum,
    struct darray_spectrum_data* data);
 
