@@ -458,7 +458,32 @@ create_hyperbol
   }
 
   return create_ssol_shape_punched_surface
-  (solstice, &hyperboloid->polyclips, &quadric, out_ssol_shape);
+    (solstice, &hyperboloid->polyclips, &quadric, out_ssol_shape);
+}
+
+static res_T
+create_hemisphere
+  (struct solstice* solstice,
+   const double transform[12],
+   const struct solparser_shape_hemisphere_id id,
+   struct ssol_shape** out_ssol_shape)
+{
+  const struct solparser_shape_hemisphere* hemisphere;
+  struct ssol_quadric quadric = SSOL_QUADRIC_DEFAULT;
+  ASSERT(solstice);
+
+  hemisphere = solparser_get_shape_hemisphere(solstice->parser, id);
+
+  quadric.type = SSOL_QUADRIC_HEMISPHERE;
+  quadric.data.hemisphere.radius = hemisphere->radius;
+  d33_set(quadric.transform, transform);
+  d3_set(quadric.transform + 9, transform + 9);
+  if(hemisphere->nslices > 0) { /* nslices is set */
+    quadric.slices_count_hint = (size_t)hemisphere->nslices;
+  }
+
+  return create_ssol_shape_punched_surface
+    (solstice, &hemisphere->polyclips, &quadric, out_ssol_shape);
 }
 
 static res_T
@@ -535,6 +560,10 @@ create_shaded_shape
       break;
     case SOLPARSER_SHAPE_HYPERBOL:
       res = create_hyperbol(solstice, transform, shape->data.hyperbol, ssol_shape);
+      break;
+    case SOLPARSER_SHAPE_HEMISPHERE:
+      res = 
+        create_hemisphere(solstice, transform, shape->data.hemisphere, ssol_shape);
       break;
     case SOLPARSER_SHAPE_PLANE:
       res = create_plane(solstice, transform, shape->data.plane, ssol_shape);

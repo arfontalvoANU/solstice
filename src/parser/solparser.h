@@ -177,6 +177,11 @@ solparser_get_shape_hyperbol
   (const struct solparser* parser,
    const struct solparser_shape_hyperboloid_id hyperboloid);
 
+extern LOCAL_SYM const struct solparser_shape_hemisphere*
+solparser_get_shape_hemisphere
+  (const struct solparser* parser,
+   const struct solparser_shape_hemisphere_id hemisphere);
+
 extern LOCAL_SYM const struct solparser_shape_plane*
 solparser_get_shape_plane
   (const struct solparser* parser,

@@ -329,6 +329,7 @@ parse_cylinder
   shape = darray_cylinder_data_get(&parser->cylinders) + ishape;
 
   n = cylinder->data.mapping.pairs.top - cylinder->data.mapping.pairs.start;
+  shape->nslices = 16; /* default value */
   FOR_EACH(i, 0, n) {
     yaml_node_t* key;
     yaml_node_t* val;
@@ -381,13 +382,6 @@ parse_cylinder
   CHECK_PARAM(HEIGHT, "height");
   CHECK_PARAM(RADIUS, "radius");
   #undef CHECK_PARAM
-
-  #define DEFAULT_PARAM(Flag, Ptr, Value)                                      \
-    if(!(mask & BIT(Flag))) {                                                  \
-      *(Ptr) = Value;                                                          \
-    } (void)0
-  DEFAULT_PARAM(SLICES, &shape->nslices, 16);
-  #undef DEFAULT_PARAM
 
 exit:
   out_ishape->i = ishape;
@@ -692,6 +686,102 @@ error:
 }
 
 static res_T
+parse_hemisphere
+  (struct solparser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* hemisphere,
+   struct solparser_shape_hemisphere_id* out_ishape)
+{
+  enum { CLIP, RADIUS, SLICES };
+  struct solparser_shape_hemisphere* shape = NULL;
+  size_t ishape = SIZE_MAX;
+  intptr_t i, n;
+  int mask = 0; /* Register the parsed attributes */
+  res_T res = RES_OK;
+  ASSERT(doc && hemisphere && out_ishape);
+
+  if(hemisphere->type != YAML_MAPPING_NODE) {
+    log_err(parser, hemisphere, "expect a mapping of hemisphere parameters.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  /* Allocate a hemispheric shape */
+  ishape = darray_hemisphere_size_get(&parser->hemispheres);
+  res = darray_hemisphere_resize(&parser->hemispheres, ishape + 1);
+  if(res != RES_OK) {
+    log_err(parser, hemisphere, "could not allocate the hemisphere shape.\n");
+    goto error;
+  }
+  shape = darray_hemisphere_data_get(&parser->hemispheres) + ishape;
+
+  n = hemisphere->data.mapping.pairs.top - hemisphere->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, hemisphere->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, hemisphere->data.mapping.pairs.start[i].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(parser, key, "expect hemisphere parameters.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(parser, key,                                                   \
+          "the hemisphere parameter `"Name"' is already defined.\n");          \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if(!strcmp((char*)key->data.scalar.value, "clip")) {
+      SETUP_MASK(CLIP, "clip");
+      res = parse_clip(parser, doc, val, &shape->polyclips);
+    }
+    else if(!strcmp((char*)key->data.scalar.value, "radius")) {
+      SETUP_MASK(RADIUS, "radius");
+      res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &shape->radius);
+    }
+    else if(!strcmp((char*)key->data.scalar.value, "slices")) {
+      SETUP_MASK(SLICES, "slices");
+      res = parse_integer(parser, val, 4, 4096, &shape->nslices);
+    }
+    else {
+      log_err(parser, key, "unknown hemisphere parameter `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    if (res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
+  #undef SETUP_MASK
+  }
+  #define CHECK_PARAM(Flag, Name)                                              \
+    if(!(mask & BIT(Flag))) {                                                  \
+      log_err(parser, hemisphere,                                              \
+        "the hemisphere parameter `"Name"' is missing.\n");                    \
+      res = RES_BAD_ARG;                                                       \
+      goto error;                                                              \
+    } (void)0
+  CHECK_PARAM(RADIUS, "radius");
+  #undef CHECK_PARAM
+
+exit :
+  out_ishape->i = ishape;
+  return res;
+error:
+  if(shape) {
+    darray_hemisphere_pop_back(&parser->hemispheres);
+    ishape = SIZE_MAX;
+  }
+  goto exit;
+}
+
+static res_T
 parse_plane
   (struct solparser* parser,
    yaml_document_t* doc,
@@ -722,6 +812,7 @@ parse_plane
   shape = darray_plane_data_get(&parser->planes) + ishape;
 
   n = plane->data.mapping.pairs.top - plane->data.mapping.pairs.start;
+  shape->nslices = 1; /* default value */
   FOR_EACH(i, 0, n) {
     yaml_node_t* key;
     yaml_node_t* val;
@@ -809,6 +900,7 @@ parse_sphere
   shape = darray_sphere_data_get(&parser->spheres) + ishape;
 
   n = sphere->data.mapping.pairs.top - sphere->data.mapping.pairs.start;
+  shape->nslices = 16; /* default value */
   FOR_EACH(i, 0, n) {
     yaml_node_t* key;
     yaml_node_t* val;
@@ -857,13 +949,6 @@ parse_sphere
     } (void)0
   CHECK_PARAM(RADIUS, "radius");
   #undef CHECK_PARAM
-
-  #define DEFAULT_PARAM(Flag, Ptr, Value)                                      \
-    if(!(mask & BIT(Flag))) {                                                  \
-      *(Ptr) = Value;                                                          \
-    } (void)0
-  DEFAULT_PARAM(SLICES, &shape->nslices, 16);
-  #undef DEFAULT_PARAM
 
 exit:
   out_ishape->i = ishape;
@@ -975,6 +1060,11 @@ parse_object
       SETUP_MASK(SHAPE, "shape");
       shape->type = SOLPARSER_SHAPE_HYPERBOL;
       res = parse_hyperboloid(parser, doc, val, &shape->data.hyperbol);
+    }
+    else if(!strcmp((char*)key->data.scalar.value, "hemisphere")) {
+      SETUP_MASK(SHAPE, "shape");
+      shape->type = SOLPARSER_SHAPE_HEMISPHERE;
+      res = parse_hemisphere(parser, doc, val, &shape->data.hemisphere);
     } else if(!strcmp((char*)key->data.scalar.value, "plane")) {
       SETUP_MASK(SHAPE, "shape");
       shape->type = SOLPARSER_SHAPE_PLANE;

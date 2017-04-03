@@ -131,6 +131,7 @@
   | <parabol>
   | <parabolic-cylinder>
   | <hyperbol>
+  | <hemisphere>
   | <plane>
   | <sphere>
   | <stl>
@@ -154,7 +155,7 @@
   parabol:
     focal: REAL # in ]0, INF)
     clip: <polyclip-list>
-    # By default slices is automatically compute with respect to the parabol
+    # By default slices is automatically computed with respect to the parabol
     # curvature
 [   slices: INTEGER ] # in [4, 4096)
 
@@ -162,7 +163,7 @@
   parabolic-cylinder: # y^2 - 4*focal*z = 0
     focal: REAL # in ]0, INF)
     clip: <polyclip-list>
-    # By default slices is automatically compute with respect to the hyperbol
+    # By default slices is automatically computed with respect to the hyperbol
     # curvature
 [   slices: INTEGER ] # in [4, 4096)
 
@@ -180,6 +181,14 @@
 <hyperboloid_focals> ::=
   real: REAL # in ]0, INF)
   image: REAL # in ]0, INF)
+
+# x^2 + y^2 + (z - radius)^2 - radius^2 = 0
+<hemisphere> ::=
+  hemisphere:
+    radius: REAL # in ]0, INF)
+    # By default slices is automatically compute with respect to the hemisphere
+    # extension
+[   slices: INTEGER ] # in [4, 4096)
 
 <plane> ::=
   plane:
