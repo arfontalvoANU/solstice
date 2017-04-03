@@ -195,13 +195,15 @@ solstice_create_sun(struct solstice* solstice)
   }
   if(res != RES_OK) goto error;
 
-  res = create_sun_spectrum(solstice, solparser_sun, &spectrum);
-  if(res != RES_OK) goto error;
+  if(solparser_sun->spectrum.size) {
+    res = create_sun_spectrum(solstice, solparser_sun, &spectrum);
+    if (res != RES_OK) goto error;
 
-  res = ssol_sun_set_spectrum(sun, spectrum);
-  if(res != RES_OK) {
-    fprintf(stderr, "Could not attach the spectrum to the sun.\n");
-    goto error;
+    res = ssol_sun_set_spectrum(sun, spectrum);
+    if(res != RES_OK) {
+      fprintf(stderr, "Could not attach the spectrum to the sun.\n");
+      goto error;
+    }
   }
 
   res = ssol_sun_set_dni(sun, solparser_sun->dni);

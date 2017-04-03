@@ -39,11 +39,17 @@
 # data should be a number
 - sun: { spectrum: [{wavelength: 1, data: "dummy"}] }
 ---
+# 0 invalid
+- sun: { spectrum: [{wavelength: 0, data: 1}] }
+---
 # -1 invalid
 - sun: { spectrum: [{wavelength: -1, data: 1}] }
 ---
 # -1 invalid
 - sun: { spectrum: [{wavelength: 1, data: -1}] }
+---
+# invalid non-increasing wavelengths
+- sun: { spectrum: [{wavelength: 1, data: 1}, {wavelength: 1, data: 2}] }
 ---
 
 #
@@ -130,9 +136,6 @@
 #    <pillbox> | <buie>
 #
 
-# missing spectrum
-- sun: { dni: 1 }
----
 # missing dni
 - sun: { spectrum: [{wavelength: 1, data: 1}] }
 ---

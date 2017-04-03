@@ -7,7 +7,7 @@
 # 0 0
 # --- Sun direction: -3.7494e-33 -6.12323e-17 -1
 
-- sun: &sun { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
+- sun: &sun { dni: 1 }
 
 - material: &mirror { mirror: { reflectivity: 1, roughness: 0 } }
 - material: &black { matte: { reflectivity: 0 } }

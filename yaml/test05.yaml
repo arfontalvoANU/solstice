@@ -1,6 +1,4 @@
-- sun: &sun
-    dni: 1
-    spectrum: [{wavelength: 1, data: 1}]
+- sun: &sun { dni: 1 }
 
 - material: &lambertian
     front:
