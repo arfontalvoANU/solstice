@@ -153,7 +153,7 @@ create_sun_spectrum
   data = darray_spectrum_data_cdata_get(&solparser_sun->spectrum);
   res = ssol_spectrum_setup(spectrum, get_wavelength, nwlens, (void*)data);
   if(res != RES_OK) {
-    fprintf(stderr, "Could no setup the spectrum of the solver sun.\n");
+    fprintf(stderr, "Could not setup the spectrum of the solver sun.\n");
     goto error;
   }
 
