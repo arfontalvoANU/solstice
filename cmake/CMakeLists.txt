@@ -156,6 +156,7 @@ if(NOT NO_TEST)
   add_test_simulation(test04)
   add_test_simulation(test05)
   add_test_simulation(test06)
+  add_test_simulation(test07)
 
 endif()
 
