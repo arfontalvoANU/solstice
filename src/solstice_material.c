@@ -16,10 +16,12 @@
 #include "solstice.h"
 #include "solstice_c.h"
 
+#include <rsys/image.h>
 #include <solstice/ssol.h>
 
 struct matte_param {
   double reflectivity;
+  struct ssol_image* normal_map;
 };
 
 struct mirror_param {
@@ -66,6 +68,28 @@ matte_get_reflectivity
 }
 
 static void
+matte_get_normal
+  (struct ssol_device* dev,
+   struct ssol_param_buffer* buf,
+   const double wavelength,
+   const double P[3],
+   const double Ng[3],
+   const double Ns[3],
+   const double uv[2],
+   const double w[3],
+   double* val)
+{
+  double N[3];
+  const struct matte_param* param = ssol_param_buffer_get(buf);
+  (void)dev, (void)wavelength, (void)P, (void)Ng, (void)Ns, (void)uv, (void)w;
+  SSOL(image_sample(param->normal_map, SSOL_FILTER_LINEAR,
+    SSOL_ADDRESS_CLAMP, SSOL_ADDRESS_CLAMP, uv, N));
+
+  /* TODO Transform in world space */
+  d3_set(val, N);
+}
+
+static void
 mirror_get_reflectivity
   (struct ssol_device* dev,
    struct ssol_param_buffer* buf,
@@ -97,6 +121,83 @@ mirror_get_roughness
   const struct mirror_param* param = ssol_param_buffer_get(buf);
   (void)dev, (void)wavelength, (void)P, (void)Ng, (void)Ns, (void)uv, (void)w;
   *val = param->roughness;
+}
+
+static void
+matte_param_release(void* mem)
+{
+  struct matte_param* param = mem;
+  ASSERT(param);
+  if(param->normal_map) SSOL(image_ref_put(param->normal_map));
+}
+
+static res_T
+load_image
+  (struct solstice* solstice,
+   const char* filename,
+   struct ssol_image** out_ssol_img)
+{
+  struct ssol_image* ssol_img = NULL;
+  struct ssol_image_layout layout;
+  struct image img;
+  char* mem;
+  size_t x, y;
+  res_T res = RES_OK;
+  ASSERT(solstice && filename && out_ssol_img);
+
+  image_init(solstice->allocator, &img);
+
+  res = image_read_ppm(&img, filename);
+  if(res != RES_OK) {
+    fprintf(stderr, "Could not load the PPM image `%s'.\n", filename);
+    goto error;
+  }
+
+  res = ssol_image_create(solstice->ssol, &ssol_img);
+  if(res != RES_OK) {
+    fprintf(stderr, "Could not create the Solstice Solver image.\n");
+    goto error;
+  }
+
+  res = ssol_image_setup(ssol_img, img.width, img.height, SSOL_PIXEL_DOUBLE3);
+  if(res != RES_OK) {
+    fprintf(stderr, "Could not setup the Solstice Solver image.\n");
+    goto error;
+  }
+
+  SSOL(image_get_layout(ssol_img, &layout));
+  SSOL(image_map(ssol_img, &mem));
+
+  FOR_EACH(y, 0, layout.height) {
+    char* dst_row = mem + layout.offset + y * layout.row_pitch;
+    const char* src_row = img.pixels + y * img.pitch;
+
+    FOR_EACH(x, 0, layout.width) {
+      char* dst = dst_row + x*ssol_sizeof_pixel_format(layout.pixel_format);
+      const char* src = src_row + x*sizeof_image_format(img.format);
+      switch(img.format) {
+        case IMAGE_RGB8:
+          ((double*)dst)[0] = ((double)((uint8_t*)src)[0] + 0.5) / UINT8_MAX;
+          ((double*)dst)[1] = ((double)((uint8_t*)src)[1] + 0.5) / UINT8_MAX;
+          ((double*)dst)[2] = ((double)((uint8_t*)src)[2] + 0.5) / UINT8_MAX;
+          break;
+        case IMAGE_RGB16:
+          ((double*)dst)[0] = ((double)((uint16_t*)src)[0] + 0.5) / UINT16_MAX;
+          ((double*)dst)[1] = ((double)((uint16_t*)src)[1] + 0.5) / UINT16_MAX;
+          ((double*)dst)[2] = ((double)((uint16_t*)src)[2] + 0.5) / UINT16_MAX;
+          break;
+        default: FATAL("Unreachable code.\n"); break;
+      }
+    }
+  }
+
+exit:
+  image_release(&img);
+  *out_ssol_img = ssol_img;
+  return res;
+error:
+  if(ssol_img) SSOL(image_ref_put(ssol_img));
+  goto exit;
 }
 
 static res_T
@@ -145,6 +246,7 @@ create_material_matte
    struct ssol_material** out_mtl)
 {
   struct ssol_matte_shader shader = SSOL_MATTE_SHADER_NULL;
+  struct ssol_image* img = NULL;
   struct ssol_material* mtl = NULL;
   struct ssol_param_buffer* pbuf = NULL;
   struct matte_param* param;
@@ -164,16 +266,28 @@ create_material_matte
     goto error;
   }
 
-  param = ssol_param_buffer_allocate
-    (pbuf, sizeof(struct matte_param), ALIGNOF(struct matte_param));
+  param = ssol_param_buffer_allocate(pbuf, sizeof(struct matte_param),
+    ALIGNOF(struct matte_param), matte_param_release);
   if(!param) {
     fprintf(stderr, "Could not allocate the matte parameter.\n");
     res = RES_MEM_ERR;
     goto error;
   }
-  param->reflectivity = matte->reflectivity;
+  memset(param, 0, sizeof(struct matte_param));
 
-  shader.normal = mtl_get_normal;
+  param->reflectivity = matte->reflectivity;
+  if(!SOLPARSER_ID_IS_VALID(matte->normal_map)) {
+    param->normal_map = NULL;
+    shader.normal = mtl_get_normal;
+  } else {
+    const struct solparser_image* image;
+    image = solparser_get_image(solstice->parser, matte->normal_map);
+    res = load_image(solstice, str_cget(&image->filename), &img);
+    if(res != RES_OK) goto error;
+    param->normal_map = img;
+    shader.normal = matte_get_normal;
+  }
+
   shader.reflectivity = matte_get_reflectivity;
   SSOL(matte_setup(mtl, &shader));
   SSOL(material_set_param_buffer(mtl, pbuf));
@@ -184,6 +298,7 @@ exit:
   return res;
 error:
   if(mtl) SSOL(material_ref_put(mtl)), mtl = NULL;
+  if(img) SSOL(image_ref_put(img)), img = NULL;
   goto exit;
 }
 
@@ -214,7 +329,7 @@ create_material_mirror
   }
 
   param = ssol_param_buffer_allocate
-    (pbuf, sizeof(struct mirror_param), ALIGNOF(struct mirror_param));
+    (pbuf, sizeof(struct mirror_param), ALIGNOF(struct mirror_param), NULL);
   if(!param) {
     fprintf(stderr, "Could not allocate the mirror parameters.\n");
     res = RES_MEM_ERR;
