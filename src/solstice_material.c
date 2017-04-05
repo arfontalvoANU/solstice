@@ -16,6 +16,7 @@
 #include "solstice.h"
 #include "solstice_c.h"
 
+#include <rsys/double33.h>
 #include <rsys/image.h>
 #include <solstice/ssol.h>
 
@@ -79,14 +80,17 @@ matte_get_normal
    const double w[3],
    double* val)
 {
+  double basis[9];
   double N[3];
   const struct matte_param* param = ssol_param_buffer_get(buf);
   (void)dev, (void)wavelength, (void)P, (void)Ng, (void)Ns, (void)uv, (void)w;
   SSOL(image_sample(param->normal_map, SSOL_FILTER_NEAREST,
     SSOL_ADDRESS_CLAMP, SSOL_ADDRESS_CLAMP, uv, N));
 
-  /* TODO Transform in world space */
-  d3_set(val, N);
+  d33_basis(basis, Ns);
+  d3_subd(N, d3_muld(N, N, 2), 1);
+  d33_muld3(N, basis, N);
+  d3_normalize(val, N);
 }
 
 static void
