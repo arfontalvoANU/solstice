@@ -9,14 +9,7 @@
 - geometry: &hemisphere
     - material: *specular
       hemisphere:
-        radius: 10
-        clip:
-          - operation: AND
-            vertices:
-              - [-5.00, -5.00]
-              - [-5.00, 5.00]
-              - [5.00, 5.00]
-              - [5.00, -5.00]
+        radius: 3
 
 - geometry: &big_square
     - material: { virtual: }
@@ -38,5 +31,5 @@
 - entity:
     name: "square_receiver"
     primary: 0
-    transform: { rotation: [0, 0, 0], translation: [0, 0, 2] }
+    transform: { rotation: [0, 0, 0], translation: [0, 0, 4] }
     geometry: *big_square
