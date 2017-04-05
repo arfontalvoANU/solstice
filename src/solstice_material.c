@@ -82,7 +82,7 @@ matte_get_normal
   double N[3];
   const struct matte_param* param = ssol_param_buffer_get(buf);
   (void)dev, (void)wavelength, (void)P, (void)Ng, (void)Ns, (void)uv, (void)w;
-  SSOL(image_sample(param->normal_map, SSOL_FILTER_LINEAR,
+  SSOL(image_sample(param->normal_map, SSOL_FILTER_NEAREST,
     SSOL_ADDRESS_CLAMP, SSOL_ADDRESS_CLAMP, uv, N));
 
   /* TODO Transform in world space */

@@ -48,7 +48,7 @@ tone_map_image(const struct ssol_image* img, uint8_t* dst)
 {
   struct ssol_image_layout layout;
   size_t irow = 0;
-  void* mem;
+  char* mem;
   ASSERT(img && dst);
 
   SSOL(image_get_layout(img, &layout));
