@@ -186,6 +186,7 @@
 <hemisphere> ::=
   hemisphere:
     radius: REAL # in ]0, INF)
+[   clip: <polyclip-list> ]
     # By default slices is automatically compute with respect to the hemisphere
     # extension
 [   slices: INTEGER ] # in [4, 4096)
