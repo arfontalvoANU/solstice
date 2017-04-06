@@ -75,7 +75,12 @@ matte_get_normal
   SSOL(image_sample(param->normal_map, SSOL_FILTER_NEAREST,
     SSOL_ADDRESS_CLAMP, SSOL_ADDRESS_CLAMP, frag->uv, N));
 
-  d33_basis(basis, frag->Ns);
+  d3_set(basis+0, frag->dPdu);
+  d3_set(basis+3, frag->dPdv);
+  d3_set(basis+6, frag->Ng);
+  d3_normalize(basis + 0, basis + 0);
+  d3_normalize(basis + 3, basis + 3);
+
   d3_subd(N, d3_muld(N, N, 2), 1);
   d33_muld3(N, basis, N);
   d3_normalize(val, N);
