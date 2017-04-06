@@ -49,6 +49,7 @@ struct target_alias {
 /* Declare the array of dielectric materials */
 #define DARRAY_NAME dielectric
 #define DARRAY_DATA struct solparser_material_dielectric
+#define DARRAY_FUNCTOR_INIT solparser_material_dielectric_init
 #include <rsys/dynamic_array.h>
 
 /* Declare the array of matte materials */
@@ -60,11 +61,13 @@ struct target_alias {
 /* Declare the array of mirror materials */
 #define DARRAY_NAME mirror
 #define DARRAY_DATA struct solparser_material_mirror
+#define DARRAY_FUNCTOR_INIT solparser_material_mirror_init
 #include <rsys/dynamic_array.h>
 
 /* Declare the array of thin_dielectric materials */
 #define DARRAY_NAME thin_dielectric
 #define DARRAY_DATA struct solparser_material_thin_dielectric
+#define DARRAY_FUNCTOR_INIT solparser_material_thin_dielectric_init
 #include <rsys/dynamic_array.h>
 
 /* Declare the array of materials  */

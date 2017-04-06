@@ -225,6 +225,7 @@
   dielectric:
     medium_i: <dielectric-medium>
     medium_t: <dielectric-medium>
+[   <normal-map> ]
 
 <matte> ::=
   matte:
@@ -235,6 +236,7 @@
   mirror:
     reflectivity: REAL # in [0, 1]
     roughness: REAL # in [0, 1]
+[   <normal-map> ]
 
 <virtual> ::=
   virtual: EMPTY-STRING
@@ -244,6 +246,7 @@
     thickness: REAL # in [0, INF)
     medium_i: <dielectric-medium>
     medium_t: <dielectric-medium>
+[   <normal-map> ]
 
 <dielectric-medium> ::=
   refractive_index: REAL # in ]0, INF)

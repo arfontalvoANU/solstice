@@ -120,7 +120,7 @@ parse_material_dielectric
    const yaml_node_t* dielec,
    struct solparser_material_dielectric_id* out_imtl)
 {
-  enum { MEDIUM_I, MEDIUM_T };
+  enum { MEDIUM_I, MEDIUM_T, NORMAL_MAP };
   struct solparser_material_dielectric* mtl = NULL;
   size_t imtl = SIZE_MAX;
   int mask = 0; /* Register the parsed attributes */
@@ -166,7 +166,10 @@ parse_material_dielectric
       }                                                                        \
       mask |= BIT(Flag);                                                       \
     } (void)0
-    if(!strcmp((char*)key->data.scalar.value, "medium_i")) {
+    if(!strcmp((char*)key->data.scalar.value, "normal_map")) {
+      SETUP_MASK(NORMAL_MAP, "normal_map");
+      res = parse_image(parser, doc, val, &mtl->normal_map);
+    } else if(!strcmp((char*)key->data.scalar.value, "medium_i")) {
       SETUP_MASK(MEDIUM_I, "medium_i");
       res = parse_medium(parser, doc, val, &mtl->medium_i);
     } else if(!strcmp((char*)key->data.scalar.value, "medium_t")) {
@@ -302,7 +305,7 @@ parse_material_mirror
    const yaml_node_t* mirror,
    struct solparser_material_mirror_id* out_imtl)
 {
-  enum { REFLECTIVITY, ROUGHNESS };
+  enum { NORMAL_MAP, REFLECTIVITY, ROUGHNESS };
   struct solparser_material_mirror* mtl = NULL;
   size_t imtl = SIZE_MAX;
   int mask = 0; /* Register the parsed attributes */
@@ -348,7 +351,10 @@ parse_material_mirror
       }                                                                        \
       mask |= BIT(Flag);                                                       \
     } (void)0
-    if(!strcmp((char*)key->data.scalar.value, "reflectivity")) {
+    if(!strcmp((char*)key->data.scalar.value, "normal_map")) {
+      SETUP_MASK(NORMAL_MAP, "normal_map");
+      res = parse_image(parser, doc, val, &mtl->normal_map);
+    } else if(!strcmp((char*)key->data.scalar.value, "reflectivity")) {
       SETUP_MASK(REFLECTIVITY, "reflectivity");
       res = parse_real(parser, val, 0, 1, &mtl->reflectivity);
     } else if(!strcmp((char*)key->data.scalar.value, "roughness")) {
@@ -395,7 +401,7 @@ parse_material_thin_dielectric
    yaml_node_t* thin,
    struct solparser_material_thin_dielectric_id* out_imtl)
 {
-  enum { MEDIUM_I, MEDIUM_T, THICKNESS };
+  enum { MEDIUM_I, MEDIUM_T, NORMAL_MAP, THICKNESS };
   struct solparser_material_thin_dielectric* mtl = NULL;
   size_t imtl = SIZE_MAX;
   int mask = 0; /* Register the parsed attributes */
@@ -442,7 +448,10 @@ parse_material_thin_dielectric
       }                                                                        \
       mask |= BIT(Flag);                                                       \
     } (void)0
-    if(!strcmp((char*)key->data.scalar.value, "medium_i")) {
+    if(!strcmp((char*)key->data.scalar.value, "normal_map")) {
+      SETUP_MASK(NORMAL_MAP, "normal_map");
+      res = parse_image(parser, doc, val, &mtl->normal_map);
+    } else if(!strcmp((char*)key->data.scalar.value, "medium_i")) {
       SETUP_MASK(MEDIUM_I, "medium_i");
       res = parse_medium(parser, doc, val, &mtl->medium_i);
     } else if(!strcmp((char*)key->data.scalar.value, "medium_t")) {

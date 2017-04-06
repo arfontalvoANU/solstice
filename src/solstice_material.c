@@ -42,9 +42,7 @@ mtl_get_normal
    double* val)
 {
   (void)dev, (void)buf, (void)wavelength;
-  val[0] = frag->Ns[0];
-  val[1] = frag->Ns[1];
-  val[2] = frag->Ns[2];
+  d3_set(val, frag->Ns);
 }
 
 static void
