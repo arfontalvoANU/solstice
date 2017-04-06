@@ -38,17 +38,13 @@ mtl_get_normal
   (struct ssol_device* dev,
    struct ssol_param_buffer* buf,
    const double wavelength,
-   const double P[3],
-   const double Ng[3],
-   const double Ns[3],
-   const double uv[2],
-   const double w[3],
+   const struct ssol_surface_fragment* frag,
    double* val)
 {
-  (void)dev, (void)buf, (void)wavelength, (void)P, (void)Ng, (void)uv, (void)w;
-  val[0] = Ns[0];
-  val[1] = Ns[1];
-  val[2] = Ns[2];
+  (void)dev, (void)buf, (void)wavelength;
+  val[0] = frag->Ns[0];
+  val[1] = frag->Ns[1];
+  val[2] = frag->Ns[2];
 }
 
 static void
@@ -56,15 +52,11 @@ matte_get_reflectivity
   (struct ssol_device* dev,
    struct ssol_param_buffer* buf,
    const double wavelength,
-   const double P[3],
-   const double Ng[3],
-   const double Ns[3],
-   const double uv[2],
-   const double w[3],
+   const struct ssol_surface_fragment* frag,
    double* val)
 {
   const struct matte_param* param = ssol_param_buffer_get(buf);
-  (void)dev, (void)wavelength, (void)P, (void)Ng, (void)Ns, (void)uv, (void)w;
+  (void)dev, (void)wavelength, (void)frag;
   *val = param->reflectivity;
 }
 
@@ -73,21 +65,17 @@ matte_get_normal
   (struct ssol_device* dev,
    struct ssol_param_buffer* buf,
    const double wavelength,
-   const double P[3],
-   const double Ng[3],
-   const double Ns[3],
-   const double uv[2],
-   const double w[3],
+   const struct ssol_surface_fragment* frag,
    double* val)
 {
   double basis[9];
   double N[3];
   const struct matte_param* param = ssol_param_buffer_get(buf);
-  (void)dev, (void)wavelength, (void)P, (void)Ng, (void)Ns, (void)uv, (void)w;
+  (void)dev, (void)wavelength;
   SSOL(image_sample(param->normal_map, SSOL_FILTER_NEAREST,
-    SSOL_ADDRESS_CLAMP, SSOL_ADDRESS_CLAMP, uv, N));
+    SSOL_ADDRESS_CLAMP, SSOL_ADDRESS_CLAMP, frag->uv, N));
 
-  d33_basis(basis, Ns);
+  d33_basis(basis, frag->Ns);
   d3_subd(N, d3_muld(N, N, 2), 1);
   d33_muld3(N, basis, N);
   d3_normalize(val, N);
@@ -98,15 +86,11 @@ mirror_get_reflectivity
   (struct ssol_device* dev,
    struct ssol_param_buffer* buf,
    const double wavelength,
-   const double P[3],
-   const double Ng[3],
-   const double Ns[3],
-   const double uv[2],
-   const double w[3],
+   const struct ssol_surface_fragment* frag,
    double* val)
 {
   const struct mirror_param* param = ssol_param_buffer_get(buf);
-  (void)dev, (void)wavelength, (void)P, (void)Ng, (void)Ns, (void)uv, (void)w;
+  (void)dev, (void)wavelength, (void)frag;
   *val = param->reflectivity;
 }
 
@@ -115,15 +99,11 @@ mirror_get_roughness
   (struct ssol_device* dev,
    struct ssol_param_buffer* buf,
    const double wavelength,
-   const double P[3],
-   const double Ng[3],
-   const double Ns[3],
-   const double uv[2],
-   const double w[3],
+   const struct ssol_surface_fragment* frag,
    double* val)
 {
   const struct mirror_param* param = ssol_param_buffer_get(buf);
-  (void)dev, (void)wavelength, (void)P, (void)Ng, (void)Ns, (void)uv, (void)w;
+  (void)dev, (void)wavelength, (void)frag;
   *val = param->roughness;
 }
 
