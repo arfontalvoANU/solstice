@@ -41,7 +41,7 @@ perturb_normal
 {
   double basis[9];
   double N[3];
-  ASSERT(frag && img && normal);
+  ASSERT(frag && normal_map && normal);
 
   SSOL(image_sample(normal_map, SSOL_FILTER_NEAREST, SSOL_ADDRESS_CLAMP,
     SSOL_ADDRESS_CLAMP, frag->uv, N));
