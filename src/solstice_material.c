@@ -34,6 +34,30 @@ struct mirror_param {
  * Helper functions
  ******************************************************************************/
 static void
+perturb_normal
+  (const struct ssol_surface_fragment* frag,
+   const struct ssol_image* normal_map,
+   double normal[3])
+{
+  double basis[9];
+  double N[3];
+  ASSERT(frag && img && normal);
+
+  SSOL(image_sample(normal_map, SSOL_FILTER_NEAREST, SSOL_ADDRESS_CLAMP,
+    SSOL_ADDRESS_CLAMP, frag->uv, N));
+
+  d3_set(basis+0, frag->dPdu);
+  d3_set(basis+3, frag->dPdv);
+  d3_set(basis+6, frag->Ng);
+  d3_normalize(basis + 0, basis + 0);
+  d3_normalize(basis + 3, basis + 3);
+
+  d3_subd(N, d3_muld(N, N, 2), 1);
+  d33_muld3(N, basis, N);
+  d3_normalize(normal, N);
+}
+
+static void
 mtl_get_normal
   (struct ssol_device* dev,
    struct ssol_param_buffer* buf,
@@ -66,22 +90,9 @@ matte_get_normal
    const struct ssol_surface_fragment* frag,
    double* val)
 {
-  double basis[9];
-  double N[3];
   const struct matte_param* param = ssol_param_buffer_get(buf);
   (void)dev, (void)wavelength;
-  SSOL(image_sample(param->normal_map, SSOL_FILTER_NEAREST,
-    SSOL_ADDRESS_CLAMP, SSOL_ADDRESS_CLAMP, frag->uv, N));
-
-  d3_set(basis+0, frag->dPdu);
-  d3_set(basis+3, frag->dPdv);
-  d3_set(basis+6, frag->Ng);
-  d3_normalize(basis + 0, basis + 0);
-  d3_normalize(basis + 3, basis + 3);
-
-  d3_subd(N, d3_muld(N, N, 2), 1);
-  d33_muld3(N, basis, N);
-  d3_normalize(val, N);
+  perturb_normal(frag, param->normal_map, val);
 }
 
 static void
