@@ -20,6 +20,10 @@
 #include <rsys/image.h>
 #include <solstice/ssol.h>
 
+struct dielectric_param {
+  struct ssol_image* normal_map;
+};
+
 struct matte_param {
   double reflectivity;
   struct ssol_image* normal_map;
@@ -28,6 +32,11 @@ struct matte_param {
 struct mirror_param {
   double reflectivity;
   double roughness;
+  struct ssol_image* normal_map;
+};
+
+struct thin_dielectric_param {
+  struct ssol_image* normal_map;
 };
 
 /*******************************************************************************
@@ -43,7 +52,7 @@ perturb_normal
   double N[3];
   ASSERT(frag && normal_map && normal);
 
-  SSOL(image_sample(normal_map, SSOL_FILTER_NEAREST, SSOL_ADDRESS_CLAMP,
+  SSOL(image_sample(normal_map, SSOL_FILTER_LINEAR, SSOL_ADDRESS_CLAMP,
     SSOL_ADDRESS_CLAMP, frag->uv, N));
 
   d3_set(basis+0, frag->dPdu);
@@ -67,6 +76,27 @@ mtl_get_normal
 {
   (void)dev, (void)buf, (void)wavelength;
   d3_set(val, frag->Ns);
+}
+
+static void
+dielectric_get_normal
+  (struct ssol_device* dev,
+   struct ssol_param_buffer* buf,
+   const double wavelength,
+   const struct ssol_surface_fragment* frag,
+   double* val)
+{
+  const struct dielectric_param* param = ssol_param_buffer_get(buf);
+  (void)dev, (void)buf, (void)wavelength;
+  perturb_normal(frag, param->normal_map, val);
+}
+
+static void
+dielectric_param_release(void* mem)
+{
+  struct dielectric_param* param = mem;
+  ASSERT(param);
+  if(param->normal_map) SSOL(image_ref_put(param->normal_map));
 }
 
 static void
@@ -96,6 +126,14 @@ matte_get_normal
 }
 
 static void
+matte_param_release(void* mem)
+{
+  struct matte_param* param = mem;
+  ASSERT(param);
+  if(param->normal_map) SSOL(image_ref_put(param->normal_map));
+}
+
+static void
 mirror_get_reflectivity
   (struct ssol_device* dev,
    struct ssol_param_buffer* buf,
@@ -122,9 +160,43 @@ mirror_get_roughness
 }
 
 static void
-matte_param_release(void* mem)
+mirror_get_normal
+  (struct ssol_device* dev,
+   struct ssol_param_buffer* buf,
+   const double wavelength,
+   const struct ssol_surface_fragment* frag,
+   double* val)
 {
-  struct matte_param* param = mem;
+  const struct mirror_param* param = ssol_param_buffer_get(buf);
+  (void)dev, (void)wavelength;
+  perturb_normal(frag, param->normal_map, val);
+}
+
+static void
+mirror_param_release(void* mem)
+{
+  struct mirror_param* param = mem;
+  ASSERT(param);
+  if(param->normal_map) SSOL(image_ref_put(param->normal_map));
+}
+
+static void
+thin_dielectric_get_normal
+  (struct ssol_device* dev,
+   struct ssol_param_buffer* buf,
+   const double wavelength,
+   const struct ssol_surface_fragment* frag,
+   double* val)
+{
+  const struct thin_dielectric_param* param = ssol_param_buffer_get(buf);
+  (void)dev, (void)buf, (void)wavelength;
+  perturb_normal(frag, param->normal_map, val);
+}
+
+static void
+thin_dielectric_param_release(void* mem)
+{
+  struct thin_dielectric_param* param = mem;
   ASSERT(param);
   if(param->normal_map) SSOL(image_ref_put(param->normal_map));
 }
@@ -209,7 +281,9 @@ create_material_dielectric
   struct ssol_medium ssol_medium_i;
   struct ssol_medium ssol_medium_t;
   struct ssol_dielectric_shader shader = SSOL_DIELECTRIC_SHADER_NULL;
+  struct ssol_image* img = NULL;
   struct ssol_material* mtl = NULL;
+  struct ssol_param_buffer* pbuf = NULL;
   res_T res = RES_OK;
   ASSERT(solstice && dielectric && out_mtl);
 
@@ -222,7 +296,36 @@ create_material_dielectric
 
   medium_i = solparser_get_medium(solstice->parser, dielectric->medium_i);
   medium_t = solparser_get_medium(solstice->parser, dielectric->medium_t);
-  shader.normal = mtl_get_normal;
+
+  if(!SOLPARSER_ID_IS_VALID(dielectric->normal_map)) {
+    shader.normal = mtl_get_normal;
+  } else {
+    const struct solparser_image* image;
+    struct dielectric_param* param = NULL;
+
+    image = solparser_get_image(solstice->parser, dielectric->normal_map);
+    res = load_image(solstice, str_cget(&image->filename), &img);
+    if(res != RES_OK) goto error;
+
+    res = ssol_param_buffer_create
+      (solstice->ssol, sizeof(struct dielectric_param), &pbuf);
+    if(res != RES_OK) {
+      fprintf(stderr, "Could not create the Solstice Solver parameter buffer.\n");
+      goto error;
+    }
+
+    param = ssol_param_buffer_allocate(pbuf, sizeof(struct dielectric_param),
+      ALIGNOF(struct dielectric_param), dielectric_param_release);
+    if(!param) {
+      fprintf(stderr, "Could not allocate the dielectric parameter.\n");
+      res = RES_MEM_ERR;
+      goto error;
+    }
+    param->normal_map = img;
+    shader.normal = dielectric_get_normal;
+    SSOL(material_set_param_buffer(mtl, pbuf));
+  }
+
   ssol_medium_i.refractive_index = medium_i->refractive_index;
   ssol_medium_i.absorptivity = medium_i->absorptivity;
   ssol_medium_t.refractive_index = medium_t->refractive_index;
@@ -230,10 +333,12 @@ create_material_dielectric
   SSOL(dielectric_setup(mtl, &shader, &ssol_medium_i, &ssol_medium_t));
 
 exit:
+  if(pbuf) SSOL(param_buffer_ref_put(pbuf));
   *out_mtl = mtl;
   return res;
 error:
   if(mtl) SSOL(material_ref_put(mtl)), mtl = NULL;
+  if(img) SSOL(image_ref_put(img));
   goto exit;
 }
 
@@ -275,7 +380,6 @@ create_material_matte
 
   param->reflectivity = matte->reflectivity;
   if(!SOLPARSER_ID_IS_VALID(matte->normal_map)) {
-    param->normal_map = NULL;
     shader.normal = mtl_get_normal;
   } else {
     const struct solparser_image* image;
@@ -296,7 +400,7 @@ exit:
   return res;
 error:
   if(mtl) SSOL(material_ref_put(mtl)), mtl = NULL;
-  if(img) SSOL(image_ref_put(img)), img = NULL;
+  if(img) SSOL(image_ref_put(img));
   goto exit;
 }
 
@@ -306,6 +410,7 @@ create_material_mirror
    const struct solparser_material_mirror* mirror,
    struct ssol_material** out_mtl)
 {
+  struct ssol_image* img = NULL;
   struct ssol_mirror_shader shader = SSOL_MIRROR_SHADER_NULL;
   struct ssol_material* mtl = NULL;
   struct ssol_param_buffer* pbuf = NULL;
@@ -326,17 +431,28 @@ create_material_mirror
     goto error;
   }
 
-  param = ssol_param_buffer_allocate
-    (pbuf, sizeof(struct mirror_param), ALIGNOF(struct mirror_param), NULL);
+  param = ssol_param_buffer_allocate(pbuf, sizeof(struct mirror_param),
+    ALIGNOF(struct mirror_param), mirror_param_release);
   if(!param) {
     fprintf(stderr, "Could not allocate the mirror parameters.\n");
     res = RES_MEM_ERR;
     goto error;
   }
+  memset(param, 0, sizeof(struct mirror_param));
   param->reflectivity = mirror->reflectivity;
   param->roughness = mirror->roughness;
 
-  shader.normal = mtl_get_normal;
+  if(!SOLPARSER_ID_IS_VALID(mirror->normal_map)) {
+    shader.normal = mtl_get_normal;
+  } else {
+    const struct solparser_image* image;
+    image = solparser_get_image(solstice->parser, mirror->normal_map);
+    res = load_image(solstice, str_cget(&image->filename), &img);
+    if(res != RES_OK) goto error;
+    param->normal_map = img;
+    shader.normal = mirror_get_normal;
+  }
+
   shader.reflectivity = mirror_get_reflectivity;
   shader.roughness = mirror_get_roughness;
   SSOL(mirror_setup(mtl, &shader));
@@ -348,6 +464,7 @@ exit:
   return res;
 error:
   if(mtl) SSOL(material_ref_put(mtl)), mtl = NULL;
+  if(img) SSOL(image_ref_put(img));
   goto exit;
 }
 
@@ -357,12 +474,14 @@ create_material_thin_dielectric
    const struct solparser_material_thin_dielectric* thin,
    struct ssol_material** out_mtl)
 {
+  struct ssol_image* img = NULL;
   struct ssol_thin_dielectric_shader shader = SSOL_THIN_DIELECTRIC_SHADER_NULL;
   const struct solparser_medium* medium_i;
   const struct solparser_medium* medium_t;
   struct ssol_medium ssol_medium_i;
   struct ssol_medium ssol_medium_t;
   struct ssol_material* mtl = NULL;
+  struct ssol_param_buffer* pbuf = NULL;
   res_T res = RES_OK;
   ASSERT(solstice && thin && out_mtl);
 
@@ -373,9 +492,40 @@ create_material_thin_dielectric
     goto error;
   }
 
-  shader.normal = mtl_get_normal;
   medium_i = solparser_get_medium(solstice->parser, thin->medium_i);
   medium_t = solparser_get_medium(solstice->parser, thin->medium_t);
+
+  if(!SOLPARSER_ID_IS_VALID(thin->normal_map)) {
+    shader.normal = mtl_get_normal;
+  } else {
+    const struct solparser_image* image;
+    struct dielectric_param* param = NULL;
+
+    image = solparser_get_image(solstice->parser, thin->normal_map);
+    res = load_image(solstice, str_cget(&image->filename), &img);
+    if(res != RES_OK) goto error;
+
+    res = ssol_param_buffer_create
+      (solstice->ssol, sizeof(struct thin_dielectric_param), &pbuf);
+    if(res != RES_OK) {
+      fprintf(stderr, "Could not create the Solsitce Solver parameter buffer.\n");
+      goto error;
+    }
+
+    param = ssol_param_buffer_allocate(pbuf,
+      sizeof(struct thin_dielectric_param),
+      ALIGNOF(struct thin_dielectric_param),
+      thin_dielectric_param_release);
+    if(!param) {
+      fprintf(stderr, "Could not allocate the thin dielectric parameter.\n");
+      res = RES_MEM_ERR;
+      goto error;
+    }
+    param->normal_map = img;
+    shader.normal = thin_dielectric_get_normal;
+    SSOL(material_set_param_buffer(mtl, pbuf));
+  }
+
   ssol_medium_i.refractive_index = medium_i->refractive_index;
   ssol_medium_t.refractive_index = medium_t->refractive_index;
   ssol_medium_i.absorptivity = medium_i->absorptivity;
@@ -384,10 +534,12 @@ create_material_thin_dielectric
     (mtl, &shader, &ssol_medium_i, &ssol_medium_t, thin->thickness));
 
 exit:
+  if(pbuf) SSOL(param_buffer_ref_put(pbuf));
   *out_mtl = mtl;
   return res;
 error:
   if(mtl) SSOL(material_ref_put(mtl)), mtl = NULL;
+  if(img) SSOL(image_ref_put(img));
   goto exit;
 }
 
