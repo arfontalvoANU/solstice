@@ -145,6 +145,7 @@
     height: REAL # in ]0, INF)
     radius: REAL # in ]0, INF)
 [   slices: INTEGER ] # in [4, 4096]. Default 16
+[   stacks: INTEGER ] # in [1, 4096]. Default 1
 
 <obj> ::=
   obj:

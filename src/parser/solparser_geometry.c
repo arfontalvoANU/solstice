@@ -305,7 +305,7 @@ parse_cylinder
    const yaml_node_t* cylinder,
    struct solparser_shape_cylinder_id* out_ishape)
 {
-  enum { HEIGHT, RADIUS, SLICES };
+  enum { HEIGHT, RADIUS, SLICES, STACKS };
   struct solparser_shape_cylinder* shape = NULL;
   size_t ishape = SIZE_MAX;
   intptr_t i, n;
@@ -330,6 +330,7 @@ parse_cylinder
 
   n = cylinder->data.mapping.pairs.top - cylinder->data.mapping.pairs.start;
   shape->nslices = 16; /* default value */
+  shape->nstacks = 1; /* default value */
   FOR_EACH(i, 0, n) {
     yaml_node_t* key;
     yaml_node_t* val;
@@ -359,6 +360,10 @@ parse_cylinder
     } else if(!strcmp((char*)key->data.scalar.value, "slices")) {
       SETUP_MASK(SLICES, "slices");
       res = parse_integer(parser, val, 4, 4096, &shape->nslices);
+    }
+    else if(!strcmp((char*)key->data.scalar.value, "stacks")) {
+      SETUP_MASK(STACKS, "stacks");
+      res = parse_integer(parser, val, 1, 4096, &shape->nstacks);
     } else {
       log_err(parser, key, "unknown cylinder parameter `%s'.\n",
         key->data.scalar.value);

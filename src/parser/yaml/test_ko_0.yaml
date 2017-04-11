@@ -496,6 +496,7 @@
 #     height: REAL # in ]0, INF)
 #     radius: REAL # in ]0, INF)
 # [   slices: INTEGER ] # in [4, 4096]. Default 16
+# [   stacks: INTEGER ] # in [1, 4096]. Default 1
 #
 
 # missing cylinder definition
@@ -525,6 +526,9 @@
 # slices should be a number
 - geometry: [ { cylinder: { slices: "dummy" } } ]
 ---
+#   stacks
+- geometry: [ { cylinder: {   stacks: "dummy" } } ]
+---
 # -1 invalid
 - geometry: [ { cylinder: { radius: -1 } } ]
 ---
@@ -546,14 +550,26 @@
 # 2x slices
 - geometry: [ { cylinder: { slices: 10, slices: 10 } } ]
 ---
+#   stacks
+- geometry: [ { cylinder: {   stacks: 10,   stacks: 10 } } ]
+---
 # 1 invalid
 - geometry: [ {  cylinder: { height: 1, radius: 1, slices: 1 } } ]
 ---
 # 4097 invalid
 - geometry: [ {  cylinder: { height: 1, radius: 1, slices: 4097 } } ]
 ---
+# 0 invalid
+- geometry: [ {  cylinder: { height: 1, radius: 1,   stacks: 0 } } ]
+---
+# 4097 invalid
+- geometry: [ {  cylinder: { height: 1, radius: 1,   stacks: 4097 } } ]
+---
 # 12.5 invalid
 - geometry: [ {  cylinder: { height: 1, radius: 1, slices: 12.5 } } ]
+---
+# 12.5 invalid
+- geometry: [ {  cylinder: { height: 1, radius: 1,   stacks: 12.5 } } ]
 ---
 
 #
