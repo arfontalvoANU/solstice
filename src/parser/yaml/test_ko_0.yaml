@@ -881,6 +881,9 @@
 # slices should be a number
 - geometry: [ { sphere: { slices: "dummy" } } ]
 ---
+# stacks should be a number
+- geometry: [ { sphere: { stacks: "dummy" } } ]
+---
 # -1 invalid
 - geometry: [ { sphere: { radius: -1 } } ]
 ---
@@ -893,11 +896,20 @@
 # 4097 invalid
 - geometry: [ { sphere: { radius: 1, slices: 4097 } } ]
 ---
+# 0 invalid
+- geometry: [ { sphere: { radius: 1, stacks: 0 } } ]
+---
+# 4097 invalid
+- geometry: [ { sphere: { radius: 1, stacks: 4097 } } ]
+---
 # 2x radius
 - geometry: [ { sphere: { radius: 1,  radius: 1 } } ]
 ---
 # 2x slices
 - geometry: [ { sphere: { slices: 10,  slices: 10 } } ]
+---
+# 2x stacks
+- geometry: [ { sphere: { stacks: 10,  stacks: 10 } } ]
 ---
 
 #

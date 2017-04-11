@@ -881,7 +881,7 @@ parse_sphere
    const yaml_node_t* sphere,
    struct solparser_shape_sphere_id* out_ishape)
 {
-  enum { RADIUS, SLICES };
+  enum { RADIUS, SLICES, STACKS };
   struct solparser_shape_sphere* shape = NULL;
   size_t ishape = SIZE_MAX;
   intptr_t i, n;
@@ -906,6 +906,7 @@ parse_sphere
 
   n = sphere->data.mapping.pairs.top - sphere->data.mapping.pairs.start;
   shape->nslices = 16; /* default value */
+  shape->nstacks = 8; /* initial default value */
   FOR_EACH(i, 0, n) {
     yaml_node_t* key;
     yaml_node_t* val;
@@ -932,6 +933,11 @@ parse_sphere
     } else if(!strcmp((char*)key->data.scalar.value, "slices")) {
       SETUP_MASK(SLICES, "slices");
       res = parse_integer(parser, val, 4, 4096, &shape->nslices);
+      if(!(mask & BIT(STACKS)))
+        shape->nstacks = shape->nslices / 2; /* if unset, new default value */
+    } else if(!strcmp((char*)key->data.scalar.value, "stacks")) {
+      SETUP_MASK(STACKS, "stacks");
+      res = parse_integer(parser, val, 2, 4096, &shape->nstacks);
     } else {
       log_err(parser, key, "unknown sphere parameter `%s'.\n",
         key->data.scalar.value);

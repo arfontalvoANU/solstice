@@ -371,6 +371,7 @@ struct solparser_shape_cylinder {
 struct solparser_shape_sphere {
   double radius;
   long nslices;
+  long nstacks;
 };
 
 struct solparser_shape_cuboid_id { size_t i; };

@@ -201,6 +201,7 @@
   sphere:
     radius: REAL # in ]0, INF)
 [   slices: INTEGER ] # in [4, 4096]. Default 16
+[   stacks: INTEGER ] # in [2, 4096]. Default slices/2
 
 <stl> ::=
   stl:
