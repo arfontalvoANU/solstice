@@ -10,6 +10,7 @@
     - material: *specular
       hemisphere:
         radius: 3
+        slices: 32
 
 - geometry: &big_square
     - material: { virtual: }
