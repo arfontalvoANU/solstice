@@ -296,10 +296,10 @@ read_primary
   CHECK(
     sscanf(line,
       "%s %*lu   "
-      "%lg %lg %*lu   "
+      "%lg %*lu %lg   "
       "%lg %lg\n",
       name, /* ID */
-      area, cos, /* count */
+      area, /* count, */ cos,
       &E[PRIMARY_SHADOW], &SE[PRIMARY_SHADOW]),
     2 * PRIMARY_RESULTS_COUNT__ + 3);
 }
