@@ -52,7 +52,7 @@ write_mc_global(struct solstice* solstice, struct ssol_estimator* estimator)
   irradiance_factor = 1 / potential;
 
   /* Counts */
-  fprintf(solstice->output, "%lu %lu %lu %lu %lu\n",
+  fprintf(solstice->output, "%d %lu %lu %lu %lu\n",
     7, /* #global results count */
     (unsigned long)htable_receiver_size_get(&solstice->receivers),
     (unsigned long)nprimary,
@@ -60,20 +60,16 @@ write_mc_global(struct solstice* solstice, struct ssol_estimator* estimator)
     (unsigned long)nfailed);
 
   /* Global data */
-  fprintf(solstice->output, "%g %g\n",
-    potential, 0.);
-  fprintf(solstice->output, "%g %g\n",
-    mc_global.absorbed.E, mc_global.absorbed.SE);
-  fprintf(solstice->output, "%g %g\n",
-    mc_global.cos_factor.E, mc_global.cos_factor.SE);
-  fprintf(solstice->output, "%g %g\n",
-    mc_global.shadowed.E, mc_global.shadowed.SE);
-  fprintf(solstice->output, "%g %g\n",
-    mc_global.missing.E, mc_global.missing.SE);
-  fprintf(solstice->output, "%g %g\n",
-    mc_global.atmosphere.E, mc_global.atmosphere.SE);
-  fprintf(solstice->output, "%g %g\n",
-    mc_global.reflectivity.E, mc_global.reflectivity.SE);
+  #define PRINT_MC_GLOBAL(Name) \
+    fprintf(solstice->output, "%g %g\n", mc_global.Name.E, mc_global.Name.SE)
+  fprintf(solstice->output, "%g %g\n", potential, 0.);
+  PRINT_MC_GLOBAL(absorbed);
+  PRINT_MC_GLOBAL(cos_factor);
+  PRINT_MC_GLOBAL(shadowed);
+  PRINT_MC_GLOBAL(missing);
+  PRINT_MC_GLOBAL(atmosphere);
+  PRINT_MC_GLOBAL(reflectivity);
+  #undef PRINT_MC_GLOBAL
 
   /* Receivers' data */
   htable_receiver_begin(&solstice->receivers, &r_it);
