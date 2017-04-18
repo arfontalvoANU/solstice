@@ -500,11 +500,17 @@ create_shaded_shape
   res_T res = RES_OK;
   ASSERT(solstice && ssol_front && ssol_back && ssol_shape);
 
+  *ssol_front = NULL;
+  *ssol_back = NULL;
+  *ssol_shape = NULL;
+
   obj = solparser_get_object(solstice->parser, obj_id);
 
   mtl2 = solparser_get_material_double_sided(solstice->parser, obj->mtl2);
-  solstice_create_ssol_material(solstice, mtl2->front, ssol_front);
-  solstice_create_ssol_material(solstice, mtl2->back, ssol_back);
+  res = solstice_create_ssol_material(solstice, mtl2->front, ssol_front);
+  if(res != RES_OK) goto error;
+  res = solstice_create_ssol_material(solstice, mtl2->back, ssol_back);
+  if(res != RES_OK) goto error;
 
   /* Define the shape transformation */
   rotation[0] = MDEG2RAD(obj->rotation[0]);
@@ -547,7 +553,15 @@ create_shaded_shape
       break;
     default: FATAL("Unreachable code.\n"); break;
   }
+  if(res != RES_OK) goto error; 
+
+exit:
   return res;
+error:
+  if(*ssol_front) SSOL(material_ref_put(*ssol_front));
+  if(*ssol_back) SSOL(material_ref_put(*ssol_back));
+  if(*ssol_shape) SSOL(shape_ref_put(*ssol_shape));
+  goto exit;
 }
 
 /*******************************************************************************

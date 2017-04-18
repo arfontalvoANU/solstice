@@ -204,6 +204,7 @@
 # <matte> ::=
 #   matte:
 #     reflectivity: REAL # in [0, 1]
+# [   normal_map: { path: PATH } ]
 #
 
 # missing matte parameters
@@ -224,7 +225,25 @@
 # 2x reflectivity
 - material: { matte: { reflectivity: 1, reflectivity: 1 } }
 ---
-
+# bad normal map
+- material:
+    matte: { reflectivity: 1, normal_map: map }
+---
+# bad normal map
+- material:
+    matte: { reflectivity: 1, normal_map: { path: } }
+---
+# Missing reflectivity
+- material:
+    matte: { normal_map: { path: test } }
+---
+# 2x normal map
+- material:
+    matte:
+      reflectivity: 1
+      normal_map: { path: test }
+      normal_map: { path: test2}
+#
 #
 # <thin-dielectric> ::=
 #   thin_dielectric:

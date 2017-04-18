@@ -37,7 +37,7 @@ main(int argc, char** argv)
   (void)argc, (void)argv;
 
   CHECK(mem_init_proxy_allocator(&allocator, &mem_default_allocator), RES_OK);
-  solparser_create(&allocator, &parser);
+  CHECK(solparser_create(&allocator, &parser), RES_OK);
 
   stream = tmpfile();
   NCHECK(stream, NULL);
