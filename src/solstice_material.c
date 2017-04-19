@@ -57,7 +57,7 @@ perturb_normal
 
   d3_set(basis+0, frag->dPdu);
   d3_set(basis+3, frag->dPdv);
-  d3_set(basis+6, frag->Ng);
+  d3_set(basis+6, frag->Ns);
   d3_normalize(basis + 0, basis + 0);
   d3_normalize(basis + 3, basis + 3);
 
