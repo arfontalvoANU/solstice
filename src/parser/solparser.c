@@ -114,9 +114,10 @@ parse_item
    const yaml_node_t* item)
 {
   /* Temporary dummy variables */
-  struct solparser_material_double_sided_id mtl2;
   struct solparser_entity_id entity;
   struct solparser_geometry_id geometry;
+  struct solparser_material_double_sided_id mtl2;
+  struct solparser_medium_id medium;
   struct solparser_sun* sun;
 
   yaml_node_t* key;
@@ -149,6 +150,8 @@ parse_item
 
   if(!strcmp((char*)key->data.scalar.value, "material")) {
     res = parse_material(parser, doc, val, &mtl2);
+  } else if(!strcmp((char*)key->data.scalar.value, "medium")) {
+    res = parse_medium(parser, doc, val, &medium);
   } else if(!strcmp((char*)key->data.scalar.value, "entity")) {
     res = parse_entity(parser, doc, val, &parser->str2entities, &entity);
     if(res == RES_OK) {
@@ -189,11 +192,14 @@ parser_clear(struct solparser* parser)
   darray_image_clear(&parser->images);
   darray_material_clear(&parser->mtls);
   darray_material2_clear(&parser->mtls2);
-  darray_medium_clear(&parser->mediums);
   darray_dielectric_clear(&parser->dielectrics);
   darray_matte_clear(&parser->mattes);
   darray_mirror_clear(&parser->mirrors);
   darray_thin_dielectric_clear(&parser->thin_dielectrics);
+
+  /* Mediums */
+  htable_yaml2sols_clear(&parser->yaml2mediums);
+  darray_medium_clear(&parser->mediums);
 
   /* Deferred targeted anchors */
   darray_tgtalias_clear(&parser->tgtaliases);
@@ -244,11 +250,14 @@ parser_release(ref_T* ref)
   darray_image_release(&parser->images);
   darray_material_release(&parser->mtls);
   darray_material2_release(&parser->mtls2);
-  darray_medium_release(&parser->mediums);
   darray_dielectric_release(&parser->dielectrics);
   darray_matte_release(&parser->mattes);
   darray_mirror_release(&parser->mirrors);
   darray_thin_dielectric_release(&parser->thin_dielectrics);
+
+  /* Mediums */
+  htable_yaml2sols_release(&parser->yaml2mediums);
+  darray_medium_release(&parser->mediums);
 
   /* Deferred targeted anchors */
   darray_tgtalias_release(&parser->tgtaliases);
@@ -573,11 +582,14 @@ solparser_create
   darray_image_init(mem_allocator, &parser->images);
   darray_material_init(mem_allocator, &parser->mtls);
   darray_material2_init(mem_allocator, &parser->mtls2);
-  darray_medium_init(mem_allocator, &parser->mediums);
   darray_dielectric_init(mem_allocator, &parser->dielectrics);
   darray_matte_init(mem_allocator, &parser->mattes);
   darray_mirror_init(mem_allocator, &parser->mirrors);
   darray_thin_dielectric_init(mem_allocator, &parser->thin_dielectrics);
+
+  /* Mediums */
+  htable_yaml2sols_init(mem_allocator, &parser->yaml2mediums);
+  darray_medium_init(mem_allocator, &parser->mediums);
 
   /* Deferred targeted anchors */
   darray_tgtalias_init(mem_allocator, &parser->tgtaliases);

@@ -43,6 +43,8 @@ main(int argc, char** argv)
   NCHECK(stream, NULL);
 
   fprintf(stream, "- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1 }] }\n");
+  fprintf(stream, "- medium: &vacuum {refractive_index: 1, absorptivity: 0}\n");
+  fprintf(stream, "- medium: &glass {refractive_index: 1.5, absorptivity: 20}\n");
   fprintf(stream, "- entity:\n");
   fprintf(stream, "    name: test\n");
   fprintf(stream, "    primary: 0\n");
@@ -51,16 +53,12 @@ main(int argc, char** argv)
   fprintf(stream, "        material:\n");
   fprintf(stream, "          front:\n");
   fprintf(stream, "            dielectric:\n");
-  fprintf(stream, "              medium_i: &outside\n");
-  fprintf(stream, "                refractive_index: 1\n");
-  fprintf(stream, "                absorptivity: 0\n");
-  fprintf(stream, "              medium_t: &inside\n");
-  fprintf(stream, "                refractive_index: 1.5\n");
-  fprintf(stream, "                absorptivity: 20\n");
+  fprintf(stream, "              medium_i: *vacuum\n");
+  fprintf(stream, "              medium_t: *glass\n");
   fprintf(stream, "          back:\n");
   fprintf(stream, "            dielectric:\n");
-  fprintf(stream, "              medium_i: *inside\n");
-  fprintf(stream, "              medium_t: *outside\n");
+  fprintf(stream, "              medium_i: *glass\n");
+  fprintf(stream, "              medium_t: *vacuum\n");
   rewind(stream);
 
   CHECK(solparser_setup(parser, NULL, stream), RES_OK);

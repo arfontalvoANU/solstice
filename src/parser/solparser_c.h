@@ -20,6 +20,7 @@
 #include "solparser_entity.h"
 #include "solparser_image.h"
 #include "solparser_material.h"
+#include "solparser_medium.h"
 #include "solparser_pivot.h"
 #include "solparser_shape.h"
 #include "solparser_sun.h"
@@ -204,16 +205,19 @@ struct solparser {
   struct str stream_name;
   int parser_is_init;
 
-  /* Materia data */
+  /* Material */
   struct htable_yaml2sols yaml2mtls; /* Cache of materials */
   struct darray_image images;
   struct darray_material mtls;
   struct darray_material2 mtls2; /* Double sided materials */
-  struct darray_medium mediums;
   struct darray_dielectric dielectrics;
   struct darray_matte mattes;
   struct darray_mirror mirrors;
   struct darray_thin_dielectric thin_dielectrics;
+
+  /* Medium */
+  struct htable_yaml2sols yaml2mediums; /* Cache of mediums */
+  struct darray_medium mediums;
 
   /* Use to deferred the setup of the anchor targeted by a pivot */
   struct darray_tgtalias tgtaliases;
@@ -377,6 +381,13 @@ parse_material
    yaml_document_t* doc,
    yaml_node_t* mtl,
    struct solparser_material_double_sided_id* out_imtl2);
+
+extern LOCAL_SYM res_T
+parse_medium
+  (struct solparser* parser,
+   yaml_document_t* doc,
+   yaml_node_t* medium,
+   struct solparser_medium_id* out_imedium);
 
 extern LOCAL_SYM res_T
 parse_spectrum

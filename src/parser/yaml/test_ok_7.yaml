@@ -38,3 +38,16 @@
             medium_i: { absorptivity: 0, refractive_index: 1 }
             medium_t: { absorptivity: 20, refractive_index: 1.5 }
 
+---
+- sun: { dni: 1 }
+- medium: &vacuum { refractive_index: 1, absorptivity: 0 }
+- medium: &glass { refractive_index: 1.5, absorptivity: 20 }
+- entity:
+    name: "entity"
+    primary: 0
+    geometry:
+      - cylinder: { height: 1, radius: 1 }
+        material:
+          front: {dielectric: { medium_i: *vacuum, medium_t: *glass }}
+          back:  {dielectric: {medium_i: *glass, medium_t: *vacuum}}
+

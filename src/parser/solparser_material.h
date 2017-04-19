@@ -17,6 +17,7 @@
 #define SOLPARSER_MATERIAL_H
 
 #include "solparser_image.h"
+#include "solparser_medium.h"
 #include <stddef.h>
 
 enum solparser_material_type {
@@ -26,13 +27,6 @@ enum solparser_material_type {
   SOLPARSER_MATERIAL_THIN_DIELECTRIC,
   SOLPARSER_MATERIAL_VIRTUAL
 };
-
-struct solparser_medium {
-  double refractive_index;
-  double absorptivity;
-};
-
-struct solparser_medium_id { size_t i; };
 
 struct solparser_material_dielectric {
   struct solparser_medium_id medium_i; /* Medium the material "looks at" */

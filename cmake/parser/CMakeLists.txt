@@ -35,6 +35,7 @@ set(SOLPARSER_FILES_SRC
   solparser_image.c
   solparser_geometry.c
   solparser_material.c
+  solparser_medium.c
   solparser_pivot.c
   solparser_sun.c
   solparser_spectrum.c)
@@ -45,6 +46,7 @@ set(SOLPARSER_FILES_INC
   solparser_geometry.h
   solparser_image.h
   solparser_material.h
+  solparser_medium.h
   solparser_pivot.h
   solparser_shape.h
   solparser_sun.h
@@ -109,5 +111,4 @@ if(NOT NO_TEST)
 
   rcmake_copy_runtime_libraries(test_solparser)
 endif()
-
 
