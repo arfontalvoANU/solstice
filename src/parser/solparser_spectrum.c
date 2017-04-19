@@ -20,12 +20,22 @@
 /*******************************************************************************
  * Helper functions
  ******************************************************************************/
+static int
+cmp_spectrum_data(const void* op0, const void* op1)
+{
+  const struct solparser_spectrum_data* a = op0;
+  const struct solparser_spectrum_data* b = op1;
+  ASSERT(a && b);
+  if(a->wavelength < b->wavelength) return -1;
+  if(a->wavelength > b->wavelength) return 1;
+  return 0;
+}
+
 static res_T
 parse_spectrum_data
   (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* sdata,
-   double* last_wl,
    struct solparser_spectrum_data* spectrum_data)
 {
   enum { DATA, WAVELENGTH };
@@ -67,16 +77,8 @@ parse_spectrum_data
       res = parse_real(parser, val, 0, DBL_MAX, &spectrum_data->data);
     } else if(!strcmp((char*)key->data.scalar.value, "wavelength")) {
       SETUP_MASK(WAVELENGTH, "wavelength");
-      res = parse_real(parser, val, nextafter(*last_wl, DBL_MAX), DBL_MAX,
+      res = parse_real(parser, val, nextafter(0, DBL_MAX), DBL_MAX,
         &spectrum_data->wavelength);
-      if(*last_wl >= spectrum_data->wavelength) {
-        ASSERT(res != RES_OK);
-        log_err(parser, key, 
-          "spectrum with non-increasing wavelengths (%g after %g).\n",
-          spectrum_data->wavelength,
-          *last_wl);
-      }
-      *last_wl = spectrum_data->wavelength;
     } else {
       log_err(parser, key, "unknown spectrum data parameter `%s'.\n",
         key->data.scalar.value);
@@ -118,7 +120,6 @@ parse_spectrum
 {
   intptr_t i, n;
   res_T res = RES_OK;
-  double last_wl = 0;
   ASSERT(doc && spectrum && data);
 
   if(spectrum->type != YAML_SEQUENCE_NODE) {
@@ -140,8 +141,30 @@ parse_spectrum
 
     sdata = yaml_document_get_node(doc, spectrum->data.sequence.items.start[i]);
     spectrum_data = darray_spectrum_data_data_get(data) + i;
-    res = parse_spectrum_data(parser, doc, sdata, &last_wl, spectrum_data);
+    res = parse_spectrum_data(parser, doc, sdata, spectrum_data);
     if(res != RES_OK) goto error;
+  }
+
+  if(n == 1) goto exit;
+
+  qsort
+    (darray_spectrum_data_data_get(data),
+     darray_spectrum_data_size_get(data),
+     sizeof(struct solparser_spectrum_data),
+     cmp_spectrum_data);
+
+  FOR_EACH(i, 1, n) {
+    const struct solparser_spectrum_data* a;
+    const struct solparser_spectrum_data* b;
+    a = darray_spectrum_data_cdata_get(data) + i - 1;
+    b = darray_spectrum_data_cdata_get(data) + i;
+    ASSERT(cmp_spectrum_data(a, b) <= 0);
+    if(a->wavelength == b->wavelength) {
+      log_err(parser, spectrum,
+        "duplicated spectrum entry for the wavelength %g\n", a->wavelength);
+      res = RES_BAD_ARG;
+      goto error;
+    }
   }
 
 exit:

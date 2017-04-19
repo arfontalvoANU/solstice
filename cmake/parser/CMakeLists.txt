@@ -108,6 +108,7 @@ if(NOT NO_TEST)
   new_test(test_solparser7)
   new_test(test_solparser8)
   new_test(test_solparser_normal_map)
+  new_test(test_solparser_spectrum)
 
   rcmake_copy_runtime_libraries(test_solparser)
 endif()
