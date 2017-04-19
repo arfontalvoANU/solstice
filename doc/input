@@ -89,10 +89,11 @@
 [ - <item> ... ]
 
 <item> ::=
-    <geometry>
+    <entity>
+  | <geometry>
   | <material>
   | <medium>
-  | <entity>
+  | <spectrum>
   | <template>
 
 #----------------------------------------

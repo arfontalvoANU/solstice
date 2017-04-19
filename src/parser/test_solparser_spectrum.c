@@ -27,18 +27,19 @@ test_sun(struct solparser* parser)
 
   NCHECK(stream = tmpfile(), NULL);
 
+  fprintf(stream, "- spectrum: &my_spectrum\n");
+  fprintf(stream, "  - { wavelength: 2, data: 2 }\n");
+  fprintf(stream, "  - { wavelength: 1, data: 1 }\n");
+  fprintf(stream, "  - { wavelength: 8, data: 8 }\n");
+  fprintf(stream, "  - { wavelength: 3, data: 3 }\n");
+  fprintf(stream, "  - { wavelength: 5, data: 5 }\n");
+  fprintf(stream, "  - { wavelength: 9, data: 9 }\n");
+  fprintf(stream, "  - { wavelength: 6, data: 6 }\n");
+  fprintf(stream, "  - { wavelength: 7, data: 7 }\n");
+  fprintf(stream, "  - { wavelength: 4, data: 4 }\n");
   fprintf(stream, "- sun:\n");
   fprintf(stream, "    dni: 123.456\n");
-  fprintf(stream, "    spectrum:\n");
-  fprintf(stream, "    - { wavelength: 2, data: 2 }\n");
-  fprintf(stream, "    - { wavelength: 1, data: 1 }\n");
-  fprintf(stream, "    - { wavelength: 8, data: 8 }\n");
-  fprintf(stream, "    - { wavelength: 3, data: 3 }\n");
-  fprintf(stream, "    - { wavelength: 5, data: 5 }\n");
-  fprintf(stream, "    - { wavelength: 9, data: 9 }\n");
-  fprintf(stream, "    - { wavelength: 6, data: 6 }\n");
-  fprintf(stream, "    - { wavelength: 7, data: 7 }\n");
-  fprintf(stream, "    - { wavelength: 4, data: 4 }\n");
+  fprintf(stream, "    spectrum: *my_spectrum\n");
   fprintf(stream, "- material: &matte { matte: { reflectivity: 1 } }\n");
   fprintf(stream, "- entity:\n");
   fprintf(stream, "    name: foo bar\n");

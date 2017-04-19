@@ -148,6 +148,7 @@ parse_item
     goto error;
   }
 
+  /* The parsing of the templates/spectraa is deferred to their explicit use */
   if(!strcmp((char*)key->data.scalar.value, "material")) {
     res = parse_material(parser, doc, val, &mtl2);
   } else if(!strcmp((char*)key->data.scalar.value, "medium")) {
@@ -157,14 +158,12 @@ parse_item
     if(res == RES_OK) {
       res = flush_deferred_target_aliases(parser, item, entity);
     }
-  } else if(!strcmp((char*)key->data.scalar.value, "template")) {
-    /* The parsing of the template data is deferred to its explicit used in the
-     * definition of an entity. If the parsing of the template becomes a
-     * bottleneck, parse the data only once here and cache them for reuse. */
+  } else if(!strcmp((char*)key->data.scalar.value, "template")) { /* Deferred */
   } else if(!strcmp((char*)key->data.scalar.value, "geometry")) {
     res = parse_geometry(parser, doc, val, &geometry);
   } else if(!strcmp((char*)key->data.scalar.value, "sun")) {
     res = parse_sun(parser, doc, val, &sun);
+  } else if(!strcmp((char*)key->data.scalar.value, "spectrum")) { /* Deferred */
   } else {
     log_err(parser, key, "unknown item `%s'.\n", key->data.scalar.value);
     res = RES_BAD_ARG;
