@@ -21,6 +21,7 @@ static void
 test_sun(struct solparser* parser)
 {
   const struct solparser_sun* sun;
+  const struct solparser_spectrum* spectrum;
   FILE* stream;
   size_t i;
 
@@ -51,12 +52,27 @@ test_sun(struct solparser* parser)
   sun = solparser_get_sun(parser);
   CHECK(sun->dni, 123.456);
   CHECK(sun->radang_distrib_type, SOLPARSER_SUN_RADANG_DISTRIB_DIRECTIONAL);
-  CHECK(darray_spectrum_data_size_get(&sun->spectrum), 9);
+  CHECK(SOLPARSER_ID_IS_VALID(sun->spectrum), 1);
+  spectrum = solparser_get_spectrum(parser, sun->spectrum);
 
-  FOR_EACH(i, 0, darray_spectrum_data_size_get(&sun->spectrum)) {
-    CHECK(darray_spectrum_data_cdata_get(&sun->spectrum)[i].wavelength, i+1);
-    CHECK(darray_spectrum_data_cdata_get(&sun->spectrum)[i].wavelength, i+1);
+  CHECK(darray_spectrum_data_size_get(&spectrum->data), 9);
+
+  FOR_EACH(i, 0, darray_spectrum_data_size_get(&spectrum->data)) {
+    CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[i].wavelength, i+1);
+    CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[i].wavelength, i+1);
   }
+
+  CHECK(solparser_load(parser), RES_BAD_OP);
+  fclose(stream);
+
+  NCHECK(stream = tmpfile(), NULL);
+  fprintf(stream, "- sun: {dni: 1}\n");
+  rewind(stream);
+
+  CHECK(solparser_setup(parser, NULL, stream), RES_OK);
+  CHECK(solparser_load(parser), RES_OK);
+
+  CHECK(SOLPARSER_ID_IS_VALID(sun->spectrum), 0);
 
   CHECK(solparser_load(parser), RES_BAD_OP);
   fclose(stream);

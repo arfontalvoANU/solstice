@@ -139,6 +139,7 @@ create_sun_spectrum
 {
   struct ssol_spectrum* spectrum = NULL;
   const struct solparser_spectrum_data* data;
+  const struct solparser_spectrum* spec;
   size_t nwlens;
   res_T res = RES_OK;
   ASSERT(solstice && solparser_sun && out_spectrum);
@@ -149,8 +150,9 @@ create_sun_spectrum
     goto error;
   }
 
-  nwlens = darray_spectrum_data_size_get(&solparser_sun->spectrum);
-  data = darray_spectrum_data_cdata_get(&solparser_sun->spectrum);
+  spec = solparser_get_spectrum(solstice->parser, solparser_sun->spectrum);
+  nwlens = darray_spectrum_data_size_get(&spec->data);
+  data = darray_spectrum_data_cdata_get(&spec->data);
   res = ssol_spectrum_setup(spectrum, get_wavelength, nwlens, (void*)data);
   if(res != RES_OK) {
     fprintf(stderr, "Could not setup the spectrum of the solver sun.\n");
@@ -195,7 +197,7 @@ solstice_create_sun(struct solstice* solstice)
   }
   if(res != RES_OK) goto error;
 
-  if(solparser_sun->spectrum.size) {
+  if(SOLPARSER_ID_IS_VALID(solparser_sun->spectrum)) {
     res = create_sun_spectrum(solstice, solparser_sun, &spectrum);
     if (res != RES_OK) goto error;
 

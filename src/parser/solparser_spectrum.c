@@ -116,11 +116,13 @@ parse_spectrum
   (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* spectrum,
-   struct darray_spectrum_data* data)
+   struct solparser_spectrum_id* out_ispectrum)
 {
+  struct solparser_spectrum* spec;
+  size_t ispec = SIZE_MAX;
   intptr_t i, n;
   res_T res = RES_OK;
-  ASSERT(doc && spectrum && data);
+  ASSERT(doc && spectrum && out_ispectrum);
 
   if(spectrum->type != YAML_SEQUENCE_NODE) {
     log_err(parser, spectrum, "expect a list of spectrum data.\n");
@@ -128,8 +130,17 @@ parse_spectrum
     goto error;
   }
 
+  /* Allocate the spectrum */
+  ispec = darray_spectrum_size_get(&parser->spectra);
+  res = darray_spectrum_resize(&parser->spectra, ispec + 1);
+  if(res != RES_OK) {
+    log_err(parser, spectrum, "could not allocate the spectrum.\n");
+    goto error;
+  }
+  spec = darray_spectrum_data_get(&parser->spectra) + ispec;
+
   n = spectrum->data.sequence.items.top - spectrum->data.sequence.items.start;
-  res = darray_spectrum_data_resize(data, (size_t)n);
+  res = darray_spectrum_data_resize(&spec->data, (size_t)n);
   if(res != RES_OK) {
     log_err(parser, spectrum, "could not allocate the list of spectrum data.\n");
     goto error;
@@ -140,7 +151,7 @@ parse_spectrum
     struct solparser_spectrum_data* spectrum_data;
 
     sdata = yaml_document_get_node(doc, spectrum->data.sequence.items.start[i]);
-    spectrum_data = darray_spectrum_data_data_get(data) + i;
+    spectrum_data = darray_spectrum_data_data_get(&spec->data) + i;
     res = parse_spectrum_data(parser, doc, sdata, spectrum_data);
     if(res != RES_OK) goto error;
   }
@@ -148,16 +159,16 @@ parse_spectrum
   if(n == 1) goto exit;
 
   qsort
-    (darray_spectrum_data_data_get(data),
-     darray_spectrum_data_size_get(data),
+    (darray_spectrum_data_data_get(&spec->data),
+     darray_spectrum_data_size_get(&spec->data),
      sizeof(struct solparser_spectrum_data),
      cmp_spectrum_data);
 
   FOR_EACH(i, 1, n) {
     const struct solparser_spectrum_data* a;
     const struct solparser_spectrum_data* b;
-    a = darray_spectrum_data_cdata_get(data) + i - 1;
-    b = darray_spectrum_data_cdata_get(data) + i;
+    a = darray_spectrum_data_cdata_get(&spec->data) + i - 1;
+    b = darray_spectrum_data_cdata_get(&spec->data) + i;
     ASSERT(cmp_spectrum_data(a, b) <= 0);
     if(a->wavelength == b->wavelength) {
       log_err(parser, spectrum,
@@ -168,9 +179,13 @@ parse_spectrum
   }
 
 exit:
+  out_ispectrum->i = ispec;
   return res;
 error:
-  darray_spectrum_data_clear(data);
+  if(spec) {
+    darray_spectrum_pop_back(&parser->spectra);
+    ispec = SIZE_MAX;
+  }
   goto exit;
 }
 

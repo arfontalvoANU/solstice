@@ -40,6 +40,7 @@ main(int argc, char** argv)
   const struct solparser_material_mirror* mirror;
   const struct solparser_shape_sphere* sphere;
   const struct solparser_sun* sun;
+  const struct solparser_spectrum* spectrum;
   size_t nmtls = 0;
   size_t ngeoms = 0;
   double tmp[3];
@@ -114,7 +115,7 @@ main(int argc, char** argv)
 
   entity_id = solparser_entity_iterator_get(&it);
   entity = solparser_get_entity(parser, entity_id);
-  
+
   CHECK(strcmp("lvl 0", str_cget(&entity->name)), 0);
   CHECK(solparser_entity_get_children_count(entity), 2);
   CHECK(entity->type, SOLPARSER_ENTITY_GEOMETRY);
@@ -203,9 +204,11 @@ main(int argc, char** argv)
   NCHECK(sun, NULL);
   CHECK(sun->dni, 1.0);
   CHECK(sun->radang_distrib_type, SOLPARSER_SUN_RADANG_DISTRIB_DIRECTIONAL);
-  CHECK(darray_spectrum_data_size_get(&sun->spectrum), 1);
-  CHECK(darray_spectrum_data_cdata_get(&sun->spectrum)[0].wavelength, 1.0);
-  CHECK(darray_spectrum_data_cdata_get(&sun->spectrum)[0].data, 1.0);
+  CHECK(SOLPARSER_ID_IS_VALID(sun->spectrum), 1);
+  spectrum = solparser_get_spectrum(parser, sun->spectrum);
+  CHECK(darray_spectrum_data_size_get(&spectrum->data), 1);
+  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[0].wavelength, 1.0);
+  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[0].data, 1.0);
 
   CHECK(solparser_load(parser), RES_BAD_OP);
   solparser_ref_put(parser);

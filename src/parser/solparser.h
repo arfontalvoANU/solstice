@@ -17,6 +17,7 @@
 #define SOLPARSER_H
 
 #include "solparser_entity.h"
+#include "solparser_spectrum.h"
 #include <rsys/rsys.h>
 #include <stddef.h>
 
@@ -203,6 +204,11 @@ extern LOCAL_SYM const struct solparser_zx_pivot*
 solparser_get_zx_pivot
   (const struct solparser* parser,
    const struct solparser_pivot_id zx_pivot);
+
+extern LOCAL_SYM const struct solparser_spectrum*
+solparser_get_spectrum
+  (const struct solparser* parser,
+   const struct solparser_spectrum_id spectrum);
 
 /*******************************************************************************
  * Entity interator

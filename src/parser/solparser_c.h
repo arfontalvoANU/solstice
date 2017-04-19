@@ -23,6 +23,7 @@
 #include "solparser_medium.h"
 #include "solparser_pivot.h"
 #include "solparser_shape.h"
+#include "solparser_spectrum.h"
 #include "solparser_sun.h"
 
 #include <rsys/dynamic_array.h>
@@ -193,6 +194,15 @@ struct target_alias {
 #define DARRAY_FUNCTOR_INIT solparser_zx_pivot_init
 #include <rsys/dynamic_array.h>
 
+/* Declare the array of spectra */
+#define DARRAY_NAME spectrum
+#define DARRAY_DATA struct solparser_spectrum
+#define DARRAY_FUNCTOR_INIT solparser_spectrum_init
+#define DARRAY_FUNCTOR_RELEASE solparser_spectrum_release
+#define DARRAY_FUNCTOR_COPY solparser_spectrum_copy
+#define DARRAY_FUNCTOR_COPY_AND_RELEASE solparser_spectrum_copy_and_release
+#include <rsys/dynamic_array.h>
+
 /* Declare the hash table that maps the address of a YAML node to the id of its
  * in memory representation. */
 #define HTABLE_NAME yaml2sols
@@ -251,6 +261,7 @@ struct solparser {
   struct darray_anchor anchors;
   struct darray_x_pivot x_pivots;
   struct darray_zx_pivot zx_pivots;
+  struct darray_spectrum spectra;
 
   ref_T ref;
   struct mem_allocator* allocator;
@@ -394,7 +405,7 @@ parse_spectrum
   (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* spectrum,
-   struct darray_spectrum_data* data);
+   struct solparser_spectrum_id* out_ispectrum);
 
 extern LOCAL_SYM res_T
 parse_sun

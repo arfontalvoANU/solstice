@@ -233,6 +233,7 @@ parser_clear(struct solparser* parser)
   darray_anchor_clear(&parser->anchors);
   darray_x_pivot_clear(&parser->x_pivots);
   darray_zx_pivot_clear(&parser->zx_pivots);
+  darray_spectrum_clear(&parser->spectra);
 }
 
 static void
@@ -290,6 +291,7 @@ parser_release(ref_T* ref)
   darray_anchor_release(&parser->anchors);
   darray_x_pivot_release(&parser->x_pivots);
   darray_zx_pivot_release(&parser->zx_pivots);
+  darray_spectrum_release(&parser->spectra);
 
   MEM_RM(parser->allocator, parser);
 }
@@ -618,10 +620,11 @@ solparser_create
   htable_str2sols_init(mem_allocator, &parser->str2entities);
   darray_entity_init(mem_allocator, &parser->entities);
 
-  /* Anchors and pivot(2)s */
+  /* Miscellaneous */
   darray_anchor_init(mem_allocator, &parser->anchors);
   darray_x_pivot_init(mem_allocator, &parser->x_pivots);
   darray_zx_pivot_init(mem_allocator, &parser->zx_pivots);
+  darray_spectrum_init(mem_allocator, &parser->spectra);
 
 exit:
   *out_parser = parser;
@@ -1096,6 +1099,15 @@ solparser_get_shape_stl
 {
   ASSERT(parser && impgeom.i < darray_impgeom_size_get(&parser->stls));
   return darray_impgeom_cdata_get(&parser->stls) + impgeom.i;
+}
+
+const struct solparser_spectrum*
+solparser_get_spectrum
+  (const struct solparser* parser,
+   const struct solparser_spectrum_id spectrum)
+{
+  ASSERT(parser && spectrum.i < darray_spectrum_size_get(&parser->spectra));
+  return darray_spectrum_cdata_get(&parser->spectra) + spectrum.i;
 }
 
 const struct solparser_sun*
