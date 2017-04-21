@@ -231,13 +231,13 @@
 
 <matte> ::=
   matte:
-    reflectivity: REAL # in [0, 1]
+    reflectivity: <mtl-data> # in [0, 1]
 [   <normal-map> ]
 
 <mirror> ::=
   mirror:
-    reflectivity: REAL # in [0, 1]
-    roughness: REAL # in [0, 1]
+    reflectivity: <mtl-data> # in [0, 1]
+    roughness: <mtl-data> # in [0, 1]
 [   <normal-map> ]
 
 <virtual> ::=
@@ -258,8 +258,8 @@
   medium: <medium-descriptor>
 
 <medium-descriptor> ::=
-  refractive_index: REAL # in ]0, INF)
-  absorptivity: REAL # in [0, INF)
+  refractive_index: <mtl-data> # value in ]0, INF)
+  absorptivity: <mtl-data> # value in [0, INF)
 
 #----------------------------------------
 <entity> ::=
@@ -309,7 +309,7 @@
 <sun> ::=
   sun:
     dni: REAL # Direct Normal Irradiance in ]0, INF)
-[   <spectrum> ]
+[   <spectrum> ] # If not defined use the smarts295 spectrum
 [   <radial-angular-distribution> ]
 
 <radial-angular-distribution> ::=
@@ -324,6 +324,9 @@
     aperture: REAL # in ]0, 90]
 
 #----------------------------------------
+<mtl-data> ::=
+  REAL | <spectrum-data-list>
+
 <transform> ::=
   transform:
     translation: <real3>
@@ -344,7 +347,9 @@
   - REAL # in ]0, inf)
 
 <spectrum> ::=
-  spectrum:
+  spectrum: <spectrum-data-list>
+
+<spectrum-data-list> ::=
     - <spectrum-data>
 [   - <spectrum-data> ... ]
 
