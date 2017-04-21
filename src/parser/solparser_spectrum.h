@@ -27,5 +27,44 @@ struct solparser_spectrum_data {
 #define DARRAY_DATA struct solparser_spectrum_data
 #include <rsys/dynamic_array.h>
 
+struct solparser_spectrum {
+  struct darray_spectrum_data data;
+};
+
+struct solparser_spectrum_id { size_t i; };
+
+static INLINE void
+solparser_spectrum_init
+  (struct mem_allocator* allocator, struct solparser_spectrum* spectrum)
+{
+  ASSERT(spectrum);
+  darray_spectrum_data_init(allocator, &spectrum->data);
+}
+
+static INLINE void
+solparser_spectrum_release(struct solparser_spectrum* spectrum)
+{
+  ASSERT(spectrum);
+  darray_spectrum_data_release(&spectrum->data);
+}
+
+static INLINE res_T
+solparser_spectrum_copy
+  (struct solparser_spectrum* dst,
+   const struct solparser_spectrum* src)
+{
+  ASSERT(dst && src);
+  return darray_spectrum_data_copy(&dst->data, &src->data);
+}
+
+static INLINE res_T
+solparser_spectrum_copy_and_release
+  (struct solparser_spectrum* dst,
+   struct solparser_spectrum* src)
+{
+  ASSERT(dst && src);
+  return darray_spectrum_data_copy_and_release(&dst->data, &src->data);
+}
+
 #endif /* SOLPARSER_SPECTRUM_H */
 

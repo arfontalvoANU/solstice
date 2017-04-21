@@ -89,9 +89,11 @@
 [ - <item> ... ]
 
 <item> ::=
-    <geometry>
+    <entity>
+  | <geometry>
   | <material>
-  | <entity>
+  | <medium>
+  | <spectrum>
   | <template>
 
 #----------------------------------------
@@ -224,7 +226,7 @@
 
 #----------------------------------------
 <material> ::=
-  <material-descriptor> | <double-sided-material>
+  material: <material-descriptor> | <double-sided-material>
 
 <double-sided-material> ::=
   front: <material-descriptor>
@@ -235,17 +237,20 @@
 
 <dielectric> ::=
   dielectric:
-    medium_i: <dielectric-medium>
-    medium_t: <dielectric-medium>
+    medium_i: <medium-descriptor>
+    medium_t: <medium-descriptor>
+[   <normal-map> ]
 
 <matte> ::=
   matte:
     reflectivity: REAL # in [0, 1]
+[   <normal-map> ]
 
 <mirror> ::=
   mirror:
     reflectivity: REAL # in [0, 1]
     roughness: REAL # in [0, 1]
+[   <normal-map> ]
 
 <virtual> ::=
   virtual: EMPTY-STRING
@@ -253,12 +258,20 @@
 <thin-dielectric> ::=
   thin_dielectric:
     thickness: REAL # in [0, INF)
-    medium_i: <dielectric-medium>
-    medium_t: <dielectric-medium>
+    medium_i: <medium-descriptor>
+    medium_t: <medium-descriptor>
+[   <normal-map> ]
 
-<dielectric-medium> ::=
-    refractive_index: REAL # in ]0, INF)
-    absorptivity: REAL # in [0, INF)
+<normal-map> ::=
+  normal_map: { path: PATH }
+
+#----------------------------------------
+<medium> ::=
+  medium: <medium-descriptor>
+
+<medium-descriptor> ::=
+  refractive_index: REAL # in ]0, INF)
+  absorptivity: REAL # in [0, INF)
 
 #----------------------------------------
 <entity> ::=

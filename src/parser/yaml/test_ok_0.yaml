@@ -50,8 +50,13 @@
 - entity: { name: "hop", primary: 1, geometry: *cuboid }
 - sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
 ---
+- spectrum: &sun_spectrum
+  - { wavelength: 1.1, data: 1.2 }
+  - { wavelength: 2.2, data: 2.3 }
+  - { wavelength: 3.3, data: 3.4 }
+  - { wavelength: 4.4, data: 4.4 }
 - material: &lambertian { matte: { reflectivity: 1 } }
-- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
+- sun: { dni: 1, spectrum: *sun_spectrum }
 - entity:
     name: hop
     primary: 0

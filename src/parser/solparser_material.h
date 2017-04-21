@@ -16,6 +16,8 @@
 #ifndef SOLPARSER_MATERIAL_H
 #define SOLPARSER_MATERIAL_H
 
+#include "solparser_image.h"
+#include "solparser_medium.h"
 #include <stddef.h>
 
 enum solparser_material_type {
@@ -26,40 +28,77 @@ enum solparser_material_type {
   SOLPARSER_MATERIAL_VIRTUAL
 };
 
-struct solparser_medium {
-  double refractive_index;
-  double absorptivity;
-};
-
-struct solparser_medium_id { size_t i; };
-
 struct solparser_material_dielectric {
   struct solparser_medium_id medium_i; /* Medium the material "looks at" */
   struct solparser_medium_id medium_t; /* Opposite medium */
+  struct solparser_image_id normal_map;
 };
 
 struct solparser_material_dielectric_id { size_t i; };
 
+static INLINE void
+solparser_material_dielectric_init
+  (struct mem_allocator* allocator,
+   struct solparser_material_dielectric* dielectric)
+{
+  ASSERT(dielectric);
+  (void)allocator;
+  dielectric->normal_map.i = SIZE_MAX;
+}
+
 struct solparser_material_matte {
   double reflectivity; /* In [0, 1] */
+  struct solparser_image_id normal_map;
 };
 
 struct solparser_material_matte_id { size_t i; };
 
+static INLINE void
+solparser_material_matte_init
+  (struct mem_allocator* allocator,
+   struct solparser_material_matte* matte)
+{
+  ASSERT(matte);
+  (void)allocator;
+  matte->normal_map.i = SIZE_MAX;
+}
+
 struct solparser_material_mirror {
   double roughness; /* In [0, 1] */
   double reflectivity; /* In [0, 1] */
+  struct solparser_image_id normal_map;
 };
 
 struct solparser_material_mirror_id { size_t i; };
 
+static INLINE void
+solparser_material_mirror_init
+  (struct mem_allocator* allocator,
+   struct solparser_material_mirror* mirror)
+{
+  ASSERT(mirror);
+  (void)allocator;
+  mirror->normal_map.i = SIZE_MAX;
+}
+
 struct solparser_material_thin_dielectric {
   struct solparser_medium_id medium_i; /* Outside medium */
   struct solparser_medium_id medium_t; /* Medium of the slab */
+  struct solparser_image_id normal_map;
   double thickness;
 };
 
 struct solparser_material_thin_dielectric_id { size_t i; };
+
+static INLINE void
+solparser_material_thin_dielectric_init
+  (struct mem_allocator* allocator,
+   struct solparser_material_thin_dielectric* thin)
+{
+  ASSERT(thin);
+  (void)allocator;
+  thin->normal_map.i = SIZE_MAX;
+}
 
 struct solparser_material {
   enum solparser_material_type type;

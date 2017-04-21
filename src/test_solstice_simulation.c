@@ -261,7 +261,7 @@ read_recv(FILE* file, char name[], double E[], double SE[])
   CHECK(read_line(line, sizeof(line), file), 1);
   CHECK(
     sscanf(line,
-      "%s %*lu %*lg   "
+      "%s %*u %*g   "
       "FRONT: %lg %lg   %lg %lg   %lg %lg   %lg %lg   %lg %lg  "
       " BACK: %lg %lg   %lg %lg   %lg %lg   %lg %lg   %lg %lg",
       name, /* ID, area */
@@ -295,7 +295,7 @@ read_primary
   CHECK(read_line(line, sizeof(line), file), 1);
   CHECK(
     sscanf(line,
-      "%s %*lu   "
+      "%s %*u   "
       "%lg %*lu %lg   "
       "%lg %lg\n",
       name, /* ID */

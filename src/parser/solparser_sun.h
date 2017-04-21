@@ -30,7 +30,7 @@ struct solparser_sun_pillbox { double aperture; };
 
 struct solparser_sun {
   double dni; /* In ]0, INF) */
-  struct darray_spectrum_data spectrum;
+  struct solparser_spectrum_id spectrum;
   enum solparser_sun_radang_distrib_type radang_distrib_type;
   union {
     struct solparser_sun_buie buie;
@@ -42,38 +42,25 @@ static INLINE void
 solparser_sun_init(struct mem_allocator* allocator, struct solparser_sun* sun)
 {
   ASSERT(sun);
+  (void)allocator;
   sun->dni = 1.0;
   sun->radang_distrib_type = SOLPARSER_SUN_RADANG_DISTRIB_DIRECTIONAL;
-  darray_spectrum_data_init(allocator, &sun->spectrum);
+  sun->spectrum.i = SIZE_MAX;
 }
 
 static INLINE void
 solparser_sun_release(struct solparser_sun* sun)
 {
   ASSERT(sun);
-  darray_spectrum_data_release(&sun->spectrum);
-}
-
-static INLINE res_T
-solparser_sun_copy(struct solparser_sun* dst, const struct solparser_sun* src)
-{
-  ASSERT(dst && src);
-  return darray_spectrum_data_copy(&dst->spectrum, &src->spectrum);
-}
-
-static INLINE res_T
-solparser_sun_copy_and_release
-  (struct solparser_sun* dst, struct solparser_sun* src)
-{
-  ASSERT(dst && src);
-  return darray_spectrum_data_copy_and_release(&dst->spectrum, &src->spectrum);
+  (void)sun;
+  /* Do nothing */
 }
 
 static INLINE void
 solparser_sun_clear(struct solparser_sun* sun)
 {
   ASSERT(sun);
-  darray_spectrum_data_clear(&sun->spectrum);
+  sun->spectrum.i = SIZE_MAX;
 }
 
 #endif /* SOLPARSER_SUN_H */

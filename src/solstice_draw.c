@@ -23,27 +23,32 @@
 /*******************************************************************************
  * Helper function
  ******************************************************************************/
-/* Assume that the pixel format of the src is DOUBLE3 in gray scale while the
- * pixel format of dst is UBYTE */
+/* Assume that the pixel format of the src is DOUBLE3 and dst is UBYTE3 */
 static void
-tone_map(const double* src, unsigned char* dst,  const size_t count)
+tone_map(const double* src, uint8_t* dst, const size_t count)
 {
   size_t i;
   ASSERT(src && dst && count);
   FOR_EACH(i, 0, count) {
-    double val;
-    val = pow(src[i*3/*#channels*/], 1/SCREEN_GAMMA);/* Gamma correction */
-    val = CLAMP(val, 0, 1);
-    dst[i] =  (unsigned char)((val * 255) + 0.5/*round*/);
+    double val[3];
+    val[0] = pow(src[i*3/*#channels*/+0], 1/SCREEN_GAMMA);/* Gamma correction */
+    val[1] = pow(src[i*3/*#channels*/+1], 1/SCREEN_GAMMA);/* Gamma correction */
+    val[2] = pow(src[i*3/*#channels*/+2], 1/SCREEN_GAMMA);/* Gamma correction */
+    val[0] = CLAMP(val[0], 0, 1);
+    val[1] = CLAMP(val[1], 0, 1);
+    val[2] = CLAMP(val[2], 0, 1);
+    dst[i*3/*#channels*/ + 0] = (uint8_t)((val[0]*255) + 0.5/*round*/);
+    dst[i*3/*#channels*/ + 1] = (uint8_t)((val[1]*255) + 0.5/*round*/);
+    dst[i*3/*#channels*/ + 2] = (uint8_t)((val[2]*255) + 0.5/*round*/);
   }
 }
 
 static void
-tone_map_image(const struct ssol_image* img, unsigned char* dst)
+tone_map_image(const struct ssol_image* img, uint8_t* dst)
 {
   struct ssol_image_layout layout;
   size_t irow = 0;
-  void* mem;
+  char* mem;
   ASSERT(img && dst);
 
   SSOL(image_get_layout(img, &layout));
@@ -52,7 +57,7 @@ tone_map_image(const struct ssol_image* img, unsigned char* dst)
   SSOL(image_map(img, &mem));
   FOR_EACH(irow, 0, layout.height) {
     const void* src_row = ((char*)mem) + layout.offset + irow * layout.row_pitch;
-    unsigned char* dst_row = dst + irow * layout.width;
+    uint8_t* dst_row = dst + irow * layout.width * 3/*#channels*/;
     tone_map(src_row, dst_row, layout.width);
   }
 }
@@ -64,13 +69,17 @@ res_T
 solstice_draw(struct solstice* solstice)
 {
   struct ssol_image_layout layout;
-  unsigned char* ubytes = NULL;
+  struct image img;
+  size_t pitch;
   res_T res = RES_OK;
   ASSERT(solstice);
 
   SSOL(image_get_layout(solstice->framebuffer, &layout));
-  ubytes = MEM_ALLOC(solstice->allocator, layout.width*layout.height);
-  if(!ubytes) {
+
+  pitch = layout.width * sizeof_image_format(IMAGE_RGB8);
+  image_init(solstice->allocator, &img);
+  res = image_setup(&img, layout.width, layout.height, pitch, IMAGE_RGB8, NULL);
+  if(res != RES_OK) {
     fprintf(stderr, "Could not allocate the 8-bits image buffer.\n");
     res = RES_MEM_ERR;
     goto error;
@@ -92,9 +101,9 @@ solstice_draw(struct solstice* solstice)
     goto error;
   }
 
-  tone_map_image(solstice->framebuffer, ubytes);
-  res = image_ppm_write_stream(solstice->output, (int)layout.width,
-    (int)layout.height, 1, ubytes);
+  tone_map_image(solstice->framebuffer, (uint8_t*)img.pixels);
+
+  res = image_write_ppm_stream(&img, 0, solstice->output);
   if(res != RES_OK) {
     fprintf(stderr,
       "Could not write the rendered image to the output stream.\n");
@@ -102,7 +111,7 @@ solstice_draw(struct solstice* solstice)
   }
 
 exit:
-  if(ubytes) MEM_RM(solstice->allocator, ubytes);
+  image_release(&img);
   return res;
 error:
   goto exit;

@@ -18,9 +18,12 @@
 
 #include "solparser.h"
 #include "solparser_entity.h"
+#include "solparser_image.h"
 #include "solparser_material.h"
+#include "solparser_medium.h"
 #include "solparser_pivot.h"
 #include "solparser_shape.h"
+#include "solparser_spectrum.h"
 #include "solparser_sun.h"
 
 #include <rsys/dynamic_array.h>
@@ -48,21 +51,25 @@ struct target_alias {
 /* Declare the array of dielectric materials */
 #define DARRAY_NAME dielectric
 #define DARRAY_DATA struct solparser_material_dielectric
+#define DARRAY_FUNCTOR_INIT solparser_material_dielectric_init
 #include <rsys/dynamic_array.h>
 
 /* Declare the array of matte materials */
 #define DARRAY_NAME matte
 #define DARRAY_DATA struct solparser_material_matte
+#define DARRAY_FUNCTOR_INIT solparser_material_matte_init
 #include <rsys/dynamic_array.h>
 
 /* Declare the array of mirror materials */
 #define DARRAY_NAME mirror
 #define DARRAY_DATA struct solparser_material_mirror
+#define DARRAY_FUNCTOR_INIT solparser_material_mirror_init
 #include <rsys/dynamic_array.h>
 
 /* Declare the array of thin_dielectric materials */
 #define DARRAY_NAME thin_dielectric
 #define DARRAY_DATA struct solparser_material_thin_dielectric
+#define DARRAY_FUNCTOR_INIT solparser_material_thin_dielectric_init
 #include <rsys/dynamic_array.h>
 
 /* Declare the array of materials  */
@@ -88,6 +95,15 @@ struct target_alias {
 /* Declare the array of cylinder */
 #define DARRAY_NAME cylinder
 #define DARRAY_DATA struct solparser_shape_cylinder
+#include <rsys/dynamic_array.h>
+
+/* Declare the array of images */
+#define DARRAY_NAME image
+#define DARRAY_DATA struct solparser_image
+#define DARRAY_FUNCTOR_INIT solparser_image_init
+#define DARRAY_FUNCTOR_RELEASE solparser_image_release
+#define DARRAY_FUNCTOR_COPY solparser_image_copy
+#define DARRAY_FUNCTOR_COPY_AND_RELEASE solparser_image_copy_and_release
 #include <rsys/dynamic_array.h>
 
 /* Declare the array of imported geometries */
@@ -188,6 +204,15 @@ struct target_alias {
 #define DARRAY_FUNCTOR_INIT solparser_zx_pivot_init
 #include <rsys/dynamic_array.h>
 
+/* Declare the array of spectra */
+#define DARRAY_NAME spectrum
+#define DARRAY_DATA struct solparser_spectrum
+#define DARRAY_FUNCTOR_INIT solparser_spectrum_init
+#define DARRAY_FUNCTOR_RELEASE solparser_spectrum_release
+#define DARRAY_FUNCTOR_COPY solparser_spectrum_copy
+#define DARRAY_FUNCTOR_COPY_AND_RELEASE solparser_spectrum_copy_and_release
+#include <rsys/dynamic_array.h>
+
 /* Declare the hash table that maps the address of a YAML node to the id of its
  * in memory representation. */
 #define HTABLE_NAME yaml2sols
@@ -200,15 +225,19 @@ struct solparser {
   struct str stream_name;
   int parser_is_init;
 
-  /* Materia data */
+  /* Material */
   struct htable_yaml2sols yaml2mtls; /* Cache of materials */
+  struct darray_image images;
   struct darray_material mtls;
   struct darray_material2 mtls2; /* Double sided materials */
-  struct darray_medium mediums;
   struct darray_dielectric dielectrics;
   struct darray_matte mattes;
   struct darray_mirror mirrors;
   struct darray_thin_dielectric thin_dielectrics;
+
+  /* Medium */
+  struct htable_yaml2sols yaml2mediums; /* Cache of mediums */
+  struct darray_medium mediums;
 
   /* Use to deferred the setup of the anchor targeted by a pivot */
   struct darray_tgtalias tgtaliases;
@@ -243,6 +272,7 @@ struct solparser {
   struct darray_anchor anchors;
   struct darray_x_pivot x_pivots;
   struct darray_zx_pivot zx_pivots;
+  struct darray_spectrum spectra;
 
   ref_T ref;
   struct mem_allocator* allocator;
@@ -339,19 +369,19 @@ parse_transform
  * Main parsing functions
  ******************************************************************************/
 extern LOCAL_SYM res_T
-parse_material
-  (struct solparser* parser,
-   yaml_document_t* doc,
-   yaml_node_t* mtl,
-   struct solparser_material_double_sided_id* out_imtl2);
-
-extern LOCAL_SYM res_T
 parse_entity
   (struct solparser* parser,
    yaml_document_t* doc,
    yaml_node_t* entity,
    struct htable_str2sols* htable,
    struct solparser_entity_id* out_isolent);
+
+extern LOCAL_SYM res_T
+parse_image
+  (struct solparser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* image,
+   struct solparser_image_id* out_img);
 
 extern LOCAL_SYM res_T
 parse_focals_description
@@ -368,6 +398,34 @@ parse_geometry
    struct solparser_geometry_id* out_isolgeom);
 
 extern LOCAL_SYM res_T
+parse_material
+  (struct solparser* parser,
+   yaml_document_t* doc,
+   yaml_node_t* mtl,
+   struct solparser_material_double_sided_id* out_imtl2);
+
+extern LOCAL_SYM res_T
+parse_medium
+  (struct solparser* parser,
+   yaml_document_t* doc,
+   yaml_node_t* medium,
+   struct solparser_medium_id* out_imedium);
+
+extern LOCAL_SYM res_T
+parse_spectrum
+  (struct solparser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* spectrum,
+   struct solparser_spectrum_id* out_ispectrum);
+
+extern LOCAL_SYM res_T
+parse_sun
+  (struct solparser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* sun,
+   struct solparser_sun** out_solsun);
+
+extern LOCAL_SYM res_T
 parse_x_pivot
   (struct solparser* parser,
    yaml_document_t* doc,
@@ -380,19 +438,5 @@ parse_zx_pivot
    yaml_document_t* doc,
    const yaml_node_t* zx_pivot,
    struct solparser_pivot_id* out_isolpivot);
-
-extern LOCAL_SYM res_T
-parse_sun
-  (struct solparser* parser,
-   yaml_document_t* doc,
-   const yaml_node_t* sun,
-   struct solparser_sun** out_solsun);
-
-extern LOCAL_SYM res_T
-parse_spectrum
-  (struct solparser* parser,
-   yaml_document_t* doc,
-   const yaml_node_t* spectrum,
-   struct darray_spectrum_data* data);
 
 #endif /* SOLPARSER_C_H */

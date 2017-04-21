@@ -114,9 +114,10 @@ parse_item
    const yaml_node_t* item)
 {
   /* Temporary dummy variables */
-  struct solparser_material_double_sided_id mtl2;
   struct solparser_entity_id entity;
   struct solparser_geometry_id geometry;
+  struct solparser_material_double_sided_id mtl2;
+  struct solparser_medium_id medium;
   struct solparser_sun* sun;
 
   yaml_node_t* key;
@@ -147,21 +148,22 @@ parse_item
     goto error;
   }
 
+  /* The parsing of the templates/spectraa is deferred to their explicit use */
   if(!strcmp((char*)key->data.scalar.value, "material")) {
     res = parse_material(parser, doc, val, &mtl2);
+  } else if(!strcmp((char*)key->data.scalar.value, "medium")) {
+    res = parse_medium(parser, doc, val, &medium);
   } else if(!strcmp((char*)key->data.scalar.value, "entity")) {
     res = parse_entity(parser, doc, val, &parser->str2entities, &entity);
     if(res == RES_OK) {
       res = flush_deferred_target_aliases(parser, item, entity);
     }
-  } else if(!strcmp((char*)key->data.scalar.value, "template")) {
-    /* The parsing of the template data is deferred to its explicit used in the
-     * definition of an entity. If the parsing of the template becomes a
-     * bottleneck, parse the data only once here and cache them for reuse. */
+  } else if(!strcmp((char*)key->data.scalar.value, "template")) { /* Deferred */
   } else if(!strcmp((char*)key->data.scalar.value, "geometry")) {
     res = parse_geometry(parser, doc, val, &geometry);
   } else if(!strcmp((char*)key->data.scalar.value, "sun")) {
     res = parse_sun(parser, doc, val, &sun);
+  } else if(!strcmp((char*)key->data.scalar.value, "spectrum")) { /* Deferred */
   } else {
     log_err(parser, key, "unknown item `%s'.\n", key->data.scalar.value);
     res = RES_BAD_ARG;
@@ -186,13 +188,17 @@ parser_clear(struct solparser* parser)
 
   /* Materials */
   htable_yaml2sols_clear(&parser->yaml2mtls);
+  darray_image_clear(&parser->images);
   darray_material_clear(&parser->mtls);
   darray_material2_clear(&parser->mtls2);
-  darray_medium_clear(&parser->mediums);
   darray_dielectric_clear(&parser->dielectrics);
   darray_matte_clear(&parser->mattes);
   darray_mirror_clear(&parser->mirrors);
   darray_thin_dielectric_clear(&parser->thin_dielectrics);
+
+  /* Mediums */
+  htable_yaml2sols_clear(&parser->yaml2mediums);
+  darray_medium_clear(&parser->mediums);
 
   /* Deferred targeted anchors */
   darray_tgtalias_clear(&parser->tgtaliases);
@@ -227,6 +233,7 @@ parser_clear(struct solparser* parser)
   darray_anchor_clear(&parser->anchors);
   darray_x_pivot_clear(&parser->x_pivots);
   darray_zx_pivot_clear(&parser->zx_pivots);
+  darray_spectrum_clear(&parser->spectra);
 }
 
 static void
@@ -241,13 +248,17 @@ parser_release(ref_T* ref)
 
   /* Materials */
   htable_yaml2sols_release(&parser->yaml2mtls);
+  darray_image_release(&parser->images);
   darray_material_release(&parser->mtls);
   darray_material2_release(&parser->mtls2);
-  darray_medium_release(&parser->mediums);
   darray_dielectric_release(&parser->dielectrics);
   darray_matte_release(&parser->mattes);
   darray_mirror_release(&parser->mirrors);
   darray_thin_dielectric_release(&parser->thin_dielectrics);
+
+  /* Mediums */
+  htable_yaml2sols_release(&parser->yaml2mediums);
+  darray_medium_release(&parser->mediums);
 
   /* Deferred targeted anchors */
   darray_tgtalias_release(&parser->tgtaliases);
@@ -281,6 +292,7 @@ parser_release(ref_T* ref)
   darray_anchor_release(&parser->anchors);
   darray_x_pivot_release(&parser->x_pivots);
   darray_zx_pivot_release(&parser->zx_pivots);
+  darray_spectrum_release(&parser->spectra);
 
   MEM_RM(parser->allocator, parser);
 }
@@ -570,13 +582,17 @@ solparser_create
 
   /* Materials */
   htable_yaml2sols_init(mem_allocator, &parser->yaml2mtls);
+  darray_image_init(mem_allocator, &parser->images);
   darray_material_init(mem_allocator, &parser->mtls);
   darray_material2_init(mem_allocator, &parser->mtls2);
-  darray_medium_init(mem_allocator, &parser->mediums);
   darray_dielectric_init(mem_allocator, &parser->dielectrics);
   darray_matte_init(mem_allocator, &parser->mattes);
   darray_mirror_init(mem_allocator, &parser->mirrors);
   darray_thin_dielectric_init(mem_allocator, &parser->thin_dielectrics);
+
+  /* Mediums */
+  htable_yaml2sols_init(mem_allocator, &parser->yaml2mediums);
+  darray_medium_init(mem_allocator, &parser->mediums);
 
   /* Deferred targeted anchors */
   darray_tgtalias_init(mem_allocator, &parser->tgtaliases);
@@ -606,10 +622,11 @@ solparser_create
   htable_str2sols_init(mem_allocator, &parser->str2entities);
   darray_entity_init(mem_allocator, &parser->entities);
 
-  /* Anchors and pivot(2)s */
+  /* Miscellaneous */
   darray_anchor_init(mem_allocator, &parser->anchors);
   darray_x_pivot_init(mem_allocator, &parser->x_pivots);
   darray_zx_pivot_init(mem_allocator, &parser->zx_pivots);
+  darray_spectrum_init(mem_allocator, &parser->spectra);
 
 exit:
   *out_parser = parser;
@@ -885,6 +902,15 @@ solparser_get_entity
   return darray_entity_cdata_get(&parser->entities) + entity.i;
 }
 
+const struct solparser_image*
+solparser_get_image
+  (const struct solparser* parser,
+   const struct solparser_image_id image)
+{
+  ASSERT(parser && image.i < darray_image_size_get(&parser->images));
+  return darray_image_cdata_get(&parser->images) + image.i;
+}
+
 const struct solparser_geometry*
 solparser_get_geometry
   (const struct solparser* parser,
@@ -1084,6 +1110,15 @@ solparser_get_shape_stl
 {
   ASSERT(parser && impgeom.i < darray_impgeom_size_get(&parser->stls));
   return darray_impgeom_cdata_get(&parser->stls) + impgeom.i;
+}
+
+const struct solparser_spectrum*
+solparser_get_spectrum
+  (const struct solparser* parser,
+   const struct solparser_spectrum_id spectrum)
+{
+  ASSERT(parser && spectrum.i < darray_spectrum_size_get(&parser->spectra));
+  return darray_spectrum_cdata_get(&parser->spectra) + spectrum.i;
 }
 
 const struct solparser_sun*
