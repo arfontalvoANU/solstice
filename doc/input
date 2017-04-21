@@ -144,8 +144,8 @@
   cylinder:
     height: REAL # in ]0, INF)
     radius: REAL # in ]0, INF)
-[   slices: INTEGER ] # in [4, 4096]. Default 16
-[   stacks: INTEGER ] # in [1, 4096]. Default 1
+[   slices: INTEGER # in [4, 4096]. Default 32 ]
+[   stacks: INTEGER # in [1, 4096]. Default 1 ]
 
 <obj> ::=
   obj:
@@ -158,7 +158,7 @@
     clip: <polyclip-list>
     # By default slices is automatically computed with respect to the parabol
     # curvature
-[   slices: INTEGER ] # in [4, 4096)
+[   slices: INTEGER # in [4, 4096) ]
 
 <parabolic-cylinder> ::=
   parabolic-cylinder: # y^2 - 4*focal*z = 0
@@ -166,7 +166,7 @@
     clip: <polyclip-list>
     # By default slices is automatically computed with respect to the hyperbol
     # curvature
-[   slices: INTEGER ] # in [4, 4096)
+[   slices: INTEGER # in [4, 4096) ] 
 
 # (x^2 + y^2) / a^2 - (z + z0 - g/2)^2 / b^2 + 1 = 0
 #      with g = img_focal + real_focal; f = real_focal / g;
@@ -177,7 +177,7 @@
     clip: <polyclip-list>
     # By default slices is automatically compute with respect to the hyperbol
     # curvature
-[   slices: INTEGER ] # in [4, 4096)
+[   slices: INTEGER # in [4, 4096) ]
 
 <hyperboloid_focals> ::=
   real: REAL # in ]0, INF)
@@ -190,7 +190,7 @@
 [   clip: <polyclip-list> ]
     # By default slices is automatically compute with respect to the hemisphere
     # extension
-[   slices: INTEGER ] # in [4, 4096)
+[   slices: INTEGER # in [4, 4096) ]
 
 <plane> ::=
   plane:
@@ -200,8 +200,8 @@
 <sphere> ::=
   sphere:
     radius: REAL # in ]0, INF)
-[   slices: INTEGER ] # in [4, 4096]. Default 16
-[   stacks: INTEGER ] # in [2, 4096]. Default slices/2
+[   slices: INTEGER # in [4, 4096). Default 32 ]
+[   stacks: INTEGER # in [2, 4096]. Default slices/2 ]
 
 <stl> ::=
   stl:
