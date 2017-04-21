@@ -146,7 +146,7 @@
   cylinder:
     height: REAL # in ]0, INF)
     radius: REAL # in ]0, INF)
-[   slices: INTEGER # in [4, 4096]. Default 32 ]
+[   slices: INTEGER # in [4, 4096]. Default 16 ]
 [   stacks: INTEGER # in [1, 4096]. Default 1 ]
 
 <obj> ::=
@@ -197,12 +197,12 @@
 <plane> ::=
   plane:
     clip: <polyclip-list>
-[   slices: INTEGER ] # in [1, 4096). Default 1
+[   slices: INTEGER  # in [1, 4096). Default 1 ]
 
 <sphere> ::=
   sphere:
     radius: REAL # in ]0, INF)
-[   slices: INTEGER # in [4, 4096). Default 32 ]
+[   slices: INTEGER # in [4, 4096). Default 16 ]
 [   stacks: INTEGER # in [2, 4096]. Default slices/2 ]
 
 <stl> ::=
@@ -216,7 +216,19 @@
 
 <polyclip> ::=
   operation: <AND|SUB>
+  <contour-descriptor>
+  
+<contour-descriptor> ::=
+    <vertices-descriptor>
+  | <circle-descriptor>
+  
+<vertices-descriptor> ::=
   vertices: <vertices-list>
+
+<circle-descriptor> ::=
+  circle: 
+    radius: REAL # in ]0, INF)
+[   segments: INTEGER # in [3, 4096). Default 16 ]
 
 <vertices-list> ::=
   - <real2>

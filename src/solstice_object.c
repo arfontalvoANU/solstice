@@ -108,6 +108,16 @@ solparser_clip_op_to_ssol_clipping_op(const enum solparser_clip_op op)
   }
 }
 
+static void
+get_circular(const size_t ivert, double position[2], void* ctx)
+{
+  struct solparser_circleclip* data = (struct solparser_circleclip*)ctx;
+  const double a = (double)ivert * 2 * PI / (double)data->segments;
+  ASSERT(ivert < data->segments);
+  position[0] = data->radius * cos(a);
+  position[1] = data->radius * sin(a);
+}
+
 static res_T
 create_ssol_shape_mesh
   (struct solstice* solstice,
@@ -353,10 +363,21 @@ create_ssol_shape_punched_surface
     const struct solparser_polyclip* clip;
     clip = darray_polyclip_cdata_get(clips) + iclip;
 
-    carvings[iclip].get = get_carving_pos;
-    carvings[iclip].nb_vertices = solparser_polyclip_get_vertices_count(clip);
-    carvings[iclip].operation = solparser_clip_op_to_ssol_clipping_op(clip->op);
-    carvings[iclip].context = (void*)clip;
+    switch(clip->contour_type) {
+      case SOLPARSER_CLIP_CONTOUR_POLY:
+        carvings[iclip].get = get_carving_pos;
+        carvings[iclip].nb_vertices = solparser_polyclip_get_vertices_count(clip);
+        carvings[iclip].operation = solparser_clip_op_to_ssol_clipping_op(clip->op);
+        carvings[iclip].context = (void*)clip;
+        break;
+      case SOLPARSER_CLIP_CONTOUR_CIRCLE:
+        carvings[iclip].get = get_circular;
+        carvings[iclip].nb_vertices = clip->circle.segments;
+        carvings[iclip].operation = solparser_clip_op_to_ssol_clipping_op(clip->op);
+        carvings[iclip].context = (void*)&clip->circle;
+        break;
+      default: FATAL("Unreachable code.\n");
+    }
   }
 
   punched_surf.quadric = quadric;
