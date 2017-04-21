@@ -191,6 +191,7 @@ parse_x_pivot
   solxpivot = darray_x_pivot_data_get(&parser->x_pivots) + isolpivot;
 
   n = x_pivot->data.mapping.pairs.top - x_pivot->data.mapping.pairs.start;
+  d3_splat(solxpivot->ref_point, 0); /* default value */
   FOR_EACH(i, 0, n) {
     yaml_node_t* key;
     yaml_node_t* val;
@@ -240,15 +241,6 @@ parse_x_pivot
   CHECK_PARAM(TARGET, "target");
   #undef CHECK_PARAM
 
-  #define DEFAULT_PARAM(Flag, Ptr, Value)                                      \
-    if(!(mask & BIT(Flag))) {                                                  \
-      *(Ptr) = Value;                                                          \
-    } (void)0
-  DEFAULT_PARAM(REF_POINT, solxpivot->ref_point, 0);
-  DEFAULT_PARAM(REF_POINT, solxpivot->ref_point+1, 0);
-  DEFAULT_PARAM(REF_POINT, solxpivot->ref_point+2, 0);
-  #undef DEFAULT_PARAM
-
 exit:
   out_isolpivot->i = isolpivot;
   return res;
@@ -292,6 +284,8 @@ parse_zx_pivot
   solxzpivot = darray_zx_pivot_data_get(&parser->zx_pivots) + isolpivot;
 
   n = zx_pivot->data.mapping.pairs.top - zx_pivot->data.mapping.pairs.start;
+  solxzpivot->spacing = 0; /* default value */
+  d3_splat(solxzpivot->ref_point, 0); /* default value */
   FOR_EACH(i, 0, n) {
     yaml_node_t* key;
     yaml_node_t* val;
@@ -347,16 +341,6 @@ parse_zx_pivot
     } (void)0
   CHECK_PARAM(TARGET, "target");
   #undef CHECK_PARAM
-
-  #define DEFAULT_PARAM(Flag, Ptr, Value)                                      \
-    if(!(mask & BIT(Flag))) {                                                  \
-      *(Ptr) = Value;                                                          \
-    } (void)0
-  DEFAULT_PARAM(SPACING, &solxzpivot->spacing, 0);
-  DEFAULT_PARAM(REF_POINT, solxzpivot->ref_point, 0);
-  DEFAULT_PARAM(REF_POINT, solxzpivot->ref_point+1, 0);
-  DEFAULT_PARAM(REF_POINT, solxzpivot->ref_point+2, 0);
-  #undef DEFAULT_PARAM
 
 exit:
   out_isolpivot->i = isolpivot;

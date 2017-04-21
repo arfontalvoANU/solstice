@@ -33,14 +33,6 @@ write_mc_global(struct solstice* solstice, struct ssol_estimator* estimator)
   double area, potential, irradiance_factor;
   ASSERT(solstice && estimator);
 
-  #define MC_RCV_NONE {                                                        \
-    { -1, -1, -1 }, /* Integrated irradiance  */                               \
-    { -1, -1, -1 }, /* Absorptivity loss */                                    \
-    { -1, -1, -1 }, /* Reflectivity loss */                                    \
-    { -1, -1, -1 }, /* Cos loss */                                             \
-    0, NULL, NULL                                                              \
-  }
-
   /* get global information */
   SSOL(estimator_get_mc_global(estimator, &mc_global));
   SSOL(estimator_get_realisation_count(estimator, &nexperiments));
@@ -78,8 +70,8 @@ write_mc_global(struct solstice* solstice, struct ssol_estimator* estimator)
     const struct str* name = htable_receiver_iterator_key_get(&r_it);
     struct solstice_receiver* rcv = htable_receiver_iterator_data_get(&r_it);
     struct ssol_instance* inst = rcv->node->instance;
-    struct ssol_mc_receiver front = MC_RCV_NONE;
-    struct ssol_mc_receiver back = MC_RCV_NONE;
+    struct ssol_mc_receiver front = MC_RCV_NONE__;
+    struct ssol_mc_receiver back = MC_RCV_NONE__;
     double f_eff_E = -1, f_eff_SE = -1; /* Front efficiency */
     double b_eff_E = -1, b_eff_SE = -1; /* Back efficiency */
     uint32_t id;
@@ -161,8 +153,8 @@ write_mc_global(struct solstice* solstice, struct ssol_estimator* estimator)
     while (!htable_primary_iterator_eq(&p_it, &p_end)) {
       struct solstice_primary* prim = htable_primary_iterator_data_get(&p_it);
       struct ssol_instance* prim_inst = prim->node->instance;
-      struct ssol_mc_receiver front = MC_RCV_NONE;
-      struct ssol_mc_receiver back = MC_RCV_NONE;
+      struct ssol_mc_receiver front = MC_RCV_NONE__;
+      struct ssol_mc_receiver back = MC_RCV_NONE__;
 
       SSOL(instance_get_id(prim_inst, &prim_id));
       switch (rcv->side) {

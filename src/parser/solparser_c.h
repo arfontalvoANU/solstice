@@ -136,6 +136,16 @@ struct target_alias {
   solparser_shape_hyperboloid_copy_and_release
 #include <rsys/dynamic_array.h>
 
+/* Declare the array of hemispheres */
+#define DARRAY_NAME hemisphere
+#define DARRAY_DATA struct solparser_shape_hemisphere
+#define DARRAY_FUNCTOR_INIT solparser_shape_hemisphere_init
+#define DARRAY_FUNCTOR_RELEASE solparser_shape_hemisphere_release
+#define DARRAY_FUNCTOR_COPY solparser_shape_hemisphere_copy
+#define DARRAY_FUNCTOR_COPY_AND_RELEASE \
+  solparser_shape_hemisphere_copy_and_release
+#include <rsys/dynamic_array.h>
+
 /* Declare the array of planes */
 #define DARRAY_NAME plane
 #define DARRAY_DATA struct solparser_shape_plane
@@ -240,6 +250,7 @@ struct solparser {
   struct darray_paraboloid parabols;
   struct darray_paraboloid parabolic_cylinders;
   struct darray_hyperboloid hyperbols;
+  struct darray_hemisphere hemispheres;
   struct darray_plane planes;
   struct darray_sphere spheres;
   struct darray_impgeom stls;

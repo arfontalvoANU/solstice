@@ -35,6 +35,7 @@ main(int argc, char** argv)
   const struct solparser_shape_paraboloid* parabol;
   const struct solparser_shape_plane* plane;
   const struct solparser_shape_hyperboloid* hyperbol;
+  const struct solparser_shape_hemisphere* hemisphere;
   const struct solparser_polyclip* polyclip;
   double pos[2];
   FILE* stream;
@@ -72,6 +73,12 @@ main(int argc, char** argv)
   fprintf(stream, "        - operation : AND\n");
   fprintf(stream, "          vertices : [[1, 2], [3, 4], [6, 7]]\n");
   fprintf(stream, "      material: { ?virtual }\n");
+  fprintf(stream, "    - hemisphere:\n");
+  fprintf(stream, "        radius: 100\n");
+  fprintf(stream, "        clip :\n");
+  fprintf(stream, "          - operation : AND\n");
+  fprintf(stream, "            vertices : [[1, 2], [3, 4], [6, 7]]\n");
+  fprintf(stream, "      material: { ?virtual }\n");
   rewind(stream);
 
   CHECK(solparser_setup(parser, NULL, stream), RES_OK);
@@ -88,7 +95,7 @@ main(int argc, char** argv)
   CHECK(solparser_entity_get_children_count(entity), 0);
   CHECK(entity->type, SOLPARSER_ENTITY_GEOMETRY);
   geom = solparser_get_geometry(parser, entity->data.geometry);
-  CHECK(solparser_geometry_get_objects_count(geom), 4);
+  CHECK(solparser_geometry_get_objects_count(geom), 5);
 
   obj_id = solparser_geometry_get_object(geom, 0);
   obj = solparser_get_object(parser, obj_id);
@@ -139,6 +146,14 @@ main(int argc, char** argv)
   CHECK(shape->type, SOLPARSER_SHAPE_PLANE);
   plane = solparser_get_shape_plane(parser, shape->data.plane);
   CHECK(plane->nslices, 1); /* Default value */
+
+  obj_id = solparser_geometry_get_object(geom, 4);
+  obj = solparser_get_object(parser, obj_id);
+  shape = solparser_get_shape(parser, obj->shape);
+  CHECK(shape->type, SOLPARSER_SHAPE_HEMISPHERE);
+  hemisphere = solparser_get_shape_hemisphere(parser, shape->data.hemisphere);;
+  CHECK(hemisphere->radius, 100);
+  CHECK(hemisphere->nslices, -1); /* Default value: auto */
 
   solparser_entity_iterator_next(&it);
   CHECK(solparser_entity_iterator_eq(&it, &end), 1);

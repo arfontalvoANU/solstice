@@ -31,7 +31,7 @@ find_package(RCMake 0.2.3 REQUIRED)
 find_package(RSys 0.4 REQUIRED)
 find_package(SolAnim 0.1 REQUIRED)
 find_package(SolSolver 0.1.1 REQUIRED)
-find_package(Star3DUT REQUIRED)
+find_package(Star3DUT 0.2 REQUIRED)
 find_package(StarSP 0.4 REQUIRED)
 find_package(StarSTL 0.3 REQUIRED)
 
@@ -156,6 +156,7 @@ if(NOT NO_TEST)
   add_test_simulation(test04)
   add_test_simulation(test05)
   add_test_simulation(test06)
+  add_test_simulation(test07)
 
 endif()
 

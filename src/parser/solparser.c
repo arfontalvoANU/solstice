@@ -211,6 +211,7 @@ parser_clear(struct solparser* parser)
   darray_paraboloid_clear(&parser->parabols);
   darray_paraboloid_clear(&parser->parabolic_cylinders);
   darray_hyperboloid_clear(&parser->hyperbols);
+  darray_hemisphere_clear(&parser->hemispheres);
   darray_plane_clear(&parser->planes);
   darray_sphere_clear(&parser->spheres);
   darray_impgeom_clear(&parser->stls);
@@ -270,6 +271,7 @@ parser_release(ref_T* ref)
   darray_paraboloid_release(&parser->parabols);
   darray_paraboloid_release(&parser->parabolic_cylinders);
   darray_hyperboloid_release(&parser->hyperbols);
+  darray_hemisphere_release(&parser->hemispheres);
   darray_plane_release(&parser->planes);
   darray_sphere_release(&parser->spheres);
   darray_impgeom_release(&parser->stls);
@@ -603,6 +605,7 @@ solparser_create
   darray_paraboloid_init(mem_allocator, &parser->parabols);
   darray_paraboloid_init(mem_allocator, &parser->parabolic_cylinders);
   darray_hyperboloid_init(mem_allocator, &parser->hyperbols);
+  darray_hemisphere_init(mem_allocator, &parser->hemispheres);
   darray_plane_init(mem_allocator, &parser->planes);
   darray_sphere_init(mem_allocator, &parser->spheres);
   darray_impgeom_init(mem_allocator, &parser->stls);
@@ -1071,6 +1074,15 @@ solparser_get_shape_hyperbol
 {
   ASSERT(parser && hyperboloid.i < darray_hyperboloid_size_get(&parser->hyperbols));
   return darray_hyperboloid_cdata_get(&parser->hyperbols) + hyperboloid.i;
+}
+
+const struct solparser_shape_hemisphere*
+solparser_get_shape_hemisphere
+  (const struct solparser* parser,
+   const struct solparser_shape_hemisphere_id hemisphere)
+{
+  ASSERT(parser && hemisphere.i < darray_hemisphere_size_get(&parser->hemispheres));
+  return darray_hemisphere_cdata_get(&parser->hemispheres) + hemisphere.i;
 }
 
 const struct solparser_shape_plane*
