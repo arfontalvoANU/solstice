@@ -190,6 +190,7 @@ error:
   goto exit;
 }
 
+
 static res_T
 create_cylinder
   (struct solstice* solstice,
@@ -198,36 +199,25 @@ create_cylinder
    struct ssol_shape** out_ssol_shape)
 {
   const struct solparser_shape_cylinder* cylinder;
+  struct s3dut_mesh* mesh = NULL;
   struct ssol_shape* ssol_shape = NULL;
-  struct ssol_analytic_surface analytic = SSOL_ANALYTIC_SURFACE_NULL__;
   res_T res = RES_OK;
   ASSERT(solstice && out_ssol_shape);
 
   cylinder = solparser_get_shape_cylinder(solstice->parser, cylinder_id);
-
-  analytic.type = SSOL_ANALYTIC_CYLINDER;
-  analytic.data.cylinder.radius = cylinder->radius;
-  analytic.data.cylinder.height = cylinder->height;
-  d33_set(analytic.transform, transform);
-  d3_set(analytic.transform + 9, transform + 9);
   ASSERT(cylinder->nslices > 0 && cylinder->nslices < UINT_MAX);
-  ASSERT(cylinder->nstacks > 0 && cylinder->nstacks < UINT_MAX);
-  analytic.data.cylinder.nslices = (unsigned)cylinder->nslices;
-  analytic.data.cylinder.nstacks = (unsigned)cylinder->nstacks;
-
-  res = ssol_shape_create_analytic_surface(solstice->ssol, &ssol_shape);
-  if (res != RES_OK) {
-    fprintf(stderr, "Could not create a Solstice Solver analytic surface.\n");
-    goto error;
-  }
-
-  res = ssol_analytic_surface_setup(ssol_shape, &analytic);
+  res = s3dut_create_cylinder(solstice->allocator, cylinder->radius,
+    cylinder->height, (unsigned)cylinder->nslices, 1, &mesh);
   if(res != RES_OK) {
-    fprintf(stderr, "Could not setup the Solstice Solver analytic surface.\n");
+    fprintf(stderr, "Could not create the cylinder 3D data.\n");
     goto error;
   }
+
+  res = create_ssol_shape_mesh(solstice, transform, mesh, &ssol_shape);
+  if(res != RES_OK) goto error;
 
 exit:
+  if(mesh) S3DUT(mesh_ref_put(mesh));
   *out_ssol_shape = ssol_shape;
   return res;
 error:
@@ -246,34 +236,25 @@ create_sphere
    struct ssol_shape** out_ssol_shape)
 {
   const struct solparser_shape_sphere* sphere;
+  struct s3dut_mesh* mesh = NULL;
   struct ssol_shape* ssol_shape = NULL;
-  struct ssol_analytic_surface analytic = SSOL_ANALYTIC_SURFACE_NULL__;
   res_T res = RES_OK;
   ASSERT(solstice && out_ssol_shape);
 
   sphere = solparser_get_shape_sphere(solstice->parser, sphere_id);
-
-  analytic.type = SSOL_ANALYTIC_SPHERE;
-  analytic.data.cylinder.radius = sphere->radius;
-  d33_set(analytic.transform, transform);
-  d3_set(analytic.transform + 9, transform + 9);
   ASSERT(sphere->nslices > 0 && sphere->nslices < UINT_MAX);
-  ASSERT(sphere->nstacks > 0 && sphere->nstacks < UINT_MAX);
-  analytic.data.sphere.nslices = (unsigned)sphere->nslices;
-  analytic.data.sphere.nstacks = (unsigned)sphere->nstacks;
-
-  res = ssol_shape_create_analytic_surface(solstice->ssol, &ssol_shape);
+  res = s3dut_create_sphere(solstice->allocator, sphere->radius,
+    (unsigned)sphere->nslices, (unsigned)(sphere->nslices / 2), &mesh);
   if(res != RES_OK) {
-    fprintf(stderr, "Could not create a Solstice Solver analytic surface.\n");
+    fprintf(stderr, "Could not create the sphere 3D data.\n");
     goto error;
   }
 
-  res = ssol_analytic_surface_setup(ssol_shape, &analytic);
-  if(res != RES_OK) {
-    fprintf(stderr, "Could not setup the Solstice Solver analytic surface.\n");
-    goto error;
-  }
+  res = create_ssol_shape_mesh(solstice, transform, mesh, &ssol_shape);
+  if(res != RES_OK) goto error;
+
 exit:
+  if(mesh) S3DUT(mesh_ref_put(mesh));
   *out_ssol_shape = ssol_shape;
   return res;
 error:
