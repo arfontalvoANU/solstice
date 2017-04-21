@@ -118,7 +118,7 @@ parse_spectrum
    const yaml_node_t* spectrum,
    struct solparser_spectrum_id* out_ispectrum)
 {
-  struct solparser_spectrum* spec;
+  struct solparser_spectrum* spec = NULL;
   size_t ispec = SIZE_MAX;
   intptr_t i, n;
   res_T res = RES_OK;
