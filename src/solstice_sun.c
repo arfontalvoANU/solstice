@@ -14,6 +14,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>. */
 
 #include "solstice_c.h"
+#include "solstice_sun_spectrum.h"
 #include "parser/solparser.h"
 #include "parser/solparser_sun.h"
 
@@ -131,6 +132,15 @@ get_wavelength(const size_t i, double* wlen, double* data, void* ctx)
   *data = specdata[i].data;
 }
 
+static void
+get_wavelength_builtin(const size_t i, double* wlen, double* data, void* ctx)
+{
+  const double* spectrum = ctx;
+  ASSERT(wlen && data && ctx);
+  *wlen = spectrum[i*2+0];
+  *data = spectrum[i*2+1];
+}
+
 static res_T
 create_sun_spectrum
   (struct solstice* solstice,
@@ -156,6 +166,53 @@ create_sun_spectrum
   res = ssol_spectrum_setup(spectrum, get_wavelength, nwlens, (void*)data);
   if(res != RES_OK) {
     fprintf(stderr, "Could not setup the spectrum of the solver sun.\n");
+    goto error;
+  }
+
+exit:
+  *out_spectrum = spectrum;
+  return res;
+error:
+  if(spectrum) {
+    SSOL(spectrum_ref_put(spectrum));
+    spectrum = NULL;
+  }
+  goto exit;
+}
+
+static res_T
+create_default_sun_spectrum
+  (struct solstice* solstice,
+   const struct solparser_sun* solparser_sun,
+   struct ssol_spectrum** out_spectrum)
+{
+  struct ssol_spectrum* spectrum = NULL;
+  const double* data;
+  size_t size;
+  res_T res = RES_OK;
+
+  /* The solparser_sun may be used if the defautl spectrum is defined wrt the
+   * sun type */
+  (void)solparser_sun; 
+
+  res = ssol_spectrum_create(solstice->ssol, &spectrum);
+  if(res != RES_OK) {
+    fprintf(stderr, "Could not create the spectrum of the solver sun.\n");
+    goto error;
+  }
+
+  if(solparser_has_spectrum(solstice->parser)) {
+    data = solstice_sun_spectrum_smarts295;
+    size = solstice_sun_spectrum_smarts295_size;
+  } else {
+    data = solstice_sun_spectrum_dummy;
+    size = solstice_sun_spectrum_dummy_size;
+  }
+
+  res = ssol_spectrum_setup
+    (spectrum, get_wavelength_builtin, size, (void*)data);
+  if(res != RES_OK) {
+    fprintf(stderr, "Coul not setup the default spectrum of the solver sun.\n");
     goto error;
   }
 
@@ -197,15 +254,18 @@ solstice_create_sun(struct solstice* solstice)
   }
   if(res != RES_OK) goto error;
 
-  if(SOLPARSER_ID_IS_VALID(solparser_sun->spectrum)) {
+  if(!SOLPARSER_ID_IS_VALID(solparser_sun->spectrum)) {
+    res = create_default_sun_spectrum(solstice, solparser_sun, &spectrum);
+    if(res != RES_OK) goto error;
+  } else {
     res = create_sun_spectrum(solstice, solparser_sun, &spectrum);
-    if (res != RES_OK) goto error;
+    if(res != RES_OK) goto error;
+  }
 
-    res = ssol_sun_set_spectrum(sun, spectrum);
-    if(res != RES_OK) {
-      fprintf(stderr, "Could not attach the spectrum to the sun.\n");
-      goto error;
-    }
+  res = ssol_sun_set_spectrum(sun, spectrum);
+  if(res != RES_OK) {
+    fprintf(stderr, "Could not attach the spectrum to the sun.\n");
+    goto error;
   }
 
   res = ssol_sun_set_dni(sun, solparser_sun->dni);

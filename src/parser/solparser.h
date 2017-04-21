@@ -210,6 +210,10 @@ solparser_get_spectrum
   (const struct solparser* parser,
    const struct solparser_spectrum_id spectrum);
 
+extern LOCAL_SYM int
+solparser_has_spectrum
+  (const struct solparser* parser);
+
 /*******************************************************************************
  * Entity interator
  ******************************************************************************/

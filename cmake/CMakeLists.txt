@@ -93,11 +93,13 @@ set(SOLSTICE_FILES_SRC
   solstice_node.c
   solstice_object.c
   solstice_solve.c
-  solstice_sun.c)
+  solstice_sun.c
+  solstice_sun_spectrum.c)
 set(SOLSTICE_FILES_INC
   solstice.h
   solstice_args.h.in
-  solstice_c.h)
+  solstice_c.h
+  solstice_sun_spectrum.h)
 set(SOLSTICE_FILES_DOC COPYING README.md)
 
 # Prepend each file in the `SOLSTICE_FILES_<SRC|INC>' list by `SOLSTICE_SOURCE_DIR'
@@ -143,7 +145,7 @@ if(NOT NO_TEST)
   build_test(test_solstice_simulation)
   function(add_test_simulation _name)
     add_test(NAME test_solstice_simulation_${_name}
-      COMMAND test_solstice_simulation 
+      COMMAND test_solstice_simulation
         $<TARGET_FILE:solstice>
         ${SOLSTICE_SOURCE_DIR}/../yaml/
         ${_name})

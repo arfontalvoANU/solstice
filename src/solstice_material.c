@@ -326,10 +326,10 @@ create_material_dielectric
     SSOL(material_set_param_buffer(mtl, pbuf));
   }
 
-  ssol_medium_i.refractive_index = medium_i->refractive_index;
-  ssol_medium_i.absorptivity = medium_i->absorptivity;
-  ssol_medium_t.refractive_index = medium_t->refractive_index;
-  ssol_medium_t.absorptivity = medium_t->absorptivity;
+  ssol_data_set_real(&ssol_medium_i.refractive_index, medium_i->refractive_index);
+  ssol_data_set_real(&ssol_medium_t.refractive_index, medium_t->refractive_index);
+  ssol_data_set_real(&ssol_medium_i.absorptivity, medium_i->absorptivity);
+  ssol_data_set_real(&ssol_medium_t.absorptivity, medium_t->absorptivity);
   SSOL(dielectric_setup(mtl, &shader, &ssol_medium_i, &ssol_medium_t));
 
 exit:
@@ -526,10 +526,10 @@ create_material_thin_dielectric
     SSOL(material_set_param_buffer(mtl, pbuf));
   }
 
-  ssol_medium_i.refractive_index = medium_i->refractive_index;
-  ssol_medium_t.refractive_index = medium_t->refractive_index;
-  ssol_medium_i.absorptivity = medium_i->absorptivity;
-  ssol_medium_t.absorptivity = medium_t->absorptivity;
+  ssol_data_set_real(&ssol_medium_i.refractive_index, medium_i->refractive_index);
+  ssol_data_set_real(&ssol_medium_t.refractive_index, medium_t->refractive_index);
+  ssol_data_set_real(&ssol_medium_i.absorptivity, medium_i->absorptivity);
+  ssol_data_set_real(&ssol_medium_t.absorptivity, medium_t->absorptivity);
   SSOL(thin_dielectric_setup
     (mtl, &shader, &ssol_medium_i, &ssol_medium_t, thin->thickness));
 
