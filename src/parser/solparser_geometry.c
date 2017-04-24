@@ -120,7 +120,7 @@ parse_circle
   }
 
   n = circle->data.mapping.pairs.top - circle->data.mapping.pairs.start;
-  clip->segments = 16; /* default value */
+  clip->segments = 64; /* default value */
   FOR_EACH(i, 0, n) {
     yaml_node_t* key;
     yaml_node_t* val;

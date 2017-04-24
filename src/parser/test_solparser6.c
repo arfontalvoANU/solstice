@@ -164,7 +164,7 @@ main(int argc, char** argv)
   polyclip = darray_polyclip_cdata_get(&hemisphere->polyclips);
   CHECK(polyclip->contour_type, SOLPARSER_CLIP_CONTOUR_CIRCLE);
   CHECK(polyclip->circle.radius, 1);
-  CHECK(polyclip->circle.segments, 16); /* Default value */
+  CHECK(polyclip->circle.segments, 64); /* Default value */
 
   solparser_entity_iterator_next(&it);
   CHECK(solparser_entity_iterator_eq(&it, &end), 1);

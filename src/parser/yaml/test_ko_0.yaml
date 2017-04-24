@@ -406,7 +406,7 @@
 # <circle-descriptor> ::=
 #  circle: 
 #    radius: REAL # in ]0, INF)
-# [  segments: INTEGER # in [3, 4096). Default 16 ]
+# [  segments: INTEGER # in [3, 4096). Default 64 ]
 #
 #
 # <vertices-list> ::=
