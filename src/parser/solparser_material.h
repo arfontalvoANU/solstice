@@ -64,8 +64,8 @@ solparser_material_matte_init
 }
 
 struct solparser_material_mirror {
-  double roughness; /* In [0, 1] */
-  double reflectivity; /* In [0, 1] */
+  struct solparser_mtl_data roughness; /* In [0, 1] */
+  struct solparser_mtl_data reflectivity; /* In [0, 1] */
   struct solparser_image_id normal_map;
 };
 

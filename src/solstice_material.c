@@ -30,8 +30,8 @@ struct matte_param {
 };
 
 struct mirror_param {
-  double reflectivity;
-  double roughness;
+  struct ssol_data reflectivity;
+  struct ssol_data roughness;
   struct ssol_image* normal_map;
 };
 
@@ -144,7 +144,7 @@ mirror_get_reflectivity
 {
   const struct mirror_param* param = ssol_param_buffer_get(buf);
   (void)dev, (void)wavelength, (void)frag;
-  *val = param->reflectivity;
+  *val = ssol_data_get_value(&param->reflectivity, wavelength);
 }
 
 static void
@@ -157,7 +157,7 @@ mirror_get_roughness
 {
   const struct mirror_param* param = ssol_param_buffer_get(buf);
   (void)dev, (void)wavelength, (void)frag;
-  *val = param->roughness;
+  *val = ssol_data_get_value(&param->roughness, wavelength);
 }
 
 static void
@@ -179,6 +179,8 @@ mirror_param_release(void* mem)
   struct mirror_param* param = mem;
   ASSERT(param);
   if(param->normal_map) SSOL(image_ref_put(param->normal_map));
+  ssol_data_clear(&param->reflectivity);
+  ssol_data_clear(&param->roughness);
 }
 
 static void
@@ -481,8 +483,11 @@ create_material_mirror
     goto error;
   }
   memset(param, 0, sizeof(struct mirror_param));
-  param->reflectivity = mirror->reflectivity;
-  param->roughness = mirror->roughness;
+
+  res = mtl_to_ssol_data(solstice, &mirror->reflectivity, &param->reflectivity);
+  if(res != RES_OK) goto error;
+  res = mtl_to_ssol_data(solstice, &mirror->roughness, &param->roughness);
+  if(res != RES_OK) goto error;
 
   if(!SOLPARSER_ID_IS_VALID(mirror->normal_map)) {
     shader.normal = mtl_get_normal;

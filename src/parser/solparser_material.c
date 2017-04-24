@@ -264,10 +264,10 @@ parse_material_mirror
       res = parse_image(parser, doc, val, &mtl->normal_map);
     } else if(!strcmp((char*)key->data.scalar.value, "reflectivity")) {
       SETUP_MASK(REFLECTIVITY, "reflectivity");
-      res = parse_real(parser, val, 0, 1, &mtl->reflectivity);
+      res = parse_mtl_data(parser, doc, val, 0, 1, &mtl->reflectivity);
     } else if(!strcmp((char*)key->data.scalar.value, "roughness")) {
       SETUP_MASK(ROUGHNESS, "roughness");
-      res = parse_real(parser, val, 0, 1, &mtl->roughness);
+      res = parse_mtl_data(parser, doc, val, 0, 1, &mtl->roughness);
     } else {
       log_err(parser, key, "unknown mirror attribute `%s'.\n",
         key->data.scalar.value);
