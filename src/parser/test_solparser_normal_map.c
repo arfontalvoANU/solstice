@@ -152,7 +152,8 @@ test_matte(struct solparser* parser)
   mtl = solparser_get_material(parser, mtl2->front);
   CHECK(mtl->type, SOLPARSER_MATERIAL_MATTE);
   matte = solparser_get_material_matte(parser, mtl->data.matte);
-  CHECK(matte->reflectivity, 0.123);
+  CHECK(matte->reflectivity.type, SOLPARSER_MTL_DATA_REAL);
+  CHECK(matte->reflectivity.value.real, 0.123);
   CHECK(SOLPARSER_ID_IS_VALID(matte->normal_map), 1);
   img = solparser_get_image(parser, matte->normal_map);
   CHECK(strcmp(str_cget(&img->filename), "path to normal map"), 0);

@@ -25,7 +25,7 @@ struct dielectric_param {
 };
 
 struct matte_param {
-  double reflectivity;
+  struct ssol_data reflectivity;
   struct ssol_image* normal_map;
 };
 
@@ -109,7 +109,7 @@ matte_get_reflectivity
 {
   const struct matte_param* param = ssol_param_buffer_get(buf);
   (void)dev, (void)wavelength, (void)frag;
-  *val = param->reflectivity;
+  *val = ssol_data_get_value(&param->reflectivity, wavelength);
 }
 
 static void
@@ -131,6 +131,7 @@ matte_param_release(void* mem)
   struct matte_param* param = mem;
   ASSERT(param);
   if(param->normal_map) SSOL(image_ref_put(param->normal_map));
+  ssol_data_clear(&param->reflectivity);
 }
 
 static void
@@ -417,7 +418,9 @@ create_material_matte
   }
   memset(param, 0, sizeof(struct matte_param));
 
-  param->reflectivity = matte->reflectivity;
+  res = mtl_to_ssol_data(solstice, &matte->reflectivity, &param->reflectivity);
+  if(res != RES_OK) goto error;
+
   if(!SOLPARSER_ID_IS_VALID(matte->normal_map)) {
     shader.normal = mtl_get_normal;
   } else {

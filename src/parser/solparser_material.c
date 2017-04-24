@@ -175,7 +175,7 @@ parse_material_matte
       res = parse_image(parser, doc, val, &mtl->normal_map);
     } else if(!strcmp((char*)key->data.scalar.value, "reflectivity")) {
       SETUP_MASK(REFLECTIVITY, "reflectivity");
-      res = parse_real(parser, val, 0, 1, &mtl->reflectivity);
+      res = parse_mtl_data(parser, doc, val, 0, 1, &mtl->reflectivity);
     } else {
       log_err(parser, key, "unknown matte parameter `%s'.\n",
         key->data.scalar.value);

@@ -47,7 +47,7 @@ solparser_material_dielectric_init
 }
 
 struct solparser_material_matte {
-  double reflectivity; /* In [0, 1] */
+  struct solparser_mtl_data reflectivity; /* In [0, 1] */
   struct solparser_image_id normal_map;
 };
 
