@@ -1,1 +1,1 @@
-- { name: "reflector.ground.pivot.small_square", side: BACK }
+- { name: "reflector.pivot.small_square", side: BACK }
