@@ -202,6 +202,38 @@ thin_dielectric_param_release(void* mem)
 }
 
 static res_T
+mtl_to_ssol_data
+  (struct solstice* solstice,
+   const struct solparser_mtl_data* mtl_data,
+   struct ssol_data* data)
+{
+  struct ssol_spectrum* spectrum = NULL;
+  res_T res = RES_OK;
+  ASSERT(mtl_data && data);
+
+  ssol_data_clear(data);
+  switch(mtl_data->type) {
+    case SOLPARSER_MTL_DATA_REAL:
+      ssol_data_set_real(data, mtl_data->value.real);
+      break;
+    case SOLPARSER_MTL_DATA_SPECTRUM:
+      res = solstice_create_ssol_spectrum
+        (solstice, mtl_data->value.spectrum, &spectrum);
+      if(res != RES_OK) goto error;
+      ssol_data_set_spectrum(data, spectrum);
+      break;
+    default: FATAL("Unreachable code.\n"); break;
+  }
+
+exit:
+  if(spectrum) SSOL(spectrum_ref_put(spectrum));
+  return res;
+error:
+  ssol_data_clear(data);
+  goto exit;
+}
+
+static res_T
 load_image
   (struct solstice* solstice,
    const char* filename,
@@ -278,8 +310,8 @@ create_material_dielectric
 {
   const struct solparser_medium* medium_i;
   const struct solparser_medium* medium_t;
-  struct ssol_medium ssol_medium_i;
-  struct ssol_medium ssol_medium_t;
+  struct ssol_medium ssol_medium_i = SSOL_MEDIUM_VACUUM;
+  struct ssol_medium ssol_medium_t = SSOL_MEDIUM_VACUUM;
   struct ssol_dielectric_shader shader = SSOL_DIELECTRIC_SHADER_NULL;
   struct ssol_image* img = NULL;
   struct ssol_material* mtl = NULL;
@@ -326,13 +358,20 @@ create_material_dielectric
     SSOL(material_set_param_buffer(mtl, pbuf));
   }
 
-  ssol_data_set_real(&ssol_medium_i.refractive_index, medium_i->refractive_index);
-  ssol_data_set_real(&ssol_medium_t.refractive_index, medium_t->refractive_index);
-  ssol_data_set_real(&ssol_medium_i.absorptivity, medium_i->absorptivity);
-  ssol_data_set_real(&ssol_medium_t.absorptivity, medium_t->absorptivity);
+  #define SET_SSOL_DATA(Medium, Name) {                                        \
+    res = mtl_to_ssol_data(solstice, &Medium->Name, &ssol_## Medium.Name);      \
+    if(res != RES_OK) goto error;                                              \
+  } (void)0
+  SET_SSOL_DATA(medium_i, refractive_index);
+  SET_SSOL_DATA(medium_t, refractive_index);
+  SET_SSOL_DATA(medium_i, absorptivity);
+  SET_SSOL_DATA(medium_t, absorptivity);
+  #undef SET_SSOL_DATA
   SSOL(dielectric_setup(mtl, &shader, &ssol_medium_i, &ssol_medium_t));
 
 exit:
+  ssol_medium_clear(&ssol_medium_i);
+  ssol_medium_clear(&ssol_medium_t);
   if(pbuf) SSOL(param_buffer_ref_put(pbuf));
   *out_mtl = mtl;
   return res;
@@ -476,10 +515,10 @@ create_material_thin_dielectric
 {
   struct ssol_image* img = NULL;
   struct ssol_thin_dielectric_shader shader = SSOL_THIN_DIELECTRIC_SHADER_NULL;
-  const struct solparser_medium* medium_i;
-  const struct solparser_medium* medium_t;
-  struct ssol_medium ssol_medium_i;
-  struct ssol_medium ssol_medium_t;
+  const struct solparser_medium* medium_i = NULL;
+  const struct solparser_medium* medium_t = NULL;
+  struct ssol_medium ssol_medium_i = SSOL_MEDIUM_VACUUM;
+  struct ssol_medium ssol_medium_t = SSOL_MEDIUM_VACUUM;
   struct ssol_material* mtl = NULL;
   struct ssol_param_buffer* pbuf = NULL;
   res_T res = RES_OK;
@@ -526,14 +565,21 @@ create_material_thin_dielectric
     SSOL(material_set_param_buffer(mtl, pbuf));
   }
 
-  ssol_data_set_real(&ssol_medium_i.refractive_index, medium_i->refractive_index);
-  ssol_data_set_real(&ssol_medium_t.refractive_index, medium_t->refractive_index);
-  ssol_data_set_real(&ssol_medium_i.absorptivity, medium_i->absorptivity);
-  ssol_data_set_real(&ssol_medium_t.absorptivity, medium_t->absorptivity);
+  #define SET_SSOL_DATA(Medium, Name) {                                        \
+    res = mtl_to_ssol_data(solstice, &Medium->Name, &ssol_## Medium.Name);     \
+    if(res != RES_OK) goto error;                                              \
+  } (void)0
+  SET_SSOL_DATA(medium_i, refractive_index);
+  SET_SSOL_DATA(medium_t, refractive_index);
+  SET_SSOL_DATA(medium_i, absorptivity);
+  SET_SSOL_DATA(medium_t, absorptivity);
+  #undef SET_SSOL_DATA
   SSOL(thin_dielectric_setup
     (mtl, &shader, &ssol_medium_i, &ssol_medium_t, thin->thickness));
 
 exit:
+  ssol_medium_clear(&ssol_medium_i);
+  ssol_medium_clear(&ssol_medium_t);
   if(pbuf) SSOL(param_buffer_ref_put(pbuf));
   *out_mtl = mtl;
   return res;
@@ -542,7 +588,6 @@ error:
   if(img) SSOL(image_ref_put(img));
   goto exit;
 }
-
 
 /*******************************************************************************
  * Local functions

@@ -126,58 +126,10 @@ error:
 static void
 get_wavelength(const size_t i, double* wlen, double* data, void* ctx)
 {
-  const struct solparser_spectrum_data* specdata = ctx;
-  ASSERT(wlen && data && ctx);
-  *wlen = specdata[i].wavelength;
-  *data = specdata[i].data;
-}
-
-static void
-get_wavelength_builtin(const size_t i, double* wlen, double* data, void* ctx)
-{
   const double* spectrum = ctx;
   ASSERT(wlen && data && ctx);
   *wlen = spectrum[i*2+0];
   *data = spectrum[i*2+1];
-}
-
-static res_T
-create_sun_spectrum
-  (struct solstice* solstice,
-   const struct solparser_sun* solparser_sun,
-   struct ssol_spectrum** out_spectrum)
-{
-  struct ssol_spectrum* spectrum = NULL;
-  const struct solparser_spectrum_data* data;
-  const struct solparser_spectrum* spec;
-  size_t nwlens;
-  res_T res = RES_OK;
-  ASSERT(solstice && solparser_sun && out_spectrum);
-
-  res = ssol_spectrum_create(solstice->ssol, &spectrum);
-  if(res != RES_OK) {
-    fprintf(stderr, "Could not create the spectrum of the solver sun.\n");
-    goto error;
-  }
-
-  spec = solparser_get_spectrum(solstice->parser, solparser_sun->spectrum);
-  nwlens = darray_spectrum_data_size_get(&spec->data);
-  data = darray_spectrum_data_cdata_get(&spec->data);
-  res = ssol_spectrum_setup(spectrum, get_wavelength, nwlens, (void*)data);
-  if(res != RES_OK) {
-    fprintf(stderr, "Could not setup the spectrum of the solver sun.\n");
-    goto error;
-  }
-
-exit:
-  *out_spectrum = spectrum;
-  return res;
-error:
-  if(spectrum) {
-    SSOL(spectrum_ref_put(spectrum));
-    spectrum = NULL;
-  }
-  goto exit;
 }
 
 static res_T
@@ -193,7 +145,7 @@ create_default_sun_spectrum
 
   /* The solparser_sun may be used if the defautl spectrum is defined wrt the
    * sun type */
-  (void)solparser_sun; 
+  (void)solparser_sun;
 
   res = ssol_spectrum_create(solstice->ssol, &spectrum);
   if(res != RES_OK) {
@@ -209,8 +161,7 @@ create_default_sun_spectrum
     size = solstice_sun_spectrum_dummy_size;
   }
 
-  res = ssol_spectrum_setup
-    (spectrum, get_wavelength_builtin, size, (void*)data);
+  res = ssol_spectrum_setup(spectrum, get_wavelength, size, (void*)data);
   if(res != RES_OK) {
     fprintf(stderr, "Coul not setup the default spectrum of the solver sun.\n");
     goto error;
@@ -258,7 +209,8 @@ solstice_create_sun(struct solstice* solstice)
     res = create_default_sun_spectrum(solstice, solparser_sun, &spectrum);
     if(res != RES_OK) goto error;
   } else {
-    res = create_sun_spectrum(solstice, solparser_sun, &spectrum);
+    res = solstice_create_ssol_spectrum
+      (solstice, solparser_sun->spectrum, &spectrum);
     if(res != RES_OK) goto error;
   }
 

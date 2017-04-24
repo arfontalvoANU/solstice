@@ -36,6 +36,7 @@ set(SOLPARSER_FILES_SRC
   solparser_geometry.c
   solparser_material.c
   solparser_medium.c
+  solparser_mtl_data.c
   solparser_pivot.c
   solparser_sun.c
   solparser_spectrum.c)
@@ -47,6 +48,7 @@ set(SOLPARSER_FILES_INC
   solparser_image.h
   solparser_material.h
   solparser_medium.h
+  solparser_mtl_data.h
   solparser_pivot.h
   solparser_shape.h
   solparser_sun.h

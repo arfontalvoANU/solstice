@@ -93,6 +93,7 @@ set(SOLSTICE_FILES_SRC
   solstice_node.c
   solstice_object.c
   solstice_solve.c
+  solstice_spectrum.c
   solstice_sun.c
   solstice_sun_spectrum.c)
 set(SOLSTICE_FILES_INC

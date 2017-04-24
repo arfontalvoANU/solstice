@@ -21,6 +21,7 @@
 #include "solparser_image.h"
 #include "solparser_material.h"
 #include "solparser_medium.h"
+#include "solparser_mtl_data.h"
 #include "solparser_pivot.h"
 #include "solparser_shape.h"
 #include "solparser_spectrum.h"
@@ -401,10 +402,21 @@ parse_medium
    struct solparser_medium_id* out_imedium);
 
 extern LOCAL_SYM res_T
+parse_mtl_data
+  (struct solparser* parser,
+   yaml_document_t* doc,
+   yaml_node_t* mtl_data,
+   const double lower_bound,
+   const double upper_bound,
+   struct solparser_mtl_data* data);
+
+extern LOCAL_SYM res_T
 parse_spectrum
   (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* spectrum,
+   const double lower_bound,
+   const double upper_bound,
    struct solparser_spectrum_id* out_ispectrum);
 
 extern LOCAL_SYM res_T

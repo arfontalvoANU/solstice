@@ -36,6 +36,8 @@ parse_spectrum_data
   (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* sdata,
+   const double lower_bound,
+   const double upper_bound,
    struct solparser_spectrum_data* spectrum_data)
 {
   enum { DATA, WAVELENGTH };
@@ -43,6 +45,7 @@ parse_spectrum_data
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
   ASSERT(doc && sdata && spectrum_data);
+  ASSERT(lower_bound <= upper_bound);
 
   if(sdata->type != YAML_MAPPING_NODE) {
     log_err(parser, sdata, "expect the definition of a spectrum data.\n");
@@ -74,7 +77,8 @@ parse_spectrum_data
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "data")) {
       SETUP_MASK(DATA, "data");
-      res = parse_real(parser, val, 0, DBL_MAX, &spectrum_data->data);
+      res = parse_real
+        (parser, val, lower_bound, upper_bound, &spectrum_data->data);
     } else if(!strcmp((char*)key->data.scalar.value, "wavelength")) {
       SETUP_MASK(WAVELENGTH, "wavelength");
       res = parse_real(parser, val, nextafter(0, DBL_MAX), DBL_MAX,
@@ -116,6 +120,8 @@ parse_spectrum
   (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* spectrum,
+   const double lower_bound,
+   const double upper_bound,
    struct solparser_spectrum_id* out_ispectrum)
 {
   struct solparser_spectrum* spec;
@@ -123,6 +129,7 @@ parse_spectrum
   intptr_t i, n;
   res_T res = RES_OK;
   ASSERT(doc && spectrum && out_ispectrum);
+  ASSERT(lower_bound <= upper_bound);
 
   if(spectrum->type != YAML_SEQUENCE_NODE) {
     log_err(parser, spectrum, "expect a list of spectrum data.\n");
@@ -152,7 +159,8 @@ parse_spectrum
 
     sdata = yaml_document_get_node(doc, spectrum->data.sequence.items.start[i]);
     spectrum_data = darray_spectrum_data_data_get(&spec->data) + i;
-    res = parse_spectrum_data(parser, doc, sdata, spectrum_data);
+    res = parse_spectrum_data
+      (parser, doc, sdata, lower_bound, upper_bound, spectrum_data);
     if(res != RES_OK) goto error;
   }
 

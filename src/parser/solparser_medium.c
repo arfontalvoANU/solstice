@@ -83,11 +83,11 @@ parse_medium
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "absorptivity")) {
       SETUP_MASK(ABSORPTIVITY, "absorptivity");
-      res = parse_real(parser, val, 0, DBL_MAX, &mdm->absorptivity);
+      res = parse_mtl_data(parser, doc, val, 0, DBL_MAX, &mdm->absorptivity);
     } else if(!strcmp((char*)key->data.scalar.value, "refractive_index")) {
       SETUP_MASK(REFRACTIVE_INDEX, "refractive_index");
-      res = parse_real
-        (parser, val, nextafter(0, 1), DBL_MAX, &mdm->refractive_index);
+      res = parse_mtl_data
+        (parser, doc, val, nextafter(0, 1), DBL_MAX, &mdm->refractive_index);
     } else {
       log_err(parser, key, "unknown medium parameter `%s'.\n",
         key->data.scalar.value);
