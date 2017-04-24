@@ -37,7 +37,7 @@ static const char* input[] = {
   "        radius: 100\n",
   "        clip:\n",
   "        - operation : AND\n",
-  "          vertices : [[1, 2],[3, 4],[6, 7]]\n",
+  "          circle: { radius: 4 }\n",
   "      material: *lambertian\n",
   "- sun: \n",
   "    dni: 1\n",

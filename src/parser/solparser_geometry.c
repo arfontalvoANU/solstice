@@ -100,13 +100,92 @@ error:
 }
 
 static res_T
+parse_circle
+  (struct solparser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* circle,
+   struct solparser_circleclip* clip)
+{
+  enum { RADIUS, SEGMENTS };
+  intptr_t i, n;
+  int mask = 0; /* Register the parsed attributes */
+  res_T res = RES_OK;
+  ASSERT(doc && circle && clip);
+
+  if(circle->type != YAML_MAPPING_NODE) {
+    log_err(parser, circle,
+      "expect a mapping of clipping circles parameters.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  n = circle->data.mapping.pairs.top - circle->data.mapping.pairs.start;
+  clip->segments = 64; /* default value */
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, circle->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, circle->data.mapping.pairs.start[i].value);
+    if (key->type != YAML_SCALAR_NODE) {
+      log_err(parser, key, "expect a clipping circle parameter.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(parser, key,                                                   \
+          "the clipping circle parameter `"Name"' is already defined.\n");     \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if(!strcmp((char*)key->data.scalar.value, "radius")) {
+      SETUP_MASK(RADIUS, "radius");
+      res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &clip->radius);
+    }
+    else if (!strcmp((char*)key->data.scalar.value, "segments")) {
+      SETUP_MASK(SEGMENTS, "segments");
+      res = parse_integer(parser, val, 3, 4096, &clip->segments);
+    } else {
+      log_err(parser, key, "unknown clipping circle parameter `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    if(res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
+  #undef SETUP_MASK
+  }
+
+  #define CHECK_PARAM(Flag, Name)                                              \
+    if(!(mask & BIT(Flag))) {                                                  \
+      log_err(parser, circle,                                                  \
+        "the clipping circle parameter `"Name"' is missing.\n");               \
+      res = RES_BAD_ARG;                                                       \
+      goto error;                                                              \
+    } (void)0
+  CHECK_PARAM(RADIUS, "radius");
+  #undef CHECK_PARAM
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+static res_T
 parse_polyclip
   (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* polyclip,
    struct solparser_polyclip* clip)
 {
-  enum { OPERATION, VERTICES };
+  enum { OPERATION, CONTOUR };
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
@@ -145,8 +224,14 @@ parse_polyclip
       SETUP_MASK(OPERATION, "operation");
       res = parse_clip_op(parser, val, &clip->op);
     } else if(!strcmp((char*)key->data.scalar.value, "vertices")) {
-      SETUP_MASK(VERTICES, "vertices");
+      SETUP_MASK(CONTOUR, "contour");
+      clip->contour_type = SOLPARSER_CLIP_CONTOUR_POLY;
       res = parse_vertices(parser, doc, val, &clip->vertices);
+    }
+    else if(!strcmp((char*)key->data.scalar.value, "circle")) {
+      SETUP_MASK(CONTOUR, "contour");
+      clip->contour_type = SOLPARSER_CLIP_CONTOUR_CIRCLE;
+      res = parse_circle(parser, doc, val, &clip->circle);
     } else {
       log_err(parser, key, "unknown clipping polygon parameter `%s'.\n",
         key->data.scalar.value);
@@ -168,7 +253,7 @@ parse_polyclip
       goto error;                                                              \
     } (void)0
   CHECK_PARAM(OPERATION, "operation");
-  CHECK_PARAM(VERTICES, "vertices");
+  CHECK_PARAM(CONTOUR, "contour");
   #undef CHECK_PARAM
 
 exit:

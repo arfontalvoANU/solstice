@@ -26,6 +26,11 @@ enum solparser_clip_op {
   SOLPARSER_CLIP_OP_SUB
 };
 
+enum solparser_clip_contour_type {
+  SOLPARSER_CLIP_CONTOUR_CIRCLE,
+  SOLPARSER_CLIP_CONTOUR_POLY
+};
+
 enum solparser_shape_type {
   SOLPARSER_SHAPE_CUBOID,
   SOLPARSER_SHAPE_CYLINDER,
@@ -42,9 +47,16 @@ enum solparser_shape_type {
 /*******************************************************************************
  * Clipping polygon
  ******************************************************************************/
+struct solparser_circleclip {
+  double radius;
+  long segments;
+};
+
 struct solparser_polyclip {
   enum solparser_clip_op op;
+  enum solparser_clip_contour_type contour_type;
   struct darray_double vertices;
+  struct solparser_circleclip circle;
 };
 
 static INLINE void

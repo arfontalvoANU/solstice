@@ -394,7 +394,20 @@
 #
 # <polyclip> ::=
 #   operation: <AND|SUB>
-#   vertices: <vertices-list>
+#   <contour-descriptor>
+#  
+# <contour-descriptor> ::=
+#    <vertices-descriptor>
+#  | <circle-descriptor>
+#  
+# <vertices-descriptor> ::=
+#  vertices: <vertices-list>
+#
+# <circle-descriptor> ::=
+#  circle: 
+#    radius: REAL # in ]0, INF)
+# [  segments: INTEGER # in [3, 4096). Default 64 ]
+#
 #
 # <vertices-list> ::=
 #   - <real2>
@@ -432,7 +445,7 @@
         clip:
           - operation: dummy
 ---
-# missing vertices parameter
+# missing contour parameter
 - geometry:
     - plane:
         clip:
@@ -470,6 +483,76 @@
         clip:
           - operation: AND
             vertices: [ [0, 1, 2], [3, 4], [6, 7] ]
+---
+# missing circle definition
+- geometry:
+    - plane:
+        clip:
+          - circle: 
+---
+# missing radius value
+- geometry:
+    - plane:
+        clip:
+          - circle: { radius: }
+---
+# invalid number "dummy"
+- geometry:
+    - plane:
+        clip:
+          - operation: AND
+            circle: { radius: "dummy" }
+---
+# invalid number "dummy"
+- geometry:
+    - plane:
+        clip:
+          - operation: AND
+            circle: { segments: "dummy" }
+---
+# 0 invalid
+- geometry:
+    - plane:
+        clip:
+          - circle: { radius: 0 }
+---
+# 2 invalid
+- geometry:
+    - plane:
+        clip:
+          - circle: { segments: 2 }
+---
+# missing radius
+- geometry:
+    - plane:
+        clip:
+          - circle: { segments: 10 }
+---
+# 2x radius
+- geometry:
+    - plane:
+        clip:
+          - circle: { radius: 1, radius: 1 }
+---
+# 2x segments
+- geometry:
+    - plane:
+        clip:
+          - circle: { segments: 10, segments: 10 }
+---
+# 2x contour
+- geometry:
+    - plane:
+        clip:
+          - vertices: [ [1, 2], [3, 4], [6, 7] ]
+            circle: { radius: 1 }
+---
+# 2x operation
+- geometry:
+    - plane:
+        clip:
+          - operation: AND
+            operation: OR
 ---
 
 #
