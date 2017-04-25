@@ -13,18 +13,21 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef SOLPARSER_MEDIUM_H
-#define SOLPARSER_MEDIUM_H
+#ifndef SOLSTICE_SUN_SPECTRUM_H
+#define SOLSTICE_SUN_SPECTRUM_H
 
-#include "solparser_mtl_data.h"
-#include <stddef.h>
+#include <rsys/rsys.h>
 
-struct solparser_medium {
-  struct solparser_mtl_data refractive_index;
-  struct solparser_mtl_data absorptivity;
-};
+/*
+ * Each built-in spectrum is a list of double2: [Wavelength in nano-meter,
+ * DNI]. Its associated size is the number of double[2] into the spectrum
+ */
 
-struct solparser_medium_id { size_t i; };
+extern LOCAL_SYM const double solstice_sun_spectrum_dummy[];
+extern LOCAL_SYM const size_t solstice_sun_spectrum_dummy_size;
 
-#endif /* SOLPARSER_MEDIUM_H */
+extern LOCAL_SYM const double solstice_sun_spectrum_smarts295[];
+extern LOCAL_SYM const size_t solstice_sun_spectrum_smarts295_size;
+
+#endif /* SOLSTICE_SUN_SPECTRUM_H */
 

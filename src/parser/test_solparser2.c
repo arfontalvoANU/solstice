@@ -137,7 +137,8 @@ main(int argc, char** argv)
   CHECK(mtl == mtls[0] || mtl == mtls[1], 1);
   CHECK(mtl->type, SOLPARSER_MATERIAL_MATTE);
   matte = solparser_get_material_matte(parser, mtl->data.matte);
-  CHECK(matte->reflectivity, 1);
+  CHECK(matte->reflectivity.type, SOLPARSER_MTL_DATA_REAL);
+  CHECK(matte->reflectivity.value.real, 1);
 
   entity_id = solparser_entity_get_child(entity, 0);
   entity1a = solparser_get_entity(parser, entity_id);
@@ -165,8 +166,10 @@ main(int argc, char** argv)
   CHECK(mtl == mtls[0] || mtl == mtls[1], 1);
   CHECK(mtl->type, SOLPARSER_MATERIAL_MIRROR);
   mirror = solparser_get_material_mirror(parser, mtl->data.mirror);
-  CHECK(mirror->reflectivity, 0.9);
-  CHECK(mirror->roughness, 0.1);
+  CHECK(mirror->reflectivity.type, SOLPARSER_MTL_DATA_REAL);
+  CHECK(mirror->reflectivity.value.real, 0.9);
+  CHECK(mirror->roughness.type, SOLPARSER_MTL_DATA_REAL);
+  CHECK(mirror->roughness.value.real, 0.1);
 
   entity_id = solparser_entity_get_child(entity, 1);
   entity1b = solparser_get_entity(parser, entity_id);

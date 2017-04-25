@@ -145,7 +145,8 @@ check_entity0
   CHECK(mtl->type, SOLPARSER_MATERIAL_MATTE);
 
   matte = solparser_get_material_matte(parser, mtl->data.matte);
-  CHECK(matte->reflectivity, 0.5);
+  CHECK(matte->reflectivity.type, SOLPARSER_MTL_DATA_REAL);
+  CHECK(matte->reflectivity.value.real, 0.5);
 
   CHECK(solparser_entity_get_children_count(entity0), 4);
   CHECK(solparser_entity_get_anchors_count(entity0), 3);

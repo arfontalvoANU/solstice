@@ -70,6 +70,12 @@ solstice_update_entities
    const double sun_dir[3]);
 
 extern LOCAL_SYM res_T
+solstice_create_ssol_spectrum
+  (struct solstice* solstice,
+   const struct solparser_spectrum_id spectrum_id,
+   struct ssol_spectrum** spectrum);
+
+extern LOCAL_SYM res_T
 solstice_create_ssol_material
   (struct solstice* solstice,
    const struct solparser_material_id mtl_id,

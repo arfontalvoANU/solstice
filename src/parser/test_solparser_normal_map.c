@@ -152,7 +152,8 @@ test_matte(struct solparser* parser)
   mtl = solparser_get_material(parser, mtl2->front);
   CHECK(mtl->type, SOLPARSER_MATERIAL_MATTE);
   matte = solparser_get_material_matte(parser, mtl->data.matte);
-  CHECK(matte->reflectivity, 0.123);
+  CHECK(matte->reflectivity.type, SOLPARSER_MTL_DATA_REAL);
+  CHECK(matte->reflectivity.value.real, 0.123);
   CHECK(SOLPARSER_ID_IS_VALID(matte->normal_map), 1);
   img = solparser_get_image(parser, matte->normal_map);
   CHECK(strcmp(str_cget(&img->filename), "path to normal map"), 0);
@@ -222,8 +223,10 @@ test_mirror(struct solparser* parser)
   mtl = solparser_get_material(parser, mtl2->front);
   CHECK(mtl->type, SOLPARSER_MATERIAL_MIRROR);
   mirror = solparser_get_material_mirror(parser, mtl->data.mirror);
-  CHECK(mirror->reflectivity, 1);
-  CHECK(mirror->roughness, 0.1);
+  CHECK(mirror->reflectivity.type, SOLPARSER_MTL_DATA_REAL);
+  CHECK(mirror->reflectivity.value.real, 1);
+  CHECK(mirror->roughness.type, SOLPARSER_MTL_DATA_REAL);
+  CHECK(mirror->roughness.value.real, 0.1);
   CHECK(SOLPARSER_ID_IS_VALID(mirror->normal_map), 1);
   img = solparser_get_image(parser, mirror->normal_map);
   CHECK(strcmp(str_cget(&img->filename), "Normal map"), 0);

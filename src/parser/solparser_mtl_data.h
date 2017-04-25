@@ -13,18 +13,23 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef SOLPARSER_MEDIUM_H
-#define SOLPARSER_MEDIUM_H
+#ifndef SOLPARSER_MTL_DATA_H
+#define SOLPARSER_MTL_DATA_H
 
-#include "solparser_mtl_data.h"
-#include <stddef.h>
+#include "solparser_spectrum.h"
 
-struct solparser_medium {
-  struct solparser_mtl_data refractive_index;
-  struct solparser_mtl_data absorptivity;
+enum solparser_mtl_data_type {
+  SOLPARSER_MTL_DATA_REAL,
+  SOLPARSER_MTL_DATA_SPECTRUM
 };
 
-struct solparser_medium_id { size_t i; };
+struct solparser_mtl_data {
+  enum solparser_mtl_data_type type;
+  union {
+    double real;
+    struct solparser_spectrum_id spectrum;
+  } value;
+};
 
-#endif /* SOLPARSER_MEDIUM_H */
+#endif /* SOLPARSER_MTL_DATA_H */
 

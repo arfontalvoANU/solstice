@@ -1121,6 +1121,13 @@ solparser_get_spectrum
   return darray_spectrum_cdata_get(&parser->spectra) + spectrum.i;
 }
 
+int
+solparser_has_spectrum(const struct solparser* parser)
+{
+  ASSERT(parser);
+  return darray_spectrum_size_get(&parser->spectra) != 0;
+}
+
 const struct solparser_sun*
 solparser_get_sun(const struct solparser* parser)
 {
