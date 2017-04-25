@@ -113,7 +113,7 @@ get_circular(const size_t ivert, double position[2], void* ctx)
 {
   struct solparser_circleclip* data = (struct solparser_circleclip*)ctx;
   const double a = (double)ivert * 2 * PI / (double)data->segments;
-  ASSERT(ivert < data->segments);
+  ASSERT(ivert < (size_t)data->segments);
   position[0] = data->radius * cos(a);
   position[1] = data->radius * sin(a);
 }
@@ -372,7 +372,7 @@ create_ssol_shape_punched_surface
         break;
       case SOLPARSER_CLIP_CONTOUR_CIRCLE:
         carvings[iclip].get = get_circular;
-        carvings[iclip].nb_vertices = clip->circle.segments;
+        carvings[iclip].nb_vertices = (size_t)clip->circle.segments;
         carvings[iclip].operation = solparser_clip_op_to_ssol_clipping_op(clip->op);
         carvings[iclip].context = (void*)&clip->circle;
         break;
