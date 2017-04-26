@@ -341,6 +341,7 @@ error:
 static res_T
 load_data(struct solstice* solstice, const struct solstice_args* args)
 {
+  struct solparser_entity_iterator it, end;
   FILE* file = stdin;
   const char* name = "stdin";
   res_T res = RES_OK;
@@ -369,6 +370,14 @@ load_data(struct solstice* solstice, const struct solstice_args* args)
 
   res = solparser_load(solstice->parser);
   if(res != RES_OK) goto error;
+
+  solparser_entity_iterator_begin(solstice->parser, &it);
+  solparser_entity_iterator_end(solstice->parser, &end);
+  if(solparser_entity_iterator_eq(&it, &end)) {
+    fprintf(stderr, "No entity is defined.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
 
 exit:
   if(file && file != stdin) fclose(file);

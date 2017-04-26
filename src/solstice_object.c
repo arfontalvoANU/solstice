@@ -99,7 +99,7 @@ get_carving_pos(const size_t ivert, double pos[2], void* ctx)
 }
 
 static INLINE enum ssol_clipping_op
-solparser_clip_op_to_ssol_clipping_op(const enum solparser_clip_op op)
+solparser_to_ssol_clip_op(const enum solparser_clip_op op)
 {
   switch(op) {
     case SOLPARSER_CLIP_OP_SUB: return SSOL_SUB;
@@ -367,13 +367,13 @@ create_ssol_shape_punched_surface
       case SOLPARSER_CLIP_CONTOUR_POLY:
         carvings[iclip].get = get_carving_pos;
         carvings[iclip].nb_vertices = solparser_polyclip_get_vertices_count(clip);
-        carvings[iclip].operation = solparser_clip_op_to_ssol_clipping_op(clip->op);
+        carvings[iclip].operation = solparser_to_ssol_clip_op(clip->op);
         carvings[iclip].context = (void*)clip;
         break;
       case SOLPARSER_CLIP_CONTOUR_CIRCLE:
         carvings[iclip].get = get_circular;
         carvings[iclip].nb_vertices = (size_t)clip->circle.segments;
-        carvings[iclip].operation = solparser_clip_op_to_ssol_clipping_op(clip->op);
+        carvings[iclip].operation = solparser_to_ssol_clip_op(clip->op);
         carvings[iclip].context = (void*)&clip->circle;
         break;
       default: FATAL("Unreachable code.\n");
@@ -589,8 +589,8 @@ create_shaded_shape
       res = create_hyperbol(solstice, transform, shape->data.hyperbol, ssol_shape);
       break;
     case SOLPARSER_SHAPE_HEMISPHERE:
-      res = 
-        create_hemisphere(solstice, transform, shape->data.hemisphere, ssol_shape);
+      res = create_hemisphere
+        (solstice, transform, shape->data.hemisphere, ssol_shape);
       break;
     case SOLPARSER_SHAPE_PLANE:
       res = create_plane(solstice, transform, shape->data.plane, ssol_shape);
@@ -603,7 +603,7 @@ create_shaded_shape
       break;
     default: FATAL("Unreachable code.\n"); break;
   }
-  if(res != RES_OK) goto error; 
+  if(res != RES_OK) goto error;
 
 exit:
   return res;
