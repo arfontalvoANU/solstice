@@ -279,7 +279,6 @@ struct solparser_shape_hemisphere {
   double radius;
   struct darray_polyclip polyclips;
   long nslices; /* < 0 if not defined */
-  long nstacks; /* < 0 if not defined */
 };
 
 static INLINE void
