@@ -102,8 +102,8 @@ write_mc_global(struct solstice* solstice, struct ssol_estimator* estimator)
     SSOL(instance_get_area(inst, &area));
     fprintf(solstice->output,
       "%s %u %g   "
-      "FRONT: %g %g   %g %g   %g %g   %g %g   %g %g   "
-      "BACK: %g %g   %g %g   %g %g   %g %g   %g %g\n",
+      "%g %g   %g %g   %g %g   %g %g   %g %g   "
+      "%g %g   %g %g   %g %g   %g %g   %g %g\n",
       str_cget(name), (unsigned)id, area,
       front.integrated_absorbed_irradiance.E, front.integrated_absorbed_irradiance.SE,
       front.integrated_irradiance.E, front.integrated_irradiance.SE,
@@ -176,8 +176,8 @@ write_mc_global(struct solstice* solstice, struct ssol_estimator* estimator)
       }
       fprintf(solstice->output,
         "%u %u   "
-        "FRONT: %g %g   %g %g   %g %g   %g %g   "
-        "BACK: %g %g   %g %g   %g %g   %g %g\n",
+        "%g %g   %g %g   %g %g   %g %g   "
+        "%g %g   %g %g   %g %g   %g %g\n",
         (unsigned) rcv_id, (unsigned) prim_id,
         front.integrated_absorbed_irradiance.E, front.integrated_absorbed_irradiance.SE,
         front.integrated_irradiance.E, front.integrated_irradiance.SE,

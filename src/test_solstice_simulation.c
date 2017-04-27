@@ -262,8 +262,8 @@ read_recv(FILE* file, char name[], double E[], double SE[])
   CHECK(
     sscanf(line,
       "%s %*u %*g   "
-      "FRONT: %lg %lg   %lg %lg   %lg %lg   %lg %lg   %lg %lg  "
-      " BACK: %lg %lg   %lg %lg   %lg %lg   %lg %lg   %lg %lg",
+      "%lg %lg   %lg %lg   %lg %lg   %lg %lg   %lg %lg  "
+      "%lg %lg   %lg %lg   %lg %lg   %lg %lg   %lg %lg",
       name, /* ID, area */
       &E[FRONT_INTEGRATED_ABSORBED_IRRADIANCE],
       &SE[FRONT_INTEGRATED_ABSORBED_IRRADIANCE],
@@ -296,7 +296,7 @@ read_primary
   CHECK(
     sscanf(line,
       "%s %*u   "
-      "%lg %*u %lg   "
+      "%lg %*lu %lg   "
       "%lg %lg\n",
       name, /* ID */
       area, /* count, */ cos,
@@ -324,8 +324,8 @@ read_recvXprim
   CHECK(
     sscanf(line,
       "%lu %lu  "
-      "FRONT: %lg %lg   %lg %lg   %lg %lg   %lg %lg  "
-      " BACK: %lg %lg   %lg %lg   %lg %lg   %lg %lg",
+      "%lg %lg   %lg %lg   %lg %lg   %lg %lg   "
+      "%lg %lg   %lg %lg   %lg %lg   %lg %lg",
       rcv_id, prim_id,
       &E[FRONT_INTEGRATED_ABSORBED_IRRADIANCE],
       &SE[FRONT_INTEGRATED_ABSORBED_IRRADIANCE],
