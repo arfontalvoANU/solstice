@@ -1,6 +1,5 @@
 solstice
   -b # Output binary per receiver hits
-  -d <date-list>:<pos-on-earth>
   -D <sun-dir-list>
   -f # Force output overwrite
   -h # Short help and exit
@@ -17,13 +16,7 @@ solstice
 solstice -r img=1280x720:pos=0,100,0:tgt=0,0,0:up=0,1,0:fov=70:spp=1
 solstice -g format=obj:split-group=1
 
--d and -D are exclusive
-
-<date-list> ::=
-  <date> [ ... ]
-
-<date> ::=
-  year:month:day:minutes:seconds:timezone # <=> UNIX format
+-g, -p and -r are exclusives
 
 <sun-dir-list> ::=
   <sun-dir>:[ ... ]
@@ -38,8 +31,7 @@ solstice -g format=obj:split-group=1
   <rendering-option>[:<rendering-option> ... ]
 
 <rendering-option> ::=
-  <fov> | <img> | <position> | <render-mode> | <samples-per-pixel> | <target> | <up>
-
+  <fov> | <img> | <position> | <render-mode> | <samples-per-pixel> | <target> | <up> 
 <dump> ::=
   format=<dump-format>[:split=<split-mode>]
 
@@ -49,7 +41,7 @@ solstice -g format=obj:split-group=1
 <dump-path-option> ::=
   <sun-ray-len> | <inf-ray-len> | default
 
-<sun-ray-len> ::=
+<sun-ray-len> ::= # Length of the ray starting from the sun
   srlen=REAL
 
 <inf-ray-len> ::= # Length of the rays going to infinite
@@ -61,13 +53,13 @@ solstice -g format=obj:split-group=1
 <split-mode> ::=
   geometry | object | none
 
-<fov> ::=
-  fov=<real3>
+<fov> ::= # Horizontal field of view in degree
+  fov=REAL
 
-<img> ::=
+<img> ::= # Image resolution
   img=INTEGERxINTEGER
 
-<position> ::=
+<position> ::= # Camera position
   pos=<real3>
 
 <render-mode> ::=
@@ -79,10 +71,10 @@ solstice -g format=obj:split-group=1
 <samples-per-pixel> ::=
   spp=<INTEGER>
 
-<target> ::=
+<target> ::= # Camera target
   tgt=<real3>
 
-<up> ::=
+<up> ::= # Camera up vector
   up=<real3>
 
 <real3> ::=

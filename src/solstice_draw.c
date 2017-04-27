@@ -92,7 +92,8 @@ solstice_draw(struct solstice* solstice)
       break;
     case SOLSTICE_ARGS_RENDER_PATH_TRACING:
       res = ssol_draw_pt(solstice->scene, solstice->camera, layout.width,
-        layout.height, solstice->spp, ssol_image_write, solstice->framebuffer);
+        layout.height, solstice->spp, solstice->up, ssol_image_write,
+        solstice->framebuffer);
       break;
     default: FATAL("Unreachable code.\n");
   }
