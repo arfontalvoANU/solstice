@@ -296,7 +296,7 @@ read_primary
   CHECK(
     sscanf(line,
       "%s %*u   "
-      "%lg %*lu %lg   "
+      "%lg %*u %lg   "
       "%lg %lg\n",
       name, /* ID */
       area, /* count, */ cos,
