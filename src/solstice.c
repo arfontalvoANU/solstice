@@ -625,6 +625,7 @@ solstice_init
     if(res != RES_OK) goto error;
     solstice->render_mode = args->render_mode;
     solstice->spp = args->img.spp;
+    d3_set(solstice->up, args->camera.up);
   }
 
 exit:
