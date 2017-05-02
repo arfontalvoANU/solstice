@@ -1,0 +1,192 @@
+solstice(1) -- compute the power collected by a concentrated solar plant
+=========================================================================
+
+## SYNOPSIS
+
+`solstice` [_option_]... [_file_]<br>
+`solstice` `-g` <_sub-option_[:...]> [_option_]... [_file_]<br>
+`solstice` `-p` <_sub-option_[:...]> [_option_]... [_file_]<br>
+`solstice` `-r` <_sub-option_[:...]> [_option_]... [_file_]<br>
+
+## DESCRIPTION
+
+`solstice` computes the total power collected by a concentrated solar plant
+described in the `solstice-input`(5) _file_. If _file_ is not set, the solar
+plant is read from standard input. To evaluate various efficiencies for each
+primary reflector, it computes losses due to cosinus effect, shadowing and
+masking, orientation and surface irregularities, reflectivity and atmospheric
+transmission. The efficiency for each one of these effects is subsequently
+computed for each reflector.
+
+The entities on which computations must be performed are listed in the
+`solstice-receiver`(5) file submitted through the `-R` option. The estimated
+results follows the `solstice-output`(5) format and are written to the _output_
+file or to the standard output whether the `-o` _output_ option is defined or
+not, respectively. Note that the `solstice`'s algorithm is based on the
+Monte-Carlo method, which means that every result is provided with its
+numerical accuracy.
+
+`solstice` is designed to efficiently handle complex solar facilities: several
+reflectors can be specified (planes, conics, cylindro-parabolic, etc.) and
+positioned in 3D space, with a possibility for 1-axis and 2-axis
+auto-orientation. Multiple materials can be used, as long as the relevant
+physical properties are provided. Spectral effects are also taken into account:
+it is possible to define the spectral distribution of any physical property,
+including the input solar spectrum and the transmissivity of the atmosphere, at
+any spectral resolution. Refer to `solstice-input`(5) for more informations.
+
+In addition of the aforementionned computations, `solstice` provides three
+others functionnalities. The `-g` option can be used to convert the
+`solstice-input`(5) geometries in CAO files. The `-p` option saves the sampled
+radiative path used by the estimations, allowing to visualise them externally
+which may be a great help to identify a design issue. Finally, the `-r` option
+is used to render an image of the submitted solar facility. Note that these
+three options are mutually exclusives, and once defined, they replace the
+default `solstice` comportment.
+
+## OPTIONS
+
+* `-D` <_azimuth_,_elevation_[:...]>:
+  List of sun directions. A direction is defined by its _azimuthal_ and
+  _elevation_ angles in degrees, with _azimuth_ in [0, 360[ and _elevation_ in
+  [0, 90]. Each sun direction triggers a new computation whose results are
+  concatenated to the _output_ file.
+
+* `-f`:
+  Force overwrite of the _output_ file.
+
+* `-h`:
+  List short help and exit.
+
+* `-g` <_sub-option_:...>:
+  Generate the shape of the geometry defined in the submitted _file_ and store
+  it in _output_. Available sub-options are:
+
+  `format=obj`<br>
+  Define the file format in which the meshes are stored. Currently, only the
+  Alias Wavefront OBJ file format is supported.
+
+  `split=<geometry|object|none>`<br>
+  Define how the output mesh is split in sub-meshes. A sub mesh can be
+  generated for each `geometry` or for each `object` as defined in the
+  `solstice-input`(5) file format. The `none` option means that only one
+  mesh is generated for the whole solar facility. By default, the `split`
+  option is set to `none`.
+
+* `-o` _output_:
+  Write results to _output_ with respect to the `solstice-output`(5) format. If
+  not defined, write results to standard output.
+
+* `-p` <_sub-option_:...>:
+  Register the sampled radiative paths for each sun direction and write them to
+  _output_. Available sub-options are:
+
+  `default`<br>
+  Use default sub-options configuration.
+
+  `irlen=`_length_<br>
+  Length of the radiative path segments going to the infinity. By default, it
+  is computed relatively to the scene size.
+
+  `srlen=`_length_<br>
+  Length of the radiative path segments coming from the sun. By default, it is
+  computed relatively to the scene size.
+
+* `-q`:
+  Do not print the helper message when no _file_ is submitted.
+
+* `-n` _realisations-count_:
+  Number of Monte-Carlo realisations used to estimate the solar flux. By
+  default _realisations-count_ is set to @SOLSTICE_ARGS_DEFAULT_NREALISATIONS@.
+
+* `-r` <_sub-option_:...>:
+  Render an image of the scene through a pinhole camera, for each submitted
+  sun direction. Write the resulting images to _output_. Available sub-options
+  are:
+
+  `fov=`_angle_<br>
+  Horizontal field of view of the camera in [30, 120] degrees. By default
+  _angle_ is @SOLSTICE_ARGS_DEFAULT_CAMERA_FOV@ degrees.
+
+  `img=`_width_`x`_height_<br>
+  Definition of the rendered image in pixels. By default the image definition
+  is @SOLSTICE_ARGS_DEFAULT_IMG_WIDTH@x@SOLSTICE_ARGS_DEFAULT_IMG_HEIGHT@.
+
+  `pos=`_x_`,`_y_`,`_z_<br>
+  Position of the camera. By default it is set to
+  {@SOLSTICE_ARGS_DEFAULT_CAMERA_POS@} or it is automatically computed to
+  ensure that the whole scene is visible, whether `tgt` is set or not,
+  respectively.
+
+  `rmode=<draft|pt>`<br>
+  Rendering mode. In `draft` mode, images are computed by ray-casting; all
+  materials are lambertian, the sun is ignored and the only light source is
+  positioned at the camera position. In `pt` mode, the scene is rendered with
+  the un-biased path-tracing Monte-Carlo algorithm; the materials described in
+  the committed _file_ as well as the submitted sun directions are correctly
+  handled and an uniform skydome is added to simulate the diffuse infinite
+  lighting. By default `rmode` is set to `draft`.
+
+  `spp=`_samples-count_<br>
+  Number of samples per pixel. If `rmode` is `draft`, the samples position
+  into a pixel are the same for all pixels.  With `rmode=pt` the pixel samples
+  are generated independently for each pixel.
+
+  `tgt=`_x_`,`_y_`,`_z_<br>
+  Position targeted by the camera. By default, it set to
+  {@SOLSTICE_ARGS_DEFAULT_CAMERA_TGT@} or it is automatically computed to
+  ensure that the whole scene is visible, whether `pos` is set or not,
+  respectively.
+
+  `up=`_x_`,`_y_`,`_z_<br>
+  Up vector of the camera. If `rmode` is `pt`, this vector also defines the
+  direction toward the top of the skydome. By default, `up` is set to
+  {@SOLSTICE_ARGS_DEFAULT_CAMERA_UP@}.
+
+* `-R` _receivers_:
+  `solstice-receiver`(5) file defining the scene receivers, i.e. the solar
+  plant entities for which `solstice` computes Monte-Carlo estimations.
+
+## EXAMPLES
+
+Launch `solstice` estimations for two sun directions whose azimuthal and
+elevation angles are {`45`,`70`} and {`50`, `75`}. The solar facility is
+described in `input.yaml` and the receivers on which the integrations must be
+performed are declared in the `rcvs.yaml` file. `10000` realisations are used
+by the Monte-Carlo estimations and the results are written to `output` even
+though this file already exists:
+
+  $ `solstice -D45,70:50,75 -R rcvs.yaml -n 10000 -f -o output input.yaml`
+
+Generate a mesh for each geometry described in `input.yaml`, and save them in
+the `output` file with respect to the Alias Wavefront OBJ format. The meshes
+are positionned according to their orientation constraints, with respect to the
+sun direction whose azimuthal and elevation angles are {`30`, `60`}. Use the
+`csplit`(1) Unix command to generate an Alias Wavefront OBJ file per geometry
+stored in `output`. The name of the generated Alias Wavefront OBJ files are
+`geom<NUM>.obj` with `<NUM>` in [0, N-1] where N is the number of geometries
+described in `input.yaml`. Refer to `solstice-output`(5) for informations on
+the regular expression `^---$` used to split the output file:
+
+  $ `solstice -D30,60 -g format=obj:split=geometry -f -o output input.yaml`<br>
+  $ `csplit -f geom -b %02d.obj -z --suppress-matched output /^---$/ {*}`
+
+Dump path
+
+  $ `solstice -n 100 -D0,90 -R rcvs.yaml -p default input.yaml | sed '1d' > paths.vtk`
+
+Draw
+
+  $ `solstice -D180,45 -r up=0,0,1:rmode=pt:spp=64 input.yaml | sed '1d' | feh -`
+
+## COPYRIGHT
+
+`solstice` is copyright &copy; CNRS 2016-2017. License GPLv3+: GNU GPL version
+3 or later <http://gnu.org/licenses/gpl.hrml>. This is a free software. you are
+free to change and redistribute it. There is NO WARRANTY, to the extent
+permitted by law.
+
+## SEE ALSO
+
+`csplit`(1), `solstice-input`(5), `solstice-output`(5), `solstice-receivers`(5)
+
