@@ -54,6 +54,13 @@ include_directories(
   ${Star3DUT_INCLUDE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR})
 
+find_program(RONN ronn)
+if(NOT RONN)
+  message(WARNING
+    "The `ronn' program is missing. "
+    "The solstice documentation cannot be generated.")
+endif()
+
 ################################################################################
 # Build subprojects
 ################################################################################
@@ -74,6 +81,18 @@ set(SOLSTICE_ARGS_DEFAULT_IMG_SPP "1")
 
 configure_file(${SOLSTICE_SOURCE_DIR}/solstice_args.h.in
   ${CMAKE_CURRENT_BINARY_DIR}/solstice_args.h @ONLY)
+
+if(RONN)
+  configure_file(${SOLSTICE_SOURCE_DIR}/../doc/solstice.1.ronn.in
+    ${CMAKE_CURRENT_BINARY_DIR}/solstice.md @ONLY)
+  if(${CMAKE_HOST_UNIX})
+    execute_process(COMMAND ${RONN} 
+      --style=man,toc ${CMAKE_CURRENT_BINARY_DIR}/solstice.md)
+  else()
+    execute_process(COMMAND ${RONN} 
+      -5 --style=man,toc ${CMAKE_CURRENT_BINARY_DIR}/solstice.md)
+  endif()
+endif()
 
 ################################################################################
 # Configure and define targets
