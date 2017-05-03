@@ -35,10 +35,10 @@ it is possible to define the spectral distribution of any physical property,
 including the input solar spectrum and the transmissivity of the atmosphere, at
 any spectral resolution. Refer to `solstice-input`(5) for more informations.
 
-In addition of the aforementionned computations, `solstice` provides three
-others functionnalities. The `-g` option can be used to convert the
+In addition of the aforementioned computations, `solstice` provides three
+others functionalities. The `-g` option can be used to convert the
 `solstice-input`(5) geometries in CAO files. The `-p` option saves the sampled
-radiative path used by the estimations, allowing to visualise them externally
+radiative paths used by the estimations, allowing to visualise them externally
 which may be a great help to identify a design issue. Finally, the `-r` option
 is used to render an image of the submitted solar facility. Note that these
 three options are mutually exclusives, and once defined, they replace the
@@ -128,12 +128,12 @@ default `solstice` comportment.
   lighting. By default `rmode` is set to `draft`.
 
   `spp=`_samples-count_<br>
-  Number of samples per pixel. If `rmode` is `draft`, the samples position
-  into a pixel are the same for all pixels.  With `rmode=pt` the pixel samples
-  are generated independently for each pixel. By default use 1 sample per pixel.
+  Number of samples per pixel. If `rmode` is `draft`, the samples position into
+  a pixel are the same for all pixels.  With `rmode=pt` the pixel samples are
+  generated independently for each pixel. By default, use 1 sample per pixel.
 
   `tgt=`_x_`,`_y_`,`_z_<br>
-  Position targeted by the camera. By default, it set to
+  Position targeted by the camera. By default, it is set to
   {@SOLSTICE_ARGS_DEFAULT_CAMERA_TGT@} or it is automatically computed to
   ensure that the whole scene is visible, whether `pos` is set or not,
   respectively.
@@ -150,18 +150,18 @@ default `solstice` comportment.
 
 ## EXAMPLES
 
- Launch `solstice` estimations for two sun directions whose azimuthal and
+Launch `solstice` estimations for two sun directions whose azimuthal and
 elevation angles are {`45`,`70`} and {`50`,`75`}. The solar facility is
 described in `input.yaml` and the receivers on which the integrations must be
 performed are declared in the `rcvs.yaml` file. `10000` realisations are used
 by the Monte-Carlo estimations and the results are written to `output` even
 though this file already exists:
 
-  $ `solstice -D45,70:50,75 -R rcvs.yaml -n 10000 -f -o output input.yaml`
+    $ solstice -D45,70:50,75 -R rcvs.yaml -n 10000 -f -o output input.yaml
 
 Generate a mesh for each geometry described in `input.yaml`, and save them in
 the `output` file with respect to the Alias Wavefront OBJ format. The meshes
-are positionned according to their orientation constraints, with respect to the
+are positioned according to their orientation constraints, with respect to the
 sun direction whose azimuthal and elevation angles are {`30`,`60`}. Use the
 `csplit`(1) Unix command to generate an Alias Wavefront OBJ file per geometry
 stored in `output`. The name of the generated Alias Wavefront OBJ files are
@@ -169,8 +169,8 @@ stored in `output`. The name of the generated Alias Wavefront OBJ files are
 described in `input.yaml`. Refer to `solstice-output`(5) for informations on
 the regular expression `^---$` used to split the output file:
 
-  $ `solstice -D30,60 -g format=obj:split=geometry -f -o output input.yaml`<br>
-  $ `csplit -f geom -b %02d.obj -z --suppress-matched output /^---$/ {*}`
+    $ solstice -D30,60 -g format=obj:split=geometry -f -o output input.yaml
+    $ csplit -f geom -b %02d.obj -z --suppress-matched output /^---$/ {*}
 
 Trace 100 radiative paths into the solar plant described in `input.yaml`, with
 respect to the sun direction whose azimuthal and elevations angles are `0` and
@@ -178,9 +178,9 @@ respect to the sun direction whose azimuthal and elevations angles are `0` and
 standard output and post-treat it with the `sed`(1) Unix command to remove the
 first line that stores the sun direction from which the radiative paths comes
 from. The remaining data that lists the radiative paths geometry are redirected
-into the `paths.vtk file:
+into the `paths.vtk` file:
 
-  $ `solstice -n 100 -D0,90 -R rcvs.yaml -p default input.yaml | sed '1d' > paths.vtk`
+    $ solstice -n 100 -D0,90 -R rcvs.yaml -p default input.yaml | sed '1d' > paths.vtk
 
 Use the path-tracing rendering algorithm to draw the solar plant
 `solplant.yaml` with respect to the sun direction whose azimuthal and elevation
@@ -189,19 +189,23 @@ estimate the per-pixel radiance and fix the up camera vector to {`0`,`0`,`1`}.
 Write the `solstice-output`(5) result to standard output and use the `sed`(1)
 Unix command to remove the first line which stores the sun direction used to
 draw the image. Finally, visualise the rendered picture by redirecting the
-remaining data to the feh image viewer.
+remaining data to the `feh`(5) image viewer.
 
-  $ `solstice -D180,45 -r up=0,0,1:rmode=pt:spp=64 solplant.yaml | sed '1d' | feh -`
+    $ solstice -D180,45 -r up=0,0,1:rmode=pt:spp=64 solplant.yaml | sed '1d' | feh -
 
 ## COPYRIGHT
 
 `solstice` is copyright &copy; CNRS 2016-2017. License GPLv3+: GNU GPL version
-3 or later <http://gnu.org/licenses/gpl.hrml>. This is a free software. you are
+3 or later <http://gnu.org/licenses/gpl.html>. This is a free software. you are
 free to change and redistribute it. There is NO WARRANTY, to the extent
 permitted by law.
 
 ## SEE ALSO
 
-`csplit`(1), `feh`(1), `sed`(1), `solstice-input`(5), `solstice-output`(5),
+`csplit`(1),
+`feh`(1),
+`sed`(1),
+`solstice-input`(5),
+`solstice-output`(5),
 `solstice-receivers`(5)
 
