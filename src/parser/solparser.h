@@ -200,6 +200,10 @@ extern LOCAL_SYM const struct solparser_sun*
 solparser_get_sun
   (const struct solparser* parser);
 
+extern LOCAL_SYM const struct solparser_atmosphere*
+solparser_get_atmosphere
+  (const struct solparser* parser);
+
 extern LOCAL_SYM const struct solparser_x_pivot*
 solparser_get_x_pivot
   (const struct solparser* parser,

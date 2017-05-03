@@ -608,6 +608,12 @@ solstice_init
     goto error;
   }
 
+  res = solstice_create_atmosphere(solstice);
+  if(res != RES_OK) {
+    fprintf(stderr, "Could not setup the Solstice atmosphere.\n");
+    goto error;
+  }
+
   solstice->nexperiments = args->nexperiments;
   solstice->output_hits = args->output_hits;
   solstice->dump_format = args->dump_format;

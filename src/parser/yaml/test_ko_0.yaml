@@ -1862,9 +1862,49 @@
 ---
 
 #
+# <atmosphere> ::=
+#   atmosphere: 
+#     absorption: <mtl-data> # in [0, 1]
+#
+
+# missing atmosphere definition
+- atmosphere:
+---
+# unknown dummy parameter
+- atmosphere:
+    dummy: 1
+---
+# missing absorption definition
+- atmosphere:
+    absorption: 
+---
+# absorption should be a number
+- atmosphere:
+    absorption: "dummy"
+---
+# 2 invalid
+- atmosphere:
+    absorption: 2
+---
+# 0 invalid
+- atmosphere:
+    absorption: [{wavelength: 0, data: 1}]
+---
+# 2 invalid
+- atmosphere:
+    absorption: [{wavelength: 0, data: 2}]
+---
+# 2x absorption
+- atmosphere:
+    absorption: 0.1
+    absorption: [{wavelength: 1, data: 1}]
+---
+
+#
 # <solar-factory> ::=
 #   <sun>
 #   <items>
+# [ <atmosphere> ]
 #
 # <items> ::=
 #   - <item>
@@ -1887,4 +1927,13 @@
     geometry:
       - cuboid: { size: [1, 2, 3] }
         material: { matte: { reflectivity: 1 } }
-
+---
+# 2x sun
+- sun: { dni: 1000, spectrum: [{wavelength: 1, data: 1}] }
+- sun: { dni: 1000, spectrum: [{wavelength: 1, data: 1}] }
+---
+# 2x atmosphere
+- atmosphere:
+    absorption: 0.1
+- atmosphere:
+    absorption: 0.1

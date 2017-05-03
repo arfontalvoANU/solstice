@@ -86,6 +86,7 @@ set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 set(SOLSTICE_FILES_SRC
   solstice.c
   solstice_args.c
+  solstice_atmosphere.c
   solstice_draw.c
   solstice_dump.c
   solstice_entity.c

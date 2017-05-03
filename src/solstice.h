@@ -88,6 +88,7 @@ struct solstice {
   struct ssol_device* ssol;
   struct ssol_scene* scene;
   struct ssol_sun* sun;
+  struct ssol_atmosphere* atmosphere;
 
   struct solparser* parser;
 
