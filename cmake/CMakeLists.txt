@@ -82,15 +82,23 @@ set(SOLSTICE_ARGS_DEFAULT_IMG_SPP "1")
 configure_file(${SOLSTICE_SOURCE_DIR}/solstice_args.h.in
   ${CMAKE_CURRENT_BINARY_DIR}/solstice_args.h @ONLY)
 
+################################################################################
+# Generate the documentation
+################################################################################
 if(RONN)
   configure_file(${SOLSTICE_SOURCE_DIR}/../doc/solstice.1.ronn.in
-    ${CMAKE_CURRENT_BINARY_DIR}/solstice.md @ONLY)
+    ${CMAKE_CURRENT_BINARY_DIR}/solstice.1.ronn @ONLY)
+
+  file(COPY ${SOLSTICE_SOURCE_DIR}/../doc/solstice-input.5.ronn
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+  set(SOLSTICE_MAN_PAGES solstice.1.ronn solstice-input.5.ronn)
+  rcmake_prepend_path(SOLSTICE_MAN_PAGES ${CMAKE_CURRENT_BINARY_DIR})
+
   if(${CMAKE_HOST_UNIX})
-    execute_process(COMMAND ${RONN} 
-      --style=man,toc ${CMAKE_CURRENT_BINARY_DIR}/solstice.md)
+    execute_process(COMMAND ${RONN} --style=man,toc ${SOLSTICE_MAN_PAGES})
   else()
-    execute_process(COMMAND ${RONN} 
-      -5 --style=man,toc ${CMAKE_CURRENT_BINARY_DIR}/solstice.md)
+    execute_process(COMMAND ${RONN} -5 --style=man,toc ${SOLSTICE_MAN_PAGES})
   endif()
 endif()
 

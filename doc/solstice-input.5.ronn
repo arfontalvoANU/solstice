@@ -1,0 +1,250 @@
+solstice-input(5) -- format of the `solstice`(1) solar plant description
+========================================================================
+
+## DESCRIPTION
+
+## GRAMMAR
+
+    <solar-factory>       ::= - <sun>
+                              - <item>
+                            [ - <item> ... ]
+
+    <item>                ::= <entity>
+                            | <geometry>
+                            | <material>
+                            | <medium>
+                            | <spectrum>
+                            | <template>
+
+    -------------------------------------
+
+    <geometry>            ::= geometry:
+                              - <object>
+                            [ - <object> ... ]
+
+    <object>              ::= <shape>
+                              <material>
+                            [ <transform> ]
+
+    <x_pivot>             ::= x_pivot:
+                                <target>
+                            [   ref_point: <real3> ] # Default is [0,0,0]
+
+    <zx_pivot>            ::= zx_pivot:
+                                <target>
+                            [   spacing: REAL ] # in [0, INF). Default 0
+                            [   ref_point: <real3> ] # Default is [0,0,0]
+
+    <target>              ::= target:
+                                anchor: <anchor-identifier>
+                            |   direction: <real3>
+                            |   position: <real3>
+                            |   <sun>
+
+    -------------------------------------
+
+    <shape>               ::= <cuboid>
+                            | <cylinder>
+                            | <hemisphere>
+                            | <hyperbol>
+                            | <parabol>
+                            | <parabolic-cylinder>
+                            | <plane>
+                            | <sphere>
+                            | <stl>
+
+    <cuboid>              ::= cuboid:
+                                size: <real3*+>
+
+    <cylinder>            ::= cylinder:
+                                height: REAL # in ]0, INF)
+                                radius: REAL # in ]0, INF)
+                            [   slices: INTEGER ] # in [4, 4096]. Default is 16
+                            [   stacks: INTEGER ] # in [1, 4096]. Default is 1
+
+    <hemisphere>          ::= hemisphere:
+                                radius: REAL # in ]0, INF)
+                            [   clip: <polyclip-list> ]
+                            [   slices: INTEGER ] # in [4, 4096]
+
+    <hyperbol>            ::= hyperbol:
+                                focals: <hyperboloid-focals>
+                                clip: <polyclip-list>
+                            [   slices: INTEGER ] # in [4, 4096]
+
+    <parabol>             ::= parabol:
+                                focal: REAL # in ]0, INF)
+                                clip: <polyclip-list>
+                            [   slices: INTEGER ] # in [4, 4096]
+
+    <parabolic-cylinder>  ::= parabolic-cylinder:
+                                focal: REAL # in ]0, INF)
+                                clip: <polyclip-list>
+                            [   slices: INTEGER ] # in [4, 4096]
+
+    <plane>               ::= plane:
+                                clip: <polyclip-list>
+                            [   slices: INTEGER ] # in [1, 4096]. Default is 1
+
+    <sphere>              ::= sphere:
+                                radius: REAL # in ]0, INF)
+                            [   slices: INTEGER ] # in [4, 4096]. Default is 16
+                            [   stacks: INTEGER ] # in [2, 4096]. Default is slices/2
+
+    <stl>                 ::= stl:
+                                path: PATH
+
+    <hyperboloid-focals>  ::= real: REAL # in ]0, INF)
+                              image: REAL # in ]0, INF)
+
+    ----------------------------------------
+
+    <polyclip-list>       ::= - <polyclip>
+                            [ - <polyclip> ... ]
+
+    <polyclip>            ::= operation: <AND|SUB>
+                              <contour-descriptor>
+
+    <contour-descriptor>  ::= <circle-descriptor>
+                            | <vertices-descriptor>
+
+    <vertices-descriptor> ::= vertices: <vertices-list>
+
+    <circle-descriptor>   ::= circle:
+                                radius: REAL # in ]0, INF)
+                            [   segments: INTEGER ] # in [3, 4096]. Default is 64
+
+    <vertices-list>       ::= - <real2>
+                              - <real2>
+                              - <real2>
+                            [ - <real2> ... ]
+
+    ----------------------------------------
+
+    <material>            ::= material:
+                                <material-descriptor>
+                            |   <double-sided-mtl>
+
+    <double-sided-mtl>    ::= front: <material-descriptor>
+                              back: <material-descriptor>
+
+    <material-descriptor> ::= <dielectric>
+                            | <matte>
+                            | <mirror>
+                            | thin-dielectric>
+                            | <virtual>
+
+    <dielectric>          ::= dielectric:
+                                medium_i: <medium-descriptor>
+                                medium_t: <medium-descriptor>
+                            [   <normal-map> ]
+
+    <matte>               ::= matte:
+                                reflectivity: <mtl-data> # in [0, 1]
+                            [   <normal-map> ]
+
+    <mirror>              ::= mirror:
+                                reflectivity: <mtl-data> # in [0, 1]
+                                roughness: <mtl-data> # in [0, 1]
+                            [   <normal-map> ]
+
+    <virtual>             ::= virtual: EMPTY-STRING
+
+    <thin-dielectric>     ::= thin_dielectric:
+                                thickness: REAL # in [0, INF)
+                                medium_i: <medium-descriptor>
+                                medium_t: <medium-descriptor>
+                            [   <normal-map> ]
+
+    <normal-map>          ::= normal_map:
+                                path: PATH
+
+    ----------------------------------------
+
+    <medium>              ::= medium: <medium-descriptor>
+
+    <medium-descriptor>   ::= refractive_index: <mtl-data> # in ]0, INF)
+                              absorptivity: <mtl-data> # in [0, INF)
+
+    ----------------------------------------
+
+    <entity>              ::= entity: <entity-data>
+
+    <template>            ::= template: <entity-data>
+
+    <entity-data>         ::= name: STRING # Except "self"
+                            [ <geometry-data> | <x_pivot> | <zx_pivot> ]
+                            [ <anchors> ]
+                            [ <transform> ]
+                            [ <children>  ]
+
+    <geometry-data>       ::= primary: INTEGER # in [0, 1]
+                              <geometry>
+
+    <children>            ::= children:
+                              - <entity-data>
+                            [ - <entity-data> ... ]
+
+    <anchors>             ::= anchors:
+                              - <anchor-data>
+                            [ - <anchor-data> ... ]
+
+    <anchor-data>         ::= name: STRING
+                              <position-descriptor>
+
+    <position-descriptor> ::= position: <real3>
+                            | hyperboloid_image_focals: <hyperboloid_focals>
+
+    # "self" references the first level entity
+    <entity-identifier>   ::= <self|STRING>[.STRING ... ]
+
+    <anchor-identifier>   ::= <entity-identifier>.STRING
+
+    ----------------------------------------
+
+    <sun>                 ::= sun:
+                                dni: REAL # Direct Normal Irradiance in ]0, INF)
+                            [   <spectrum> ] # Default is the smarts295 spectrum
+                            [   <radial-angular-distribution> ]
+
+    <rad-ang-distrib>     ::= <pillbox> | <buie>
+
+    <buie>                ::= buie:
+                                csr: REAL # in [1e-6, 0.849]
+
+    <pillbox>             ::= pillbox:
+                                aperture: REAL # in ]0, 90]
+
+    ----------------------------------------
+
+    <mtl-data>            ::= REAL
+                            | <spectrum-data-list>
+
+    <transform>           ::= transform:
+                                translation: <real3>
+                                rotation: <real3>
+
+    <real2>               ::= - REAL
+                              - REAL
+
+    <real3>               ::= - REAL
+                              - REAL
+                              - REAL
+
+    <spectrum>            ::= spectrum: <spectrum-data-list>
+
+    <spectrum-data-list>  ::= - <spectrum-data>
+                            [ - <spectrum-data> ... ]
+
+    <spectrum-data>       ::= wavelength: REAL # in [0, INF)
+                              data: REAL # in [0, INF)
+
+## NOTES
+
+* [1]: 
+  YAML Ain't Markup Language - <http://yaml.org>
+
+## SEE ALSO
+`solstice`(1)
+
+
