@@ -130,7 +130,7 @@ default `solstice` comportment.
   `spp=`_samples-count_<br>
   Number of samples per pixel. If `rmode` is `draft`, the samples position
   into a pixel are the same for all pixels.  With `rmode=pt` the pixel samples
-  are generated independently for each pixel.
+  are generated independently for each pixel. By default use 1 sample per pixel.
 
   `tgt=`_x_`,`_y_`,`_z_<br>
   Position targeted by the camera. By default, it set to
@@ -147,10 +147,11 @@ default `solstice` comportment.
   `solstice-receiver`(5) file defining the scene receivers, i.e. the solar
   plant entities for which `solstice` computes Monte-Carlo estimations.
 
+
 ## EXAMPLES
 
-Launch `solstice` estimations for two sun directions whose azimuthal and
-elevation angles are {`45`,`70`} and {`50`, `75`}. The solar facility is
+ Launch `solstice` estimations for two sun directions whose azimuthal and
+elevation angles are {`45`,`70`} and {`50`,`75`}. The solar facility is
 described in `input.yaml` and the receivers on which the integrations must be
 performed are declared in the `rcvs.yaml` file. `10000` realisations are used
 by the Monte-Carlo estimations and the results are written to `output` even
@@ -161,7 +162,7 @@ though this file already exists:
 Generate a mesh for each geometry described in `input.yaml`, and save them in
 the `output` file with respect to the Alias Wavefront OBJ format. The meshes
 are positionned according to their orientation constraints, with respect to the
-sun direction whose azimuthal and elevation angles are {`30`, `60`}. Use the
+sun direction whose azimuthal and elevation angles are {`30`,`60`}. Use the
 `csplit`(1) Unix command to generate an Alias Wavefront OBJ file per geometry
 stored in `output`. The name of the generated Alias Wavefront OBJ files are
 `geom<NUM>.obj` with `<NUM>` in [0, N-1] where N is the number of geometries
@@ -171,13 +172,26 @@ the regular expression `^---$` used to split the output file:
   $ `solstice -D30,60 -g format=obj:split=geometry -f -o output input.yaml`<br>
   $ `csplit -f geom -b %02d.obj -z --suppress-matched output /^---$/ {*}`
 
-Dump path
+Trace 100 radiative paths into the solar plant described in `input.yaml`, with
+respect to the sun direction whose azimuthal and elevations angles are `0` and
+`90` degrees, respectively. Write the `solstice-output`(5) result to the
+standard output and post-treat it with the `sed`(1) Unix command to remove the
+first line that stores the sun direction from which the radiative paths comes
+from. The remaining data that lists the radiative paths geometry are redirected
+into the `paths.vtk file:
 
   $ `solstice -n 100 -D0,90 -R rcvs.yaml -p default input.yaml | sed '1d' > paths.vtk`
 
-Draw
+Use the path-tracing rendering algorithm to draw the solar plant
+`solplant.yaml` with respect to the sun direction whose azimuthal and elevation
+angles are `180` and `45` degrees, respectively. Use `64` samples per pixel to
+estimate the per-pixel radiance and fix the up camera vector to {`0`,`0`,`1`}.
+Write the `solstice-output`(5) result to standard output and use the `sed`(1)
+Unix command to remove the first line which stores the sun direction used to
+draw the image. Finally, visualise the rendered picture by redirecting the
+remaining data to the feh image viewer.
 
-  $ `solstice -D180,45 -r up=0,0,1:rmode=pt:spp=64 input.yaml | sed '1d' | feh -`
+  $ `solstice -D180,45 -r up=0,0,1:rmode=pt:spp=64 solplant.yaml | sed '1d' | feh -`
 
 ## COPYRIGHT
 
@@ -188,5 +202,6 @@ permitted by law.
 
 ## SEE ALSO
 
-`csplit`(1), `solstice-input`(5), `solstice-output`(5), `solstice-receivers`(5)
+`csplit`(1), `feh`(1), `sed`(1), `solstice-input`(5), `solstice-output`(5),
+`solstice-receivers`(5)
 
