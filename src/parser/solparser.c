@@ -119,6 +119,7 @@ parse_item
   struct solparser_material_double_sided_id mtl2;
   struct solparser_medium_id medium;
   struct solparser_sun* sun;
+  struct solparser_atmosphere* atmosphere;
 
   yaml_node_t* key;
   yaml_node_t* val;
@@ -148,7 +149,7 @@ parse_item
     goto error;
   }
 
-  /* The parsing of the templates/spectraa is deferred to their explicit use */
+  /* The parsing of the templates/spectra is deferred to their explicit use */
   if(!strcmp((char*)key->data.scalar.value, "material")) {
     res = parse_material(parser, doc, val, &mtl2);
   } else if(!strcmp((char*)key->data.scalar.value, "medium")) {
@@ -163,6 +164,8 @@ parse_item
     res = parse_geometry(parser, doc, val, &geometry);
   } else if(!strcmp((char*)key->data.scalar.value, "sun")) {
     res = parse_sun(parser, doc, val, &sun);
+  } else if (!strcmp((char*)key->data.scalar.value, "atmosphere")) {
+    res = parse_atmosphere(parser, doc, val, &atmosphere);
   } else if(!strcmp((char*)key->data.scalar.value, "spectrum")) { /* Deferred */
   } else {
     log_err(parser, key, "unknown item `%s'.\n", key->data.scalar.value);
@@ -1133,6 +1136,14 @@ solparser_get_sun(const struct solparser* parser)
 {
   ASSERT(parser && parser->sun_key);
   return &parser->sun;
+}
+
+const struct solparser_atmosphere*
+solparser_get_atmosphere(const struct solparser* parser)
+{
+  ASSERT(parser);
+  if(parser->sun_key) return &parser->atmosphere;
+  else return NULL;
 }
 
 void

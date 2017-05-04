@@ -205,38 +205,6 @@ thin_dielectric_param_release(void* mem)
 }
 
 static res_T
-mtl_to_ssol_data
-  (struct solstice* solstice,
-   const struct solparser_mtl_data* mtl_data,
-   struct ssol_data* data)
-{
-  struct ssol_spectrum* spectrum = NULL;
-  res_T res = RES_OK;
-  ASSERT(mtl_data && data);
-
-  ssol_data_clear(data);
-  switch(mtl_data->type) {
-    case SOLPARSER_MTL_DATA_REAL:
-      ssol_data_set_real(data, mtl_data->value.real);
-      break;
-    case SOLPARSER_MTL_DATA_SPECTRUM:
-      res = solstice_create_ssol_spectrum
-        (solstice, mtl_data->value.spectrum, &spectrum);
-      if(res != RES_OK) goto error;
-      ssol_data_set_spectrum(data, spectrum);
-      break;
-    default: FATAL("Unreachable code.\n"); break;
-  }
-
-exit:
-  if(spectrum) SSOL(spectrum_ref_put(spectrum));
-  return res;
-error:
-  ssol_data_clear(data);
-  goto exit;
-}
-
-static res_T
 load_image
   (struct solstice* solstice,
    const char* filename,
@@ -600,6 +568,38 @@ error:
 /*******************************************************************************
  * Local functions
  ******************************************************************************/
+res_T
+mtl_to_ssol_data
+  (struct solstice* solstice,
+   const struct solparser_mtl_data* mtl_data,
+   struct ssol_data* data)
+{
+  struct ssol_spectrum* spectrum = NULL;
+  res_T res = RES_OK;
+  ASSERT(mtl_data && data);
+
+  ssol_data_clear(data);
+  switch(mtl_data->type) {
+  case SOLPARSER_MTL_DATA_REAL:
+    ssol_data_set_real(data, mtl_data->value.real);
+    break;
+  case SOLPARSER_MTL_DATA_SPECTRUM:
+    res = solstice_create_ssol_spectrum
+    (solstice, mtl_data->value.spectrum, &spectrum);
+    if(res != RES_OK) goto error;
+    ssol_data_set_spectrum(data, spectrum);
+    break;
+  default: FATAL("Unreachable code.\n"); break;
+  }
+
+exit:
+  if(spectrum) SSOL(spectrum_ref_put(spectrum));
+  return res;
+error:
+  ssol_data_clear(data);
+  goto exit;
+}
+
 res_T
 solstice_create_ssol_material
   (struct solstice* solstice,

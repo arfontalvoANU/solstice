@@ -17,6 +17,7 @@
 #define SOLPARSER_C_H
 
 #include "solparser.h"
+#include "solparser_atmosphere.h"
 #include "solparser_entity.h"
 #include "solparser_image.h"
 #include "solparser_material.h"
@@ -265,6 +266,11 @@ struct solparser {
   const yaml_node_t* sun_key; /* yaml_node_t ptr used to spawn the sun */
   struct solparser_sun sun; /* The loaded sun */
 
+  /* Atmosphere. Note that at most one atmosphere is supported */
+  const yaml_node_t* atmosphere_key;
+  /* yaml_node_t ptr used to spawn the atmosphere; can be NULL */
+  struct solparser_atmosphere atmosphere; /* The loaded atmosphere, if any */
+
   /* Entity */
   struct htable_str2sols str2entities;
   struct darray_entity entities;
@@ -436,6 +442,13 @@ parse_sun
    yaml_document_t* doc,
    const yaml_node_t* sun,
    struct solparser_sun** out_solsun);
+
+extern LOCAL_SYM res_T
+parse_atmosphere
+  (struct solparser* parser,
+   yaml_document_t* doc,
+   yaml_node_t* atm,
+   struct solparser_atmosphere** out_solatm);
 
 extern LOCAL_SYM res_T
 parse_x_pivot

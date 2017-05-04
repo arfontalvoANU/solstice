@@ -42,6 +42,8 @@ static const char* input[] = {
   "- sun: \n",
   "    dni: 1\n",
   "    spectrum: [{wavelength: 1, data: 1}]\n",
+  "- atmosphere:\n",
+  "    absorption: [{wavelength: 1, data: 1}]\n",
   "- entity:\n",
   "    name: entity0\n",
   "    primary: 0\n",

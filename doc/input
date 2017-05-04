@@ -83,6 +83,7 @@
 <solar-factory> ::=
   <sun>
   <items>
+[ <atmosphere> ]
 
 <items> ::=
   - <item>
@@ -348,6 +349,11 @@
     aperture: REAL # in ]0, 90]
 
 #----------------------------------------
+<atmosphere> ::=
+  atmosphere: 
+    absorption: <mtl-data> # in [0, 1]
+
+#----------------------------------------
 <mtl-data> ::=
   REAL | <spectrum-data-list>
 
@@ -380,4 +386,3 @@
 <spectrum-data> ::=
   wavelength: REAL # in [0, INF)
   data: REAL # in [0, INF)
-

@@ -79,6 +79,8 @@ main(int argc, char** argv)
   fprintf(stream, "- sun:\n");
   fprintf(stream, "    dni: 1\n");
   fprintf(stream, "    spectrum: [ { wavelength: 1, data: 1} ]\n");
+  fprintf(stream, "- atmosphere:\n");
+  fprintf(stream, "    absorption: 0\n");
   rewind(stream);
 
   CHECK(solparser_setup(parser, NULL, stream), RES_OK);

@@ -294,7 +294,7 @@ create_stl
   stl = solparser_get_shape_stl(solstice->parser, stl_id);
   ASSERT(str_cget(&stl->filename));
 
-  res = sstl_create(NULL, solstice->allocator, 0, &tmp_stl);
+  res = sstl_create(NULL, solstice->allocator, 1, &tmp_stl);
   if(res != RES_OK) {
     fprintf(stderr, "Could not create a Solstice Solver STL shape.\n");
     goto error;
@@ -608,9 +608,9 @@ create_shaded_shape
 exit:
   return res;
 error:
-  if(*ssol_front) SSOL(material_ref_put(*ssol_front));
-  if(*ssol_back) SSOL(material_ref_put(*ssol_back));
-  if(*ssol_shape) SSOL(shape_ref_put(*ssol_shape));
+  if(*ssol_front) SSOL(material_ref_put(*ssol_front)), *ssol_front = NULL;
+  if(*ssol_back) SSOL(material_ref_put(*ssol_back)), *ssol_back = NULL;
+  if(*ssol_shape) SSOL(shape_ref_put(*ssol_shape)), *ssol_shape = NULL;
   goto exit;
 }
 

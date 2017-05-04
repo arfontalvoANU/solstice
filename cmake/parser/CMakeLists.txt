@@ -31,6 +31,7 @@ include_directories(
 ################################################################################
 set(SOLPARSER_FILES_SRC
   solparser.c
+  solparser_atmosphere.c
   solparser_entity.c
   solparser_image.c
   solparser_geometry.c
@@ -43,6 +44,7 @@ set(SOLPARSER_FILES_SRC
 set(SOLPARSER_FILES_INC
   solparser.h
   solparser_c.h
+  solparser_atmosphere.h
   solparser_entity.h
   solparser_geometry.h
   solparser_image.h
