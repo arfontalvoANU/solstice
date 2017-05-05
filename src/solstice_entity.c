@@ -188,7 +188,7 @@ setup_tracking
     case SOLPARSER_TARGET_POSITION:
       tracking->policy = TRACKING_POINT;
       d3_set(tracking->data.point.target, target->data.position);
-      tracking->data.point.target_is_local = 0; /* TODO */
+      tracking->data.point.target_is_local = 0;
       break;
     case SOLPARSER_TARGET_SUN:
       tracking->policy = TRACKING_SUN;
