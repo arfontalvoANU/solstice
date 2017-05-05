@@ -1,11 +1,27 @@
-solstice-input(5) -- format of the `solstice`(1) solar plant description
-========================================================================
+solstice-input(5) -- solar plant description for `solstice`(1)
+==============================================================
 
 ## DESCRIPTION
 
+The `solstice-input` is the format used by the `solstice`(1) program to
+represent a solar plant. It relies on the YAML 1.1 data serialization standard
+[1]; assuming that the file is compatible with the `solstice-input` semantic, a
+solar plant can be described by using the whole YAML 1.1 functionalities as
+compact notation or data tagging.
+
+A solar plant is composed of a `sun`, an optional `atmosphere` and a collection
+of `geometries`, i.e. `shapes` with their associated `material`. Beside the raw
+description of the aforementioned data, the `solstice-input` format provides
+the `entity` item to efficiently structure the `geometries` in the scene. An
+`entity` is a node in a tree data structure where the position of each child
+`entity` is relative to the position of its parent. An `entity` can either
+encapsulate a `geometry` or a `pivot` that controls the dynamic positioning of
+its children entity with respect to the pivot constraints and the sun direction
+submitted to the `solstice`(1) program.
+
 ## GRAMMAR
 
-    <solar-factory>       ::= - <sun>
+    <solar-plant>         ::= - <sun>
                               - <item>
                             [ - <item> ... ]
 
@@ -131,7 +147,7 @@ solstice-input(5) -- format of the `solstice`(1) solar plant description
     <material-descriptor> ::= <dielectric>
                             | <matte>
                             | <mirror>
-                            | thin-dielectric>
+                            | <thin-dielectric>
                             | <virtual>
 
     <dielectric>          ::= dielectric:
