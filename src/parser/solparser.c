@@ -1142,7 +1142,7 @@ const struct solparser_atmosphere*
 solparser_get_atmosphere(const struct solparser* parser)
 {
   ASSERT(parser);
-  if(parser->sun_key) return &parser->atmosphere;
+  if(parser->atmosphere_key) return &parser->atmosphere;
   else return NULL;
 }
 
