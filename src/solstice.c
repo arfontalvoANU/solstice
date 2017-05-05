@@ -651,6 +651,7 @@ solstice_release(struct solstice* solstice)
   if(solstice->ssol) SSOL(device_ref_put(solstice->ssol));
   if(solstice->scene) SSOL(scene_ref_put(solstice->scene));
   if(solstice->sun) SSOL(sun_ref_put(solstice->sun));
+  if(solstice->atmosphere) SSOL(atmosphere_ref_put(solstice->atmosphere));
   if(solstice->parser) solparser_ref_put(solstice->parser);
   if(solstice->camera) SSOL(camera_ref_put(solstice->camera));
   if(solstice->framebuffer) SSOL(image_ref_put(solstice->framebuffer));
