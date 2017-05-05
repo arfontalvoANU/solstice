@@ -255,10 +255,95 @@ submitted to the `solstice`(1) program.
     <spectrum-data>       ::= wavelength: REAL # in [0, INF)
                               data: REAL # in [0, INF)
 
+## MATERIAL
+
+A `material` describes the properties of an interface. These properties can be
+the same for the two sides of the interface or may be differentiated with a
+`double-sided-mtl`. The material comportment is controlled by a
+`material-descriptor` that specifies the physical properties of the interface
+as well as its optional normal perturbation. Note that the physical properties
+can be either scalars of spectral data.
+
+### Material descriptors
+
+The available material descriptors are:
+
+* `dielectric`:
+  Interface between 2 dielectric media. Its `medium_i` parameter defines the
+  current medium, i.e. the medium the ray travels in, while `medium_t` represents
+  the opposite medium. Incoming rays are either specularly reflected or refracted
+  with respect to a Fresnel term computed with respect to the refractive indices
+  of the 2 media as:
+
+  Fr = 1/2 * (Rs\^2 + Rp\^2)
+
+  with Rs and Rp the reflectance for the light polarized with its electric
+  field perpendicular or parallel to the plane of incidence, respectively.
+
+  Rs = (n1 * |wi.N| - n2 * |wt.N|) / (n1 * |wi.N| + n2 * |wt.N)<br/>
+  Rp = (n2 * |wi.N| - n1 * |wt.N|) / (n2 * |wi.N| + n1 * |wt.N)
+
+  with n1 and n2 the indices of refraction of the incident and transmitted
+  media, and wi and wt the incident and transmitted direction. Note that the
+  `solstice-input` file must ensure that the description of the scene media is
+  consistent; a ray travelling in a medium _A_ can only encounter a medium
+  interface whose `medium_i` attribute is _A_. The default medium is assumed to
+  be the vacuum, i.e. its refractive index is 1 and its absorptivity is 0.
+
+* `matte`:
+  Diffuse surface. Reflects the same intensity in all direction independently
+  of the incoming direction.
+
+* `mirror`:
+  Specular or glossy reflection whether the `roughness` parameter is 0 or not,
+  respectively. Glossy reflections are controlled by a microfacet BRDF with the
+  Beckmann normal distribution defined as:
+
+  D(wh) = exp(-tan\^2(a) / m\^2) / (PI * m\^2 * cos\^4(a))
+
+  with a = arccos(wh.N) and m the `roughness` in ]0,1] of the interface.
+
+* `thin-dielectric`:
+  The interface is assumed to be a thin slab of a dielectric material.  The
+  `medium_i` parameter defines the outside dielectric medium while `medium_t` is
+  the medium of the thin slab. Incoming rays are either specularly reflected or
+  transmitted (without deviation) with respect to a Fresnel term computed with
+  respect to the refractive indices of the 2 media as:
+
+  Fr = 1/2 * (Rs\^2 + Rp\^2)
+
+  with Rs and Rp the reflectance for the light polarized with its electric
+  field perpendicular or parallel to the plane of incidence, respectively.
+
+  Rs = (n1 * |wi.N| - n2 * |wt.N|) / (n1 * |wi.N| + n2 * |wt.N)<br/>
+  Rp = (n2 * |wi.N| - n1 * |wt.N|) / (n2 * |wi.N| + n1 * |wt.N)
+
+  with n1 and n2 the indices of refraction of the incident and transmitted
+  media, and wi and wt the incident and transmitted direction. Note that the
+  underlying scattering function correctly handles the multiple refraction
+  effects into the thin slab.
+
+* `virtual`:
+  Fully transparent interface.
+
+### Normal map
+
+Excepted the `virtual` material descriptor, all the material descriptors provide
+an optional `normal-map` attribute that defines a path toward an Portable
+PixMap image [2] whose pixels stores a normal expressed in the tangent space
+of the interface. By default the un-perturbated tangent space normal is
+{0,0,1}. The PPM image can be encoded on 8 or 16-bits per component either in
+ASCII or binary. The parametrization of this 2D image onto the shape surfaces
+depends on the type of the shape. For the `hemisphere`, `hyperbol`, `parabol`,
+`plane` and `parabolic-cylinder` shapes, the image is mapped in the {X, Y}
+plane. For the other shapes, the image is mapped per triangle.
+
 ## NOTES
 
-* [1]: 
+* [1]:
   YAML Ain't Markup Language - <http://yaml.org>
+* [2]:
+  Portable PixMap - <http://netpbm.sourceforge.net/doc/ppm.html>
 
 ## SEE ALSO
 `solstice`(1)
