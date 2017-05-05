@@ -228,6 +228,10 @@ parser_clear(struct solparser* parser)
   solparser_sun_clear(&parser->sun);
   parser->sun_key = 0;
 
+  /* Atmosphere */
+  solparser_atmosphere_clear(&parser->atmosphere);
+  parser->atmosphere_key = 0;
+
   /* Entities */
   htable_str2sols_clear(&parser->str2entities);
   darray_entity_clear(&parser->entities);
