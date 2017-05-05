@@ -467,11 +467,8 @@ write_paths(struct solstice* solstice, struct ssol_estimator* estimator)
 res_T
 solstice_solve(struct solstice* solstice)
 {
-  char buf[1024];
   struct ssol_estimator* estimator = NULL;
   struct ssp_rng* rng = NULL;
-  FILE* bin_stream = NULL;
-  size_t sz;
   res_T res = RES_OK;
   ASSERT(solstice);
 
@@ -481,18 +478,9 @@ solstice_solve(struct solstice* solstice)
     goto error;
   }
 
-  if(solstice->output_hits) {
-    bin_stream = tmpfile();
-    if(!bin_stream) {
-      fprintf(stderr, "Could not create the temporary output binary stream.\n");
-      res = RES_IO_ERR;
-      goto error;
-    }
-  }
 
   res = ssol_solve(solstice->scene, rng, solstice->nexperiments,
-    solstice->dump_paths ? &solstice->path_tracker : NULL, bin_stream,
-    &estimator);
+    solstice->dump_paths ? &solstice->path_tracker : NULL, NULL, &estimator);
   if(res != RES_OK) {
     fprintf(stderr, "Error in integrating the solar flux.\n");
     goto error;
@@ -503,30 +491,9 @@ solstice_solve(struct solstice* solstice)
   } else {
     write_mc_global(solstice, estimator);
     write_per_receiver_mc_primitive(solstice, estimator);
-
-    if(solstice->output_hits) {
-      sz = (size_t)ftell(bin_stream);
-      rewind(bin_stream);
-
-      while(sz) {
-        const size_t read_sz = MMIN(sz, sizeof(buf));
-        if(fread(buf, 1, read_sz, bin_stream) != read_sz) {
-          fprintf(stderr, "Could not read the output binary stream.\n");
-          res = RES_IO_ERR;
-          goto error;
-        }
-        if(fwrite(buf, 1, read_sz, solstice->output) != read_sz) {
-          fprintf(stderr, "Could not write the output binary stream.\n");
-          res = RES_IO_ERR;
-          goto error;
-        }
-        sz -= read_sz;
-      }
-    }
   }
 
 exit:
-  if(bin_stream) fclose(bin_stream);
   if(estimator) SSOL(estimator_ref_put(estimator));
   if(rng) SSP(rng_ref_put(rng));
   return res;

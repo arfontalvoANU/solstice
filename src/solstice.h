@@ -120,7 +120,6 @@ struct solstice {
 
   size_t nexperiments; /* # MC experiments */
   FILE* output; /* Output stream */
-  int output_hits; /* Output per receiver hits */
   int dump_paths;
 
   struct mem_allocator* allocator;

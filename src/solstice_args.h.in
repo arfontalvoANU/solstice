@@ -78,7 +78,6 @@ struct solstice_args {
   int force_overwriting;
   int dump_paths; /* Dump radiative paths */
   int rendering;
-  int output_hits; /* Output the per receiver hits */
   int quiet;
   int quit; /* Quit the application */
 };
@@ -121,7 +120,6 @@ static const struct solstice_args SOLSTICE_ARGS_NULL = SOLSTICE_ARGS_NULL__;
   0, /* Force overwriting */                                                   \
   0, /* Dump radiative paths */                                                \
   0, /* Rendering */                                                           \
-  0, /* Output hits */                                                         \
   0, /* Quiet */                                                               \
   0 /* Quit */                                                                 \
 }

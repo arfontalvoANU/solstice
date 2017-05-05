@@ -391,26 +391,6 @@ test_threads_count(void)
 }
 
 static void
-test_output_hits(void)
-{
-  struct solstice_args args = SOLSTICE_ARGS_NULL;
-  char** cmd = NULL;
-
-  cmd = cmd_create(0, "test", "-D", "0,90", NULL);
-  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
-  CHECK(args.output_hits, SOLSTICE_ARGS_DEFAULT.output_hits);
-  CHECK(args.output_hits, 0);
-  solstice_args_release(&args);
-  cmd_delete(cmd);
-
-  cmd = cmd_create(0, "test", "-D", "0,90", "-H", NULL);
-  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
-  CHECK(args.output_hits, 1);
-  solstice_args_release(&args);
-  cmd_delete(cmd);
-}
-
-static void
 test_output(void)
 {
   struct solstice_args args = SOLSTICE_ARGS_NULL;
@@ -678,7 +658,6 @@ main(int argc, char** argv)
   test_sun_dirs();
   test_realisations_count();
   test_threads_count();
-  test_output_hits();
   test_output();
   test_quiet();
   test_receivers();

@@ -492,13 +492,12 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
   *args = SOLSTICE_ARGS_DEFAULT;
 
   optind = 0;
-  while((opt = getopt(argc, argv, "D:fg:Hhn:o:p:qR:r:t:")) != -1) {
+  while((opt = getopt(argc, argv, "D:fg:hn:o:p:qR:r:t:")) != -1) {
     switch(opt) {
       case 'D': /* Sun directions */
         res = parse_sun_dir_list(optarg, args);
         break;
       case 'f': args->force_overwriting = 1; break;
-      case 'H': args->output_hits = 1; break;
       case 'h': /* Print short help and exit */
         print_help(argv[0]);
         solstice_args_release(args);
