@@ -12,9 +12,9 @@ compact notation or data tagging.
 A solar plant is composed of a `sun`, an optional `atmosphere` and a collection
 of `geometries`, i.e. `shapes` with their associated `material`. Beside the raw
 description of the aforementioned data, the `solstice-input` format provides
-the `entity` item to efficiently structure the `geometries` in the scene. An
-`entity` is a node in a tree data structure where the position of each child
-`entity` is relative to the position of its parent. An `entity` can either
+the `entity` item to efficiently structure the geometries in the scene. An
+entity is a node in a tree data structure where the position of each child
+entity is relative to the position of its parent. An entity can either
 encapsulate a `geometry` or a `pivot` that controls the dynamic positioning of
 its children entity with respect to the pivot constraints and the sun direction
 submitted to the `solstice`(1) program.
@@ -70,7 +70,7 @@ submitted to the `solstice`(1) program.
                             | <stl>
 
     <cuboid>              ::= cuboid:
-                                size: <real3*+>
+                                size: <real3> # in ]0, INF]^3
 
     <cylinder>            ::= cylinder:
                                 height: REAL # in ]0, INF)
@@ -262,7 +262,7 @@ the same for the two sides of the interface or may be differentiated with a
 `double-sided-mtl`. The material comportment is controlled by a
 `material-descriptor` that specifies the physical properties of the interface
 as well as its optional normal perturbation. Note that the physical properties
-can be either scalars of spectral data.
+can be either scalars or spectral data.
 
 ### Material descriptors
 
@@ -280,8 +280,8 @@ The available material descriptors are:
   with Rs and Rp the reflectance for the light polarized with its electric
   field perpendicular or parallel to the plane of incidence, respectively.
 
-  Rs = (n1 * |wi.N| - n2 * |wt.N|) / (n1 * |wi.N| + n2 * |wt.N)<br/>
-  Rp = (n2 * |wi.N| - n1 * |wt.N|) / (n2 * |wi.N| + n1 * |wt.N)
+  Rs = (n1 * |wi.N| - n2 * |wt.N|) / (n1 * |wi.N| + n2 * |wt.N|)<br/>
+  Rp = (n2 * |wi.N| - n1 * |wt.N|) / (n2 * |wi.N| + n1 * |wt.N|)
 
   with n1 and n2 the indices of refraction of the incident and transmitted
   media, and wi and wt the incident and transmitted direction. Note that the
@@ -291,7 +291,7 @@ The available material descriptors are:
   be the vacuum, i.e. its refractive index is 1 and its absorptivity is 0.
 
 * `matte`:
-  Diffuse surface. Reflects the same intensity in all direction independently
+  Diffuse surface. Reflects the same intensity in all directions independently
   of the incoming direction.
 
 * `mirror`:
@@ -315,8 +315,8 @@ The available material descriptors are:
   with Rs and Rp the reflectance for the light polarized with its electric
   field perpendicular or parallel to the plane of incidence, respectively.
 
-  Rs = (n1 * |wi.N| - n2 * |wt.N|) / (n1 * |wi.N| + n2 * |wt.N)<br/>
-  Rp = (n2 * |wi.N| - n1 * |wt.N|) / (n2 * |wi.N| + n1 * |wt.N)
+  Rs = (n1 * |wi.N| - n2 * |wt.N|) / (n1 * |wi.N| + n2 * |wt.N|)<br/>
+  Rp = (n2 * |wi.N| - n1 * |wt.N|) / (n2 * |wi.N| + n1 * |wt.N|)
 
   with n1 and n2 the indices of refraction of the incident and transmitted
   media, and wi and wt the incident and transmitted direction. Note that the
@@ -328,15 +328,134 @@ The available material descriptors are:
 
 ### Normal map
 
-Excepted the `virtual` material descriptor, all the material descriptors provide
-an optional `normal-map` attribute that defines a path toward an Portable
-PixMap image [2] whose pixels stores a normal expressed in the tangent space
-of the interface. By default the un-perturbated tangent space normal is
-{0,0,1}. The PPM image can be encoded on 8 or 16-bits per component either in
-ASCII or binary. The parametrization of this 2D image onto the shape surfaces
-depends on the type of the shape. For the `hemisphere`, `hyperbol`, `parabol`,
-`plane` and `parabolic-cylinder` shapes, the image is mapped in the {X, Y}
-plane. For the other shapes, the image is mapped per triangle.
+Excepted the `virtual` material descriptor, all the material descriptors
+provide an optional `normal-map` attribute that defines a path toward a
+Portable PixMap image [2] whose each pixel stores a normal expressed in the
+tangent space of the interface. By default the un-perturbated tangent space
+normal is {0,0,1}. The PPM image can be encoded on 8 or 16-bits per component
+either in ASCII or binary. The parameterization of this 2D image onto the shape
+surfaces depends on the type of the shape. For the `hemisphere`, `hyperbol`,
+`parabol`, `plane` and `parabolic-cylinder` shapes, the image is mapped in the
+{X,Y} plane. The other shapes are not parameterized and consequently, applying a
+normal-mapped material on these shapes leads to undefined behaviors.
+
+## SHAPE
+
+A `shape` is used to describe a geometric model. A `shape` is defined in its
+local space, i.e. in a repair whose origin is proper to the shape. No space
+transformation can be defined on the declaration of a shape: it is transformed
+externally through an `object` and/or `entities`.
+
+### Quadrics
+
+A quadric shape is defined from a quadric equation and a set of 2D clipping
+operations in the {X,Y} plane defined by its `clip` parameter. By convention,
+the front side of the quadric surface looks toward the positive Z axis.
+Internally, the clipped quadric surface is discretized in a triangular mesh
+with respect to the quadric discretization parameters. This mesh is used by
+`solstice`(1) as a "proxy" to speed up the access toward the quadric shape: the
+quadric position and its associated normal are in fine computed from the
+quadric equation.
+
+The quadric surface is parameterized in the {X,Y} plane. Its parametrization
+domain is defined from the bounds of its clipped mesh in the {X,Y} plane:
+
+    u = (x - lowerX) / (upperX-lowerX)
+    v = (y - lowerY) / (upperY-lowerY)
+
+with `u` and `v` the mapped 2D coordinates from a 3D position {`x`,`y`,`z`}
+onto the quadric, and `lower<X|Y>` and `upper<X|Y>` the lower and upper
+bounds of the clipped parabolic cylinder mesh along the X and Y axis.
+
+The available quadrics are:
+
+* `hemisphere`:
+  Hemisphere whose up direction is along the negative Z axis and its polar
+  coordinate is positioned at the origin. The `slices` parameter controls the
+  number of divisions along the Z axis.
+
+  x\^2 + y\^2 + (z-`radius`)\^2 = `radius`\^2
+
+* `hyperbol`:
+  Hyperbolic quadric defines along the Z axis whose minimum is positioned at
+  the origin. The `slices` parameter controls the discretisation of the
+  hyperbol. If not defined, it is automatically computed with respect to the
+  hyperbol curvature.
+
+  (x\^2 + y\^2) / a\^2 - (z + z0 - g/2)\^2 / b\^2 + 1 = 0
+
+  a\^2 = g\^2(f - f\^2)<br/>
+  b = g(f - 1/2)<br/>
+  z0 = |b| + g/2<br/>
+  g = `focals.real` + `focals.image`<br/>
+  f = `focals.real` / g
+
+* `parabol`:
+  Parabolic quadric defines along the Z axis whose minimum is positioned at the
+  origin. The `slices` parameter controls the discretisation of the parabol. If
+  not defined, it is automatically computed with respect to the parabol
+  curvature.
+
+  x\^2 + y\^2 - 4 * `focal` * z = 0
+
+* `parabolic-cylinder`:
+  Parabolic cylinder oriented along the Z axis whose main axis is along the X
+  axis and minimum is positionned at the origin. The `slices` parameter
+  controls the discretisation of the parabolic cylinder. If not defined, it is
+  automatically computed with respect to the parabolic cylinder curvature.
+
+  y\^2 - 4 * `focal` * z = 0
+
+* `plane`:
+  Plane whose normal points along the positive Z axis. The `slices` attribute
+  controls the discretisation of the plane cut with respect to the clipping
+  operations defines by the `clip` parameter.
+
+### Triangular meshes
+
+Triangular meshes are generated by `solstice`(1) from a shape description or
+loaded from a CAO file. Note that the mesh normals are defined per triangle.
+They are thus discontinuous even though for smooth shapes as spheres.
+
+The triangular meshes are not parameterized, i.e. they do not provide a mapping
+from a 3D position onto its surface to a 2D coordinates. Applying a
+normal-mapped material to a triangular meshes will thus produce undefined
+behaviors.
+
+The available triangular meshes are:
+
+* `cuboid`:
+  Axis aligned cuboid centered in 0 whose dimensions along the 3 axis is
+  defined by the `size` parameter. The front side of the cuboid surface looks
+  outside the cuboid shape.
+
+* `cylinder`:
+  Cylinder centered in 0 whose `height` is along the positive Z axis. The top
+  and the bottom of the cylinder is capped. The `stacks` and `slices`
+  parameters control the discretisation, i.e. the number of divisions, along or
+  around the Z axis, respectively. The front side of the cylinder surface looks
+  outside the cylinder shape.
+
+* `sphere`:
+  Triangulated sphere centered in 0. The `stacks` and `slices` parameters
+  control the discretisation, i.e. the number of divisions, along or around the
+  Z axis, respectively. The front side of the sphere surface looks outside the
+  sphere shape.
+
+* `stl`:
+  Path toward an external mesh defined with respect to the `ST`ereo
+  `L`ithography file format. The front side of the loaded triangles is defined
+  with respect to their vertex ordering: a triangle is front facing when their
+  vertices are clock wise ordered.
+
+
+### Object
+
+### Geometry
+
+## ENTITY
+
+Pivot, Geometry, Template
 
 ## NOTES
 
@@ -344,6 +463,7 @@ plane. For the other shapes, the image is mapped per triangle.
   YAML Ain't Markup Language - <http://yaml.org>
 * [2]:
   Portable PixMap - <http://netpbm.sourceforge.net/doc/ppm.html>
+
 
 ## SEE ALSO
 `solstice`(1)
