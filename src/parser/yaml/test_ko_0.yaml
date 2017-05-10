@@ -406,6 +406,7 @@
 # <circle-descriptor> ::=
 #  circle: 
 #    radius: REAL # in ]0, INF)
+# [  center: <real2>. Default 0,0 ]
 # [  segments: INTEGER # in [3, 4096). Default 64 ]
 #
 #
@@ -496,12 +497,32 @@
         clip:
           - circle: { radius: }
 ---
+# missing center description
+- geometry:
+    - plane:
+        clip:
+          - circle: { center: }
+---
 # invalid number "dummy"
 - geometry:
     - plane:
         clip:
           - operation: AND
             circle: { radius: "dummy" }
+---
+# invalid point "dummy"
+- geometry:
+    - plane:
+        clip:
+          - operation: AND
+            circle: { center: "dummy" }
+---
+# invalid point 1
+- geometry:
+    - plane:
+        clip:
+          - operation: AND
+            circle: { center: 1 }
 ---
 # invalid number "dummy"
 - geometry:
@@ -526,6 +547,12 @@
 - geometry:
     - plane:
         clip:
+          - circle: { center: [4, -10] }
+---
+# missing radius
+- geometry:
+    - plane:
+        clip:
           - circle: { segments: 10 }
 ---
 # 2x radius
@@ -533,6 +560,12 @@
     - plane:
         clip:
           - circle: { radius: 1, radius: 1 }
+---
+# 2x center
+- geometry:
+    - plane:
+        clip:
+          - circle: { center: [4, -10], center: [4, -10] }
 ---
 # 2x segments
 - geometry:

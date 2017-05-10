@@ -114,8 +114,8 @@ get_circular(const size_t ivert, double position[2], void* ctx)
   struct solparser_circleclip* data = (struct solparser_circleclip*)ctx;
   const double a = (double)ivert * 2 * PI / (double)data->segments;
   ASSERT(ivert < (size_t)data->segments);
-  position[0] = data->radius * cos(a);
-  position[1] = data->radius * sin(a);
+  position[0] = data->center[0] + data->radius * cos(a);
+  position[1] = data->center[1] + data->radius * sin(a);
 }
 
 static res_T

@@ -16,6 +16,7 @@
 #define _POSIX_C_SOURCE 200112L /* nextafter support */
 
 #include "solparser_c.h"
+#include <rsys/double2.h>
 #include <math.h> /* nextafter */
 
 /*******************************************************************************
@@ -106,7 +107,7 @@ parse_circle
    const yaml_node_t* circle,
    struct solparser_circleclip* clip)
 {
-  enum { RADIUS, SEGMENTS };
+  enum { RADIUS, CENTER, SEGMENTS };
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
@@ -121,6 +122,7 @@ parse_circle
 
   n = circle->data.mapping.pairs.top - circle->data.mapping.pairs.start;
   clip->segments = 64; /* default value */
+  d2_splat(clip->center, 0); /* default value */
   FOR_EACH(i, 0, n) {
     yaml_node_t* key;
     yaml_node_t* val;
@@ -146,7 +148,11 @@ parse_circle
       SETUP_MASK(RADIUS, "radius");
       res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &clip->radius);
     }
-    else if (!strcmp((char*)key->data.scalar.value, "segments")) {
+    else if(!strcmp((char*)key->data.scalar.value, "center")) {
+      SETUP_MASK(CENTER, "center");
+      res = parse_real2(parser, doc, val, -DBL_MAX, DBL_MAX, clip->center);
+    }
+    else if(!strcmp((char*)key->data.scalar.value, "segments")) {
       SETUP_MASK(SEGMENTS, "segments");
       res = parse_integer(parser, val, 3, 4096, &clip->segments);
     } else {

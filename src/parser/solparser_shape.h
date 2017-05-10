@@ -49,6 +49,7 @@ enum solparser_shape_type {
  ******************************************************************************/
 struct solparser_circleclip {
   double radius;
+  double center[2];
   long segments;
 };
 

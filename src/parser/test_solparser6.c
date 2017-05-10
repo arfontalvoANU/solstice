@@ -71,7 +71,7 @@ main(int argc, char** argv)
   fprintf(stream, "    - plane:\n");
   fprintf(stream, "        clip :\n");
   fprintf(stream, "        - operation : AND\n");
-  fprintf(stream, "          circle : { radius: 1, segments: 8 }\n");
+  fprintf(stream, "          circle : { radius: 1, center: [-1, 1], segments: 8 }\n");
   fprintf(stream, "      material: { ?virtual }\n");
   fprintf(stream, "    - hemisphere:\n");
   fprintf(stream, "        radius: 100\n");
@@ -151,6 +151,8 @@ main(int argc, char** argv)
   polyclip = darray_polyclip_cdata_get(&plane->polyclips);
   CHECK(polyclip->contour_type, SOLPARSER_CLIP_CONTOUR_CIRCLE);
   CHECK(polyclip->circle.radius, 1);
+  CHECK(polyclip->circle.center[0], -1);
+  CHECK(polyclip->circle.center[1], 1);
   CHECK(polyclip->circle.segments, 8);
 
   obj_id = solparser_geometry_get_object(geom, 4);
@@ -164,6 +166,8 @@ main(int argc, char** argv)
   polyclip = darray_polyclip_cdata_get(&hemisphere->polyclips);
   CHECK(polyclip->contour_type, SOLPARSER_CLIP_CONTOUR_CIRCLE);
   CHECK(polyclip->circle.radius, 1);
+  CHECK(polyclip->circle.center[0], 0); /* default value */
+  CHECK(polyclip->circle.center[1], 0); /* default value */
   CHECK(polyclip->circle.segments, 64); /* Default value */
 
   solparser_entity_iterator_next(&it);

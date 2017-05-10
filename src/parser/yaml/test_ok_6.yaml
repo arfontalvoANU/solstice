@@ -127,4 +127,4 @@
           focals: { real: 1, image: 1 }
           clip:
           - operation: AND
-            circle: { radius: 1, segments: 32 }
+            circle: { radius: 1, center: [1, 1], segments: 32 }

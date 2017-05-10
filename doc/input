@@ -229,6 +229,7 @@
 <circle-descriptor> ::=
   circle: 
     radius: REAL # in ]0, INF)
+[   center: <real2>. Default 0,0 ]
 [   segments: INTEGER # in [3, 4096). Default 64 ]
 
 <vertices-list> ::=
