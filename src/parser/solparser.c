@@ -404,7 +404,8 @@ parse_realX
   ASSERT(doc && realX && dst && dim > 0);
 
   if(realX->type != YAML_SEQUENCE_NODE) {
-    log_err(parser, realX, "expect a sequence of 3 reals.\n");
+    log_err(parser, realX, "expect a sequence of %lu reals.\n", 
+      (unsigned long)dim);
     res = RES_BAD_ARG;
     goto error;
   }
