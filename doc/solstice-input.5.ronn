@@ -344,19 +344,19 @@ material on these shapes leads to undefined behaviors.
 A `shape` describes a geometric model. It is defined in its local space, i.e.
 in a repair whose origin is proper to the shape. No space transformation can be
 defined on the declaration of a shape: it is transformed externally through an
-`object` and/or `entities`.
+`object` and/or `entities`. `solstice-input`(1) provides 2 types of shape:
+quadric and mesh. The former is used to declare parametric surfaces, while
+the latter describes triangulated surfaces.
 
 ### Quadric
 
 A quadric shape is defined from a quadric equation and a set of 2D clipping
-operations in the {X,Y} plane listed by its `clip` parameter.
-
-By convention,
-the front side of the quadric surface looks toward the positive Z axis.
-Internally, the clipped quadric surface is discretized in a triangular mesh
-with respect to the quadric discretization parameters. This mesh is used by
-`solstice`(1) as a "proxy" to speed up the access toward the quadric shape: the
-quadric position and its associated normal are in fine computed from the
+operations listed by its `clip` parameter performed in their {X,Y} plane .By
+convention, the front side of the quadric surface looks toward the positive Z
+axis. Internally, the clipped quadric surface is discretized in a triangular
+mesh with respect to the quadric discretization parameters. This mesh is used
+by `solstice`(1) as a "proxy" to speed up the access toward the quadric shape:
+the quadric position and its associated normal are in fine computed from the
 quadric equation.
 
 The quadric surface is parameterized in the {X,Y} plane. Its parametrization
@@ -428,14 +428,14 @@ are:
   attribute that defines the overall number of segments used to approximate the
   circle.
 
-* `vertices-countour`:
+* `vertices-descriptor`:
   Polygonal contour describe by a list of 2D vertices. The polygon edges are
   defined by connecting each vertex to its previous one. To ensure that the
   polygon is closed, the first and the last vertex is automatically connected.
   Note that `solstice`(1) assumes that the defined polygon does not overlap
   itself, i.e. their non consecutive edges are not intersecting.
 
-The `clip` parameter of the quadrics list a set of the aforementioned 2D
+The `clip` parameter of the quadrics lists a set of the aforementioned 2D
 `polyclip`. Each of these clipping operation is successively applied on the
 remaining quadric surface, in the order on which they are declared. For
 instance, the following example defines 5 clipping operations on a plane to
@@ -491,7 +491,51 @@ The available triangular meshes are:
 
 ## ENTITY
 
-Pivot, Geometry, Template
+An `entity` is used to declare and position shapes into the solar plant.
+Actually, the entity is the only item that effectively spawns a `geometry` into
+the solar plant: if a geometry is declared but not referenced by an entity, it
+is ignored by `solstice`(1). An entity is a hierarchical data structure that
+can have child entities whose transformation is relative to their parent.  If
+not defined, the `transform` parameter of an entity is assumed to be the
+identity, i.e. the `rotation` and the `translation` of the entity are nulls.
+
+Each entity has a `name` which must be unique per hierarchy level: 2 root
+entities (i.e. entities without parent) cannot have the same name as well as
+the children of a same parent entity. A child entity is identified into the
+solar plant by successively concatenating, with the '.' character, the name of
+its parents with its own name. This naming convention is used in the
+`solstice-receiver`(5) format to define the entities to track during the
+`solstice`(1) computations. For instance, in the following example, the
+`entity-identifier` of the child entity named `level2` is
+`level0.level1.level2`:
+
+    entity:
+      name: level0
+      geometry: ...
+      child:
+      - name: level1
+        geometry: ...
+        child:
+        - name: level2
+          geometry: ...
+
+An entity encapsulates either directly a `geometry` or a `pivot`. The former is
+a collection of `objects`, i.e. `shapes` with their associated `material`. The
+latter is used to control the dynamic positioning of the child entities with
+respect to some constraints defined by the pivot type, and the sun directions
+submitted by `solstice`(1). Each entity can also have a list of `anchors`. An
+anchor is used to define a position relative to the entity onto which the
+anchor is declared. The anchors are useful for pivots and hyperbolic shapes
+that may have to reference a position relative to an entity whose
+transformations may also depends of its parent.
+
+### Geometry
+
+### Pivot
+
+### Anchor
+
+## EXAMPLES
 
 ## NOTES
 
