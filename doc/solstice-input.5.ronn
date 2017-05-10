@@ -622,7 +622,27 @@ following example, the entities `entity0.level0.level1` and
     - entity: {name: entity0, child: [*my-template]}
     - entity: {name: entity1, child: [*my-template]}
 
-## EXAMPLES
+### Transform
+
+A `transform` can be applied to a `geometry` or an `entity` to move them in
+space. Its `rotation` parameter list 3 angles in degrees defining the rotation
+to perform around the X, Y and Z axis. The `translation` attribute describes
+the offsets to apply along the X, Y and Z axis. Let the local repair `p` of an
+geometry, `p` is transformed in `p'` with respect to its associated `transform`
+as follow:
+
+    p' = Rx * Ry * Rz * (T + p)
+
+with `T` the `translation` vector and `Rx`, `Ry` and `Rz` the rotation matrices
+around the X, Y and Z axis defined as:
+
+         | 1  0   0 |        | cY  0 sY |        | cZ -sZ  0 |
+    Rx = | 0 cX -sX |;  Ry = |  0  1  0 |;  Rz = | sZ  cZ  0 |
+         | 0 sX  cX |        |-sY  0 cY |        |  0   0  1 |
+
+where `c<X|Y|Z>` and `s<X|Y|Z>` are the cosine and the sinus, respectively, of
+the rotation angles around the `X`, `Y` and `Z` axis defined by the `rotation`
+vector.
 
 ## NOTES
 
