@@ -530,27 +530,46 @@ its ancestors with its own name. This naming convention is used in the
 
     entity:
       name: level0
-      geometry: ...
       child:
       - name: level1
-        geometry: ...
         child:
         - name: level2
-          geometry: ...
 
-An entity encapsulates either directly a `geometry` or a `pivot`. The former is
-a collection of `objects`, i.e. `shapes` with their associated `material`. The
+An entity encapsulates either a `geometry` or a `pivot`. The former is a
+collection of `objects`, i.e. `shapes` with their associated `material`. The
 latter is used to control the dynamic positioning of the child entities with
 respect to some constraints defined by the pivot type, and the sun directions
 submitted by `solstice`(1). Each entity can also have a list of `anchors`. An
-anchor is used to define a position relative to the entity onto which the
-anchor is declared. The anchors are useful for pivots and hyperbolic shapes
-that may have to reference a position relative to an entity whose
-transformations may also depends of its parent.
+anchor is used to define a position relative to the entity into which it is
+declared.
 
-### Geometry
+### Template
+
+A `template` is a first level entity with no existence into the solar plant. It
+is used to pre-declare an entity hierarchy that can then be instantiated
+several times in the solar plant by referencing it through common entities with
+YAML data tagging. In the following example, the templated entity `my-template`
+is instantiated 3 times into the scene:
+
+    - template: &my-template
+        name: bar
+        geometry: ...
+    - entity:
+        name: foo0
+        transform: {translation: [-10.5, 0, 0]}
+        children: [*my-template]
+    - entity:
+        name: foo1
+        transform: {translation: [0, 0, 0]}
+        children: [*my-template]
+    - entity:
+        name: foo2
+        transform: {translation: [10.5, 0, 0]}
+        children: [*my-template]
 
 ### Pivot
+
+TODO
 
 ### Anchor
 
@@ -565,6 +584,6 @@ transformations may also depends of its parent.
 
 
 ## SEE ALSO
-`solstice`(1)
+`solstice`(1), `solstice-receiver`(5)
 
 
