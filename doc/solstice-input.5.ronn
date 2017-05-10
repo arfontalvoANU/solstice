@@ -257,16 +257,17 @@ submitted to the `solstice`(1) program.
 
 ## SUN
 
-The `sun` describes how the solar plant is lit. However, its position is not
-defined into the `solstice-input`(5) file but is provided by the `solstice`(1)
-command. This allows to use the same unmodified `solstice-input`(5) file for
-several simulations with different sun directions.
+The `sun` describes how the solar plant is lit. Its direction is not defined
+into the `solstice-input`(5) file but is provided by the `solstice`(1) command.
+This allows to use the same unmodified `solstice-input`(5) file for several
+simulations with different sun directions.
 
 The main `sun` property is its direct normal irradiance or `dni`. Its value is
 a scalar defining the average direct normal irradiance of the sun on its whole
 spectrum. The optional `spectrum` parameter describes the per wavelength
 distribution of the sun `dni`. Note that this distribution is automatically
-normalized by `solstice`(1).
+normalized by `solstice`(1). If the `spectrum` attribute is not defined, use
+the default smarts295 spectrum instead [TODO-ref].
 
 Finally, the `rad-ang-distrib` parameter controls the radial angular
 distribution of the sun directions. If not defined, the sun directions are
