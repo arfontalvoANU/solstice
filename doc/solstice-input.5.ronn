@@ -6,8 +6,8 @@ solstice-input(5) -- solar plant description for `solstice`(1)
 The `solstice-input` is the format used by the `solstice`(1) program to
 represent a solar plant. It relies on the YAML 1.1 data serialization standard
 [1]; assuming that the file is compatible with the `solstice-input` semantic, a
-solar plant can be described by using the whole YAML 1.1 functionalities as
-compact notation or data tagging.
+solar plant can be described by using the whole YAML 1.1 functionalities
+including compact notation and data tagging.
 
 A solar plant is composed of a `sun`, an optional `atmosphere` and a collection
 of `geometries`, i.e. `shapes` with their associated `material`. Beside the raw
@@ -16,7 +16,7 @@ the `entity` item to efficiently structure the geometries in the scene. An
 entity is a node in a tree data structure where the position of each child
 entity is relative to the position of its parent. An entity can either
 encapsulate a `geometry` or a `pivot` that controls the dynamic positioning of
-its children entity with respect to the pivot constraints and the sun direction
+its child entities with respect to the pivot constraints and the sun direction
 submitted to the `solstice`(1) program.
 
 ## GRAMMAR
@@ -330,7 +330,7 @@ The available material descriptors are:
 
 Excepted the `virtual` material descriptor, all the material descriptors
 provide an optional `normal-map` attribute that defines a path toward a
-Portable PixMap image [2] whose each pixel stores a normal expressed in the
+Portable PixMap image [2] whose pixels store a normal expressed in the
 tangent space of the interface. By default the un-perturbated tangent space
 normal is {0,0,1}. The PPM image can be encoded on 8 or 16-bits per component
 either in ASCII or binary. The parameterization of this 2D image onto the shape
@@ -342,9 +342,9 @@ normal-mapped material on these shapes leads to undefined behaviors.
 ## SHAPE
 
 A `shape` is used to describe a geometric model. A `shape` is defined in its
-local space, i.e. in a repair whose origin is proper to the shape. No space
-transformation can be defined on the declaration of a shape: it is transformed
-externally through an `object` and/or `entities`.
+local space, i.e. in a coordinate system whose origin is proper to the shape.
+No space transformation can be introduced through the declaration of a shape:
+it should be transformed externally through an `object` and/or `entities`.
 
 ### Quadrics
 
@@ -365,7 +365,7 @@ domain is defined from the bounds of its clipped mesh in the {X,Y} plane:
 
 with `u` and `v` the mapped 2D coordinates from a 3D position {`x`,`y`,`z`}
 onto the quadric, and `lower<X|Y>` and `upper<X|Y>` the lower and upper
-bounds of the clipped parabolic cylinder mesh along the X and Y axis.
+bounds of the clipped quadric mesh along the X and Y axis.
 
 The available quadrics are:
 
@@ -425,7 +425,7 @@ behaviors.
 The available triangular meshes are:
 
 * `cuboid`:
-  Axis aligned cuboid centered in 0 whose dimensions along the 3 axis is
+  Axis aligned cuboid centered in 0 whose dimensions along the 3 axis are
   defined by the `size` parameter. The front side of the cuboid surface looks
   outside the cuboid shape.
 
@@ -443,7 +443,7 @@ The available triangular meshes are:
   sphere shape.
 
 * `stl`:
-  Path toward an external mesh defined with respect to the `ST`ereo
+  Path toward an external mesh file defined with respect to the `ST`ereo
   `L`ithography file format. The front side of the loaded triangles is defined
   with respect to their vertex ordering: a triangle is front facing when their
   vertices are clock wise ordered.
