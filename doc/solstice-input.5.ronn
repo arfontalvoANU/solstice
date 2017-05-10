@@ -6,8 +6,8 @@ solstice-input(5) -- solar plant description for `solstice`(1)
 The `solstice-input` is the format used by the `solstice`(1) program to
 represent a solar plant. It relies on the YAML 1.1 data serialization standard
 [1]; assuming that the file is compatible with the `solstice-input` semantic, a
-solar plant can be described by using the whole YAML 1.1 functionalities as
-compact notation or data tagging.
+solar plant can be described by using the whole YAML 1.1 functionalities
+including compact notation and data tagging.
 
 A solar plant is composed of a `sun`, an optional `atmosphere` and a collection
 of `geometries`, i.e. `shapes` with their associated `material`. Beside the raw
@@ -16,7 +16,7 @@ the `entity` item to efficiently structure the geometries in the scene. An
 entity is a node in a tree data structure where the position of each child
 entity is relative to the position of its parent. An entity can either
 encapsulate a `geometry` or a `pivot` that controls the dynamic positioning of
-its children entity with respect to the pivot constraints and the sun direction
+its child entities with respect to the pivot constraints and the sun direction
 submitted to the `solstice`(1) program.
 
 ## GRAMMAR
@@ -128,6 +128,7 @@ submitted to the `solstice`(1) program.
 
     <circle-descriptor>   ::= circle:
                                 radius: REAL # in ]0, INF)
+                            [   center: <real2> ] # Default is 0,0
                             [   segments: INTEGER ] # in [3, 4096]. Default is 64
 
     <vertices-list>       ::= - <real2>
@@ -366,11 +367,12 @@ material on these shapes leads to undefined behaviors.
 ## SHAPE
 
 A `shape` describes a geometric model. It is defined in its local space, i.e.
-in a repair whose origin is proper to the shape. No space transformation can be
-defined on the declaration of a shape: it is transformed externally through an
-`object` and/or `entities`. `solstice-input`(1) provides 2 types of shape:
-quadric and mesh. The former is used to declare parametric surfaces, while
-the latter describes triangulated surfaces.
+in a coordinate system whose origin is proper to the shape. No space
+transformation can be introduced through the declaration of a shape: it should
+be transformed externally through an `object` and/or `entities`.
+`solstice-input`(1) provides 2 types of shape: quadric and mesh. The former is
+used to declare parametric surfaces, while the latter describes triangulated
+surfaces.
 
 ### Quadric
 
@@ -391,7 +393,7 @@ domain is defined from the bounds of its clipped mesh in the {X,Y} plane:
 
 with `u` and `v` the mapped 2D coordinates from a 3D position {`x`,`y`,`z`}
 onto the quadric, and `lower<X|Y>` and `upper<X|Y>` the lower and upper
-bounds of the clipped parabolic cylinder mesh along the X and Y axis.
+bounds of the clipped quadric mesh along the X and Y axis.
 
 The available quadrics are:
 
@@ -469,10 +471,10 @@ the rectangle near of its corner with circles whose radius is 0.5:
     plane:
       clip:
       - {operation: AND, vertices: [[-4,-2],[-4,2],[4,2],[4,-2]]}
-      - {operation: SUB, circle: {radius: 0.5, position: [-3,-1]}}
-      - {operation: SUB, circle: {radius: 0.5, position: [-3, 1]}}
-      - {operation: SUB, circle: {radius: 0.5, position: [ 3,-1]}}
-      - {operation: SUB, circle: {radius: 0.5, position: [ 3, 1]}}
+      - {operation: SUB, circle: {radius: 0.5, center: [-3,-1]}}
+      - {operation: SUB, circle: {radius: 0.5, center: [-3, 1]}}
+      - {operation: SUB, circle: {radius: 0.5, center: [ 3,-1]}}
+      - {operation: SUB, circle: {radius: 0.5, center: [ 3, 1]}}
 
 ### Triangular mesh
 
@@ -486,7 +488,7 @@ material to a triangular meshes will thus produce undefined behaviors.
 The available triangular meshes are:
 
 * `cuboid`:
-  Axis aligned cuboid centered in 0 whose dimensions along the 3 axis is
+  Axis aligned cuboid centered in 0 whose dimensions along the 3 axis are
   defined by the `size` parameter. The front side of the cuboid surface looks
   outside the cuboid shape.
 
@@ -504,7 +506,7 @@ The available triangular meshes are:
   sphere shape.
 
 * `stl`:
-  Path toward an external mesh defined with respect to the `ST`ereo
+  Path toward an external mesh file defined with respect to the `ST`ereo
   `L`ithography file format. The front side of the loaded triangles is defined
   with respect to their vertex ordering: a triangle is front facing when their
   vertices are clock wise ordered.
@@ -561,6 +563,7 @@ is instantiated 3 times into the scene:
 
     - template: &my-template
         name: bar
+        primary: 1
         geometry: ...
     - entity:
         name: foo0

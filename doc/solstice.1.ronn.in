@@ -10,17 +10,17 @@ solstice(1) -- compute the power collected by a concentrated solar plant
 
 ## DESCRIPTION
 
-`solstice` computes the total power collected by a concentrated solar plant
-described in the `solstice-input`(5) _file_. If _file_ is not set, the solar
-plant is read from standard input. To evaluate various efficiencies for each
-primary reflector, it computes losses due to cosinus effect, shadowing and
-masking, orientation and surface irregularities, reflectivity and atmospheric
-transmission. The efficiency for each one of these effects is subsequently
-computed for each reflector.
+`solstice` computes the total power collected by a concentrated solar plant, as
+described in the `solstice-input`(5) _file_. If the _file_ argument is not
+provided, the solar plant is read from standard input. To evaluate various 
+efficiencies for each primary reflector, it computes losses due to cosinus 
+effect, shadowing and masking, orientation and surface irregularities,
+reflectivity and atmospheric transmission. The efficiency for each one of these
+effects is subsequently computed for each reflector.
 
 The entities on which computations must be performed are listed in the
 `solstice-receiver`(5) file submitted through the `-R` option. The estimated
-results follows the `solstice-output`(5) format and are written to the _output_
+results follow the `solstice-output`(5) format and are written to the _output_
 file or to the standard output whether the `-o` _output_ option is defined or
 not, respectively. Note that the `solstice`'s algorithm is based on the
 Monte-Carlo method, which means that every result is provided with its
@@ -36,13 +36,13 @@ including the input solar spectrum and the transmissivity of the atmosphere, at
 any spectral resolution. Refer to `solstice-input`(5) for more informations.
 
 In addition of the aforementioned computations, `solstice` provides three
-others functionalities. The `-g` option can be used to convert the
+other functionalities. The `-g` option can be used to convert the
 `solstice-input`(5) geometries in CAO files. The `-p` option saves the sampled
 radiative paths used by the estimations, allowing to visualise them externally
 which may be a great help to identify a design issue. Finally, the `-r` option
 is used to render an image of the submitted solar facility. Note that these
 three options are mutually exclusives, and once defined, they replace the
-default `solstice` comportment.
+default `solstice` behaviour.
 
 ## OPTIONS
 
@@ -67,7 +67,7 @@ default `solstice` comportment.
   Alias Wavefront OBJ file format is supported.
 
   `split=<geometry|object|none>`<br>
-  Define how the output mesh is split in sub-meshes. A sub mesh can be
+  Define how the output mesh is split in sub meshes. A sub mesh can be
   generated for each `geometry` or for each `object` as defined in the
   `solstice-input`(5) file format. The `none` option means that only one
   mesh is generated for the whole solar facility. By default, the `split`
@@ -175,7 +175,7 @@ the regular expression `^---$` used to split the output file:
 Trace 100 radiative paths into the solar plant described in `input.yaml`, with
 respect to the sun direction whose azimuthal and elevations angles are `0` and
 `90` degrees, respectively. Write the `solstice-output`(5) result to the
-standard output and post-treat it with the `sed`(1) Unix command to remove the
+standard output and postprocess it with the `sed`(1) Unix command to remove the
 first line that stores the sun direction from which the radiative paths comes
 from. The remaining data that lists the radiative paths geometry are redirected
 into the `paths.vtk` file:
