@@ -573,6 +573,47 @@ TODO
 
 ### Anchor
 
+An `anchor` defines a relative position into the entity hierarchy. They are
+particularly useful for pivots and hyperbolic shapes that may have to reference
+a position relative to an entity whose transformations may also depends of its
+ancestor. An anchor has a `name` that must be unique for the whole sets of per
+entity anchors. An anchor is identified into the solar plant by concatenating, with
+the '.' character, the `entity-identifier` of the entity into which it is
+declared with its own name. For instance, in the following example, the
+`anchor-identifier` of the anchor named `anchor0` is `level0.level1.anchor0`:
+
+    entity:
+      name: level0
+      child:
+      - name: level1
+        anchor:
+        - {name: anchor0, position: [0, 0, 0]}
+        - {name: anchor1, position: [1, 2, 3]}
+
+In some situations, the `anchor-identifier` cannot be fully determined. Let a
+templated entity with a descendant referencing an anchor of one of its
+ancestor. On its declaration, the template is still not instantiated through a
+parent entity and consequently the name of the root entity is unknown.
+Moreover, the name of the root entity cannot be fixed since it changes for each
+instance of the template. To handle these cases, the `self` keyword allows to
+reference the unknown root entity of the currently declared hierarchy. In the
+following example, the entities `entity0.level0.level1` and
+`entity1.level0.level1` encapsulate a pivot that references the anchor
+`anchor0` defined in their respective parent `entity0.level0` and
+`entity1.level0`:
+
+    - template: &my-template
+        name: level0
+        anchor: [{name: anchor0, position: [1, 2, 3]}]
+        child:
+        - name: level1
+          pivot:
+            x_pivot:
+              ref_point: {0, 0, 0}
+              target: {anchor: self.level0.anchor0}
+    - entity: {name: entity0, child: [*my-template]}
+    - entity: {name: entity1, child: [*my-template]}
+
 ## EXAMPLES
 
 ## NOTES
@@ -581,7 +622,6 @@ TODO
   YAML Ain't Markup Language - <http://yaml.org>
 * [2]:
   Portable PixMap - <http://netpbm.sourceforge.net/doc/ppm.html>
-
 
 ## SEE ALSO
 `solstice`(1), `solstice-receiver`(5)
