@@ -270,10 +270,10 @@ The available material descriptors are:
 
 * `dielectric`:
   Interface between 2 dielectric media. Its `medium_i` parameter defines the
-  current medium, i.e. the medium the ray travels in, while `medium_t` represents
-  the opposite medium. Incoming rays are either specularly reflected or refracted
-  with respect to a Fresnel term computed with respect to the refractive indices
-  of the 2 media as:
+  current medium, i.e. the medium the ray travels in, while `medium_t`
+  represents the opposite medium. Incoming rays are either specularly reflected
+  or refracted according to a Fresnel term computed with respect to the
+  refractive indices of the 2 media as:
 
   Fr = 1/2 * (Rs\^2 + Rp\^2)
 
@@ -305,9 +305,9 @@ The available material descriptors are:
 
 * `thin-dielectric`:
   The interface is assumed to be a thin slab of a dielectric material.  The
-  `medium_i` parameter defines the outside dielectric medium while `medium_t` is
-  the medium of the thin slab. Incoming rays are either specularly reflected or
-  transmitted (without deviation) with respect to a Fresnel term computed with
+  `medium_i` parameter defines the outside dielectric medium while `medium_t`
+  is the medium of the thin slab. Incoming rays are either specularly reflected
+  or transmitted (without deviation) according to a Fresnel term computed with
   respect to the refractive indices of the 2 media as:
 
   Fr = 1/2 * (Rs\^2 + Rp\^2)
@@ -328,28 +328,30 @@ The available material descriptors are:
 
 ### Normal map
 
-Excepted the `virtual` material descriptor, all the material descriptors
-provide an optional `normal-map` attribute that defines a path toward a
-Portable PixMap image [2] whose each pixel stores a normal expressed in the
-tangent space of the interface. By default the un-perturbated tangent space
-normal is {0,0,1}. The PPM image can be encoded on 8 or 16-bits per component
-either in ASCII or binary. The parameterization of this 2D image onto the shape
-surfaces depends on the type of the shape. For the `hemisphere`, `hyperbol`,
-`parabol`, `plane` and `parabolic-cylinder` shapes, the image is mapped in the
-{X,Y} plane. The other shapes are not parameterized and consequently, applying a
-normal-mapped material on these shapes leads to undefined behaviors.
+All the material descriptors, excepted the `virtual`, provide an optional
+`normal-map` attribute that defines a path toward a Portable PixMap image [2]
+whose each pixel stores a normal expressed in the tangent space of the
+interface. By default the un-perturbated tangent space normal is {0,0,1}. The
+PPM image can be encoded on 8 or 16-bits per component either in ASCII or
+binary. The parameterization of this 2D image onto the shape surfaces depends
+on the type of the shape. For the `hemisphere`, `hyperbol`, `parabol`, `plane`
+and `parabolic-cylinder` shapes, the image is mapped in the {X,Y} plane. The
+other shapes are not parameterized and consequently, applying a normal-mapped
+material on these shapes leads to undefined behaviors.
 
 ## SHAPE
 
-A `shape` is used to describe a geometric model. A `shape` is defined in its
-local space, i.e. in a repair whose origin is proper to the shape. No space
-transformation can be defined on the declaration of a shape: it is transformed
-externally through an `object` and/or `entities`.
+A `shape` describes a geometric model. It is defined in its local space, i.e.
+in a repair whose origin is proper to the shape. No space transformation can be
+defined on the declaration of a shape: it is transformed externally through an
+`object` and/or `entities`.
 
-### Quadrics
+### Quadric
 
 A quadric shape is defined from a quadric equation and a set of 2D clipping
-operations in the {X,Y} plane defined by its `clip` parameter. By convention,
+operations in the {X,Y} plane listed by its `clip` parameter.
+
+By convention,
 the front side of the quadric surface looks toward the positive Z axis.
 Internally, the clipped quadric surface is discretized in a triangular mesh
 with respect to the quadric discretization parameters. This mesh is used by
@@ -370,9 +372,9 @@ bounds of the clipped parabolic cylinder mesh along the X and Y axis.
 The available quadrics are:
 
 * `hemisphere`:
-  Hemisphere whose up direction is along the negative Z axis and its polar
-  coordinate is positioned at the origin. The `slices` parameter controls the
-  number of divisions along the Z axis.
+  Hemispheric shape whose up direction is along the negative Z axis and its
+  polar coordinate is positioned at the origin. The `slices` parameter controls
+  the number of divisions along the Z axis.
 
   x\^2 + y\^2 + (z-`radius`)\^2 = `radius`\^2
 
@@ -411,7 +413,46 @@ The available quadrics are:
   controls the discretisation of the plane cut with respect to the clipping
   operations defines by the `clip` parameter.
 
-### Triangular meshes
+### Clipping
+
+A clipping operation, or `polyclip`, is used to remove some parts of the,
+possibly infinite, quadric surface. It is defined by a 2D `contour-descriptor`
+expressed in the {X,Y} plane and a clipping `operation`. The `AND` and `SUB`
+clip operands, remove the quadric surface that intersects or does not intersect
+the `contour-descriptor`, respectively. The available `countour-descriptor`s
+are:
+
+* `circle-descriptor`:
+  Circular contour whose size is defined by the `radius` parameter. Actually,
+  `solstice`(1) discretized the circular contour with respect to the `segments`
+  attribute that defines the overall number of segments used to approximate the
+  circle.
+
+* `vertices-countour`:
+  Polygonal contour describe by a list of 2D vertices. The polygon edges are
+  defined by connecting each vertex to its previous one. To ensure that the
+  polygon is closed, the first and the last vertex is automatically connected.
+  Note that `solstice`(1) assumes that the defined polygon does not overlap
+  itself, i.e. their non consecutive edges are not intersecting.
+
+The `clip` parameter of the quadrics list a set of the aforementioned 2D
+`polyclip`. Each of these clipping operation is successively applied on the
+remaining quadric surface, in the order on which they are declared. For
+instance, the following example defines 5 clipping operations on a plane to
+describe a rectangle with a circular hole at each of its corner. The first
+`polyclip` limits the infinite plane to a rectangle centered in 0 whose
+size in X and Y is 8 and 4, respectively. The 4 subsequent `polyclips` drill
+the rectangle near of its corner with circles whose radius is 0.5.
+
+    plane:
+      clip:
+      - {operation: AND, vertices: [[-4,-2],[-4,2],[4,2],[4,-2]]}
+      - {operation: SUB, circle: {radius: 0.5, position: [-3,-1]}}
+      - {operation: SUB, circle: {radius: 0.5, position: [-3, 1]}}
+      - {operation: SUB, circle: {radius: 0.5, position: [ 3,-1]}}
+      - {operation: SUB, circle: {radius: 0.5, position: [ 3, 1]}}
+
+### Triangular mesh
 
 Triangular meshes are generated by `solstice`(1) from a shape description or
 loaded from a CAO file. Note that the mesh normals are defined per triangle.
@@ -447,11 +488,6 @@ The available triangular meshes are:
   `L`ithography file format. The front side of the loaded triangles is defined
   with respect to their vertex ordering: a triangle is front facing when their
   vertices are clock wise ordered.
-
-
-### Object
-
-### Geometry
 
 ## ENTITY
 
