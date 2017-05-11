@@ -222,9 +222,9 @@ submitted to the `solstice`(1) program.
     <sun>                 ::= sun:
                                 dni: REAL # Direct Normal Irradiance in ]0, INF)
                             [   <spectrum> ] # Default is the smarts295 spectrum
-                            [   <rad-ang-distrib> ]
+                            [   <sun-shape> ]
 
-    <rad-ang-distrib>     ::= <pillbox> | <buie>
+    <sun-shape>           ::= <pillbox> | <buie>
 
     <buie>                ::= buie:
                                 csr: REAL # in [1e-6, 0.849]
@@ -258,27 +258,32 @@ submitted to the `solstice`(1) program.
 
 ## SUN
 
-The `sun` describes how the solar plant is lit. Its direction is not defined
+The `sun` describes the solar-plant's source. Its direction is not defined
 into the `solstice-input`(5) file but is provided by the `solstice`(1) command.
 This allows to use the same unmodified `solstice-input`(5) file for several
 simulations with different sun directions.
 
 The main `sun` property is its direct normal irradiance or `dni`. Its value is
-a scalar defining the average direct normal irradiance of the sun on its whole
-spectrum. The optional `spectrum` parameter describes the per wavelength
-distribution of the sun `dni`. Note that this distribution is automatically
-normalized by `solstice`(1). If the `spectrum` attribute is not defined, use
-the default smarts295 spectrum instead [TODO-ref].
+a scalar defining the direct irradiance received on a plane normal to the sun.
+The optional `spectrum` parameter describes the per wavelength distribution of
+the sun's `dni`. Note that this distribution is automatically normalized by
+`solstice`(1). If the `spectrum` attribute is not defined, `solstice`(1) uses
+the default smarts295 spectrum [TODO-ref].
 
-Finally, the `rad-ang-distrib` parameter controls the radial angular
-distribution of the sun directions. If not defined, the sun directions are
-assumed to be parallels. The available radial angular distributions are:
+Finally, the `sun-shape` parameter controls the angular distribution of the 
+sun light intensity across the sun's disk. If not defined, the distribution
+is assumed to be a dirac distribution (point source sun). The available radial
+angular distributions are:
 
 * `pillbox`:
-TODO
+  The `pillbox` distribution defines an uniform intensity over the sun's disk.
+  Its unique `aperture` parameter is the sun's disk half-angle that is linked
+  to the apparent size of the sun.
 
 * `buie`:
-TODO
+  The `buie` distribution, as first discribed in [2]. Its unique `csr`
+  parameter is the ratio between the circumsolar irradiance and the sum of
+  the circumsolar and sun's disk irradiances.
 
 ## MATERIAL
 
@@ -354,7 +359,7 @@ The available material descriptors are:
 ### Normal map
 
 All the material descriptors, excepted the `virtual`, provide an optional
-`normal-map` attribute that defines a path toward a Portable PixMap image [2]
+`normal-map` attribute that defines a path toward a Portable PixMap image [3]
 whose each pixel stores a normal expressed in the tangent space of the
 interface. By default the un-perturbated tangent space normal is {0,0,1}. The
 PPM image can be encoded on 8 or 16-bits per component either in ASCII or
@@ -731,7 +736,11 @@ sun with a `pillbox` radial angular distribution:
 
 * [1]:
   YAML Ain't Markup Language - <http://yaml.org>
-* [2]:
+* [2]: D. Buie, A.G. Monger, C.J. Dey. "Sunshape distributions for
+  terrestrial solar simulations". Solar Energy, 2003, 74, pp. 113-122.
+  
+  <https://www.researchgate.net/publication/256854372_Sunshape_distributions_for_terrestrial_solar_simulations>
+* [3]:
   Portable PixMap - <http://netpbm.sourceforge.net/doc/ppm.html>
 
 ## SEE ALSO

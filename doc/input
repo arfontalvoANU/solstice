@@ -334,9 +334,9 @@
   sun:
     dni: REAL # Direct Normal Irradiance in ]0, INF)
 [   <spectrum> ] # If not defined use the smarts295 spectrum
-[   <radial-angular-distribution> ]
+[   <sun-shape> ]
 
-<radial-angular-distribution> ::=
+<sun-shape> ::=
     <pillbox> | <buie>
 
 <buie> ::=
