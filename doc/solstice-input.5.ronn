@@ -263,17 +263,16 @@ into the `solstice-input`(5) file but is provided by the `solstice`(1) command.
 This allows to use the same unmodified `solstice-input`(5) file for several
 simulations with different sun directions.
 
-The main `sun` property is its direct normal irradiance or `dni`. Its value is
+The main `sun` property is its direct normal irradiance, or `dni`. Its value is
 a scalar defining the direct irradiance received on a plane normal to the sun.
 The optional `spectrum` parameter describes the per wavelength distribution of
 the sun's `dni`. Note that this distribution is automatically normalized by
 `solstice`(1). If the `spectrum` attribute is not defined, `solstice`(1) uses
 the default smarts295 spectrum [TODO-ref].
 
-Finally, the `sun-shape` parameter controls the angular distribution of the 
-sun light intensity across the sun's disk. If not defined, the distribution
-is assumed to be a dirac distribution (point source sun). The available radial
-angular distributions are:
+The `sun-shape` parameter controls the angular distribution of the sun light
+intensity across the sun's disk. If not defined, the distribution is assumed
+to be a dirac distribution (point source sun). The available sun shapes are:
 
 * `pillbox`:
   The `pillbox` distribution defines an uniform intensity over the sun's disk.
@@ -315,8 +314,8 @@ The available material descriptors are:
 
   with n1 and n2 the indices of refraction of the incident and transmitted
   media, and wi and wt the incident and transmitted direction. Note that the
-  `solstice-input` file must ensure that the description of the scene media is
-  consistent; a ray travelling in a medium _A_ can only encounter a medium
+  `solstice-input`(5) file must ensure that the description of the scene media
+  is consistent; a ray travelling in a medium _A_ can only encounter a medium
   interface whose `medium_i` attribute is _A_. The default medium is assumed to
   be the vacuum, i.e. its refractive index is 1 and its absorptivity is 0.
 
@@ -360,13 +359,13 @@ The available material descriptors are:
 
 All the material descriptors, excepted the `virtual`, provide an optional
 `normal-map` attribute that defines a path toward a Portable PixMap image [3]
-whose each pixel stores a normal expressed in the tangent space of the
-interface. By default the un-perturbated tangent space normal is {0,0,1}. The
-PPM image can be encoded on 8 or 16-bits per component either in ASCII or
-binary. The parameterization of this 2D image onto the shape surfaces depends
-on the type of the shape. For the `hemisphere`, `hyperbol`, `parabol`, `plane`
-and `parabolic-cylinder` shapes, the image is mapped in the {X,Y} plane. The
-other shapes are not parameterized and consequently, applying a normal-mapped
+whose pixels store a normal expressed in the tangent space of the interface. By
+default the unperturbed tangent space normal is {0,0,1}. The PPM image can
+be encoded on 8 or 16-bits per component either in ASCII or binary. The
+parameterization of this 2D image onto the shape surfaces depends on the type
+of the shape. For the `hemisphere`, `hyperbol`, `parabol`, `plane` and
+`parabolic-cylinder` shapes, the image is mapped in the {X,Y} plane. The other
+shapes are not parameterized and consequently, applying a normal-mapped
 material on these shapes leads to undefined behaviors.
 
 ## SHAPE
@@ -382,13 +381,13 @@ surfaces.
 ### Quadric
 
 A quadric shape is defined from a quadric equation and a set of 2D clipping
-operations listed by its `clip` parameter performed in their {X,Y} plane. By
-convention, the front side of the quadric surface looks toward the positive Z
-axis. Internally, the clipped quadric surface is discretized in a triangular
-mesh with respect to the quadric discretization parameters. This mesh is used
-by `solstice`(1) as a "proxy" to speed up the access toward the quadric shape:
-the quadric position and its associated normal are in fine computed from the
-quadric equation.
+operations performed in their {X,Y} plane. By convention, the front side of the
+quadric surface looks toward the positive Z axis. Internally, the clipped
+quadric surface is discretized in a triangular mesh with respect to the
+discretisation parameters of the quadric. This mesh is used by `solstice`(1)
+as a "proxy" to speed up the access toward the quadric shape: the quadric
+position and its associated normal are in fine computed from the quadric
+equation.
 
 The quadric surface is parameterized in the {X,Y} plane. Its parameterization
 domain is defined from the bounds of its clipped mesh in the {X,Y} plane:
@@ -397,8 +396,8 @@ domain is defined from the bounds of its clipped mesh in the {X,Y} plane:
     v = (y - lowerY) / (upperY-lowerY)
 
 with `u` and `v` the mapped 2D coordinates from a 3D position {`x`,`y`,`z`}
-onto the quadric, and `lower<X|Y>` and `upper<X|Y>` the lower and upper
-bounds of the clipped quadric mesh along the X and Y axis.
+onto the quadric, and `lower<X|Y>` and `upper<X|Y>` the lower and upper bounds
+of the clipped quadric along the X and Y axis.
 
 The available quadrics are:
 
@@ -410,7 +409,7 @@ The available quadrics are:
   x\^2 + y\^2 + (z-`radius`)\^2 = `radius`\^2
 
 * `hyperbol`:
-  Hyperbolic quadric defines along the Z axis whose minimum is positioned at
+  Hyperbolic quadric defined along the Z axis whose minimum is positioned at
   the origin. The `slices` parameter controls the discretisation of the
   hyperbol. If not defined, it is automatically computed with respect to the
   hyperbol curvature.
@@ -424,7 +423,7 @@ The available quadrics are:
   f = `focals.real` / g
 
 * `parabol`:
-  Parabolic quadric defines along the Z axis whose minimum is positioned at the
+  Parabolic quadric defined along the Z axis whose minimum is positioned at the
   origin. The `slices` parameter controls the discretisation of the parabol. If
   not defined, it is automatically computed with respect to the parabol
   curvature.
@@ -433,7 +432,7 @@ The available quadrics are:
 
 * `parabolic-cylinder`:
   Parabolic cylinder oriented along the Z axis whose main axis is along the X
-  axis and minimum is positionned at the origin. The `slices` parameter
+  axis and minimum is positioned at the origin. The `slices` parameter
   controls the discretisation of the parabolic cylinder. If not defined, it is
   automatically computed with respect to the parabolic cylinder curvature.
 
@@ -449,7 +448,7 @@ A clipping operation, or `polyclip`, is used to remove some parts of the
 quadric surface. It is defined by a 2D `contour-descriptor` expressed in the
 {X,Y} plane and a clipping `operation`. The `AND` and `SUB` clip operands,
 remove the quadric surface that intersects or does not intersect the
-`contour-descriptor`, respectively. The available `countour-descriptor`s are:
+`contour-descriptor`, respectively. The available `countour-descriptors` are:
 
 * `circle-descriptor`:
   Circular contour whose size is defined by the `radius` parameter. Actually,
@@ -457,21 +456,21 @@ remove the quadric surface that intersects or does not intersect the
   attribute that defines the overall number of segments used to approximate the
   circle.
 
-* `vertices-descriptor`:
-  Polygonal contour describes by a list of 2D vertices. The polygon edges are
-  defined by connecting each vertex to its previous one. To ensure that the
-  polygon is closed, the first and the last vertex is automatically connected.
-  Note that `solstice`(1) assumes that the defined polygon does not overlap
-  itself, i.e. their non consecutive edges are not intersecting.
+* `vertices-descriptor`: Polygonal contour describes by a list of 2D vertices.
+  The polygon edges are defined by connecting each vertex to its previous one.
+  To ensure that the polygon is closed, an additional edge is automatically
+  created between the first and the last vertex.  Note that `solstice`(1)
+  assumes that the defined polygon does not overlap itself, i.e. their non
+  consecutive edges are not intersecting.
 
 The `clip` parameter of the quadrics lists a set of the aforementioned 2D
-`polyclip`. Each of these clipping operation is successively applied on the
+`polyclips`. Each of these clipping operation is successively applied on the
 remaining quadric surface, in the order on which they are declared. For
-instance, the following example defines 5 clipping operations on a plane to
-describe a rectangle with a circular hole at each of its corner. The first
-`polyclip` limits the infinite plane to a rectangle centered in 0 whose
-size in X and Y is 8 and 4, respectively. The 4 subsequent `polyclips` drill
-the rectangle near of its corner with circles whose radius is 0.5:
+instance, the following example uses 5 clipping operations on a plane to build
+a rectangle with a circular hole at each of its corner. The first `polyclip`
+limits the infinite plane to a rectangle centered in 0 whose size in X and Y is
+8 and 4, respectively. The 4 subsequent `polyclips` drill the
+rectangle near of its corner with circles whose radius is 0.5:
 
     plane:
       clip:
@@ -484,37 +483,37 @@ the rectangle near of its corner with circles whose radius is 0.5:
 ### Triangular mesh
 
 Triangular meshes are generated by `solstice`(1) from a shape description or
-loaded from a CAO file. Note that the mesh normals are defined per triangle.
-They are thus discontinuous even for smooth shapes as spheres. The triangular
-meshes are not parameterized, i.e. they do not provide a mapping from a 3D
-position onto its surface to a 2D coordinates. Applying a normal-mapped
-material to a triangular meshes will thus produce undefined behaviors.
+loaded from a CAO file. Their normals are defined per triangle and are thus
+discontinuous even for smooth shapes as spheres. The triangular meshes are not
+parameterized, i.e. they do not provide a mapping from a 3D position onto its
+surface to a 2D coordinates. Applying a normal-mapped material to a triangular
+meshes will thus produce undefined behaviors.
 
 The available triangular meshes are:
 
 * `cuboid`:
-  Axis aligned cuboid centered in 0 whose dimensions along the 3 axis are
-  defined by the `size` parameter. The front side of the cuboid surface looks
-  outside the cuboid shape.
+  Axis aligned cuboid centered in 0 whose corner positions and dimensions along
+  the 3 axis are defined by the `size` parameter. The front side of the cuboid
+  surface looks outside the cuboid.
 
 * `cylinder`:
   Cylinder centered in 0 whose `height` is along the positive Z axis. The top
   and the bottom of the cylinder is capped. The `stacks` and `slices`
   parameters control the discretisation, i.e. the number of divisions, along or
   around the Z axis, respectively. The front side of the cylinder surface looks
-  outside the cylinder shape.
+  outside the cylinder.
 
 * `sphere`:
   Triangulated sphere centered in 0. The `stacks` and `slices` parameters
   control the discretisation, i.e. the number of divisions, along or around the
   Z axis, respectively. The front side of the sphere surface looks outside the
-  sphere shape.
+  sphere.
 
 * `stl`:
   Path toward an external mesh file defined with respect to the `ST`ereo
   `L`ithography file format. The front side of the loaded triangles is defined
-  with respect to their vertex ordering: a triangle is front facing when their
-  vertices are clock wise ordered.
+  with respect to their vertex ordering into the STL file: a triangle is front
+  facing when their vertices are clock wise ordered.
 
 ## ENTITY
 
@@ -544,19 +543,19 @@ its ancestors with its own name. This naming convention is used in the
         - name: level2
 
 An entity encapsulates either a `geometry` or a `pivot`. The former is a
-collection of `objects` i.e. `shapes` with their associated `material` and an
+collection of `objects`, i.e. `shapes` with their associated `material` and an
 optional `transformation`. The latter is used to control the dynamic
 positioning of the child entities with respect to some constraints defined by
 the pivot type, and the sun directions submitted by `solstice`(1). Each entity
 can also have a list of `anchors`. An anchor is used to define a position
 relative to the entity into which it is declared.
 
-For geometric entity one have to define if the encapsulated geometry is
-`primary`, i.e. it is directly lit by the sun and it is used to concentrate the
-solar flux as, for instance, a primary mirror. One can define all the solar
-plant geometric entity as primary but a well designed solar plant where only
-primary mirrors are tagged as primary will drastically reduce the convergence
-speed of the `solstice`(1) simulations.
+For geometric entity one have to define if the encapsulated geometry is a
+`primary` geometry, i.e. a geometry directly lit by the sun and used to
+concentrate the solar flux (e.g. a primary mirror). One can define all the
+solar plant geometric entities as primaries but a well designed solar plant
+with correctly tagged primary geometries will drastically improve the
+convergence speed of the `solstice`(1) simulations.
 
 ### Template
 
@@ -593,9 +592,9 @@ An `anchor` defines a relative position into the entity hierarchy. They are
 particularly useful for pivots and hyperbolic shapes that may have to reference
 a position relative to an entity whose transformations may also depends of its
 ancestor. An anchor has a `name` that must be unique for the whole sets of per
-entity anchors. An anchor is identified into the solar plant by concatenating, with
-the '.' character, the `entity-identifier` of the entity into which it is
-declared with its own name. For instance, in the following example, the
+entity anchors. An anchor is identified into the solar plant by concatenating,
+with the '.' character, its name to the `entity-identifier` of the entity into
+which it is declared. For instance, in the following example, the
 `anchor-identifier` of the anchor named `anchor0` is `level0.level1.anchor0`:
 
     entity:
@@ -627,21 +626,21 @@ following example, the entities `entity0.level0.level1` and
             x_pivot:
               ref_point: {0, 0, 0}
               target: {anchor: self.level0.anchor0}
+
     - entity: {name: entity0, child: [*my-template]}
     - entity: {name: entity1, child: [*my-template]}
 
 ### Transform
 
-A `transform` can be applied to a `geometry` or an `entity` to move them in
-space. Its `rotation` parameter list 3 angles in degrees defining the rotation
-to perform around the X, Y and Z axis. The `translation` attribute describes
-the offsets to apply along the X, Y and Z axis. Let the local repair `p` of an
-geometry, `p` is transformed in `p'` with respect to its associated `transform`
-as follow:
+A `transform` is used to move an `object` or an `entity` in space. The
+`rotation` parameter list 3 angles in degrees defining the rotation to perform
+around the X, Y and Z axis. The `translation` attribute describes the offsets
+to apply along the X, Y and Z axis. Let the local repair `p` of an object, `p`
+is transformed in `p'` with respect to its associated `transform` as follow:
 
     p' = Rx * Ry * Rz * (T + p)
 
-with `T` the `translation` vector and `Rx`, `Ry` and `Rz` the rotation matrices
+with `T` the translation vector and `Rx`, `Ry` and `Rz` the rotation matrices
 around the X, Y and Z axis defined as:
 
          | 1  0   0 |        | cY  0 sY |        | cZ -sZ  0 |
@@ -649,88 +648,57 @@ around the X, Y and Z axis defined as:
          | 0 sX  cX |        |-sY  0 cY |        |  0   0  1 |
 
 where `c<X|Y|Z>` and `s<X|Y|Z>` are the cosine and the sinus, respectively, of
-the rotation angles around the `X`, `Y` and `Z` axis defined by the `rotation`
-vector.
+the rotation angles around the X, Y and Z axis.
 
 ## EXAMPLE
 
-Solar furnace with 9 heliostats whose mirrors are a little glossy and lit by a
-sun with a `pillbox` radial angular distribution:
+Declare 2 entities lit by a sun with purely parallel rays. The first entity is
+a purely specular square of size 10, whose center is at the origin. The second
+entity is a purely transparent square used as the receiver of the solar flux.
+Its size is 1 and its center is positioned at {0,0,2}:
 
-    # Sun description
-    - sun: &sun {dni: 1, pillbox: {aperture: 0.01}}
+    - sun: {dni: 1}
 
-    # Material description
-    - material: &lambertian
-        matte: {reflectivity: 1}
-    - material: &specular
-        front: {mirror: {reflectivity: 1, roughness: 0.01}}
-        back: {matte: {reflectivity: 1}}
-
-    # Geometry declaration
-    - geometry: &target
-      - material: {matte: {reflectivity: 0}}
-        plane:
-          slices: 64
-          clip:
-          - operation: AND
-            vertices: [[-0.5,-0.5],[-0.5,0.5],[0.5,0.5],[0.5,-0.5]]
-    - geometry: &great-parabola
-      - material: *specular
-        transform: {rotation: [90,0,0], translation: [0,0,20]}
-        parabol:
-          focal: 18
-          clip:
-          - operation: AND
-            vertices: [[-30,-20],[-30,20],[30,20],[30,-20]]
-
-    # Spawn the target and the parabola entity
     - entity:
-        name: my-target
-        primary: 0
-        transform: {rotation: [0,90,0], translation: [18,0,20]}
-        geometry: *target
-    - entity:
-        name: parabola
-        primary: 0
-        transform: {rotation: [0,0,90]}
-        geometry: *great-parabola
-
-    # Declare the heliostat template
-    - template: &H
-        name: heliostat
-        primary: 0
+        name: reflector
+        primary: 1
         geometry:
-        - material: *lambertian
-          cylinder: {radius: 0.3, height: 10, slices: 128}
-        children:
-        - name: pivot
-          transform: {translation: [0,0,5.5]}
-          zx_pivot:
-            spacing: 0
-            ref_point: [0,0,0]
-            target: {direction: [-1,0,0]}
-          children:
-          - name: reflector
-            transform: {rotation: [-90,0,0]}
-            primary: 1
-            geometry:
-            - material: *specular
-              plane:
-                clip:
-                - operation: AND
-                  vertices: [[-5,-5],[-5,5],[5,5],[5,-5]]
+        - material: {mirror: {reflectivity: 1}}
+          plane:
+            clip:
+            - operation: AND
+              vertices: [[-5.0,-5.0], [-5.0,5.0], [5.0,5.0], [5.0,-5.0]]
 
-    # Instantiate the heliostat template
-    - entity: {name: H1, children: [*H], transform: {translation: [40,-20, 0]}}
-    - entity: {name: H2, children: [*H], transform: {translation: [40,  0, 0]}}
-    - entity: {name: H3, children: [*H], transform: {translation: [40, 20, 0]}}
-    - entity: {name: H4, children: [*H], transform: {translation: [60,-20,10]}}
-    - entity: {name: H5, children: [*H], transform: {translation: [60,  0,10]}}
-    - entity: {name: H6, children: [*H], transform: {translation: [60, 20,10]}}
-    - entity: {name: H7, children: [*H], transform: {translation: [80,-20,20]}}
-    - entity: {name: H8, children: [*H], transform: {translation: [80, 0, 20]}}
-    - entity: {name: H9, children: [*H], transform: {translation: [80, 20,20]}}
+    - entity:
+        name: receiver
+        primary: 0
+        transform: {translation: [0, 0, 2]}
+        geometry:
+        - material: { virtual: }
+          plane:
+            clip:
+            - operation: AND
+              vertices: [[-0.5,-0.5], [-0.5,0.5], [0.5,0.5], [0.5,-0.5]]
+
+Define a circular diffuse reflector surrounded by a virtual sphere and lit by a
+sun with a pillbox radial angular distribution whose aperture is 0.1 degree.
+Use the YAML anchors and tags to reference into the entities a pre-declared
+geometry:
+
+    - sun:
+        dni: 1
+        pillbox: {aperture: 0.1}
+
+    - geometry: &small-circle
+      - material: {matte: {reflectivity: 1}}
+        plane: {clip: [{operation: AND, circle: {radius: 0.5}}]}
+
+    - geometry: &big-sphere
+      - material: {virtual: }
+        sphere: {radius: 2, slices: 128}
+
+    - entity: {name: reflector, primary: 1, geometry: *small-square}
+    - entity: {name: receiver,  primary: 0, geometry: *big-sphere}
 
 ## NOTES
 
