@@ -648,83 +648,53 @@ the rotation angles around the X, Y and Z axis.
 
 ## EXAMPLE
 
-Solar furnace with 9 heliostats whose mirrors are a little glossy and lit by a
-sun with a `pillbox` radial angular distribution:
+Declare 2 entities lit by a sun with purely parallel rays. The first entity is
+a purely specular square of size 10, whose center is at the origin. The second
+entity is a purely transparent square used as the receiver of the solar flux.
+Its size is 1 and its center is positioned at {0,0,2}:
 
-    # Sun description
-    - sun: &sun {dni: 1, pillbox: {aperture: 0.01}}
+    - sun: {dni: 1}
 
-    # Material description
-    - material: &lambertian
-        matte: {reflectivity: 1}
-    - material: &specular
-        front: {mirror: {reflectivity: 1, roughness: 0.01}}
-        back: {matte: {reflectivity: 1}}
-
-    # Geometry declaration
-    - geometry: &target
-      - material: {matte: {reflectivity: 0}}
-        plane:
-          slices: 64
-          clip:
-          - operation: AND
-            vertices: [[-0.5,-0.5],[-0.5,0.5],[0.5,0.5],[0.5,-0.5]]
-    - geometry: &great-parabola
-      - material: *specular
-        transform: {rotation: [90,0,0], translation: [0,0,20]}
-        parabol:
-          focal: 18
-          clip:
-          - operation: AND
-            vertices: [[-30,-20],[-30,20],[30,20],[30,-20]]
-
-    # Spawn the target and the parabola entity
     - entity:
-        name: my-target
-        primary: 0
-        transform: {rotation: [0,90,0], translation: [18,0,20]}
-        geometry: *target
-    - entity:
-        name: parabola
-        primary: 0
-        transform: {rotation: [0,0,90]}
-        geometry: *great-parabola
-
-    # Declare the heliostat template
-    - template: &H
-        name: heliostat
-        primary: 0
+        name: reflector
+        primary: 1
         geometry:
-        - material: *lambertian
-          cylinder: {radius: 0.3, height: 10, slices: 128}
-        children:
-        - name: pivot
-          transform: {translation: [0,0,5.5]}
-          zx_pivot:
-            spacing: 0
-            ref_point: [0,0,0]
-            target: {direction: [-1,0,0]}
-          children:
-          - name: reflector
-            transform: {rotation: [-90,0,0]}
-            primary: 1
-            geometry:
-            - material: *specular
-              plane:
-                clip:
-                - operation: AND
-                  vertices: [[-5,-5],[-5,5],[5,5],[5,-5]]
+        - material: {mirror: {reflectivity: 1}}
+          plane:
+            clip:
+            - operation: AND
+              vertices: [[-5.0,-5.0], [-5.0,5.0], [5.0,5.0], [5.0,-5.0]]
 
-    # Instantiate the heliostat template
-    - entity: {name: H1, children: [*H], transform: {translation: [40,-20, 0]}}
-    - entity: {name: H2, children: [*H], transform: {translation: [40,  0, 0]}}
-    - entity: {name: H3, children: [*H], transform: {translation: [40, 20, 0]}}
-    - entity: {name: H4, children: [*H], transform: {translation: [60,-20,10]}}
-    - entity: {name: H5, children: [*H], transform: {translation: [60,  0,10]}}
-    - entity: {name: H6, children: [*H], transform: {translation: [60, 20,10]}}
-    - entity: {name: H7, children: [*H], transform: {translation: [80,-20,20]}}
-    - entity: {name: H8, children: [*H], transform: {translation: [80, 0, 20]}}
-    - entity: {name: H9, children: [*H], transform: {translation: [80, 20,20]}}
+    - entity:
+        name: receiver
+        primary: 0
+        transform: {translation: [0, 0, 2]}
+        geometry:
+        - material: { virtual: }
+          plane:
+            clip:
+            - operation: AND
+              vertices: [[-0.5,-0.5], [-0.5,0.5], [0.5,0.5], [0.5,-0.5]]
+
+Define a circular diffuse reflector surrounded by a virtual sphere and lit by a
+sun with a pillbox radial angular distribution whose aperture is 0.1 degree.
+Use the YAML anchors and tags to reference into the entities a pre-declared
+geometry:
+
+    - sun:
+        dni: 1
+        pillbox: {aperture: 0.1}
+
+    - geometry: &small-circle
+      - material: {matte: {reflectivity: 1}}
+        plane: {clip: [{operation: AND, circle: {radius: 0.5}}]}
+
+    - geometry: &big-sphere
+      - material: {virtual: }
+        sphere: {radius: 2, slices: 128}
+
+    - entity: {name: reflector, primary: 1, geometry: *small-square}
+    - entity: {name: receiver,  primary: 0, geometry: *big-sphere}
 
 ## NOTES
 
