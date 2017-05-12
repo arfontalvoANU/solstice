@@ -583,6 +583,62 @@ is instantiated 3 times into the scene:
         transform: {translation: [10.5, 0, 0]}
         children: [*my-template]
 
+### Pivot
+
+A `pivot` is a special kind of node that can be used in the tree data structure
+describing an entity to automatically point its child geometry according to
+the sun's position and to the pivot's parameters. It is supposed (but not
+mandatory) that the pivot's child geometry includes a reflector, that, once
+pivoted, will reflect sun's light towards a `target`. You should note that a
+pivot cannot be child of a pivot.
+
+The most noticeable pivot's parameter is its `target`. Four different types of
+targets are available:
+
+* `position`:
+  Defines the pivot's target as being an absolute point in world coordinates.
+
+* `anchor`:
+  Defines the pivot's target as being a point defined through an anchor's name
+  (see below).
+
+* `sun`:
+  Defines the pivot's target as being the center of the sun.
+
+* `direction`:
+  Points the pivot to reflect light in the given direction, specified in world
+  coordinates.
+
+Pivots can also have a `ref_point` optional parameter defining a 3D point in
+pivot's child coordinate system that will be used by the pointing algorithm.
+If not provided, the origin of the coordinate system is used instead.
+
+Two different flavours of `pivots` are available: `x_pivot` and `zx_pivot`,
+each with its own set of parameters and behaviour.
+
+* `x_pivot`:
+  A `x_pivot` is a pivot with a single rotation axis: the `O`,`X` axis in its
+  local coordinate system. It has a `target` and can have a `ref_point`.
+  
+  The `x_pivot` pointing algorithm considers an incoming ray of light from the
+  center of the sun and rotates the pivot's child geometry so that a specular
+  reflection at `ref_point` using `+Z` as local normal will hit the pivot's
+  target point, or will have the specified direction (depending of the kind
+  of target).
+
+* `zx_pivot`:
+  A `zx_pivot` is a pivot with two rotation axis: the `O`,`Z` axis in its local
+  coordinate system, then the `O'`,`X` axis in the coordinate system resulting
+  of the Z rotation. It has a `target` and can have a `ref_point` and a 
+  `spacing` that defines the `|O O'|` distance along the `Y` axis. If not
+  defined, `spacing` is 0 and `O` and `O'` are the same point.
+  
+  The `zx_pivot` pointing algorithm considers an incoming ray of light from the
+  center of the sun and rotates the pivot's child geometry so that a specular
+  reflection at `ref_point` using `+Y` as local normal will hit the pivot's
+  target point, or will have the specified direction (depending of the kind
+  of target).
+
 ### Anchor
 
 An `anchor` defines a relative position into the entity hierarchy. They are
@@ -626,61 +682,6 @@ following example, the entities `entity0.level0.level1` and
 
     - entity: {name: entity0, child: [*my-template]}
     - entity: {name: entity1, child: [*my-template]}
-
-### Pivot
-
-A `pivot` is a special kind of node that can be used in the tree data structure
-describing an entity to automatically point its child geometry according to
-the sun's position and to the pivot's parameters. It is supposed (but not
-mandatory) that the pivot's child geometry includes a reflector, that, once
-pivoted, will reflect sun's light towards a `target`. You should note that a
-pivot cannot be child of a pivot.
-
-The most noticeable pivot's parameter is its `target`. Four different types of
-targets are available:
-
-* `position`:
-  Defines the pivot's target as being an absolute point in world space.
-
-* `anchor`:
-  Defines the pivot's target as being a point defined through an anchor's name.
-
-* `sun`:
-  Defines the pivot's target as being the center of the sun.
-
-* `direction`:
-  Points the pivot to reflect light in the given direction, specified in world
-  coordinates.
-
-Pivots can also have a `ref_point` optional parameter defining a 3D point in
-pivot's child coordinate system that will be used by the pointing algorithm.
-If not provided, the origin of the coordinate system is used instead.
-
-Two different flavours of `pivots` are available: `x_pivot` and `zx_pivot`,
-each with its own set of parameters and behaviour.
-
-* `x_pivot`:
-  A `x_pivot` is a pivot with a single rotation axis: the `O`,`X` axis in its
-  local coordinate system. It has a `target` and can have a `ref_point`.
-  
-  The `x_pivot` pointing algorithm considers an incoming ray of light from the
-  center of the sun and rotates the pivot's child geometry so that a specular
-  reflection at `ref_point` using `+Z` as local normal will hit the pivot's
-  target point, or will have the specified direction (depending of the kind
-  of target).
-
-* `zx_pivot`:
-  A `zx_pivot` is a pivot with two rotation axis: the `O`,`Z` axis in its local
-  coordinate system, then the `O'`,`X` axis in the coordinate system resulting
-  of the Z rotation. It has a `target` and can have a `ref_point` and a 
-  `spacing` that defines the `|O O'|` distance along the `Y` axis. If not
-  defined, `spacing` is 0 and `O` and `O'` are the same point.
-  
-  The `zx_pivot` pointing algorithm considers an incoming ray of light from the
-  center of the sun and rotates the pivot's child geometry so that a specular
-  reflection at `ref_point` using `+Y` as local normal will hit the pivot's
-  target point, or will have the specified direction (depending of the kind
-  of target).
 
 ### Transform
 
