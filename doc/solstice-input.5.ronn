@@ -276,13 +276,14 @@ to be a dirac distribution (point source sun). The available sun shapes are:
 
 * `pillbox`:
   The `pillbox` distribution defines an uniform intensity over the sun's disk.
-  Its unique `aperture` parameter is the sun's disk half-angle that is linked
-  to the apparent size of the sun.
+  Its single `aperture` parameter is the sun's disk half-angle in degrees, that
+  is linked to the apparent size of the sun. A typical aperture is 0.2664.
 
 * `buie`:
-  The `buie` distribution, as first discribed in [2]. Its unique `csr`
+  The `buie` distribution, as first discribed in [2]. Its single `csr`
   parameter is the ratio between the circumsolar irradiance and the sum of
-  the circumsolar and sun's disk irradiances.
+  the circumsolar and sun's disk irradiances. An analysis on typical csr
+  values can be found in [3].
 
 ## MATERIAL
 
@@ -358,7 +359,7 @@ The available material descriptors are:
 ### Normal map
 
 All the material descriptors, excepted the `virtual`, provide an optional
-`normal-map` attribute that defines a path toward a Portable PixMap image [3]
+`normal-map` attribute that defines a path toward a Portable PixMap image [4]
 whose pixels store a normal expressed in the tangent space of the interface. By
 default the unperturbed tangent space normal is {0,0,1}. The PPM image can
 be encoded on 8 or 16-bits per component either in ASCII or binary. The
@@ -702,14 +703,14 @@ geometry:
 
 ## NOTES
 
-* [1]:
-  YAML Ain't Markup Language - <http://yaml.org>
+* [1]: YAML Ain't Markup Language - <http://yaml.org>
 * [2]: D. Buie, A.G. Monger, C.J. Dey. "Sunshape distributions for
-  terrestrial solar simulations". Solar Energy, 2003, 74, pp. 113-122.
-  
+  terrestrial solar simulations". Solar Energy, 2003, 74, pp. 113-122.  
   <https://www.researchgate.net/publication/256854372_Sunshape_distributions_for_terrestrial_solar_simulations>
-* [3]:
-  Portable PixMap - <http://netpbm.sourceforge.net/doc/ppm.html>
+* [3]: D. Buie , C.J. Dey, S. Bosi. "The effective size of the solar cone for
+  solar concentrating systems". Solar Energy, 2003, 74, pp. 417-427.  
+  <http://http://documents.mx/documents/effective-size-of-solar-cone.html>
+* [4]: Portable PixMap - <http://netpbm.sourceforge.net/doc/ppm.html>
 
 ## SEE ALSO
 `solstice`(1), `solstice-receiver`(5)
