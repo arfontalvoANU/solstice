@@ -189,7 +189,7 @@ submitted to the `solstice`(1) program.
 
     <template>            ::= template: <entity-data>
 
-    <entity-data>         ::= name: STRING # Except "self"
+    <entity-data>         ::= name: STRING
                             [ <geometry-data> | <x_pivot> | <zx_pivot> ]
                             [ <anchors> ]
                             [ <transform> ]
@@ -212,7 +212,6 @@ submitted to the `solstice`(1) program.
     <position-descriptor> ::= position: <real3>
                             | hyperboloid_image_focals: <hyperboloid_focals>
 
-    # "self" references the first level entity
     <entity-identifier>   ::= <self|STRING>[.STRING ... ]
 
     <anchor-identifier>   ::= <entity-identifier>.STRING
@@ -619,7 +618,7 @@ each with its own set of parameters and behaviour.
 * `x_pivot`:
   A `x_pivot` is a pivot with a single rotation axis: the `O`,`X` axis in its
   local coordinate system. It has a `target` and can have a `ref_point`.
-  
+
   The `x_pivot` pointing algorithm considers an incoming ray of light from the
   center of the sun and rotates the pivot's child geometry so that a specular
   reflection at `ref_point` using `+Z` as local normal will hit the pivot's
@@ -629,10 +628,10 @@ each with its own set of parameters and behaviour.
 * `zx_pivot`:
   A `zx_pivot` is a pivot with two rotation axis: the `O`,`Z` axis in its local
   coordinate system, then the `O'`,`X` axis in the coordinate system resulting
-  of the Z rotation. It has a `target` and can have a `ref_point` and a 
+  of the Z rotation. It has a `target` and can have a `ref_point` and a
   `spacing` that defines the `|O O'|` distance along the `Y` axis. If not
   defined, `spacing` is 0 and `O` and `O'` are the same point.
-  
+
   The `zx_pivot` pointing algorithm considers an incoming ray of light from the
   center of the sun and rotates the pivot's child geometry so that a specular
   reflection at `ref_point` using `+Y` as local normal will hit the pivot's
@@ -663,9 +662,9 @@ templated entity with a descendant referencing an anchor of one of its
 ancestor. On its declaration, the template is still not instantiated through a
 parent entity and consequently the name of the root entity is unknown.
 Moreover, the name of the root entity cannot be fixed since it changes for each
-instance of the template. To handle these cases, the `self` keyword allows to
-reference the unknown root entity of the currently declared hierarchy. In the
-following example, the entities `entity0.level0.level1` and
+instance of the template. To handle these cases, the `self` reserved keyword
+allows to reference the unknown root entity of the currently declared
+hierarchy. In the following example, the entities `entity0.level0.level1` and
 `entity1.level0.level1` encapsulate a pivot that references the anchor
 `anchor0` defined in their respective parent `entity0.level0` and
 `entity1.level0`:
@@ -716,52 +715,119 @@ Its size is 1 and its center is positioned at {0,0,2}:
         name: reflector
         primary: 1
         geometry:
-        - material: {mirror: {reflectivity: 1}}
+        - material:
+            mirror:
+              reflectivity: 1
           plane:
             clip:
             - operation: AND
-              vertices: [[-5.0,-5.0], [-5.0,5.0], [5.0,5.0], [5.0,-5.0]]
+              vertices:
+              - [-5.0,-5.0]
+              - [-5.0, 5.0]
+              - [ 5.0, 5.0]
+              - [ 5.0,-5.0]
 
     - entity:
         name: receiver
         primary: 0
-        transform: {translation: [0, 0, 2]}
+        transform:
+          translation: [0, 0, 2]
         geometry:
-        - material: { virtual: }
+        - material:
+            virtual: # No attrib
           plane:
             clip:
             - operation: AND
-              vertices: [[-0.5,-0.5], [-0.5,0.5], [0.5,0.5], [0.5,-0.5]]
+              vertices:
+              - [-0.5,-0.5]
+              - [-0.5, 0.5]
+              - [ 0.5, 0.5]
+              - [ 0.5,-0.5]
 
 Define a circular diffuse reflector surrounded by a virtual sphere and lit by a
 sun with a pillbox radial angular distribution whose aperture is 0.1 degree.
-Use the YAML anchors and tags to reference into the entities a pre-declared
-geometry:
+Use anchors and tags of the YAML format to reference into the entities a
+pre-declared geometry. Rely on the YAML compact notation to reduce the number
+of lines requires to describe the scene:
 
-    - sun:
-        dni: 1
-        pillbox: {aperture: 0.1}
+    - sun: {dni: 1, pillbox: {aperture: 0.1}}
 
     - geometry: &small-circle
       - material: {matte: {reflectivity: 1}}
         plane: {clip: [{operation: AND, circle: {radius: 0.5}}]}
 
     - geometry: &big-sphere
-      - material: {virtual: }
+      - material: {?virtual}
         sphere: {radius: 2, slices: 128}
 
     - entity: {name: reflector, primary: 1, geometry: *small-square}
     - entity: {name: receiver,  primary: 0, geometry: *big-sphere}
 
+Declare a solar furnace with 9 heliostats instantiated from the same
+`template`.  Their position is controlled by a `zx_pivot` to ensure that the
+incoming sun rays are reflected toward the negative X axis. Reflected rays are
+then concentrated by a parabola toward a purely absorptive receiver. The
+heliostats and the parabola share the same material: the front faces are purely
+specular while the back faces are diffuse:
+
+    - sun: {dni: 1}
+
+    - material: &specular
+        front: {mirror: {reflectivity: 1, roughness: 0}}
+        back: {matte: {reflectivity: 1}}
+
+    - template: &H # Template of an heliostat
+        name: heliostat
+        transform: {translation: [0,0,5.5]}
+        zx_pivot: {target: {direction: [-1,0,0]}}
+        children:
+        - name: reflector
+          transform: {rotation: [-90,0,0]}
+          primary: 1
+          geometry:
+          - material: *specular
+            plane:
+              clip: [{operation: AND, vertices: [[-5,-5],[-5,5],[5,5],[5,-5]]}]
+
+    - entity: # Receiver entity
+        name: receiver
+        primary: 0
+        transform: {translation: [18,0,20], rotation: [0,90,0]}
+        geometry:
+        - material: {matte: {reflectivity: 0}}
+          plane:
+            clip:
+            - operation: AND
+              vertices: [[-.5,-.5],[-.5,.5],[.5,.5],[.5,-.5]]
+
+    - entity: # Great parabola
+        name: parabola
+        primary: 0
+        transform: {translation: [0,0,20], rotation: [0,90,90]}
+        geometry:
+        - material: *specular
+          parabol:
+            focal: 18
+            clip: [{operation: AND, vertices: [[-30,-20],[-30,20],[30,20],[30,-20]]}]
+
+    # Instantiate the heliostat template
+    - entity: {name: H1, children: [*H], transform: {translation: [40,-20, 0]}}
+    - entity: {name: H2, children: [*H], transform: {translation: [40,  0, 0]}}
+    - entity: {name: H3, children: [*H], transform: {translation: [40, 20, 0]}}
+    - entity: {name: H4, children: [*H], transform: {translation: [60,-20,10]}}
+    - entity: {name: H5, children: [*H], transform: {translation: [60,  0,10]}}
+    - entity: {name: H6, children: [*H], transform: {translation: [60, 20,10]}}
+    - entity: {name: H7, children: [*H], transform: {translation: [80,-20,20]}}
+    - entity: {name: H8, children: [*H], transform: {translation: [80, 0, 20]}}
+    - entity: {name: H9, children: [*H], transform: {translation: [80, 20,20]}}
+
 ## NOTES
 
 * [1]: YAML Ain't Markup Language - <http://yaml.org>
 * [2]: D. Buie, A.G. Monger, C.J. Dey. "Sunshape distributions for
-  terrestrial solar simulations". Solar Energy, 2003, 74, pp. 113-122.  
-  <https://www.researchgate.net/publication/256854372_Sunshape_distributions_for_terrestrial_solar_simulations>
-* [3]: D. Buie , C.J. Dey, S. Bosi. "The effective size of the solar cone for
-  solar concentrating systems". Solar Energy, 2003, 74, pp. 417-427.  
-  <http://http://documents.mx/documents/effective-size-of-solar-cone.html>
+  terrestrial solar simulations". Solar Energy, 2003, 74, pp. 113-122.
+* [3]: D. Buie, C.J. Dey, S. Bosi. "The effective size of the solar cone for
+  solar concentrating systems". Solar Energy, 2003, 74, pp. 417-427.
 * [4]: Portable PixMap - <http://netpbm.sourceforge.net/doc/ppm.html>
 
 ## SEE ALSO
