@@ -24,6 +24,7 @@ submitted to the `solstice`(1) program.
     <solar-plant>         ::= - <sun>
                               - <item>
                             [ - <item> ... ]
+                            [ - <atmosphere> ]
 
     <item>                ::= <entity>
                             | <geometry>
@@ -233,6 +234,11 @@ submitted to the `solstice`(1) program.
 
     ----------------------------------------
 
+    <atmosphere>          ::= atmosphere: 
+                                absorption: <mtl-data> # in [0, 1]
+
+    ----------------------------------------
+
     <mtl-data>            ::= REAL
                             | <spectrum-data-list>
 
@@ -262,12 +268,18 @@ into the `solstice-input`(5) file but is provided by the `solstice`(1) command.
 This allows to use the same unmodified `solstice-input`(5) file for several
 simulations with different sun directions.
 
-The main `sun` property is its direct normal irradiance, or `dni`. Its value is
-a scalar defining the direct irradiance received on a plane normal to the sun.
-The optional `spectrum` parameter describes the per wavelength distribution of
-the sun's `dni`. Note that this distribution is automatically normalized by
-`solstice`(1). If the `spectrum` attribute is not defined, `solstice`(1) uses
-the default smarts295 spectrum [TODO-ref].
+The main `sun` property is its direct normal irradiance, or `dni` in W/m\^2.
+Its value is a scalar defining the direct irradiance received on a plane normal
+to the sun. The optional `spectrum` parameter describes the per wavelength
+distribution of the sun's `dni`. Note that this distribution is automatically
+normalized by `solstice`(1). If the `spectrum` attribute is not defined,
+`solstice`(1) uses the default smarts295 spectrum [2].
+
+Even if an atmosphere is provided, the atmospheric effetcs from the top of the
+atmosphere to ground level are not computed using the atmosphere description.
+As a result, the sun description (dni and optional spectrum) is expected to
+include all the atmospheric effects (sun's irradiance available at ground
+level).
 
 The `sun-shape` parameter controls the angular distribution of the sun light
 intensity across the sun's disk. If not defined, the distribution is assumed
@@ -279,10 +291,23 @@ to be a dirac distribution (point source sun). The available sun shapes are:
   is linked to the apparent size of the sun. A typical aperture is 0.2664.
 
 * `buie`:
-  The `buie` distribution, as first discribed in [2]. Its single `csr`
+  The `buie` distribution, as first discribed in [3]. Its single `csr`
   parameter is the ratio between the circumsolar irradiance and the sum of
   the circumsolar and sun's disk irradiances. An analysis on typical csr
-  values can be found in [3].
+  values can be found in [4].
+
+## ATMOSPHERE
+
+The `atmosphere`, when provided, describes the medium surrounding the
+solar-plant. Its only parameter is its absorption coefficient in m\^-1, that
+can either be a scalar if the `absorption` is constant over the spectrum, or
+can be spectrally described. The absorption along light paths is only computed
+after the first reflector, as sun's description must include all the
+atmospheric effects before the first reflector (see sun's description for more
+details).
+
+If no atmosphere is provided, atmospheric absorption after the first reflector
+is not taken into account.
 
 ## MATERIAL
 
@@ -358,7 +383,7 @@ The available material descriptors are:
 ### Normal map
 
 All the material descriptors, excepted the `virtual`, provide an optional
-`normal-map` attribute that defines a path toward a Portable PixMap image [4]
+`normal-map` attribute that defines a path toward a Portable PixMap image [5]
 whose pixels store a normal expressed in the tangent space of the interface. By
 default the unperturbed tangent space normal is {0,0,1}. The PPM image can
 be encoded on 8 or 16-bits per component either in ASCII or binary. The
@@ -659,7 +684,7 @@ which it is declared. For instance, in the following example, the
 
 In some situations, the `anchor-identifier` cannot be fully determined. Let a
 templated entity with a descendant referencing an anchor of one of its
-ancestor. On its declaration, the template is still not instantiated through a
+ancestors. On its declaration, the template is still not instantiated through a
 parent entity and consequently the name of the root entity is unknown.
 Moreover, the name of the root entity cannot be fixed since it changes for each
 instance of the template. To handle these cases, the `self` reserved keyword
@@ -704,12 +729,12 @@ the rotation angles around the X, Y and Z axis.
 
 ## EXAMPLE
 
-Declare 2 entities lit by a sun with purely parallel rays. The first entity is
-a purely specular square of size 10, whose center is at the origin. The second
-entity is a purely transparent square used as the receiver of the solar flux.
-Its size is 1 and its center is positioned at {0,0,2}:
+Declare 2 entities and a point source sun. The first entity is a purely
+specular square of size 10, whose center is at the origin. The second entity
+is a purely transparent square used as a receiver of the solar flux. Its size
+is 1 and its center is positioned at {0,0,2}:
 
-    - sun: {dni: 1}
+    - sun: {dni: 1000}
 
     - entity:
         name: reflector
@@ -744,11 +769,11 @@ Its size is 1 and its center is positioned at {0,0,2}:
               - [ 0.5, 0.5]
               - [ 0.5,-0.5]
 
-Define a circular diffuse reflector surrounded by a virtual sphere and lit by a
-sun with a pillbox radial angular distribution whose aperture is 0.1 degree.
-Use anchors and tags of the YAML format to reference into the entities a
-pre-declared geometry. Rely on the YAML compact notation to reduce the number
-of lines requires to describe the scene:
+Define a circular diffuse reflector surrounded by a virtual sphere and a
+pillbox-shaped sun whose aperture is 0.1 degree. Use anchors and tags of the
+YAML format to reference into the entities a pre-declared geometry. Rely on the
+YAML compact notation to reduce the number of lines requires to describe the
+scene:
 
     - sun: {dni: 1, pillbox: {aperture: 0.1}}
 
@@ -824,11 +849,12 @@ specular while the back faces are diffuse:
 ## NOTES
 
 * [1]: YAML Ain't Markup Language - <http://yaml.org>
-* [2]: D. Buie, A.G. Monger, C.J. Dey. "Sunshape distributions for
+* [2]: smarts295 reference: TODO
+* [3]: D. Buie, A.G. Monger, C.J. Dey. "Sunshape distributions for
   terrestrial solar simulations". Solar Energy, 2003, 74, pp. 113-122.
-* [3]: D. Buie, C.J. Dey, S. Bosi. "The effective size of the solar cone for
+* [4]: D. Buie, C.J. Dey, S. Bosi. "The effective size of the solar cone for
   solar concentrating systems". Solar Energy, 2003, 74, pp. 417-427.
-* [4]: Portable PixMap - <http://netpbm.sourceforge.net/doc/ppm.html>
+* [5]: Portable PixMap - <http://netpbm.sourceforge.net/doc/ppm.html>
 
 ## SEE ALSO
 `solstice`(1), `solstice-receiver`(5)
