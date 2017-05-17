@@ -189,7 +189,7 @@ estimate the per-pixel radiance and fix the up camera vector to {`0`,`0`,`1`}.
 Write the `solstice-output`(5) result to standard output and use the `sed`(1)
 Unix command to remove the first line which stores the sun direction used to
 draw the image. Finally, visualise the rendered picture by redirecting the
-remaining data to the `feh`(5) image viewer.
+remaining data to the `feh`(1) image viewer.
 
     $ solstice -D180,45 -r up=0,0,1:rmode=pt:spp=64 solplant.yaml | sed '1d' | feh -
 

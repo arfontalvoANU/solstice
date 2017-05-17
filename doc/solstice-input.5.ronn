@@ -727,7 +727,7 @@ around the X, Y and Z axis defined as:
 where `c<X|Y|Z>` and `s<X|Y|Z>` are the cosine and the sinus, respectively, of
 the rotation angles around the X, Y and Z axis.
 
-## EXAMPLE
+## EXAMPLES
 
 Declare 2 entities and a point source sun. The first entity is a purely
 specular square of size 10, whose center is at the origin. The second entity
