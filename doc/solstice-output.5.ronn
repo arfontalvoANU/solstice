@@ -51,7 +51,7 @@ the same line while a closed quote mark is not defined.
                             [ <dump-radiative-paths-output> ... ]
 
     <rendering-output>    ::= <sun-direction>
-                              PPM-FILE
+                              PPM-FILE # ASCII PPM with 8-bits per component [1]
                             [ <rendering-output> ... ]
 
     ----------------------------------------
@@ -168,25 +168,25 @@ errors as numerical imprecisions.
 
 ### Receiver map
 
-A receiver can have a per-primitive irradiance estimation if their
-`per_primitive` flag is active. In this case, `solstice`(1) generates a
-`receiver-map` that is actually an ASCII VTK file [1] that stores the
-triangular mesh of the receiver and, for each triangle, the estimation of its
-associated irradiance. The "definition" of the receiver map is thus controlled
-by the discretisation of the receiver shape as described in the
-`solstice-input`(5) file. Note that to obtain a good estimation of the per
-triangle irradiance, one have to ensure that the number of per triangle
-experiments is sufficient regarding the targeted accuracy. Since only a small
-fraction of the overall sampled radiative paths reach a given triangle, the
-total number of experiments provided by the `-n` option of `solstice`(1) should
-be increased significantly, as 1 or 2 order of magnitude.
+A receiver defined in the submitted `solstice-receiver`(5) file, can have a
+per-primitive irradiance estimation if their `per_primitive` flag is active. In
+this case, `solstice`(1) generates a `receiver-map` that is actually an ASCII
+VTK file [2] that stores the triangular mesh of the receiver and, for each
+triangle, the estimation of its associated irradiance. The "definition" of the
+receiver map is thus controlled by the discretisation of the receiver shape as
+described in the `solstice-input`(5) file. Note that to obtain a good
+estimation of the per triangle irradiance, one have to ensure that the number
+of per triangle experiments is sufficient regarding the targeted accuracy.
+Since only a small fraction of the overall sampled radiative paths reach a
+given triangle, the total number of experiments provided by the `-n` option of
+`solstice`(1) should be increased significantly, as 1 or 2 order of magnitude.
 
-If only the front or the back side of the receiver is active then only one set
+If only the front or the back side of the receiver is active, then only one set
 of per triangle irradiance estimation is written. If the `side` attribute of
 the receiver is set to `FRONT_AND_BACK`, the irradiance estimation for the
 front facing triangles are written priorly to the estimation of the back facing
 ones. The following grammar gives a brief description of the formatting of a
-`VTK-RECEIVER-MAP`. Refer to the VTK format specification [1] for more
+`VTK-RECEIVER-MAP`. Refer to the VTK format specification [2] for more
 informations on the VTK file format.
 
 
@@ -229,25 +229,26 @@ informations on the VTK file format.
 ## DUMP GEOMETRY
 
 A `dump-geometry-output` is generated when `solstice`(1) is invoked with the
-`-g` option. In this mode, `solstice`(1) converts the geometry of the submitted
-`solstice-input`(5) file in triangular meshes that is then written to the
-output with respect to the format provided by the `format` parameter of the
-`-g` option. The only format currently supported by `solstice`(1) is the Alias
-Wavefront OBJ [2]. With no more sub-option, `solstice`(1) will thus generate an
-OBJ file that will contain the whole solar plant mesh.  However, the `split`
-parameter of the `-g` option allows to generate several OBJ files: one file is
-generated per `geometry` or per `object`, as defined in the `solstice-input`(5)
-format, whether the `split` sub-option is set to `geometry` or `object`. In
-this situation, each OBJ file is followed by a line with 3 minus characters in
-order to identify where the OBJ definition stops in the output stream, and thus
-where the next OBJ definition begins.
+`-g` option. In this mode, for each submitted sun direction, `solstice`(1)
+converts the geometry of the submitted `solstice-input`(5) file in triangular
+meshes that is then written to the output with respect to the format provided
+by the `format` parameter of the `-g` option. The only format currently
+supported by `solstice`(1) is the Alias Wavefront OBJ [3]. With no more
+sub-option, `solstice`(1) will thus generate an OBJ file that will contain the
+whole solar plant mesh.  However, the `split` parameter of the `-g` option
+allows to generate several OBJ files: one file is generated per `geometry` or
+per `object`, as defined in the `solstice-input`(5) format, whether the `split`
+sub-option is set to `geometry` or `object`. In this situation, each OBJ file
+is followed by a line with 3 minus characters in order to identify where the
+OBJ definition stops in the output stream, and thus where the next OBJ
+definition begins.
 
 Independently of the `split` strategy, each `solstice-input`(1) geometry is an
 OBJ group whose name is the `entity-identifier` of the entity in which it is
 encapsulated. Finally, the `dump-geometry-output` use the `usemtl` directive of
 the OBJ format to associate to a mesh the name of its material type. The
 following grammar succinctly describe the formatting of an `OBJ-FILE`. Refer to
-the OBJ format specification [1] for more informations on the OBJ file format.
+the OBJ format specification [3] for more informations on the OBJ file format.
 
     OBJ-FILE              ::= g <entity-identifier>
                               <obj-mesh>
@@ -266,14 +267,14 @@ the OBJ format specification [1] for more informations on the OBJ file format.
 
 ## DUMP RADIATIVE PATHS
 
-The `dump-radiative-paths-output` lists the geometric data of the radiative
-paths sampled during a simulation. Each path is colored with respect to its
-trajectory: the path is blue or yellow whether it reaches or not a receiver,
-respectively. A path can be red if its first segment, i.e. the ray starting
-from the sun toward a primary geometry, is occluded by a non virtual object.
-The following grammar describes the formatting of a VTK-RADIATIVE-PATHS file.
-Refer to the VTK format specification [1] for more informations on the VTK file
-format.
+For each sun direction, the `dump-radiative-paths-output` lists the geometric
+data of the radiative paths sampled during a simulation. Each path is colored
+with respect to its trajectory: the path is blue or yellow whether it reaches
+or not a receiver, respectively. A path can be red if its first segment, i.e.
+the ray starting from the sun toward a primary geometry, is occluded by a non
+virtual object.  The following grammar describes the formatting of a
+VTK-RADIATIVE-PATHS file.  Refer to the VTK format specification [2] for more
+informations on the VTK file format.
 
     VTK-RADIATIVE-PATHS   ::= # vtk DataFile Version 2.0
                               Radiative paths
@@ -318,10 +319,11 @@ format.
 ## NOTES
 
 * [1]:
+  Portable PixMap - <http://netpbm.sourceforge.net/doc/ppm.html>
+* [2]:
   VTK file format -
   <http://www.vtk.org/wp-content/uploads/2015/04/file-formats.pdf>
-
-* [2]:
+* [3]:
   OBJ file format -
   <http://www.martinreddy.net/gfx/3d/OBJ.spec>
 
