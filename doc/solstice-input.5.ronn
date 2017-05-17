@@ -848,13 +848,18 @@ specular while the back faces are diffuse:
 
 ## NOTES
 
-* [1]: YAML Ain't Markup Language - <http://yaml.org>
-* [2]: smarts295 reference: TODO
-* [3]: D. Buie, A.G. Monger, C.J. Dey. "Sunshape distributions for
+* [1]:
+  YAML Ain't Markup Language - <http://yaml.org>
+* [2]:
+  smarts295 reference: TODO
+* [3]: 
+  D\. Buie, A.G. Monger, C.J. Dey. "Sunshape distributions for
   terrestrial solar simulations". Solar Energy, 2003, 74, pp. 113-122.
-* [4]: D. Buie, C.J. Dey, S. Bosi. "The effective size of the solar cone for
+* [4]:
+  D\. Buie, C.J. Dey, S. Bosi. "The effective size of the solar cone for
   solar concentrating systems". Solar Energy, 2003, 74, pp. 417-427.
-* [5]: Portable PixMap - <http://netpbm.sourceforge.net/doc/ppm.html>
+* [5]:
+  Portable PixMap - <http://netpbm.sourceforge.net/doc/ppm.html>
 
 ## SEE ALSO
 `solstice`(1), `solstice-receiver`(5)
