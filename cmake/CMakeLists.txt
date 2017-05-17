@@ -89,10 +89,15 @@ if(RONN)
   configure_file(${SOLSTICE_SOURCE_DIR}/../doc/solstice.1.ronn.in
     ${CMAKE_CURRENT_BINARY_DIR}/solstice.1.ronn @ONLY)
 
-  file(COPY ${SOLSTICE_SOURCE_DIR}/../doc/solstice-input.5.ronn
+  file(COPY 
+    ${SOLSTICE_SOURCE_DIR}/../doc/solstice-input.5.ronn
+    ${SOLSTICE_SOURCE_DIR}/../doc/solstice-output.5.ronn
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-  set(SOLSTICE_MAN_PAGES solstice.1.ronn solstice-input.5.ronn)
+  set(SOLSTICE_MAN_PAGES 
+    solstice.1.ronn
+    solstice-input.5.ronn
+    solstice-output.5.ronn)
   rcmake_prepend_path(SOLSTICE_MAN_PAGES ${CMAKE_CURRENT_BINARY_DIR})
 
   if(${CMAKE_HOST_UNIX})
