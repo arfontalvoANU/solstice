@@ -263,6 +263,68 @@ the OBJ format specification [1] for more informations on the OBJ file format.
     <obj-indices>         ::= f <triangle-indices>
                             [ f <triangle-indices> ... ]
 
+
+## DUMP RADIATIVE PATHS
+
+The `dump-radiative-paths-output` lists the geometric data of the radiative
+paths sampled during a simulation. Each path is colored with respect to its
+trajectory: the path is blue or yellow whether it reaches or not a receiver,
+respectively. A path can be red if its first segment, i.e. the ray starting
+from the sun toward a primary geometry, is occluded by a non virtual object.
+The following grammar describes the formatting of a VTK-RADIATIVE-PATHS file.
+Refer to the VTK format specification [1] for more informations on the VTK file
+format.
+
+    VTK-RADIATIVE-PATHS   ::= # vtk DataFile Version 2.0
+                              Radiative paths
+                              ASCII
+                              DATASET POLYDATA
+                              POINTS <#vertices> float
+                              <paths-vertices>
+                              LINES <#paths> <#paths+#vertices>
+                              <paths-lists>
+                              CELL_DATA <#paths>
+                              SCALAR Radiative_path_type float 1
+                              LOOKUP_TABLE path_type
+                              <paths-type>
+                              LOOKUP_TABLE path_type 3
+                              <color-occlude>
+                              <color-success>
+                              <color-missing>
+
+    <paths-vertices>      ::= <real3>
+                            [ <real3> ... ] # up to <#vertices>
+
+    <paths-lists>         ::= <radiative-path>
+                            [ <radiative-path> ... ] # up to <#path>
+
+    <radiative-path>      ::= <#path-segments> <path-vertex-id> ...
+
+    <paths-type>          ::= <color-id>
+                            [ <color-id> ... ] # up to <#paths>
+
+    <color-id>            ::= 0.0 # occlude
+                            | 0.5 # success
+                            | 1.0 # missing
+
+    <color-occlude>       ::= 1.0 0.0 0.0 1.0
+    <color-success>       ::= 0.0 0.0 1.0 1.0
+    <color-missing>       ::= 1.0 1.0 0.0 1.0
+
+    <#paths>              ::= INTEGER
+    <#path-segments>      ::= INTEGER
+    <path-vertex-id>      ::= INTEGER
+
+## NOTES
+
+* [1]:
+  VTK file format -
+  <http://www.vtk.org/wp-content/uploads/2015/04/file-formats.pdf>
+
+* [2]:
+  OBJ file format -
+  <http://www.martinreddy.net/gfx/3d/OBJ.spec>
+
 ## SEE ALSO
 `solstice`(1),
 `solstice-input`(5),
