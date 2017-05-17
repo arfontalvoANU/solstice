@@ -27,7 +27,7 @@ grammar may use new lines for formatting constraints, but data are actually on
 the same line while a closed quote mark is not defined.
 
     <output>              ::= <simulation-output>
-                            | <dump-geometry-output> # -g option 
+                            | <dump-geometry-output> # -g option
                             | <dump-radiative-paths-output> # -p option
                             | <rendering-output> # -r option
 
@@ -47,7 +47,7 @@ the same line while a closed quote mark is not defined.
 
     <dump-radiative-paths-output>
                           ::= <sun-direction>
-                              VTK-FILE
+                              VTK-RADIATIVE-PATHS
                             [ <dump-radiative-paths-output> ... ]
 
     <rendering-output>    ::= <sun-direction>
@@ -58,7 +58,7 @@ the same line while a closed quote mark is not defined.
 
     <sun-direction>       ::= "#--- Sun direction: <azimuth> <elevation> (<real3>)"
 
-    <counts>              ::= "<#globals> <#receivers> <#primaries> 
+    <counts>              ::= "<#globals> <#receivers> <#primaries>
                                <#samples> <#failed>"
 
     <#globals>            ::= 7
@@ -111,7 +111,7 @@ the same line while a closed quote mark is not defined.
     <rcvXprims-list>      ::= <rcvXprim>
                             [ <rcvXprim> ... ]
 
-    <rcvXprim>            ::= "<receiver-id> <primary-id> 
+    <rcvXprim>            ::= "<receiver-id> <primary-id>
                                <rcvXprim-front> <rcvXprim-back>"
 
     <rcvXprim-front>      ::= <rcvXprim-side>
@@ -122,7 +122,7 @@ the same line while a closed quote mark is not defined.
 
     ----------------------------------------
 
-    <receiver-maps>       ::= VTK-RECEIVER
+    <receiver-maps>       ::= VTK-RECEIVER-MAP
                             [ <receiver-maps> ... ]
 
     <geometry-data>       ::= OBJ-FILE
@@ -150,9 +150,9 @@ the same line while a closed quote mark is not defined.
     <expected-value>      ::= REAL
     <standard-error>      ::= REAL # in [0, INF)
 
-## SIMULATION OUTPUT
+## SIMULATION
 
-A simulation-output begins by a line that stores the sun direction used by the
+A `simulation-output` begins by a line that stores the sun direction used by the
 simulation. The next line list the numbers of global, per receiver and per
 primary results as well as the overall number of Monte-Carlo experiments used
 by the simulation and the number of experiments that failed due to unforeseen
@@ -174,17 +174,23 @@ A receiver can have a per-primitive irradiance estimation if their
 triangular mesh of the receiver and, for each triangle, the estimation of its
 associated irradiance. The "definition" of the receiver map is thus controlled
 by the discretisation of the receiver shape as described in the
-`solstice-input`(5) file.
+`solstice-input`(5) file. Note that to obtain a good estimation of the per
+triangle irradiance, one have to ensure that the number of per triangle
+experiments is sufficient regarding the targeted accuracy. Since only a small
+fraction of the overall sampled radiative paths reach a given triangle, the
+total number of experiments provided by the `-n` option of `solstice`(1) should
+be increased significantly, as 1 or 2 order of magnitude.
 
 If only the front or the back side of the receiver is active then only one set
 of per triangle irradiance estimation is written. If the `side` attribute of
 the receiver is set to `FRONT_AND_BACK`, the irradiance estimation for the
 front facing triangles are written priorly to the estimation of the back facing
-triangles. The following grammar gives a brief description of the
-`receiver-map` format. Refer to the VTK format specification for more
+ones. The following grammar gives a brief description of the formatting of a
+`VTK-RECEIVER-MAP`. Refer to the VTK format specification [1] for more
 informations on the VTK file format.
 
-    VTK-RECEIVER          ::= # vtk DataFile Version 2.0
+
+    VTK-RECEIVER-MAP      ::= # vtk DataFile Version 2.0
                               <receiver-name>
                               ASCII
                               DATASET POLYDATA
@@ -220,28 +226,28 @@ informations on the VTK file format.
     <#vertices>           ::= INTEGER
     <triangle-indices>    ::= INTEGER INTEGER INTEGER
 
-## DUMP GEOMETRY OUTPUT
+## DUMP GEOMETRY
 
 A `dump-geometry-output` is generated when `solstice`(1) is invoked with the
 `-g` option. In this mode, `solstice`(1) converts the geometry of the submitted
 `solstice-input`(5) file in triangular meshes that is then written to the
 output with respect to the format provided by the `format` parameter of the
 `-g` option. The only format currently supported by `solstice`(1) is the Alias
-Wavefront OBJ format [2]. With no more sub-option, `solstice`(1) will thus
-generate an OBJ file that will contain the whole solar plant mesh.  However,
-the `split` parameter of the `-g` option allows to generate several OBJ files:
-one file is generated per `geometry` or per `object`, as defined in the
-`solstice-input`(5) format, whether the `split` sub-option is set to `geometry`
-or `object`. In this situation, each OBJ file is followed by a line with 3
-minus characters in order to identify where the OBJ definition stops in the
-output stream, and thus where the next OBJ definition begins.
+Wavefront OBJ [2]. With no more sub-option, `solstice`(1) will thus generate an
+OBJ file that will contain the whole solar plant mesh.  However, the `split`
+parameter of the `-g` option allows to generate several OBJ files: one file is
+generated per `geometry` or per `object`, as defined in the `solstice-input`(5)
+format, whether the `split` sub-option is set to `geometry` or `object`. In
+this situation, each OBJ file is followed by a line with 3 minus characters in
+order to identify where the OBJ definition stops in the output stream, and thus
+where the next OBJ definition begins.
 
 Independently of the `split` strategy, each `solstice-input`(1) geometry is an
 OBJ group whose name is the `entity-identifier` of the entity in which it is
 encapsulated. Finally, the `dump-geometry-output` use the `usemtl` directive of
 the OBJ format to associate to a mesh the name of its material type. The
 following grammar succinctly describe the formatting of an `OBJ-FILE`. Refer to
-the OBJ format specification for more informations on the OBJ file format.
+the OBJ format specification [1] for more informations on the OBJ file format.
 
     OBJ-FILE              ::= g <entity-identifier>
                               <obj-mesh>
