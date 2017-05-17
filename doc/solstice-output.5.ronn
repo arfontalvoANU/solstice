@@ -23,7 +23,7 @@ collected by the submitted solar plant. When invoked with the `-g` option,
 
 The output values are mainly ASCII data formatted line by line. By convention,
 in the following grammar the line data are listed between quote marks. The
-grammar may use new lines for formatting constraints but data are actually on
+grammar may use new lines for formatting constraints, but data are actually on
 the same line while a closed quote mark is not defined.
 
     <output>              ::= <simulation-output>
@@ -88,9 +88,9 @@ the same line while a closed quote mark is not defined.
     <front>               ::= <side>
     <back>                ::= <side>
 
-    <side>                ::= <absorbed-irradiance> <irradiance> \
-                              <reflectivity-loss> <absorptivity-loss> \
-                              <efficiency>
+    <side>                ::= "<absorbed-irradiance> <irradiance>
+                               <reflectivity-loss> <absorptivity-loss>
+                               <efficiency>"
 
     ----------------------------------------
 
