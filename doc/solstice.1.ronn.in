@@ -95,9 +95,9 @@ default `solstice` behaviour.
 * `-q`:
   Do not print the helper message when no _file_ is submitted.
 
-* `-n` _realisations-count_:
-  Number of Monte-Carlo realisations used to estimate the solar flux. By
-  default _realisations-count_ is set to @SOLSTICE_ARGS_DEFAULT_NREALISATIONS@.
+* `-n` _experiments-count_:
+  Number of Monte-Carlo experiments used to estimate the solar flux. By
+  default _experiments-count_ is set to @SOLSTICE_ARGS_DEFAULT_NREALISATIONS@.
 
 * `-r` <_sub-option_:...>:
   Render an image of the scene through a pinhole camera, for each submitted
@@ -153,7 +153,7 @@ default `solstice` behaviour.
 Launch `solstice` estimations for two sun directions whose azimuthal and
 elevation angles are {`45`,`70`} and {`50`,`75`}. The solar facility is
 described in `input.yaml` and the receivers on which the integrations must be
-performed are declared in the `rcvs.yaml` file. `10000` realisations are used
+performed are declared in the `rcvs.yaml` file. `10000` experiments are used
 by the Monte-Carlo estimations and the results are written to `output` even
 though this file already exists:
 
