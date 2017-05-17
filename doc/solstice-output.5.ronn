@@ -27,9 +27,9 @@ grammar may use new lines for formatting constraints, but data are actually on
 the same line while a closed quote mark is not defined.
 
     <output>              ::= <simulation-output>
-                            | <dump-geometry-output> # -g option of solstice(1)
-                            | <dump-radiative-paths-output> # -p option of solstice(1)
-                            | <rendering-output> # -r option of solstice(1)
+                            | <dump-geometry-output> # -g option 
+                            | <dump-radiative-paths-output> # -p option
+                            | <rendering-output> # -r option
 
     <simulation-output>   ::= <sun-direction>
                               <counts>
@@ -43,7 +43,7 @@ the same line while a closed quote mark is not defined.
     <dump-geometry-output>
                           ::= <sun-direction>
                               <geometry-data>
-                            [ <geometry-output> ... ]
+                            [ <dump-geometry-output> ... ]
 
     <dump-radiative-paths-output>
                           ::= <sun-direction>
@@ -58,7 +58,8 @@ the same line while a closed quote mark is not defined.
 
     <sun-direction>       ::= "#--- Sun direction: <azimuth> <elevation> (<real3>)"
 
-    <counts>              ::= "<#globals> <#receivers> <#primaries> <#samples> <#failed>"
+    <counts>              ::= "<#globals> <#receivers> <#primaries> 
+                               <#samples> <#failed>"
 
     <#globals>            ::= 7
     <#receivers>          ::= INTEGER # in [0, INF)
@@ -79,9 +80,10 @@ the same line while a closed quote mark is not defined.
     <receivers-list>      ::= <receiver>
                             [ <receiver> ... ]
 
-    <receiver>            ::= "<receiver-name> <receiver-id> <area> <front> <back>"
+    <receiver>             solstioce::= "<receiver-name> <receiver-id> <area>
+                                         <front> <back>"
 
-    <receiver-name>       ::= <entity-identifier> # Defined in `solstice-input`(5)
+    <receiver-name>       ::= <entity-identifier>
 
     <receiver-id>         ::= INTEGER
 
@@ -100,7 +102,7 @@ the same line while a closed quote mark is not defined.
     <primary>             ::= "<primary-name> <primary-id> <area> <#samples>
                                <cos-factor> <shadow-loss>"
 
-    <primary-name>        ::= <entity-identifier> # Defined in `solstice-input`(5)
+    <primary-name>        ::= <entity-identifier
 
     <primary-id>          ::= INTEGER
 
@@ -109,7 +111,8 @@ the same line while a closed quote mark is not defined.
     <rcvXprims-list>      ::= <rcvXprim>
                             [ <rcvXprim> ... ]
 
-    <rcvXprim>            ::= "<receiver-id> <primary-id> <rcvXprim-front> <rcvXprim-back>"
+    <rcvXprim>            ::= "<receiver-id> <primary-id> 
+                               <rcvXprim-front> <rcvXprim-back>"
 
     <rcvXprim-front>      ::= <rcvXprim-side>
     <rcvXprim-back>       ::= <rcvXprim-side>
@@ -119,7 +122,7 @@ the same line while a closed quote mark is not defined.
 
     ----------------------------------------
 
-    <receiver-maps>       ::= VTK-FILE
+    <receiver-maps>       ::= VTK-RECEIVER
                             [ <receiver-maps> ... ]
 
     <geometry-data>       ::= OBJ-FILE
@@ -145,11 +148,11 @@ the same line while a closed quote mark is not defined.
 
     <estimation>          ::= <expected-value> <standard-error>
     <expected-value>      ::= REAL
-    <standar-error>       ::= REAL # in [0, INF)
+    <standard-error>      ::= REAL # in [0, INF)
 
 ## SIMULATION OUTPUT
 
-A simulation output begins by a line that stores the sun direction used by the
+A simulation-output begins by a line that stores the sun direction used by the
 simulation. The next line list the numbers of global, per receiver and per
 primary results as well as the overall number of Monte-Carlo experiments used
 by the simulation and the number of experiments that failed due to unforeseen
@@ -181,42 +184,80 @@ triangles. The following grammar gives a brief description of the
 `receiver-map` format. Refer to the VTK format specification for more
 informations on the VTK file format.
 
-    <receiver-map>        ::= # vtk DataFile Version 2.0
+    VTK-RECEIVER          ::= # vtk DataFile Version 2.0
                               <receiver-name>
                               ASCII
                               DATASET POLYDATA
                               POINTS <#vertices> float
-                              <mesh-vertices>
+                              <map-vertices>
                               POLYGONS <#triangles> <#triangles*4>
-                              <mesh-triangles>
+                              <map-triangles>
                               CELL_DATA <#triangles>
-                              <triangle-data>
+                              <map-triangle-data>
 
-    <mesh-vertices>       ::= <real3>
+    <map-vertices>        ::= <real3>
                             [ <real3> ... ] # up to <#vertices>
 
-    <mesh-triangles>      ::= 3 <triangle-indices>
+    <map-triangles>       ::= 3 <triangle-indices>
                             [ 3 <triangle-indices> ... ] # up to <#triangles>
 
-    <triangle-data>       ::= <front-data>
-                            | <back-data>
-                            | <front-data> <back-data>
+    <map-triangle-data>   ::= <map-front-data>
+                            | <map-back-data>
+                            | <map-front-data> <map-back-data>
 
-    <front-data>          ::= <side-data>
-    <back-data>           ::= <side-data>
+    <map-front-data>      ::= <map-side-data>
+    <map-back-data>       ::= <map-side-data>
 
-    <side-data>           ::= CELL_DATA <#triangles>
+    <map-side-data>       ::= CELL_DATA <#triangles>
                               SCALARS <side-name> float 2
                               LOOKUP_TABLE default
                               <irradiance>
                             [ <irradiance> ... ]
 
-    <side-name>           ::= Front_faces | Back_faces
+    <map-side-name>       ::= Front_faces | Back_faces
 
     <#triangles>          ::= INTEGER
     <#vertices>           ::= INTEGER
     <triangle-indices>    ::= INTEGER INTEGER INTEGER
 
+## DUMP GEOMETRY OUTPUT
+
+A `dump-geometry-output` is generated when `solstice`(1) is invoked with the
+`-g` option. In this mode, `solstice`(1) converts the geometry of the submitted
+`solstice-input`(5) file in triangular meshes that is then written to the
+output with respect to the format provided by the `format` parameter of the
+`-g` option. The only format currently supported by `solstice`(1) is the Alias
+Wavefront OBJ format [2]. With no more sub-option, `solstice`(1) will thus
+generate an OBJ file that will contain the whole solar plant mesh.  However,
+the `split` parameter of the `-g` option allows to generate several OBJ files:
+one file is generated per `geometry` or per `object`, as defined in the
+`solstice-input`(5) format, whether the `split` sub-option is set to `geometry`
+or `object`. In this situation, each OBJ file is followed by a line with 3
+minus characters in order to identify where the OBJ definition stops in the
+output stream, and thus where the next OBJ definition begins.
+
+Independently of the `split` strategy, each `solstice-input`(1) geometry is an
+OBJ group whose name is the `entity-identifier` of the entity in which it is
+encapsulated. Finally, the `dump-geometry-output` use the `usemtl` directive of
+the OBJ format to associate to a mesh the name of its material type. The
+following grammar succinctly describe the formatting of an `OBJ-FILE`. Refer to
+the OBJ format specification for more informations on the OBJ file format.
+
+    OBJ-FILE              ::= g <entity-identifier>
+                              <obj-mesh>
+                            [ <obj-mesh> ... ]
+
+    <obj-mesh>            ::= usemtl <material-type>
+                              <obj-vertices>
+                              <obj-faces>
+
+    <obj-vertices>        ::= v <real3>
+                            [ v <real3> ... ]
+
+    <obj-indices>         ::= f <triangle-indices>
+                            [ f <triangle-indices> ... ]
+
 ## SEE ALSO
 `solstice`(1),
-`solstice-input`(5)
+`solstice-input`(5),
+`solstice-receiver`(5)
