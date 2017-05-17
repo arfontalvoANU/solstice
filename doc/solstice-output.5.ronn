@@ -12,20 +12,24 @@ directions. In other words, invoking `solstice`(1) with N several sun
 directions looks like calling `solstice`(1) N times and concatenating their
 associated output.
 
-The type of the data that are generated, and thus how they are formatted,
-depends on the mode in which `solstice`(1) is invoked. By default,
-`solstice`(1) evaluates the power collected by the submitted solar plant and
-its efficiency. When invoked with the `-g` option, `solstice`(1) converts the
-solar plant geometries in a list of CAO files. The `-p` option is used to track
-the sampled radiative paths while, finally, the `-r` option allows to render an
-image of the solar facility.
+The type of the data that are generated depends on the mode in which
+`solstice`(1) is invoked. By default, `solstice`(1) evaluates the power
+collected by the submitted solar plant. When invoked with the `-g` option,
+`solstice`(1) converts the solar plant geometries in a list of CAO files. The
+`-p` option is used to track the sampled radiative paths while, finally, the
+`-r` option allows to render an image of the solar facility.
 
 ## GRAMMAR
 
+The output values are mainly ASCII data formatted line by line. By convention,
+in the following grammar the line data are listed between quote marks. The
+grammar may use new lines for formatting constraints but data are actually on
+the same line while a closed quote mark is not defined.
+
     <output>              ::= <simulation-output>
-                            | <dump-geometry-output>
-                            | <dump-radiative-paths-output>
-                            | <rendering-output>
+                            | <dump-geometry-output> # -g option of solstice(1)
+                            | <dump-radiative-paths-output> # -p option of solstice(1)
+                            | <rendering-output> # -r option of solstice(1)
 
     <simulation-output>   ::= <sun-direction>
                               <counts>
@@ -52,9 +56,9 @@ image of the solar facility.
 
     ----------------------------------------
 
-    <sun-direction>       ::= #--- Sun direction: <azimuth> <elevation> (<real3>)
+    <sun-direction>       ::= "#--- Sun direction: <azimuth> <elevation> (<real3>)"
 
-    <counts>              ::= <#globals> <#receivers> <#primaries> <#samples> <#failed>
+    <counts>              ::= "<#globals> <#receivers> <#primaries> <#samples> <#failed>"
 
     <#globals>            ::= 7
     <#receivers>          ::= INTEGER # in [0, INF)
@@ -75,7 +79,7 @@ image of the solar facility.
     <receivers-list>      ::= <receiver>
                             [ <receiver> ... ]
 
-    <receiver>            ::= <receiver-name> <receiver-id> <area> <front> <back>
+    <receiver>            ::= "<receiver-name> <receiver-id> <area> <front> <back>"
 
     <receiver-name>       ::= <entity-identifier> # Defined in `solstice-input`(5)
 
@@ -93,8 +97,8 @@ image of the solar facility.
     <primaries-list>      ::= <primary>
                             [ <primary> ... ]
 
-    <primary>             ::= <primary-name> <primary-id> <area> <#samples> \
-                              <cos-factor> <shadow-loss>
+    <primary>             ::= "<primary-name> <primary-id> <area> <#samples>
+                               <cos-factor> <shadow-loss>"
 
     <primary-name>        ::= <entity-identifier> # Defined in `solstice-input`(5)
 
@@ -105,13 +109,13 @@ image of the solar facility.
     <rcvXprims-list>      ::= <rcvXprim>
                             [ <rcvXprim> ... ]
 
-    <rcvXprim>            ::= <receiver-id> <primary-id> <rcvXprim-front> <rcvXprim-back>
+    <rcvXprim>            ::= "<receiver-id> <primary-id> <rcvXprim-front> <rcvXprim-back>"
 
     <rcvXprim-front>      ::= <rcvXprim-side>
     <rcvXprim-back>       ::= <rcvXprim-side>
 
-    <rcvXprim-side>       ::= <absorbed-irradiance> <irradiance> \
-                              <reflectivity-loss> <absorptivity-loss>
+    <rcvXprim-side>       ::= "<absorbed-irradiance> <irradiance>
+                               <reflectivity-loss> <absorptivity-loss>"
 
     ----------------------------------------
 
@@ -142,6 +146,76 @@ image of the solar facility.
     <estimation>          ::= <expected-value> <standard-error>
     <expected-value>      ::= REAL
     <standar-error>       ::= REAL # in [0, INF)
+
+## SIMULATION OUTPUT
+
+A simulation output begins by a line that stores the sun direction used by the
+simulation. The next line list the numbers of global, per receiver and per
+primary results as well as the overall number of Monte-Carlo experiments used
+by the simulation and the number of experiments that failed due to unforeseen
+errors as numerical imprecisions.
+
+### Global results
+
+### Per receiver results
+
+### Per primary results
+
+### Per receiver and per primary results
+
+### Receiver map
+
+A receiver can have a per-primitive irradiance estimation if their
+`per_primitive` flag is active. In this case, `solstice`(1) generates a
+`receiver-map` that is actually an ASCII VTK file [1] that stores the
+triangular mesh of the receiver and, for each triangle, the estimation of its
+associated irradiance. The "definition" of the receiver map is thus controlled
+by the discretisation of the receiver shape as described in the
+`solstice-input`(5) file.
+
+If only the front or the back side of the receiver is active then only one set
+of per triangle irradiance estimation is written. If the `side` attribute of
+the receiver is set to `FRONT_AND_BACK`, the irradiance estimation for the
+front facing triangles are written priorly to the estimation of the back facing
+triangles. The following grammar gives a brief description of the
+`receiver-map` format. Refer to the VTK format specification for more
+informations on the VTK file format.
+
+    <receiver-map>        ::= # vtk DataFile Version 2.0
+                              <receiver-name>
+                              ASCII
+                              DATASET POLYDATA
+                              POINTS <#vertices> float
+                              <mesh-vertices>
+                              POLYGONS <#triangles> <#triangles*4>
+                              <mesh-triangles>
+                              CELL_DATA <#triangles>
+                              <triangle-data>
+
+    <mesh-vertices>       ::= <real3>
+                            [ <real3> ... ] # up to <#vertices>
+
+    <mesh-triangles>      ::= 3 <triangle-indices>
+                            [ 3 <triangle-indices> ... ] # up to <#triangles>
+
+    <triangle-data>       ::= <front-data>
+                            | <back-data>
+                            | <front-data> <back-data>
+
+    <front-data>          ::= <side-data>
+    <back-data>           ::= <side-data>
+
+    <side-data>           ::= CELL_DATA <#triangles>
+                              SCALARS <side-name> float 2
+                              LOOKUP_TABLE default
+                              <irradiance>
+                            [ <irradiance> ... ]
+
+    <side-name>           ::= Front_faces | Back_faces
+
+    <#triangles>          ::= INTEGER
+    <#vertices>           ::= INTEGER
+    <triangle-indices>    ::= INTEGER INTEGER INTEGER
 
 ## SEE ALSO
 `solstice`(1),
