@@ -92,12 +92,14 @@ if(RONN)
   file(COPY 
     ${SOLSTICE_SOURCE_DIR}/../doc/solstice-input.5.ronn
     ${SOLSTICE_SOURCE_DIR}/../doc/solstice-output.5.ronn
+    ${SOLSTICE_SOURCE_DIR}/../doc/solstice-receiver.5.ronn
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
   set(SOLSTICE_MAN_PAGES 
     solstice.1.ronn
     solstice-input.5.ronn
-    solstice-output.5.ronn)
+    solstice-output.5.ronn
+    solstice-receiver.5.ronn)
   rcmake_prepend_path(SOLSTICE_MAN_PAGES ${CMAKE_CURRENT_BINARY_DIR})
 
   if(${CMAKE_HOST_UNIX})
