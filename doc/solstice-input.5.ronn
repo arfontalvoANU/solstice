@@ -234,7 +234,7 @@ submitted to the `solstice`(1) program.
 
     ----------------------------------------
 
-    <atmosphere>          ::= atmosphere: 
+    <atmosphere>          ::= atmosphere:
                                 absorption: <mtl-data> # in [0, 1]
 
     ----------------------------------------
@@ -743,6 +743,7 @@ is 1 and its center is positioned at {0,0,2}:
         - material:
             mirror:
               reflectivity: 1
+              roughness: 0
           plane:
             clip:
             - operation: AND
@@ -775,7 +776,7 @@ YAML format to reference into the entities a pre-declared geometry. Rely on the
 YAML compact notation to reduce the number of lines requires to describe the
 scene:
 
-    - sun: {dni: 1, pillbox: {aperture: 0.1}}
+    - sun: {dni: 1000, pillbox: {aperture: 0.1}}
 
     - geometry: &small-circle
       - material: {matte: {reflectivity: 1}}
@@ -788,14 +789,59 @@ scene:
     - entity: {name: reflector, primary: 1, geometry: *small-square}
     - entity: {name: receiver,  primary: 0, geometry: *big-sphere}
 
+Declare 2 parabolic reflectors from a `templated` parabola whose orientation is
+controlled by a `zx_pivot`. This pivot ensures that the reflector points toward
+the receiver, independently of its position, by targeting an `anchor` whose
+position is defined relatively to the receiver:
+
+    - sun: {dni: 1000}
+
+    - entity: # Receiver
+        name: square_receiver
+        primary: 0
+        transform: { rotation: [0,90,0], translation: [100,0,10] }
+        anchors: [{name: anchor0, position: [0,0,0]}]
+        geometry:
+        - material: {?virtual}
+          plane:
+            clip:
+            - operation: AND
+              vertices: [[-.5,-.5],[-.5,.5],[.5,.5],[.5,-.5]]
+
+    - template: &self_oriented_parabol # Reflector
+        name: pivot
+        transform: {translation: [0, 0, 4], rotation: [0, 0, 90]}
+        zx_pivot: {target: {anchor: square_receiver.anchor0}}
+        children:
+        - name: parabol
+          transform: {rotation: [-90, 0, 0]}
+          primary: 1
+          geometry:
+          - material: {mirror: {reflectivity: 1, roughness: 0}}
+            parabol:
+              focal: 100
+              clip:
+              - operation: AND
+                vertices: [[-5,-5],[-5,5],[5,5],[5,-5]]
+
+    # Instantiate the reflectors
+    - entity:
+        name: reflector1
+        transform: {translation: [0,0,0]}
+        children: [*self_oriented_parabol]
+    - entity:
+        name: reflector2
+        transform: {translation: [10,43.6,0]}
+        children: [*self_oriented_parabol]
+
 Declare a solar furnace with 9 heliostats instantiated from the same
-`template`.  Their position is controlled by a `zx_pivot` to ensure that the
+`template`. Their position is controlled by a `zx_pivot` to ensure that the
 incoming sun rays are reflected toward the negative X axis. Reflected rays are
 then concentrated by a parabola toward a purely absorptive receiver. The
 heliostats and the parabola share the same material: the front faces are purely
 specular while the back faces are diffuse:
 
-    - sun: {dni: 1}
+    - sun: {dni: 1000}
 
     - material: &specular
         front: {mirror: {reflectivity: 1, roughness: 0}}
@@ -852,7 +898,7 @@ specular while the back faces are diffuse:
   YAML Ain't Markup Language - <http://yaml.org>
 * [2]:
   smarts295 reference: TODO
-* [3]: 
+* [3]:
   D\. Buie, A.G. Monger, C.J. Dey. "Sunshape distributions for
   terrestrial solar simulations". Solar Energy, 2003, 74, pp. 113-122.
 * [4]:
