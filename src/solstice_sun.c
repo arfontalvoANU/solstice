@@ -154,8 +154,8 @@ create_default_sun_spectrum
   }
 
   if(solparser_has_spectrum(solstice->parser)) {
-    data = solstice_sun_spectrum_smarts295;
-    size = solstice_sun_spectrum_smarts295_size;
+    data = solstice_sun_spectrum_smarts;
+    size = solstice_sun_spectrum_smarts_size;
   } else {
     data = solstice_sun_spectrum_dummy;
     size = solstice_sun_spectrum_dummy_size;
