@@ -67,7 +67,7 @@ the same line while a closed quote mark is not defined.
     <#samples>            ::= INTEGER # in [0, INF)
     <#failed>             ::= INTEGER # in [0, INF)
 
-    <global>              ::= <irradiance>
+    <global>              ::= <potential-irradiance>
                               <absorbed-irradiance>
                               <cos-factor>
                               <shadow-loss>
@@ -80,7 +80,7 @@ the same line while a closed quote mark is not defined.
     <receivers-list>      ::= <receiver>
                             [ <receiver> ... ]
 
-    <receiver>             solstioce::= "<receiver-name> <receiver-id> <area>
+    <receiver>            ::= "<receiver-name> <receiver-id> <area>
                                          <front> <back>"
 
     <receiver-name>       ::= <entity-identifier>
@@ -138,15 +138,16 @@ the same line while a closed quote mark is not defined.
     <azimuth>             ::= REAL # Degrees in [0, 360[
     <elevation>           ::= REAL # Degrees in [0, 90]
 
-    <absorbed-irradiance> ::= <estimation>
-    <absorptivity-loss>   ::= <estimation>
-    <cos-factor>          ::= <estimation>
-    <irradiance>          ::= <estimation>
-    <missing-loss>        ::= <estimation>
-    <reflectivity-loss>   ::= <estimation>
-    <shadow-loss>         ::= <estimation>
+    <potential-irradiance>::= <estimate>
+    <absorbed-irradiance> ::= <estimate>
+    <absorptivity-loss>   ::= <estimate>
+    <cos-factor>          ::= <estimate>
+    <irradiance>          ::= <estimate>
+    <missing-loss>        ::= <estimate>
+    <reflectivity-loss>   ::= <estimate>
+    <shadow-loss>         ::= <estimate>
 
-    <estimation>          ::= <expected-value> <standard-error>
+    <estimate>            ::= <expected-value> <standard-error>
     <expected-value>      ::= REAL
     <standard-error>      ::= REAL # in [0, INF)
 
@@ -154,30 +155,66 @@ the same line while a closed quote mark is not defined.
 
 ## SIMULATION
 
-A `simulation-output` begins by a line that stores the sun direction used by the
-simulation. The next line lists the numbers of global, per receiver and per
-primary results as well as the overall number of Monte-Carlo experiments used
-by the simulation and the number of experiments that failed due to unforeseen
-errors as numerical imprecisions.
+A `simulation-output` begins with two header lines. The first one reports the
+sun direction used in the simulation, and the second one lists the numbers of
+global, per receiver and per primary results as well as the overall number of
+Monte-Carlo experiments used by the simulation and the number of experiments
+that failed due to unforeseen errors as numerical imprecisions.
 
 ### Global results
 
+After the 2 header lines, the output includes various global-result lines, the
+exact number of lines being part of the headers. Currently this number is 7.
+Each global result is a pair of real numbers: the estimate of the value and
+its standard deviation. The global results are, in this order:
+
+* `potential irradiance`: the maximum irradiance that all the primary
+  geometries could intercept if properly oriented.
+* `absorbed irradiance`: the absorbed part of the irradiance hitting any
+  receiver geometry. At most equal to potential irradiance.
+* `cos factor`: the fraction of incoming irradiance not intercepted by the
+  primary geometries due to their orientation.
+* `shadow loss`: the amount of potential irradiance lost before hitting primary
+  geometries due to another geometry's shadow.
+* `missing loss`: the amount of potential irradiance having hit primary
+  geometries, but not absorbed by a receiver; this irradiance could have been
+  blocked along its path, can have missed the receivers, or can have hit a
+  receiver but without being absorbed.
+* `absorptivity loss`: the amount of potential irradiance that could have been
+  absorbed by receivers if atmospheric absorption was not taken into account.
+* `reflectivity loss`: the amount of potential irradiance that could have been
+  absorbed by receivers if reflections occured on materials with reflectivity
+  1.0.
+
 ### Per receiver results
+
+After the global results, the output includes various per-receiver result
+lines, one line per receiver, the exact number of lines being part of the
+headers.
 
 ### Per primary results
 
+After the per-receiver results, the output includes various per-primary result
+lines, one line per primary geometry, the exact number of lines being part of
+the headers.
+
 ### Per receiver and per primary results
+
+After the per-primary results, the output includes various result lines, each
+describing the contribution of a primary geometry to a given receiver. The
+total number of such lines is the number of receivers times the number of
+primary geometries.
 
 ### Receiver map
 
 A receiver defined in the submitted `solstice-receiver`(5) file, can have a
-per-primitive irradiance estimation if its `per_primitive` flag is active. In
+per-primitive irradiance estimate if its `per_primitive` flag is active. In
 this case, `solstice`(1) generates a `receiver-map` that is actually an ASCII
 VTK file [2] that stores the triangular mesh of the receiver and, for each
-triangle, the estimation of its associated irradiance. The "definition" of the
+triangle, the estimate of its associated irradiance. The "definition" of the
 receiver map is thus controlled by the discretisation of the receiver's shape,
 as described in the `solstice-input`(5) file. Note that to obtain a good
-estimation of the per-triangle irradiance, one have to ensure that the number
+estimate of the per-triangle irradiance, one have to ensure that the number
 of per-triangle experiments is sufficient regarding the targeted accuracy.
 Since only a small fraction of the overall sampled radiative paths reach a
 given triangle, the total number of experiments required through the `-n`
@@ -185,9 +222,9 @@ option of `solstice`(1) should be increased significantly, as 1 or 2 order of
 magnitude.
 
 If only the front or the back side of the receiver is active, then only one set
-of per triangle irradiance estimation is written. If the `side` attribute of
-the receiver is set to `FRONT_AND_BACK`, the irradiance estimation for the
-front facing triangles are written before  to the estimation of the back facing
+of per triangle irradiance estimate is written. If the `side` attribute of
+the receiver is set to `FRONT_AND_BACK`, the irradiance estimate for the
+front facing triangles are written before  to the estimate of the back facing
 ones. The following grammar gives a brief description of the formatting of a
 `VTK-RECEIVER-MAP`. Please refer to the VTK format specification [2] for more
 informations on the VTK file format.
