@@ -824,7 +824,7 @@ position is defined relatively to the receiver:
               - operation: AND
                 vertices: [[-5,-5],[-5,5],[5,5],[5,-5]]
 
-    # Instantiate the reflectors
+    # Instantiate the reflector template
     - entity:
         name: reflector1
         transform: {translation: [0,0,0]}
