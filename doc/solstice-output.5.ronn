@@ -102,7 +102,7 @@ the same line while a closed quote mark is not defined.
     <primary>             ::= "<primary-name> <primary-id> <area> <#samples>
                                <cos-factor> <shadow-loss>"
 
-    <primary-name>        ::= <entity-identifier
+    <primary-name>        ::= <entity-identifier>
 
     <primary-id>          ::= INTEGER
 
@@ -149,6 +149,8 @@ the same line while a closed quote mark is not defined.
     <estimation>          ::= <expected-value> <standard-error>
     <expected-value>      ::= REAL
     <standard-error>      ::= REAL # in [0, INF)
+
+    <entity-identifier>   # Defined in solstice-input(1)
 
 ## SIMULATION
 
