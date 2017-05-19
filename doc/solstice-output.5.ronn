@@ -72,8 +72,8 @@ the same line while a closed quote mark is not defined.
                               <cos-factor>
                               <shadow-loss>
                               <missing-loss>
-                              <absorptivity-loss>
                               <reflectivity-loss>
+                              <absorptivity-loss>
 
     ----------------------------------------
 
@@ -181,10 +181,10 @@ its standard deviation. The global results are, in this order:
   absorbed by a receiver; this irradiance could have been blocked along its
   path, can have missed the receivers, or can have hit a receiver but without
   being absorbed,
-* `absorptivity loss`: the irradiance that could have been absorbed by
-  receivers if atmospheric absorption had not been taken into account,
 * `reflectivity loss`: the additional irradiance that could have been absorbed
-  by receivers if reflections had occured on materials with reflectivity 1.0.
+  by receivers if reflections had occured on materials with reflectivity 1.0,
+* `absorptivity loss`: the irradiance that could have been absorbed by
+  receivers if atmospheric absorption had not been taken into account.
 
 ### Per receiver results
 

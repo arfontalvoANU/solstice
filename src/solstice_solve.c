@@ -59,8 +59,8 @@ write_mc_global(struct solstice* solstice, struct ssol_estimator* estimator)
   PRINT_MC_GLOBAL(cos_factor);
   PRINT_MC_GLOBAL(shadowed);
   PRINT_MC_GLOBAL(missing);
-  PRINT_MC_GLOBAL(atmosphere);
   PRINT_MC_GLOBAL(reflectivity);
+  PRINT_MC_GLOBAL(atmosphere);
   #undef PRINT_MC_GLOBAL
 
   /* Receivers' data */
