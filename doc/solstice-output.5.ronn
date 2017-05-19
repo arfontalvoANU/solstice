@@ -156,10 +156,11 @@ the same line while a closed quote mark is not defined.
 ## SIMULATION
 
 A `simulation-output` begins with two header lines. The first one reports the
-sun direction used in the simulation, and the second one lists the numbers of
-global, per receiver and per primary results as well as the overall number of
-Monte-Carlo experiments used by the simulation and the number of experiments
-that failed due to unforeseen errors as numerical imprecisions.
+sun direction used in the simulation (azimuth and elevation angles, in
+degrees), and the second one lists the numbers of global, per receiver and per
+primary results as well as the overall number of Monte-Carlo experiments used
+by the simulation and the number of experiments that failed due to unforeseen
+errors as numerical imprecisions.
 
 ### Global results
 
@@ -169,41 +170,116 @@ Each global result is a pair of real numbers: the estimate of the value and
 its standard deviation. The global results are, in this order:
 
 * `potential irradiance`: the maximum irradiance that all the primary
-  geometries could intercept if properly oriented.
+  geometries could intercept if properly oriented,
 * `absorbed irradiance`: the absorbed part of the irradiance hitting any
-  receiver geometry. At most equal to potential irradiance.
+  receiver geometry. At most equal to potential irradiance,
 * `cos factor`: the fraction of incoming irradiance not intercepted by the
-  primary geometries due to their orientation.
-* `shadow loss`: the amount of potential irradiance lost before hitting primary
-  geometries due to another geometry's shadow.
-* `missing loss`: the amount of potential irradiance having hit primary
-  geometries, but not absorbed by a receiver; this irradiance could have been
-  blocked along its path, can have missed the receivers, or can have hit a
-  receiver but without being absorbed.
-* `absorptivity loss`: the amount of potential irradiance that could have been
-  absorbed by receivers if atmospheric absorption was not taken into account.
-* `reflectivity loss`: the amount of potential irradiance that could have been
-  absorbed by receivers if reflections occured on materials with reflectivity
-  1.0.
+  primary geometries due to their orientation,
+* `shadow loss`: the irradiance lost before hitting primary geometries due to
+  another geometry's shadow,
+* `missing loss`: the irradiance having hit primary geometries, but not
+  absorbed by a receiver; this irradiance could have been blocked along its
+  path, can have missed the receivers, or can have hit a receiver but without
+  being absorbed,
+* `absorptivity loss`: the irradiance that could have been absorbed by
+  receivers if atmospheric absorption had not been taken into account,
+* `reflectivity loss`: the additional irradiance that could have been absorbed
+  by receivers if reflections had occured on materials with reflectivity 1.0.
 
 ### Per receiver results
 
 After the global results, the output includes various per-receiver result
 lines, one line per receiver, the exact number of lines being part of the
-headers.
+headers. Each line contains:
+
+* `name`: the name of the receiver, from the input file,
+* `ID`: an unique integer identifying the receiver,
+* `area`: area of the receiver,
+* `front absorbed irradiance`: the irradiance absorbed by the receiver's front
+  face, and its standard deviation (2 real numbers),
+* `front irradiance`: the irradiance hitting the receiver's front face, and its
+  standard deviation (2 real numbers),
+* `front reflectivity loss`: the irradiance that could have been absorbed by
+  the receiver's front face if reflections had occured on materials with
+  reflectivity 1.0, and its standard deviation (2 real numbers),
+* `front absorptivity loss`: the irradiance that could have been absorbed by
+  the receiver's front face if atmospheric absorption had not been taken into
+  account, and its standard deviation (2 real numbers),
+* `front efficiency`: the fraction of incoming irradiance absorbed by
+  the receiver's front face, and its standard deviation (2 real numbers),
+* `back absorbed irradiance`: the irradiance absorbed by the receiver's back
+  face, and its standard deviation (2 real numbers),
+* `back irradiance`: the irradiance hitting the receiver's back face, and its
+  standard deviation (2 real numbers),
+* `back reflectivity loss`: the irradiance that could have been absorbed by
+  the receiver's back face if reflections had occured on materials with
+  reflectivity 1.0, and its standard deviation (2 real numbers),
+* `back absorptivity loss`: the irradiance that could have been absorbed by
+  the receiver's back face if atmospheric absorption had not been taken into
+  account, and its standard deviation (2 real numbers),
+* `back efficiency`: the fraction of incoming irradiance absorbed by
+  the receiver's back face, and its standard deviation (2 real numbers)
+
+Both front face and back face results are output, even if the receiver has only
+a single receiving face. In this case, outputs relative to the non-receiving
+face are meaningless (invalid -1 value).
 
 ### Per primary results
 
 After the per-receiver results, the output includes various per-primary result
 lines, one line per primary geometry, the exact number of lines being part of
-the headers.
+the headers. Each line contains:
+
+* `name`: the name of the primary geometry, from the input file,
+* `ID`: an unique integer identifying the primary geometry,
+* `area`: area of the primary geometry,
+* `sample count`: the number of Monte-Carlo experiments sampled on the primary
+  geometry,
+* `cos factor`: the fraction of incoming irradiance not intercepted by the
+  primary geometry due to its orientation, and its standard deviation (2 real
+  numbers),
+* `shadow loss`: the irradiance lost before hitting the primary geometry due to
+  another geometry's shadow, and its standard deviation (2 real numbers).
 
 ### Per receiver and per primary results
 
 After the per-primary results, the output includes various result lines, each
 describing the contribution of a primary geometry to a given receiver. The
 total number of such lines is the number of receivers times the number of
-primary geometries.
+primary geometries. Each line contains:
+
+* `receiver ID`: the ID of the involved receiver,
+* `primary ID`:  the ID of the involved primary geometry,
+* `front absorbed irradiance`: the irradiance absorbed by the receiver's front
+  face coming from the primary geometry, and its standard deviation (2 real
+  numbers),
+* `front irradiance`: the irradiance hitting the receiver's front face coming
+  from the primary geometry, and its standard deviation (2 real numbers),
+* `front reflectivity loss`: the irradiance that could have been absorbed by
+  the receiver's front face coming from the primary geometry if reflections
+  had occured on materials with reflectivity 1.0, and its standard deviation (2
+  real numbers),
+* `front absorptivity loss`: the irradiance that could have been absorbed by
+  the receiver's front face coming from the primary geometry if atmospheric
+  absorption had not been taken into account, and its standard deviation (2
+  real numbers),
+* `back absorbed irradiance`: the irradiance absorbed by the receiver's back
+  face coming from the primary geometry, and its standard deviation (2 real
+  numbers),
+* `back irradiance`: the irradiance hitting the receiver's back face coming
+  from the primary geometry, and its standard deviation (2 real numbers),
+* `back reflectivity loss`: the irradiance that could have been absorbed by
+  the receiver's back face coming from the primary geometry if reflections
+  had occured on materials with reflectivity 1.0, and its standard deviation (2
+  real numbers),
+* `back absorptivity loss`: the irradiance that could have been absorbed by
+  the receiver's back face coming from the primary geometry if atmospheric
+  absorption had not been taken into account, and its standard deviation (2
+  real numbers).
+
+Both front face and back face results are output, even if the receiver has only
+a single receiving face. In this case, outputs relative to the non-receiving
+face are meaningless (invalid -1 value).
 
 ### Receiver map
 
