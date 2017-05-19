@@ -54,16 +54,10 @@ include_directories(
   ${Star3DUT_INCLUDE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR})
 
-find_program(RONN ronn)
-if(NOT RONN)
-  message(WARNING
-    "The `ronn' program is missing. "
-    "The solstice documentation cannot be generated.")
-endif()
-
 ################################################################################
 # Build subprojects
 ################################################################################
+add_subdirectory(doc)
 add_subdirectory(parser)
 add_subdirectory(receivers)
 
@@ -81,33 +75,8 @@ set(SOLSTICE_ARGS_DEFAULT_IMG_SPP "1")
 
 configure_file(${SOLSTICE_SOURCE_DIR}/solstice_args.h.in
   ${CMAKE_CURRENT_BINARY_DIR}/solstice_args.h @ONLY)
-
-################################################################################
-# Generate the documentation
-################################################################################
-if(RONN)
-  configure_file(${SOLSTICE_SOURCE_DIR}/../doc/solstice.1.ronn.in
-    ${CMAKE_CURRENT_BINARY_DIR}/solstice.1.ronn @ONLY)
-
-  file(COPY 
-    ${SOLSTICE_SOURCE_DIR}/../doc/solstice-input.5.ronn
-    ${SOLSTICE_SOURCE_DIR}/../doc/solstice-output.5.ronn
-    ${SOLSTICE_SOURCE_DIR}/../doc/solstice-receiver.5.ronn
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-
-  set(SOLSTICE_MAN_PAGES 
-    solstice.1.ronn
-    solstice-input.5.ronn
-    solstice-output.5.ronn
-    solstice-receiver.5.ronn)
-  rcmake_prepend_path(SOLSTICE_MAN_PAGES ${CMAKE_CURRENT_BINARY_DIR})
-
-  if(${CMAKE_HOST_UNIX})
-    execute_process(COMMAND ${RONN} --style=man,toc ${SOLSTICE_MAN_PAGES})
-  else()
-    execute_process(COMMAND ${RONN} -5 --style=man,toc ${SOLSTICE_MAN_PAGES})
-  endif()
-endif()
+configure_file(${SOLSTICE_SOURCE_DIR}/../doc/solstice.1.txt.in
+  ${CMAKE_CURRENT_BINARY_DIR}/doc/solstice.1.txt @ONLY)
 
 ################################################################################
 # Configure and define targets
