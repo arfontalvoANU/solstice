@@ -68,6 +68,10 @@ body.manpage div#toc a, div#toc a:link, div#toc a:visited {
   text-decoration:none
 }
 
+body.manpage div.toclevel2 {
+  margin-left: 2em
+}
+
 body.manpage div#toc a:hover {
   color:#666666;
 }
