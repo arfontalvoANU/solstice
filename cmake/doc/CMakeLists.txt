@@ -37,10 +37,15 @@ if(CMAKE_HOST_UNIX)
 endif()
 
 ################################################################################
+# Define doc files
+################################################################################
+set(MAN_TXT 
+  #  ${CMAKE_CURRENT_BINARY_DIR}/solstice.1.txt
+  ${SOLSTICE_DOC_DIR}/solstice-input.5.txt)
+
+################################################################################
 # Generate the TROFF man pages
 ################################################################################
-set(MAN_TXT ${CMAKE_CURRENT_BINARY_DIR}/solstice.1.txt)
-
 if(A2X)
   set(A2X_OPTS -dmanpage -fmanpage)
 
@@ -51,7 +56,7 @@ if(A2X)
       COMMAND ${A2X} ${A2X_OPTS} ${_txt}
       DEPENDS ${_txt}
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-      COMMENT "Build troff man page ${_txt}"
+      COMMENT "Build TROFF man page ${_txt}"
       VERBATIM)
     list(APPEND MAN_FILES ${_txt}.troff)
   endforeach()
