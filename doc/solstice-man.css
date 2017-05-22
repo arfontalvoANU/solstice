@@ -19,6 +19,7 @@ body.manpage {
   text-align: justify;
   max-width: 55em;
   margin: 1em;
+  background: #ffffff
 }
 
 body.manpage .monospaced, .literalblock {
