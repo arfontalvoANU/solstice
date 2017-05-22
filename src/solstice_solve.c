@@ -483,7 +483,7 @@ solstice_solve(struct solstice* solstice)
     solstice->dump_paths ? &solstice->path_tracker : NULL, NULL, &estimator);
   if(res != RES_OK) {
     fprintf(stderr, "Error in integrating the solar flux.\n");
-    goto error;
+    if(!estimator) goto error;
   }
 
   if(solstice->dump_paths) {
