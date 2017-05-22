@@ -39,6 +39,8 @@ dump_instantiated_shaded_shape
     case SSOL_MATERIAL_MATTE: mtl = "matte"; break;
     case SSOL_MATERIAL_MIRROR: mtl = "mirror"; break;
     case SSOL_MATERIAL_VIRTUAL: mtl = "virtual"; break;
+    case SSOL_MATERIAL_DIELECTRIC: mtl = "dielectric"; break;
+    case SSOL_MATERIAL_THIN_DIELECTRIC: mtl = "thin_dielectric"; break;
     default: FATAL("Unexpected Solstice Solver material type.\n"); break;
   }
 
