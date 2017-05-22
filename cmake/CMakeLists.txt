@@ -16,7 +16,9 @@
 cmake_minimum_required(VERSION 2.8)
 project(solstice C)
 enable_testing()
+
 option(NO_TEST "Do not build tests" OFF)
+option(NO_MAN "Do not build man pages" OFF)
 
 set(SOLSTICE_SOURCE_DIR ${PROJECT_SOURCE_DIR}/../src/)
 
@@ -57,7 +59,9 @@ include_directories(
 ################################################################################
 # Build subprojects
 ################################################################################
-add_subdirectory(doc)
+if(NOT NO_MAN)
+  add_subdirectory(doc)
+endif()
 add_subdirectory(parser)
 add_subdirectory(receivers)
 
