@@ -37,28 +37,47 @@ if(CMAKE_HOST_UNIX)
 endif()
 
 ################################################################################
-# Define doc files
+# Copy doc files
 ################################################################################
-set(MAN_TXT 
-  #  ${CMAKE_CURRENT_BINARY_DIR}/solstice.1.txt
-  ${SOLSTICE_DOC_DIR}/solstice-input.5.txt)
+set(MAN_NAMES
+  solstice-input.5)
+
+if(A2X OR ASCIIDOC)
+  set(MAN_FILES)
+  foreach(_name IN LISTS MAN_NAMES)
+    set(_src ${SOLSTICE_DOC_DIR}/${_name}.txt)
+    set(_dst ${CMAKE_CURRENT_BINARY_DIR}/${_name}.txt)
+    add_custom_command(
+      OUTPUT ${_dst}
+      COMMAND ${CMAKE_COMMAND} -E copy ${_src} ${_dst}
+      DEPENDS ${_src}
+      COMMENT "Copy the asciidoc ${_src}"
+      VERBATIM)
+    list(APPEND MAN_FILES ${_dst})
+  endforeach()
+  add_custom_target(man-copy ALL DEPENDS ${MAN_FILES})
+endif()
+
+list(APPEND MAN_NAMES solstice.1)
 
 ################################################################################
 # Generate the TROFF man pages
 ################################################################################
 if(A2X)
   set(A2X_OPTS -dmanpage -fmanpage)
-
   set(MAN_FILES)
-  foreach(_txt IN LISTS MAN_TXT)
+  foreach(_name IN LISTS MAN_NAMES)
+    set(_man ${CMAKE_CURRENT_BINARY_DIR}/${_name})
+    set(_txt ${CMAKE_CURRENT_BINARY_DIR}/${_name}.txt)
+
     add_custom_command(
-      OUTPUT ${_txt}.troff
+      OUTPUT ${_man}
       COMMAND ${A2X} ${A2X_OPTS} ${_txt}
-      DEPENDS ${_txt}
+      DEPENDS man-copy ${_txt}
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
       COMMENT "Build TROFF man page ${_txt}"
       VERBATIM)
-    list(APPEND MAN_FILES ${_txt}.troff)
+    list(APPEND MAN_FILES ${_man})
   endforeach()
   add_custom_target(man-troff ALL DEPENDS ${MAN_FILES})
 endif()
@@ -74,15 +93,18 @@ if(ASCIIDOC)
     --theme=solstice-man)
 
   set(MAN_FILES)
-  foreach(_txt IN LISTS MAN_TXT)
+  foreach(_name IN LISTS MAN_NAMES)
+    set(_man ${CMAKE_CURRENT_BINARY_DIR}/${_name}.html)
+    set(_txt ${CMAKE_CURRENT_BINARY_DIR}/${_name}.txt)
+
     add_custom_command(
-      OUTPUT ${_txt}.html
+      OUTPUT ${_man}
       COMMAND ${ASCIIDOC} ${ASCIIDOC_OPTS} ${_txt}
-      DEPENDS ${_txt}
+      DEPENDS man-copy ${_txt}
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
       COMMENT "Build HTML man page ${_txt}"
       VERBATIM)
-    list(APPEND MAN_FILES ${_txt}.html)
+    list(APPEND MAN_FILES ${_man})
   endforeach()
   add_custom_target(man-html ALL DEPENDS ${MAN_FILES})
 endif()
