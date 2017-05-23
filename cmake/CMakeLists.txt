@@ -19,8 +19,13 @@ enable_testing()
 
 option(NO_TEST "Do not build tests" OFF)
 
-set(MAN "TROFF & HTML" CACHE STRING "Man pages to generate and install.")
-set_property(CACHE MAN PROPERTY STRINGS "HTML" "TROFF" "TROFF & HTML" "NONE")
+if(CMAKE_HOST_UNIX)
+  set(MAN "TROFF & HTML" CACHE STRING "Man pages to generate and install.")
+  set_property(CACHE MAN PROPERTY STRINGS "HTML" "TROFF" "TROFF & HTML" "NONE")
+else()
+  set(MAN "HTML" CACHE STRING "Man pages to generate and install.")
+  set_property(CACHE MAN PROPERTY STRINGS "HTML" "TROFF" "TROFF & HTML" "NONE")
+endif()
 
 set(SOLSTICE_SOURCE_DIR ${PROJECT_SOURCE_DIR}/../src/)
 

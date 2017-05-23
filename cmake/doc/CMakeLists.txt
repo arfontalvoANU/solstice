@@ -86,7 +86,7 @@ if(_troff)
       COMMAND ${A2X} ${A2X_OPTS} ${_txt}
       DEPENDS man-copy ${_txt}
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-      COMMENT "Build TROFF man page ${_txt}"
+      COMMENT "Build TROFF man page ${_man}"
       VERBATIM)
     list(APPEND MAN_FILES ${_man})
 
@@ -128,7 +128,7 @@ if(_html)
       COMMAND ${ASCIIDOC} ${ASCIIDOC_OPTS} ${_txt}
       DEPENDS man-copy ${_txt} ${SOLSTICE_DOC_DIR}/solstice-man.css
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-      COMMENT "Build HTML man page ${_txt}"
+      COMMENT "Build HTML man page ${_man}"
       VERBATIM)
     list(APPEND MAN_FILES ${_man})
 
