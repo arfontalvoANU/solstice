@@ -454,6 +454,14 @@ VTK-RADIATIVE-PATHS   ::= # vtk DataFile Version 2.0
 <path-vertex-id>      ::= INTEGER
 _______
 
+RENDERING
+---------
+When invoked with the *-r* option, *solstice*(1) generates an image of the
+solar facility for each submitted sun direction. Each image is preceded by its
+associated sun direction and is saved with respect to the ASCII PPM file
+format [1]. The output images are actually greyscale images whose pixels store
+the average normalized radiance that reaches them.
+
 NOTES
 -----
 1. Portable PixMap - <http://netpbm.sourceforge.net/doc/ppm.html>
