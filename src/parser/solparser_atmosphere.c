@@ -1,17 +1,17 @@
 /* Copyright (C) CNRS 2016-2017
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program. If not, see <http://www.gnu.org/licenses/>. */
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>. */
 
 #define _POSIX_C_SOURCE 200112L /* nextafter support */
 
@@ -19,8 +19,8 @@
 #include <math.h> /* nextafter */
 
 /*******************************************************************************
-* Local function
-******************************************************************************/
+ * Local function
+ ******************************************************************************/
 res_T
 parse_atmosphere
   (struct solparser* parser,
@@ -68,14 +68,14 @@ parse_atmosphere
       res = RES_BAD_ARG;
       goto error;
     }
-    #define SETUP_MASK(Flag, Name) {                                          \
-      if(mask & BIT(Flag)) {                                                  \
-         log_err(parser, key,                                                 \
-           "the "Name" of the atmosphere is already defined.\n");             \
-         res = RES_BAD_ARG;                                                   \
-         goto error;                                                          \
-      }                                                                       \
-      mask |= BIT(Flag);                                                      \
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+         log_err(parser, key,                                                  \
+           "the "Name" of the atmosphere is already defined.\n");              \
+         res = RES_BAD_ARG;                                                    \
+         goto error;                                                           \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "absorption")) {
       SETUP_MASK(ABSORPTION, "absorption");
@@ -94,15 +94,15 @@ parse_atmosphere
     #undef SETUP_MASK
   }
 
-  #define CHECK_PARAM(Flag, Name)                                             \
-  if(!(mask & BIT(Flag))) {                                                   \
-    log_err(parser, atm, "the "Name" of the atmosphere is missing.\n");       \
-    res = RES_BAD_ARG;                                                        \
-    goto error;                                                               \
+  #define CHECK_PARAM(Flag, Name)                                              \
+  if(!(mask & BIT(Flag))) {                                                    \
+    log_err(parser, atm, "the "Name" of the atmosphere is missing.\n");        \
+    res = RES_BAD_ARG;                                                         \
+    goto error;                                                                \
   } (void)0
   CHECK_PARAM(ABSORPTION, "absorption");
   #undef CHECK_PARAM
-  
+
 exit:
   *out_solatm = solatm;
   return res;

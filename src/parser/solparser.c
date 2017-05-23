@@ -291,6 +291,9 @@ parser_release(ref_T* ref)
   /* Sun */
   solparser_sun_release(&parser->sun);
 
+  /* Atmosphere */
+  solparser_atmosphere_release(&parser->atmosphere);
+
   /* Entities */
   htable_str2sols_release(&parser->str2entities);
   darray_entity_release(&parser->entities);
@@ -625,6 +628,9 @@ solparser_create
 
   /* Sun */
   solparser_sun_init(mem_allocator, &parser->sun);
+
+  /* Atmosphere */
+  solparser_atmosphere_init(mem_allocator, &parser->atmosphere);
 
   /* Entities */
   htable_str2sols_init(mem_allocator, &parser->str2entities);

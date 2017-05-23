@@ -267,8 +267,7 @@ struct solparser {
   struct solparser_sun sun; /* The loaded sun */
 
   /* Atmosphere. Note that at most one atmosphere is supported */
-  const yaml_node_t* atmosphere_key;
-  /* yaml_node_t ptr used to spawn the atmosphere; can be NULL */
+  const yaml_node_t* atmosphere_key; /* ptr of the atmosphere. Can be NULL */
   struct solparser_atmosphere atmosphere; /* The loaded atmosphere, if any */
 
   /* Entity */

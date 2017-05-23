@@ -478,7 +478,6 @@ solstice_solve(struct solstice* solstice)
     goto error;
   }
 
-
   res = ssol_solve(solstice->scene, rng, solstice->nexperiments,
     solstice->dump_paths ? &solstice->path_tracker : NULL, NULL, &estimator);
   if(res != RES_OK) {
