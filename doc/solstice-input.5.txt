@@ -288,31 +288,33 @@ _______
 SUN
 ---
 
-The *sun* describes the solar-plant's source. Its direction is not defined
+The *sun* describes the source of the solar-plant. Its direction is not defined
 into the *solstice-input*(5) file but is provided by the *solstice*(1) command.
 This allows to use the same unmodified *solstice-input*(5) file for several
 simulations with different sun directions.
 
 The main *sun* property is its direct normal irradiance, or *dni* in W.m\^-2.
-Its value is a scalar defining the direct irradiance received on a plane normal
-to the sun. The optional *spectrum* parameter describes the per wavelength
-distribution of the sun's *dni*. Note that this distribution is automatically
-normalized by *solstice*(1). If the *spectrum* attribute is not defined,
-*solstice*(1) uses a default spectrum computed with the SMARTS software [2]
-between 0.28 and 4 micro-meters. The total DNI (integrated over the spectral
-range) was set to 1000 W.m^-2. The standard Mid-Latitude-Summer atmosphere was
-used with most of gases concentration set as default (the CO2 concentration was
-assumed 400ppmv in the atmosphere column).
+Its value is a scalar defining the direct irradiance received on a plane
+perpendicular to the main sun direction. The optional *spectrum* parameter
+describes the per wavelength distribution of the sun *dni*. Note that this
+distribution is automatically normalized by *solstice*(1). If the *spectrum*
+attribute is not defined, *solstice*(1) uses a default spectrum computed with
+the SMARTS software [2] between 0.28 and 4 micro-meters. The total *dni*
+(integrated over the spectral range) was set to 1000 W.m^-2. The standard
+Mid-Latitude-Summer atmosphere was used with most of gases concentration set
+as default (the CO2 concentration was assumed 400ppmv in the atmosphere
+column).
 
-Even if an atmosphere is provided, the atmospheric effetcs from the top of the
+Even if an atmosphere is provided, the atmospheric effects from the top of the
 atmosphere to ground level are not computed using the atmosphere description.
-As a result, the sun description (dni and optional spectrum) is expected to
-include all the atmospheric effects (sun's irradiance available at ground
+As a result, the sun description (*dni* and optional *spectrum*) is expected to
+include all the atmospheric effects (sun irradiance available at ground
 level).
 
 The *sun-shape* parameter controls the angular distribution of the sun light
-intensity across the sun's disk. If not defined, the distribution is assumed
-to be a dirac distribution (point source sun). The available sun shapes are:
+intensity across the sun's disk. If not defined, the distribution is assumed to
+be a dirac distribution (infinite directional source). The available sun
+shapes are:
 
 *pillbox*::
   The *pillbox* distribution defines an uniform intensity over the sun's disk.
@@ -322,7 +324,7 @@ to be a dirac distribution (point source sun). The available sun shapes are:
 *buie*::
   The *buie* distribution, as first discribed in [3]. Its single *csr*
   parameter is the ratio between the circumsolar irradiance and the sum of
-  the circumsolar and sun's disk irradiances. An analysis on typical csr
+  the circumsolar and sun's disk irradiance. An analysis on typical *csr*
   values can be found in [4].
 
 ATMOSPHERE
@@ -332,9 +334,8 @@ The *atmosphere*, when provided, describes the medium surrounding the
 solar-plant. Its only parameter is its absorption coefficient in m^-1, that
 can either be a scalar if the *absorption* is constant over the spectrum, or
 can be spectrally described. The absorption along light paths is only computed
-after the first reflector, as sun's description must include all the
-atmospheric effects before the first reflector (see sun's description for more
-details).
+after the first reflector, as sun description must include all the atmospheric
+effects before the first reflector (see sun description for more details).
 
 If no atmosphere is provided, atmospheric absorption after the first reflector
 is not taken into account.
@@ -671,55 +672,55 @@ is instantiated 3 times into the scene:
 Pivot
 ~~~~~
 
-A *pivot* is a special kind of node that can be used in the tree data structure
-describing an entity to automatically point its child geometry according to
-the sun's position and to the pivot's parameters. It is supposed (but not
-mandatory) that the pivot's child geometry includes a reflector, that, once
-pivoted, will reflect sun's light towards a *target*. You should note that a
-pivot cannot be child of a pivot.
+A *pivot* is a special kind of node that can be used in the tree data
+structure describing an entity to automatically point its child geometry
+according to the sun position and to the pivot parameters. It is supposed (but
+not mandatory) that the children of a pivot includes a reflector, that,
+once pivoted, will reflect the sun light towards a *target*. You should note
+that a pivot cannot be the child of another pivot.
 
-The most noticeable pivot's parameter is its *target*. Four different types of
+The most noticeable pivot parameter is its *target*. Four different types of
 targets are available:
 
 *position*::
-  Defines the pivot's target as being an absolute point in world coordinates.
+  Define the target as being an absolute point in world coordinates.
 
 *anchor*::
-  Defines the pivot's target as being a point defined through an anchor's name
-  (see below).
+  Define the target as being a position relative to an entity (see the
+  *anchor* section).
 
 *sun*::
-  Defines the pivot's target as being the center of the sun.
+  Define the target as being the center of the sun.
 
 *direction*::
-  Points the pivot to reflect light in the given direction, specified in world
+  The pivot reflects light in the given direction, specified in world
   coordinates.
 
 Pivots can also have a *ref_point* optional parameter defining a 3D point in
-pivot's child coordinate system that will be used by the pointing algorithm.
-If not provided, the origin of the coordinate system is used instead.
+the coordinate system the pivot children that will be used by the pointing algorithm.
+If not provided, it is set to the origin.
 
 Two different flavours of *pivots* are available: *x_pivot* and *zx_pivot*,
 each with its own set of parameters and behaviour.
 
 *x_pivot*::
-  A *x_pivot* is a pivot with a single rotation axis: the *O*,*X* axis in its
-  local coordinate system. It has a *target* and can have a *ref_point*. Its
-  pointing algorithm considers an incoming ray of light from the center of the
-  sun and rotates the pivot's child geometry so that a specular reflection at
-  *ref_point* using *+Z* as local normal will hit the pivot's target point, or
-  will have the specified direction (depending of the kind of target).
+  Pivot with a single rotation axis: the *+X* axis in its local coordinate
+  system. It has a *target* and can have a *ref_point*. Its pointing algorithm
+  considers an incoming ray of light from the center of the sun and rotates
+  its children so that a specular reflection at *ref_point* using *+Z* as
+  local normal will hit the target point of the pivot, or will have the
+  specified direction (depending of the kind of target).
 
 *zx_pivot*::
-  A *zx_pivot* is a pivot with two rotation axis: the *O*,*Z* axis in its local
-  coordinate system, then the *O'*,*X* axis in the coordinate system resulting
-  of the Z rotation. It has a *target* and can have a *ref_point* and a
-  *spacing* that defines the *|O O'|* distance along the *Y* axis. If not
-  defined, *spacing* is 0 and *O* and *O'* are the same point. The *zx_pivot*
-  pointing algorithm considers an incoming ray of light from the center of the
-  sun and rotates the pivot's child geometry so that a specular reflection at
-  *ref_point* using *+Y* as local normal will hit the pivot's target point, or
-  will have the specified direction (depending of the kind of target).
+  Pivot with two rotation axis: the *+Z* axis in its local coordinate system,
+  then the *+X* axis in the coordinate system resulting of the *Z* rotation.
+  It has a *target* and can have a *ref_point* and a *spacing* that defines
+  the translation along the *+Y* axis after the first rotation. If not
+  defined, *spacing* is 0. The *zx_pivot* pointing algorithm considers an
+  incoming ray of light from the center of the sun and rotates the pivot's
+  children of the pivot so that a specular reflection at *ref_point* using
+  *+Y* as local normal will hit the target point of the pivot, or will have
+  the specified direction (depending of the kind of target).
 
 Anchor
 ~~~~~~
