@@ -24,7 +24,7 @@ body.manpage {
 
 body.manpage .monospaced, .literalblock {
   margin: 2em;
-  color: #434241;
+  color: #636261
 }
 
 body.manpage em {
