@@ -102,7 +102,7 @@ if(ASCIIDOC)
     add_custom_command(
       OUTPUT ${_man}
       COMMAND ${ASCIIDOC} ${ASCIIDOC_OPTS} ${_txt}
-      DEPENDS man-copy ${_txt}
+      DEPENDS man-copy ${_txt} ${SOLSTICE_DOC_DIR}/solstice-man.css
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
       COMMENT "Build HTML man page ${_txt}"
       VERBATIM)
