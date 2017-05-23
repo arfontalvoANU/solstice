@@ -41,7 +41,8 @@ endif()
 ################################################################################
 set(MAN_NAMES
   solstice-input.5
-  solstice-output.5)
+  solstice-output.5
+  solstice-receiver.5)
 
 if(A2X OR ASCIIDOC)
   set(MAN_FILES)
