@@ -44,7 +44,7 @@ The entities on which computations must be performed are listed in the
 *solstice-receiver*(5) file submitted through the *-R* option. The estimated
 results follow the *solstice-output*(5) format and are written to the _output_
 file or to the standard output whether the *-o* _output_ option is defined or
-not, respectively. Note that the *solstice*'s algorithm is based on the
+not, respectively. Note that the *solstice* algorithm is based on the
 Monte-Carlo method, which means that every result is provided with its
 numerical accuracy.
 
@@ -60,7 +60,7 @@ any spectral resolution. Refer to *solstice-input*(5) for more informations.
 In addition of the aforementioned computations, *solstice* provides three
 other functionalities. The *-g* option can be used to convert the
 *solstice-input*(5) geometries in CAO files. The *-p* option saves the sampled
-radiative paths used by the estimations, allowing to visualise them externally
+radiative paths used by the estimates, allowing to visualise them externally
 which may be a great help to identify a design issue. Finally, the *-r* option
 is used to render an image of the submitted solar facility. Note that these
 three options are mutually exclusives, and once defined, they replace the
@@ -104,7 +104,7 @@ OPTIONS
   _output_. Available sub-options are:
 
   *default*;;
-    Use default sub-options configuration.
+    Use default sub-options.
 
   **irlen=**_length_;;
     Length of the radiative path segments going to the infinity. By default, it
@@ -168,17 +168,17 @@ OPTIONS
 
 *-R* _receivers_::
   *solstice-receiver*(5) file defining the scene receivers, i.e. the solar
-  plant entities for which *solstice* computes Monte-Carlo estimations.
+  plant entities for which *solstice* computes Monte-Carlo estimates.
 
 EXAMPLES
 --------
 
-Launch *solstice* estimations for two sun directions whose azimuthal and
-elevation angles are {*45*,*70*} and {*50*,*75*}. The solar facility is
-described in *input.yaml* and the receivers on which the integrations must be
-performed are declared in the *rcvs.yaml* file. *10000* experiments are used
-by the Monte-Carlo estimations and the results are written to *output* even
-though this file already exists:
+Launch two simulations for sun directions whose azimuthal and elevation angles
+are {*45*,*70*} and {*50*,*75*}. The solar facility is described in
+*input.yaml* and the receivers on which the integrations must be performed are
+declared in the *rcvs.yaml* file. *10000* experiments are used by the
+Monte-Carlo estimates and the results are written to *output* even though this
+file already exists:
 
     $ solstice -D45,70:50,75 -R rcvs.yaml -n 10000 -f -o output input.yaml
 
