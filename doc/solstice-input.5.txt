@@ -611,7 +611,7 @@ identity, i.e. its *rotation* and *translation* are nulls.
 Each entity has a *name* which must be unique per hierarchy level: 2 root
 entities (i.e. entities without parent) cannot have the same name as well as
 the children of a same parent entity. A child entity is identified into the
-solar plant by successively concatenating, with the '.' character, the name of
+solar plant by successively concatenating, with the \'.' character, the name of
 its ancestors with its own name. This naming convention is used in the
 *solstice-receiver*(5) format to define the entities to track during the
 *solstice*(1) computations. For instance, in the following example, the
@@ -729,7 +729,7 @@ particularly useful for pivots and hyperbolic shapes that may have to reference
 a position relative to an entity whose transformations may also depends of its
 ancestor. An anchor has a *name* that must be unique for the whole sets of per
 entity anchors. An anchor is identified into the solar plant by concatenating,
-with the '.' character, its name to the *entity-identifier* of the entity into
+with the \'.' character, its name to the *entity-identifier* of the entity into
 which it is declared. For instance, in the following example, the
 *anchor-identifier* of the anchor named *anchor0* is *level0.level1.anchor0*:
 .......

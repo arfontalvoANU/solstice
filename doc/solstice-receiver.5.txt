@@ -94,7 +94,7 @@ notation to reduce the number of lines:
 
 Declare that the back side of *receiver* is effectively a receiver and enable
 the estimation of its associated irradiance map. Make a receiver from the front
-side of the reflector named `LFR0.pivot.reflector`:
+side of the reflector named *LFR0.pivot.reflector*:
 
 .......
 - {name: receiver, side: BACK, per_primitive: 1}
