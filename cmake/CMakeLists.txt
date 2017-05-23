@@ -18,7 +18,9 @@ project(solstice C)
 enable_testing()
 
 option(NO_TEST "Do not build tests" OFF)
-option(NO_MAN "Do not build man pages" OFF)
+
+set(MAN "TROFF & HTML" CACHE STRING "Man pages to generate and install.")
+set_property(CACHE MAN PROPERTY STRINGS "HTML" "TROFF" "TROFF & HTML" "NONE")
 
 set(SOLSTICE_SOURCE_DIR ${PROJECT_SOURCE_DIR}/../src/)
 
@@ -59,7 +61,7 @@ include_directories(
 ################################################################################
 # Build subprojects
 ################################################################################
-if(NOT NO_MAN)
+if(NOT MAN STREQUAL "NONE")
   add_subdirectory(doc)
 endif()
 add_subdirectory(parser)
@@ -178,5 +180,4 @@ install(TARGETS solstice
   ARCHIVE DESTINATION bin
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin)
-install(FILES ${SOLSTICE_FILES_DOC} DESTINATION share/doc/solstice)
 

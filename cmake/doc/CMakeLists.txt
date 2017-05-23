@@ -15,21 +15,28 @@
 
 cmake_minimum_required(VERSION 2.8)
 
+string(REGEX MATCH ".*HTML.*" _html ${MAN})
+string(REGEX MATCH ".*TROFF.*" _troff ${MAN})
+
+set(SOLSTICE_DOC_DIR ${PROJECT_SOURCE_DIR}/../doc)
+
 ################################################################################
 # Look for asciidoc and a2x programs
 ################################################################################
-find_program(ASCIIDOC asciidoc)
-set(SOLSTICE_DOC_DIR ${PROJECT_SOURCE_DIR}/../doc)
-
-if(NOT ASCIIDOC)
-  message(WARNING
-    "The `asciidoc' program is missing. "
-    "The solstice HTML documentation cannot be generated.")
+if(_html)
+  find_program(ASCIIDOC asciidoc)
+  if(NOT ASCIIDOC)
+    unset(_html)
+    message(WARNING
+      "The `asciidoc' program is missing. "
+      "The solstice HTML documentation cannot be generated.")
+  endif()
 endif()
 
-if(CMAKE_HOST_UNIX)
+if(_troff)
   find_program(A2X a2x)
   if(NOT A2X)
+    unset(_troff)
     message(WARNING
       "The `a2x' program is missing. "
       "The solstice man pages cannot be generated.")
@@ -44,7 +51,7 @@ set(MAN_NAMES
   solstice-output.5
   solstice-receiver.5)
 
-if(A2X OR ASCIIDOC)
+if(_troff OR _html)
   set(MAN_FILES)
   foreach(_name IN LISTS MAN_NAMES)
     set(_src ${SOLSTICE_DOC_DIR}/${_name}.txt)
@@ -63,11 +70,13 @@ endif()
 list(APPEND MAN_NAMES solstice.1)
 
 ################################################################################
-# Generate the TROFF man pages
+# TROFF man pages
 ################################################################################
-if(A2X)
+if(_troff)
   set(A2X_OPTS -dmanpage -fmanpage)
   set(MAN_FILES)
+  set(MAN5_FILES)
+  set(MAN1_FILES)
   foreach(_name IN LISTS MAN_NAMES)
     set(_man ${CMAKE_CURRENT_BINARY_DIR}/${_name})
     set(_txt ${CMAKE_CURRENT_BINARY_DIR}/${_name}.txt)
@@ -80,14 +89,27 @@ if(A2X)
       COMMENT "Build TROFF man page ${_txt}"
       VERBATIM)
     list(APPEND MAN_FILES ${_man})
+
+    string(REGEX MATCH "^.*.5$" _man5 ${_man})
+    string(REGEX MATCH "^.*.1$" _man1 ${_man})
+    if(_man1)
+      list(APPEND MAN1_FILES ${_man1})
+    elseif(_man5)
+      list(APPEND MAN5_FILES ${_man5})
+    else()
+      message(FATAL_ERROR "Unexpected man type")
+    endif()
   endforeach()
   add_custom_target(man-troff ALL DEPENDS ${MAN_FILES})
+
+  install(FILES ${MAN1_FILES} DESTINATION share/man/man1)
+  install(FILES ${MAN5_FILES} DESTINATION share/man/man5)
 endif()
 
 ################################################################################
-# Generate the HTML documentation
+# HTML documentation
 ################################################################################
-if(ASCIIDOC)
+if(_html)
   set(ASCIIDOC_OPTS
     -bxhtml11
     -dmanpage
@@ -95,6 +117,8 @@ if(ASCIIDOC)
     --theme=solstice-man)
 
   set(MAN_FILES)
+  set(MAN5_FILES)
+  set(MAN1_FILES)
   foreach(_name IN LISTS MAN_NAMES)
     set(_man ${CMAKE_CURRENT_BINARY_DIR}/${_name}.html)
     set(_txt ${CMAKE_CURRENT_BINARY_DIR}/${_name}.txt)
@@ -107,7 +131,20 @@ if(ASCIIDOC)
       COMMENT "Build HTML man page ${_txt}"
       VERBATIM)
     list(APPEND MAN_FILES ${_man})
+
+    string(REGEX MATCH "^.*.5.html$" _man5 ${_man})
+    string(REGEX MATCH "^.*.1.html$" _man1 ${_man})
+    if(_man1)
+      list(APPEND MAN1_FILES ${_man1})
+    elseif(_man5)
+      list(APPEND MAN5_FILES ${_man5})
+    else()
+      message(FATAL_ERROR "Unexpected man type")
+    endif()
   endforeach()
   add_custom_target(man-html ALL DEPENDS ${MAN_FILES})
+
+  install(FILES ${MAN1_FILES} DESTINATION share/man/man1)
+  install(FILES ${MAN5_FILES} DESTINATION share/man/man5)
 endif()
 
