@@ -2,8 +2,8 @@
 
 - material: &dielectric
     dielectric:
-      medium_i: { absorptivity: 0, refractive_index: 1.00027 }
-      medium_t: { absorptivity: 0.1, refractive_index: 1.5 }
+      medium_i: { absorption: 0, refractive_index: 1.00027 }
+      medium_t: { absorption: 0.1, refractive_index: 1.5 }
 
 - entity:
     name: "entity"
@@ -16,8 +16,8 @@
 
 - material: &dielectric
     dielectric:
-      medium_i: { absorptivity: 0, refractive_index: 0.00027 }
-      medium_t: { absorptivity: 0.1, refractive_index: 1.5 }
+      medium_i: { absorption: 0, refractive_index: 0.00027 }
+      medium_t: { absorption: 0.1, refractive_index: 1.5 }
 
 - entity:
     name: "entity"
@@ -35,13 +35,13 @@
       - cylinder: { height: 1, radius: 1 }
         material:
           dielectric:
-            medium_i: { absorptivity: 0, refractive_index: 1 }
-            medium_t: { absorptivity: 20, refractive_index: 1.5 }
+            medium_i: { absorption: 0, refractive_index: 1 }
+            medium_t: { absorption: 20, refractive_index: 1.5 }
 
 ---
 - sun: { dni: 1 }
-- medium: &vacuum { refractive_index: 1, absorptivity: 0 }
-- medium: &glass { refractive_index: 1.5, absorptivity: 20 }
+- medium: &vacuum { refractive_index: 1, absorption: 0 }
+- medium: &glass { refractive_index: 1.5, absorption: 20 }
 - entity:
     name: "entity"
     primary: 0

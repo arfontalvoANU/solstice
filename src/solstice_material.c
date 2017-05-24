@@ -335,8 +335,8 @@ create_material_dielectric
   } (void)0
   SET_SSOL_DATA(medium_i, refractive_index);
   SET_SSOL_DATA(medium_t, refractive_index);
-  SET_SSOL_DATA(medium_i, absorptivity);
-  SET_SSOL_DATA(medium_t, absorptivity);
+  SET_SSOL_DATA(medium_i, absorption);
+  SET_SSOL_DATA(medium_t, absorption);
   #undef SET_SSOL_DATA
   SSOL(dielectric_setup(mtl, &shader, &ssol_medium_i, &ssol_medium_t));
 
@@ -547,8 +547,8 @@ create_material_thin_dielectric
   } (void)0
   SET_SSOL_DATA(medium_i, refractive_index);
   SET_SSOL_DATA(medium_t, refractive_index);
-  SET_SSOL_DATA(medium_i, absorptivity);
-  SET_SSOL_DATA(medium_t, absorptivity);
+  SET_SSOL_DATA(medium_i, absorption);
+  SET_SSOL_DATA(medium_t, absorption);
   #undef SET_SSOL_DATA
   SSOL(thin_dielectric_setup
     (mtl, &shader, &ssol_medium_i, &ssol_medium_t, thin->thickness));

@@ -252,31 +252,31 @@
 #     medium_t: <dielectric-medium>
 #
 
-# invalid absorptivity
+# invalid absorption
 - material:
     thin_dielectric:
       thickness: 0
-      medium_i: &m { refractive_index: 1, absorptivity: -1 }
+      medium_i: &m { refractive_index: 1, absorption: -1 }
       medium_t: *m
 ---
 # invalid thickness
 - material:
     thin_dielectric:
       thickness: -0.01
-      medium_i: &m { refractive_index: 1, absorptivity: 0 }
+      medium_i: &m { refractive_index: 1, absorption: 0 }
       medium_t: *m
 ---
 # invalid refractive index
 - material:
     thin_dielectric:
       thickness: 0
-      medium_i: &m { refractive_index: 0, absorptivity: 0 }
+      medium_i: &m { refractive_index: 0, absorption: 0 }
       medium_t: *m
 ---
 # missing thickness
 - material:
     thin_dielectric:
-      medium_i: &m { refractive_index: 1, absorptivity: 0 }
+      medium_i: &m { refractive_index: 1, absorption: 0 }
       medium_t: *m
 ---
 
@@ -290,22 +290,22 @@
 # invalid refractive_index
 - material:
     dielectric:
-      medium_i: &m { refractive_index: 0, absorptivity: 0 }
+      medium_i: &m { refractive_index: 0, absorption: 0 }
       medium_t: *m
 ---
-# invalid absorptivity
+# invalid absorption
 - material:
     dielectric:
-      medium_i: &m { refractive_index: 1, absorptivity: -1 }
+      medium_i: &m { refractive_index: 1, absorption: -1 }
       medium_t: *m
 ---
 # missing refractive_index
 - material:
     dielectric:
-      medium_i: &m { absorptivity: 0 }
+      medium_i: &m { absorption: 0 }
       medium_t: *m
 ---
-# missing absorptivity
+# missing absorption
 - material:
     dielectric:
       medium_i: &m { refractive_index: 1 }
@@ -314,12 +314,12 @@
 # missing medium_i
 - material:
     dielectric:
-      medium_t: { refractive_index: 1, absorptivity: 0 }
+      medium_t: { refractive_index: 1, absorption: 0 }
 ---
 # missing medium_t
 - material:
     dielectric:
-      medium_i: { refractive_index: 1, absorptivity: 0 }
+      medium_i: { refractive_index: 1, absorption: 0 }
 ---
 
 #

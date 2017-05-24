@@ -28,7 +28,7 @@ parse_medium
    yaml_node_t* medium,
    struct solparser_medium_id* out_imedium)
 {
-  enum { ABSORPTIVITY, REFRACTIVE_INDEX };
+  enum { ABSORPTION, REFRACTIVE_INDEX };
   struct solparser_medium* mdm = NULL;
   size_t* pimedium = NULL;
   size_t imedium = SIZE_MAX;
@@ -81,9 +81,9 @@ parse_medium
       }                                                                        \
       mask |= BIT(Flag);                                                       \
     } (void)0
-    if(!strcmp((char*)key->data.scalar.value, "absorptivity")) {
-      SETUP_MASK(ABSORPTIVITY, "absorptivity");
-      res = parse_mtl_data(parser, doc, val, 0, DBL_MAX, &mdm->absorptivity);
+    if(!strcmp((char*)key->data.scalar.value, "absorption")) {
+      SETUP_MASK(ABSORPTION, "absorption");
+      res = parse_mtl_data(parser, doc, val, 0, DBL_MAX, &mdm->absorption);
     } else if(!strcmp((char*)key->data.scalar.value, "refractive_index")) {
       SETUP_MASK(REFRACTIVE_INDEX, "refractive_index");
       res = parse_mtl_data
@@ -107,7 +107,7 @@ parse_medium
     res = RES_BAD_ARG;                                                         \
     goto error;                                                                \
   } (void)0
-  CHECK_PARAM(ABSORPTIVITY, "absorptivity");
+  CHECK_PARAM(ABSORPTION, "absorption");
   CHECK_PARAM(REFRACTIVE_INDEX, "refractive_index");
   #undef CHECK_PARAM
 
