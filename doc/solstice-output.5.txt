@@ -397,6 +397,12 @@ OBJ-FILE              ::= g <entity-identifier>
 
 <obj-indices>         ::= f <triangle-indices>
                         [ f <triangle-indices> ... ]
+
+<material-type>       ::= dielectric
+                        | matte
+                        | mirror
+                        | thin_dielectric
+                        | virtual
 _______
 
 DUMP RADIATIVE PATHS
@@ -408,7 +414,7 @@ with respect to its trajectory: the path is blue or yellow whether it reaches
 or not a receiver, respectively. A path can be red if its first segment, i.e.
 the ray starting from the sun toward a primary geometry, is occluded by a non
 virtual object. The following grammar describes the formatting of a
-VTK-RADIATIVE-PATHS file. Refer to the VTK format specification [2] for more
+*VTK-RADIATIVE-PATHS* file. Refer to the VTK format specification [2] for more
 informations on the VTK file format.
 
 [verse]
