@@ -16,7 +16,22 @@
 cmake_minimum_required(VERSION 2.8)
 project(solstice C)
 enable_testing()
+
 option(NO_TEST "Do not build tests" OFF)
+
+if(CMAKE_HOST_UNIX)
+  set(SOLSTICE_DOC "TROFF & HTML" CACHE STRING
+    "Type of documentation to generate and install.")
+else()
+  set(SOLSTICE_DOC "HTML" CACHE STRING
+    "Type of documentation to generate and install.")
+endif()
+
+set_property(CACHE SOLSTICE_DOC PROPERTY STRINGS
+  "HTML"
+  "TROFF"
+  "TROFF & HTML"
+  "NONE")
 
 set(SOLSTICE_SOURCE_DIR ${PROJECT_SOURCE_DIR}/../src/)
 
@@ -57,6 +72,9 @@ include_directories(
 ################################################################################
 # Build subprojects
 ################################################################################
+if(NOT SOLSTICE_DOC STREQUAL "NONE")
+  add_subdirectory(doc)
+endif()
 add_subdirectory(parser)
 add_subdirectory(receivers)
 
@@ -74,6 +92,8 @@ set(SOLSTICE_ARGS_DEFAULT_IMG_SPP "1")
 
 configure_file(${SOLSTICE_SOURCE_DIR}/solstice_args.h.in
   ${CMAKE_CURRENT_BINARY_DIR}/solstice_args.h @ONLY)
+configure_file(${SOLSTICE_SOURCE_DIR}/../doc/solstice.1.txt.in
+  ${CMAKE_CURRENT_BINARY_DIR}/doc/solstice.1.txt @ONLY)
 
 ################################################################################
 # Configure and define targets
@@ -172,5 +192,4 @@ install(TARGETS solstice
   ARCHIVE DESTINATION bin
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin)
-install(FILES ${SOLSTICE_FILES_DOC} DESTINATION share/doc/solstice)
 

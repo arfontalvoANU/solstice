@@ -26,8 +26,8 @@
 extern LOCAL_SYM const double solstice_sun_spectrum_dummy[];
 extern LOCAL_SYM const size_t solstice_sun_spectrum_dummy_size;
 
-extern LOCAL_SYM const double solstice_sun_spectrum_smarts295[];
-extern LOCAL_SYM const size_t solstice_sun_spectrum_smarts295_size;
+extern LOCAL_SYM const double solstice_sun_spectrum_smarts[];
+extern LOCAL_SYM const size_t solstice_sun_spectrum_smarts_size;
 
 #endif /* SOLSTICE_SUN_SPECTRUM_H */
 
