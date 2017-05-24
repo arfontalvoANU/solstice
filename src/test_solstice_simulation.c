@@ -340,30 +340,44 @@ read_recvXprim
     2 * (RECEIVER_RESULTS_COUNT__ - 2 /* efficiencies not read */) + 2);
 }
 
-#define POSITIVE_OR_M_ONE(x) ((x) == -1 || (x) >= 0)
+static void
+compute_estimate_intersection
+  (double intersection[2],
+   const double scale,
+   const double E0,
+   const double SE0,
+   const double E1,
+   const double SE1)
+{
+  double interval0[2], interval1[2];
+  CHECK(scale > 0, 1);
+  interval0[0] = E0 - scale*SE0;
+  interval0[1] = E0 + scale*SE0;
+  interval1[0] = E1 - scale*SE1;
+  interval1[1] = E1 + scale*SE1;
+  intersection[0] = MMAX(interval0[0], interval1[0]);
+  intersection[1] = MMIN(interval0[1], interval1[1]);
+}
 
-static int
-is_compatible_with
+static void
+check_estimate
   (const double ref_E,
    const double ref_SE,
    const double test_E,
    const double test_SE)
 {
-  double SE;
-
-  CHECK(POSITIVE_OR_M_ONE(ref_E), 1);
-  CHECK(POSITIVE_OR_M_ONE(ref_SE), 1);
-  CHECK(POSITIVE_OR_M_ONE(test_E), 1);
-  CHECK(POSITIVE_OR_M_ONE(test_SE), 1);
-
   if(ref_E == -1) {
     CHECK(ref_SE, -1);
-    return (test_E == -1 && test_SE == -1);
+    CHECK(test_E, -1);
+    CHECK(test_SE, -1);
+  } else {
+    double interval[2];
+    CHECK(ref_SE >= 0, 1);
+    CHECK(test_E >= 0, 1);
+    CHECK(test_SE >= 0, 1);
+    compute_estimate_intersection(interval, 2, ref_E, ref_SE, test_E, test_SE);
+    CHECK(interval[0] <= interval[1], 1);
   }
-
-  NCHECK(ref_SE, -1);
-  SE = ref_SE > 0 ? 2 * ref_SE : (ref_E > 0 ? ref_E * 1e-6 : 1e-6);
-  return (fabs(ref_E - test_E) <= SE && test_SE <= SE);
 }
 
 static void
@@ -384,7 +398,7 @@ check_1_reference
     double reference_E, reference_SE, test_E, test_SE;
     read_global(ref_file, &reference_E, &reference_SE);
     read_global(test_file, &test_E, &test_SE);
-    CHECK(is_compatible_with(reference_E, reference_SE, test_E, test_SE), 1);
+    check_estimate(reference_E, reference_SE, test_E, test_SE);
   }
   for (n = 0; n < counts->receiver; n++) {
     char ref_rcv_name[MAX_LINE_LEN], test_rcv_name[MAX_LINE_LEN];
@@ -398,8 +412,7 @@ check_1_reference
     read_recv(test_file, test_rcv_name, test_E, test_SE);
     CHECK(strcmp(ref_rcv_name, test_rcv_name), 0);
     FOR_EACH(r, FIRST_RECEIVER_RESULT, RECEIVER_RESULTS_COUNT__) {
-      CHECK(is_compatible_with
-        (reference_E[r], reference_SE[r], test_E[r], test_SE[r]), 1);
+      check_estimate(reference_E[r], reference_SE[r], test_E[r], test_SE[r]);
     }
   }
   for (n = 0; n < counts->primary; n++) {
@@ -414,12 +427,11 @@ check_1_reference
 
     read_primary(ref_file, ref_prim_name, &ref_area, &ref_cos, reference_E, reference_SE);
     read_primary(test_file, test_prim_name, &test_area, &test_cos, test_E, test_SE);
-    CHECK(is_compatible_with(ref_area, 0, test_area, 0), 1);
-    CHECK(is_compatible_with(ref_cos, 0, test_cos, 0), 1);
+    check_estimate(ref_area, 0, test_area, 0);
+    check_estimate(ref_cos, 0, test_cos, 0);
     CHECK(strcmp(ref_prim_name, test_prim_name), 0);
     FOR_EACH(r, FIRST_RECEIVER_RESULT, PRIMARY_RESULTS_COUNT__) {
-      CHECK(is_compatible_with
-        (reference_E[r], reference_SE[r], test_E[r], test_SE[r]), 1);
+      check_estimate(reference_E[r], reference_SE[r], test_E[r], test_SE[r]);
     }
   }
   for (n = 0; n < counts->receiver * counts->primary; n++) {
@@ -439,8 +451,7 @@ check_1_reference
     FOR_EACH(r, FIRST_RECEIVER_RESULT, RECEIVER_RESULTS_COUNT__) {
       if (r == FRONT_EFFICIENCY || r == BACK_EFFICIENCY)
         continue; /* not read */
-      CHECK(is_compatible_with
-        (reference_E[r], reference_SE[r], test_E[r], test_SE[r]), 1);
+      check_estimate(reference_E[r], reference_SE[r], test_E[r], test_SE[r]);
     }
   }
 }
