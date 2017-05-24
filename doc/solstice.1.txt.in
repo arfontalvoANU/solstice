@@ -199,8 +199,8 @@ Trace 100 radiative paths into the solar plant described in *input.yaml*, with
 respect to the sun direction whose azimuthal and elevations angles are *0* and
 *90* degrees, respectively. Write the *solstice-output*(5) result to the
 standard output and postprocess it with the *sed*(1) Unix command to remove the
-first line that stores the sun direction from which the radiative paths comes
-from. The remaining data that lists the radiative paths geometry are redirected
+first line that stores the sun direction from which the radiative paths come
+from. The remaining data that list the radiative paths geometry are redirected
 into the *paths.vtk* file:
 
     $ solstice -n 100 -D0,90 -R rcvs.yaml -p default input.yaml | sed '1d' > paths.vtk
