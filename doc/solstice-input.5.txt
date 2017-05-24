@@ -851,7 +851,7 @@ the scene:
   - material: {?virtual}
     sphere: {radius: 2, slices: 128}
 
-- entity: {name: reflector, primary: 1, geometry: *small-square}
+- entity: {name: reflector, primary: 1, geometry: *small-circle}
 - entity: {name: receiver,  primary: 0, geometry: *big-sphere}
 .......
 
