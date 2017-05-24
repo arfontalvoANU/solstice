@@ -189,9 +189,9 @@ errors as numerical imprecisions.
 Global results
 ~~~~~~~~~~~~~~
 
-After the 2 header lines, the output includes various global-result lines, the
-exact number of lines being part of the headers. Currently this number is 7.
-Each global result is a pair of real numbers: the expected value and its
+After the 2 header lines, the output includes various *global* result lines,
+the exact number of lines being part of the headers. Currently this number is
+7. Each global result is a pair of real numbers: the expected value and its
 standard error. The global results are, in this order:
 
 - *potential-irradiance*: maximum irradiance that all the primary
