@@ -20,12 +20,18 @@ enable_testing()
 option(NO_TEST "Do not build tests" OFF)
 
 if(CMAKE_HOST_UNIX)
-  set(MAN "TROFF & HTML" CACHE STRING "Man pages to generate and install.")
-  set_property(CACHE MAN PROPERTY STRINGS "HTML" "TROFF" "TROFF & HTML" "NONE")
+  set(SOLSTICE_DOC "TROFF & HTML" CACHE STRING
+    "Type of documentation to generate and install.")
 else()
-  set(MAN "HTML" CACHE STRING "Man pages to generate and install.")
-  set_property(CACHE MAN PROPERTY STRINGS "HTML" "TROFF" "TROFF & HTML" "NONE")
+  set(SOLSTICE_DOC "HTML" CACHE STRING
+    "Type of documentation to generate and install.")
 endif()
+
+set_property(CACHE SOLSTICE_DOC PROPERTY STRINGS
+  "HTML"
+  "TROFF"
+  "TROFF & HTML"
+  "NONE")
 
 set(SOLSTICE_SOURCE_DIR ${PROJECT_SOURCE_DIR}/../src/)
 
@@ -66,7 +72,7 @@ include_directories(
 ################################################################################
 # Build subprojects
 ################################################################################
-if(NOT MAN STREQUAL "NONE")
+if(NOT SOLSTICE_DOC STREQUAL "NONE")
   add_subdirectory(doc)
 endif()
 add_subdirectory(parser)

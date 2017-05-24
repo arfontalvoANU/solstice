@@ -15,8 +15,8 @@
 
 cmake_minimum_required(VERSION 2.8)
 
-string(REGEX MATCH ".*HTML.*" _html ${MAN})
-string(REGEX MATCH ".*TROFF.*" _troff ${MAN})
+string(REGEX MATCH ".*HTML.*" _html ${SOLSTICE_DOC})
+string(REGEX MATCH ".*TROFF.*" _troff ${SOLSTICE_DOC})
 
 set(SOLSTICE_DOC_DIR ${PROJECT_SOURCE_DIR}/../doc)
 
