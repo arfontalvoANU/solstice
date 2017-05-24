@@ -330,7 +330,7 @@ create_material_dielectric
   }
 
   #define SET_SSOL_DATA(Medium, Name) {                                        \
-    res = mtl_to_ssol_data(solstice, &Medium->Name, &ssol_## Medium.Name);      \
+    res = mtl_to_ssol_data(solstice, &Medium->Name, &ssol_## Medium.Name);     \
     if(res != RES_OK) goto error;                                              \
   } (void)0
   SET_SSOL_DATA(medium_i, refractive_index);
