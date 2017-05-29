@@ -205,7 +205,7 @@ _______
 <medium>              ::= medium: <medium-descriptor>
 
 <medium-descriptor>   ::= refractive_index: <mtl-data> # in ]0, INF)
-                          absorptivity: <mtl-data> # in [0, INF)
+                          absorption: <mtl-data> # in [0, INF)
 
 ----------------------------------------
 
@@ -379,7 +379,7 @@ media, and wi and wt the incident and transmitted direction. Note that the
 *solstice-input*(5) file must ensure that the description of the scene media
 is consistent; a ray travelling in a medium _A_ can only encounter a medium
 interface whose *medium_i* attribute is _A_. The default medium is assumed to
-be the vacuum, i.e. its refractive index is 1 and its absorptivity is 0.
+be the vacuum, i.e. its refractive index is 1 and its absorption is 0.
 
 *matte*::
 Diffuse surface. Reflects the same intensity in all directions independently
