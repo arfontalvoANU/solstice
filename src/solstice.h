@@ -22,6 +22,7 @@
 
 #include <rsys/dynamic_array_double.h>
 #include <rsys/hash_table.h>
+#include <rsys/logger.h>
 #include <rsys/mem_allocator.h>
 #include <rsys/str.h>
 
@@ -122,6 +123,7 @@ struct solstice {
   FILE* output; /* Output stream */
   int dump_paths;
 
+  struct logger logger;
   struct mem_allocator* allocator;
 };
 

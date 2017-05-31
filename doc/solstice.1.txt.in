@@ -77,9 +77,6 @@ OPTIONS
 *-f*::
   Force overwrite of the _output_ file.
 
-*-h*::
-  List short help and exit.
-
 *-g* <__sub-option__:...>::
   Generate the shape of the geometry defined in the submitted _file_ and store
   it in _output_. Available sub-options are:
@@ -94,6 +91,13 @@ OPTIONS
     *solstice-input*(5) file format. The *none* option means that only one
     mesh is generated for the whole solar facility. By default, the *split*
     option is set to *none*.
+
+*-h*::
+  List short help and exit.
+
+*-n* _experiments-count_::
+  Number of Monte-Carlo experiments used to estimate the solar flux. By
+  default _experiments-count_ is set to @SOLSTICE_ARGS_DEFAULT_NREALISATIONS@.
 
 *-o* _output_::
   Write results to _output_ with respect to the *solstice-output*(5) format. If
@@ -117,9 +121,9 @@ OPTIONS
 *-q*::
   Do not print the helper message when no _file_ is submitted.
 
-*-n* _experiments-count_::
-  Number of Monte-Carlo experiments used to estimate the solar flux. By
-  default _experiments-count_ is set to @SOLSTICE_ARGS_DEFAULT_NREALISATIONS@.
+*-R* _receivers_::
+  *solstice-receiver*(5) file defining the scene receivers, i.e. the solar
+  plant entities for which *solstice* computes Monte-Carlo estimates.
 
 *-r* <__sub-option__:...>::
   Render an image of the scene through a pinhole camera, for each submitted
@@ -166,9 +170,12 @@ OPTIONS
     direction toward the top of the skydome. By default, *up* is set to
     {@SOLSTICE_ARGS_DEFAULT_CAMERA_UP@}.
 
-*-R* _receivers_::
-  *solstice-receiver*(5) file defining the scene receivers, i.e. the solar
-  plant entities for which *solstice* computes Monte-Carlo estimates.
+*-t* _threads-count_::
+  Hint on the number of threads to use. By default us as many threads as CPU
+  cores.
+
+*-v*::
+  Make solstice more verbose.
 
 EXAMPLES
 --------

@@ -48,6 +48,30 @@
  * Helper functions
  ******************************************************************************/
 static void
+log_err(const char* msg, void* ctx)
+{
+  ASSERT(msg);
+  (void)ctx;
+#if OS_WINDOWS
+  fprintf(stderr, "error: %s", msg);
+#else
+  fprintf(stderr, "\x1b[31merror:\x1b[0m %s", msg);
+#endif
+}
+
+static void
+log_warn(const char* msg, void* ctx)
+{
+  ASSERT(msg);
+  (void)ctx;
+#ifdef OS_WINDOWS
+  fprintf(stderr,"warning: %s", msg);
+#else
+  fprintf(stderr, "\x1b[33mwarning:\x1b[0m %s", msg);
+#endif
+}
+
+static void
 clear_materials(struct htable_material* materials)
 {
   struct htable_material_iterator it, end;
@@ -553,7 +577,12 @@ solstice_init
 
   solstice->allocator = allocator ? allocator : &mem_default_allocator;
 
-  res = ssol_device_create(NULL, allocator, args->nthreads, 0, &solstice->ssol);
+  logger_init(solstice->allocator, &solstice->logger);
+  logger_set_stream(&solstice->logger, LOG_ERROR, log_err, NULL);
+  logger_set_stream(&solstice->logger, LOG_WARNING, log_warn, NULL);
+
+  res = ssol_device_create(&solstice->logger, allocator, args->nthreads,
+    args->verbose, &solstice->ssol);
   if(res != RES_OK) {
     fprintf(stderr, "Could not create the Solstice Solver device.\n");
     goto error;
@@ -666,6 +695,7 @@ solstice_release(struct solstice* solstice)
   darray_nodes_release(&solstice->pivots);
   darray_double_release(&solstice->sun_dirs);
   darray_double_release(&solstice->sun_angles);
+  logger_release(&solstice->logger);
 }
 
 res_T

@@ -440,6 +440,26 @@ test_quiet(void)
 }
 
 static void
+test_verbose(void)
+{
+  struct solstice_args args = SOLSTICE_ARGS_NULL;
+  char** cmd = NULL;
+
+  cmd = cmd_create(0, "test", "-D", "0,90", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.verbose, SOLSTICE_ARGS_DEFAULT.verbose);
+  CHECK(args.verbose, 0);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "0,90", "-v", NULL);
+  CHECK(solstice_args_init(&args, cmd_size(cmd), cmd), RES_OK);
+  CHECK(args.verbose, 1);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+}
+
+static void
 test_receivers(void)
 {
   struct solstice_args args = SOLSTICE_ARGS_NULL;
@@ -660,6 +680,7 @@ main(int argc, char** argv)
   test_threads_count();
   test_output();
   test_quiet();
+  test_verbose();
   test_receivers();
   test_input();
   test_dump();
