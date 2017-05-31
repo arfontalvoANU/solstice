@@ -16,7 +16,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 string(REGEX MATCH ".*HTML.*" _html ${SOLSTICE_DOC})
-string(REGEX MATCH ".*TROFF.*" _troff ${SOLSTICE_DOC})
+string(REGEX MATCH ".*ROFF.*" _roff ${SOLSTICE_DOC})
 
 set(SOLSTICE_DOC_DIR ${PROJECT_SOURCE_DIR}/../doc)
 
@@ -33,10 +33,10 @@ if(_html)
   endif()
 endif()
 
-if(_troff)
+if(_roff)
   find_program(A2X a2x)
   if(NOT A2X)
-    unset(_troff)
+    unset(_roff)
     message(WARNING
       "The `a2x' program is missing. "
       "The solstice man pages cannot be generated.")
@@ -51,7 +51,7 @@ set(MAN_NAMES
   solstice-output.5
   solstice-receiver.5)
 
-if(_troff OR _html)
+if(_roff OR _html)
   set(MAN_FILES)
   foreach(_name IN LISTS MAN_NAMES)
     set(_src ${SOLSTICE_DOC_DIR}/${_name}.txt)
@@ -70,9 +70,9 @@ endif()
 list(APPEND MAN_NAMES solstice.1)
 
 ################################################################################
-# TROFF man pages
+# ROFF man pages
 ################################################################################
-if(_troff)
+if(_roff)
   set(A2X_OPTS -dmanpage -fmanpage)
   set(MAN_FILES)
   set(MAN5_FILES)
@@ -86,7 +86,7 @@ if(_troff)
       COMMAND ${A2X} ${A2X_OPTS} ${_txt}
       DEPENDS man-copy ${_txt}
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-      COMMENT "Build TROFF man page ${_man}"
+      COMMENT "Build ROFF man page ${_man}"
       VERBATIM)
     list(APPEND MAN_FILES ${_man})
 
@@ -100,7 +100,7 @@ if(_troff)
       message(FATAL_ERROR "Unexpected man type")
     endif()
   endforeach()
-  add_custom_target(man-troff ALL DEPENDS ${MAN_FILES})
+  add_custom_target(man-roff ALL DEPENDS ${MAN_FILES})
 
   install(FILES ${MAN1_FILES} DESTINATION share/man/man1)
   install(FILES ${MAN5_FILES} DESTINATION share/man/man5)
