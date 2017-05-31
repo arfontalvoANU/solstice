@@ -288,7 +288,7 @@ _______
 SUN
 ---
 
-The *sun* describes the source of the solar-plant. Its direction is not defined
+The *sun* describes the source of the solar plant. Its direction is not defined
 into the *solstice-input*(5) file but is provided by the *solstice*(1) command.
 This allows to use the same unmodified *solstice-input*(5) file for several
 simulations with different sun directions.
@@ -331,7 +331,7 @@ ATMOSPHERE
 ----------
 
 The *atmosphere*, when provided, describes the medium surrounding the
-solar-plant. Its only parameter is its absorption coefficient in m^-1, that
+solar plant. Its only parameter is its absorption coefficient in m^-1, that
 can either be a scalar if the *absorption* is constant over the spectrum, or
 can be spectrally described. The absorption along light paths is only computed
 after the first reflector, as sun description must include all the atmospheric
@@ -375,11 +375,36 @@ Rp = (n2 * |wi.N| - n1 * |wt.N|) / (n2 * |wi.N| + n1 * |wt.N|)
 .......
 +
 with n1 and n2 the indices of refraction of the incident and transmitted
-media, and wi and wt the incident and transmitted direction. Note that the
-*solstice-input*(5) file must ensure that the description of the scene media
-is consistent; a ray travelling in a medium _A_ can only encounter a medium
-interface whose *medium_i* attribute is _A_. The default medium is assumed to
-be the vacuum, i.e. its refractive index is 1 and its absorption is 0.
+media, and wi and wt the incident and transmitted direction.
++
+Be careful to ensure the media consistency in the *solstice-input*(5) file; a
+ray travelling in a medium _A_ can only encounter a medium interface whose
+*medium_i* attribute is _A_. Consequently, a *dielectric* material must be
+defined as a double sided material whose front and back interfaces are
+dielectrics with inverted media:
++
+.......
+material:
+  front:
+    dielectric:
+      medium_i: &vacuum { refractive_index: 1, absorption: 0 }
+      medium_t: &glass { refractive_index: 1.5, absorption: 20 }
+  back:
+    dielectric:
+      medium_i: *glass
+      medium_t: *vacuum
+.......
++
+If the media consistency is not ensure, *solstice*(1) will fail to run
+simulations. Note that by default, the surrounding medium is assumed to be
+the vacuum, i.e.  its refractive index and its absorption are scalars whose
+values are 1 and 0, respectively. If an atmosphere is defined, the refractive
+index of the surrounding medium is still the scalar 1 but its absorption is
+the one of the atmosphere. In other words, to reference the surrounding medium
+in the *medium_i* or the *medium_t* attribute of a *dielectric* interface, one
+have to define a medium whose refractive index is the scalar 1 and absorption
+is either 0 or the absorption of the atmosphere if the latter is defined or
+not, respectively.
 
 *matte*::
 Diffuse surface. Reflects the same intensity in all directions independently
@@ -419,6 +444,19 @@ with n1 and n2 the indices of refraction of the incident and transmitted
 media, and wi and wt the incident and transmitted direction. Note that the
 underlying scattering function correctly handles the multiple refraction
 effects into the thin slab.
++
+Be careful to ensure the media consistency in the *solstice-input*(5) file; a
+ray travelling in a medium _A_ can only encounter a medium interface whose
+*medium_i* attribute is _A_. If the media consistency is not ensure,
+*solstice*(1) will fail to run simulations. Note that by default, the
+surrounding medium is assumed to be the vacuum, i.e. its refractive index and
+its absorption are scalars whose values are 1 and 0, respectively. If an
+atmosphere is defined, the refractive index of the surrounding medium is still
+the scalar 1 but its absorption is the one of the atmosphere. In other words,
+to reference the surrounding medium in the *medium_i* attribute of a
+*thin-dielectric* interface, one have to define a medium whose refractive
+index is the scalar 1 and absorption is either 0 or the absorption of the
+atmosphere if the latter is defined or not, respectively.
 
 *virtual*::
 Fully transparent interface.
