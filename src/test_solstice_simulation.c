@@ -95,7 +95,7 @@ sundir_header [] = "#--- Sun direction:";
 #ifdef COMPILER_CL
 /* mkstemp extracted from libc/sysdeps/posix/tempname.c.  Copyright
  * (C) 1991-1999, 2000, 2001, 2006 Free Software Foundation, Inc.
- * 
+ *
  * The GNU C Library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -361,10 +361,10 @@ compute_estimate_intersection
 
 static void
 check_estimate
-  (const double ref_E,
-   const double ref_SE,
-   const double test_E,
-   const double test_SE)
+  (double ref_E,
+   double ref_SE,
+   double test_E,
+   double test_SE)
 {
   if(ref_E == -1) {
     CHECK(ref_SE, -1);
@@ -375,6 +375,8 @@ check_estimate
     CHECK(ref_SE >= 0, 1);
     CHECK(test_E >= 0, 1);
     CHECK(test_SE >= 0, 1);
+    if(!ref_SE) ref_SE = ref_E / 1000.0;
+    if(!test_SE) test_SE = test_E / 1000.0;
     compute_estimate_intersection(interval, 2, ref_E, ref_SE, test_E, test_SE);
     CHECK(interval[0] <= interval[1], 1);
   }
