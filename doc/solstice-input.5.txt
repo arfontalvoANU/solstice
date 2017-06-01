@@ -395,14 +395,14 @@ material:
       medium_t: *vacuum
 .......
 +
-If the media consistency is not ensure, *solstice*(1) will fail to run
+If the media consistency is not ensured, *solstice*(1) will fail to run
 simulations. Note that by default, the surrounding medium is assumed to be
 the vacuum, i.e.  its refractive index and its absorption are scalars whose
 values are 1 and 0, respectively. If an atmosphere is defined, the refractive
 index of the surrounding medium is still the scalar 1 but its absorption is
 the one of the atmosphere. In other words, to reference the surrounding medium
 in the *medium_i* or the *medium_t* attribute of a *dielectric* interface, one
-have to define a medium whose refractive index is the scalar 1 and absorption
+has to define a medium whose refractive index is the scalar 1 and absorption
 is either 0 or the absorption of the atmosphere if the latter is defined or
 not, respectively.
 
@@ -422,7 +422,7 @@ D(wh) = exp(-tan^2(a) / m^2) / (PI * m^2 * cos^4(a))
 with a = arccos(wh.N) and m the *roughness* in ]0,1] of the interface.
 
 *thin-dielectric*::
-The interface is assumed to be a thin slab of a dielectric material.  The
+The interface is assumed to be a thin slab of a dielectric material. The
 *medium_i* parameter defines the outside dielectric medium while *medium_t*
 is the medium of the thin slab. Incoming rays are either specularly reflected
 or transmitted (without deviation) according to a Fresnel term computed with
@@ -447,16 +447,16 @@ effects into the thin slab.
 +
 Be careful to ensure the media consistency in the *solstice-input*(5) file; a
 ray travelling in a medium _A_ can only encounter a medium interface whose
-*medium_i* attribute is _A_. If the media consistency is not ensure,
+*medium_i* attribute is _A_. If the media consistency is not ensured,
 *solstice*(1) will fail to run simulations. Note that by default, the
 surrounding medium is assumed to be the vacuum, i.e. its refractive index and
 its absorption are scalars whose values are 1 and 0, respectively. If an
 atmosphere is defined, the refractive index of the surrounding medium is still
 the scalar 1 but its absorption is the one of the atmosphere. In other words,
 to reference the surrounding medium in the *medium_i* attribute of a
-*thin-dielectric* interface, one have to define a medium whose refractive
+*thin-dielectric* interface, one has to define a medium whose refractive
 index is the scalar 1 and absorption is either 0 or the absorption of the
-atmosphere if the latter is defined or not, respectively.
+atmosphere if the latter is defined.
 
 *virtual*::
 Fully transparent interface.
