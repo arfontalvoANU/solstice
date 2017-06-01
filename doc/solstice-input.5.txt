@@ -472,9 +472,9 @@ and upper bounds of the clipped quadric along the X and Y axis. The available
 quadrics are:
 
 *hemisphere*::
-Hemispheric shape whose up direction is along the negative Z axis and its
-polar coordinate is positioned at the origin. The *slices* parameter controls
-the number of divisions along the Z axis.
+Hemispheric shape defined along the Z axis whose minimum is positioned at
+the origin. The *slices* parameter controls the number of divisions along
+the Z axis.
 +
 .......
 x^2 + y^2 + (z-radius)^2 = radius^2
@@ -536,7 +536,7 @@ attribute that defines the overall number of segments used to approximate the
 circle.
 
 *vertices-descriptor*::
-Polygonal contour describes by a list of 2D vertices. The polygon edges are
+Polygonal contour described by a list of 2D vertices. The polygon edges are
 defined by connecting each vertex to its previous one. To ensure that the
 polygon is closed, an additional edge is automatically created between the
 first and the last vertex.  Note that *solstice*(1) assumes that the defined
@@ -544,7 +544,7 @@ polygon does not overlap itself, i.e. their non consecutive edges are not
 intersecting.
 
 The *clip* parameter of the quadrics lists a set of the aforementioned 2D
-*polyclips*. Each of these clipping operation is successively applied on the
+*polyclips*. Each of these clipping operations is successively applied on the
 remaining quadric surface, in the order on which they are declared. For
 instance, the following example uses 5 clipping operations on a plane to build
 a rectangle with a circular hole at each of its corner. The first *polyclip*
@@ -570,7 +570,7 @@ loaded from a CAO file. Their normals are defined per triangle and are thus
 discontinuous even for smooth shapes as spheres. The triangular meshes are not
 parameterized, i.e. they do not provide a mapping from a 3D position onto its
 surface to a 2D coordinates. Applying a normal-mapped material to a triangular
-meshes will thus produce undefined behaviors.
+mesh will thus produce undefined behaviors.
 
 The available triangular meshes are:
 
@@ -635,7 +635,7 @@ the pivot type, and the sun directions submitted by *solstice*(1). Each entity
 can also have a list of *anchors*. An anchor is used to define a position
 relative to the entity into which it is declared.
 
-For a geometric entity one have to define if the encapsulated geometry is a
+For a geometric entity one has to define if the encapsulated geometry is a
 *primary* geometry, i.e. a geometry directly lit by the sun and used to
 concentrate the solar flux (e.g. a primary mirror). One can define all the
 solar plant geometric entities as primaries but a well designed solar plant
@@ -676,8 +676,8 @@ A *pivot* is a special kind of node that can be used in the tree data
 structure describing an entity to automatically point its child geometry
 according to the sun position and to the pivot parameters. It is supposed (but
 not mandatory) that the children of a pivot includes a reflector, that,
-once pivoted, will reflect the sun light towards a *target*. You should note
-that a pivot cannot be the child of another pivot.
+once pivoted, will reflect the sun light towards a *target*. You should
+note that a pivot cannot be the child of another pivot.
 
 The most noticeable pivot parameter is its *target*. Four different types of
 targets are available:
@@ -838,7 +838,7 @@ is 1 and its center is positioned at {0,0,2}:
 Define a circular diffuse reflector surrounded by a virtual sphere and a
 pillbox-shaped sun whose aperture is 0.1 degree. Use anchors and tags of the
 YAML format to reference into the entities a pre-declared geometry. Rely on
-the YAML compact notation to reduce the number of lines requires to describe
+the YAML compact notation to reduce the number of lines required to describe
 the scene:
 .......
 - sun: {dni: 1000, pillbox: {aperture: 0.1}}

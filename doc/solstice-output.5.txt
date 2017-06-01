@@ -184,7 +184,12 @@ sun direction used in the simulation (azimuth and elevation angles, in
 degrees), and the second one lists the numbers of global, per receiver and per
 primary results as well as the overall number of Monte-Carlo experiments used
 by the simulation and the number of experiments that failed due to unforeseen
-errors as numerical imprecisions.
+errors as numerical imprecisions. As soon as the number of failed experiments
+reaches 1% of the required number of Monte-Carlo experiments, the code exits
+with a "Error in integrating the solar flux" message, and the validity of
+subsequent results is questionable: estimates are produced using the number of
+Monte-Carlo experiments that have been successful, which is necessarily smaller
+than the required number of experiments.
 
 Global results
 ~~~~~~~~~~~~~~
