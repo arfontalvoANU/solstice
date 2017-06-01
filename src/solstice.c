@@ -52,7 +52,7 @@ log_err(const char* msg, void* ctx)
 {
   ASSERT(msg);
   (void)ctx;
-#if OS_WINDOWS
+#ifdef OS_WINDOWS
   fprintf(stderr, "error: %s", msg);
 #else
   fprintf(stderr, "\x1b[31merror:\x1b[0m %s", msg);
