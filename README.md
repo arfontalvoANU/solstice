@@ -56,7 +56,25 @@ project from the `cmake/CMakeLists.txt` file by appending to the
 `CMAKE_PREFIX_PATH` variable the install directories of its dependencies. The
 resulting project can be edited, built, tested and installed as any CMake
 project. Refer to the [CMake](https://cmake.org/documentation) for further
-informations ond CMake.
+informations on CMake.
+
+## Release notes
+
+### Version 0.2
+
+- Add the support of an optional normal map to the materials. It defines
+  spatially varying normals in the tangent space of the surface. Currently,
+  only the quadric surfaces are parameterized: using a normal mapped material
+  on the other shapes will produce unforeseen behaviors.
+- Add the support of spectral data to the materials: a material attribute can be
+  either a scalar or follow a spectral distribution.
+- Add an optional atmospheric absorption after the first reflection of the light
+  path; the sun description includes the atmospheric effect before the first
+  reflector.
+- Write the man pages of the Solstice command line and its associated file
+  formats.
+- Add the verbose option `-v`.
+- Update the output format of the simulation.
 
 ## Licenses
 
