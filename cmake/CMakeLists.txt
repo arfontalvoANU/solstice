@@ -45,10 +45,10 @@ find_package(LibYAML REQUIRED)
 find_package(RCMake 0.2.3 REQUIRED)
 find_package(RSys 0.4 REQUIRED)
 find_package(SolAnim 0.1 REQUIRED)
-find_package(SolSolver 0.1.1 REQUIRED)
+find_package(SolSolver 0.2 REQUIRED)
 find_package(Star3DUT 0.2 REQUIRED)
 find_package(StarSP 0.4 REQUIRED)
-find_package(StarSTL 0.3 REQUIRED)
+find_package(StarSTL 0.3.1 REQUIRED)
 
 if(MSVC)
   find_package(MuslGetopt REQUIRED)
@@ -99,8 +99,8 @@ configure_file(${SOLSTICE_SOURCE_DIR}/../doc/solstice.1.txt.in
 # Configure and define targets
 ################################################################################
 set(VERSION_MAJOR 0)
-set(VERSION_MINOR 1)
-set(VERSION_PATCH 1)
+set(VERSION_MINOR 2)
+set(VERSION_PATCH 0)
 set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
 set(SOLSTICE_FILES_SRC
