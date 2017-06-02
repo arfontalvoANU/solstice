@@ -48,6 +48,30 @@
  * Helper functions
  ******************************************************************************/
 static void
+log_err(const char* msg, void* ctx)
+{
+  ASSERT(msg);
+  (void)ctx;
+#ifdef OS_WINDOWS
+  fprintf(stderr, "error: %s", msg);
+#else
+  fprintf(stderr, "\x1b[31merror:\x1b[0m %s", msg);
+#endif
+}
+
+static void
+log_warn(const char* msg, void* ctx)
+{
+  ASSERT(msg);
+  (void)ctx;
+#ifdef OS_WINDOWS
+  fprintf(stderr,"warning: %s", msg);
+#else
+  fprintf(stderr, "\x1b[33mwarning:\x1b[0m %s", msg);
+#endif
+}
+
+static void
 clear_materials(struct htable_material* materials)
 {
   struct htable_material_iterator it, end;
@@ -341,6 +365,7 @@ error:
 static res_T
 load_data(struct solstice* solstice, const struct solstice_args* args)
 {
+  struct solparser_entity_iterator it, end;
   FILE* file = stdin;
   const char* name = "stdin";
   res_T res = RES_OK;
@@ -369,6 +394,14 @@ load_data(struct solstice* solstice, const struct solstice_args* args)
 
   res = solparser_load(solstice->parser);
   if(res != RES_OK) goto error;
+
+  solparser_entity_iterator_begin(solstice->parser, &it);
+  solparser_entity_iterator_end(solstice->parser, &end);
+  if(solparser_entity_iterator_eq(&it, &end)) {
+    fprintf(stderr, "No entity is defined.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
 
 exit:
   if(file && file != stdin) fclose(file);
@@ -536,6 +569,7 @@ solstice_init
   htable_object_init(allocator, &solstice->objects);
   htable_anchor_init(allocator, &solstice->anchors);
   htable_receiver_init(allocator, &solstice->receivers);
+  htable_primary_init(allocator, &solstice->primaries);
   darray_nodes_init(allocator, &solstice->roots);
   darray_nodes_init(allocator, &solstice->pivots);
   darray_double_init(allocator, &solstice->sun_dirs);
@@ -543,7 +577,12 @@ solstice_init
 
   solstice->allocator = allocator ? allocator : &mem_default_allocator;
 
-  res = ssol_device_create(NULL, allocator, args->nthreads, 0, &solstice->ssol);
+  logger_init(solstice->allocator, &solstice->logger);
+  logger_set_stream(&solstice->logger, LOG_ERROR, log_err, NULL);
+  logger_set_stream(&solstice->logger, LOG_WARNING, log_warn, NULL);
+
+  res = ssol_device_create(&solstice->logger, allocator, args->nthreads,
+    args->verbose, &solstice->ssol);
   if(res != RES_OK) {
     fprintf(stderr, "Could not create the Solstice Solver device.\n");
     goto error;
@@ -598,8 +637,13 @@ solstice_init
     goto error;
   }
 
+  res = solstice_create_atmosphere(solstice);
+  if(res != RES_OK) {
+    fprintf(stderr, "Could not setup the Solstice atmosphere.\n");
+    goto error;
+  }
+
   solstice->nexperiments = args->nexperiments;
-  solstice->output_hits = args->output_hits;
   solstice->dump_format = args->dump_format;
   solstice->dump_split_mode = args->dump_split_mode;
   solstice->dump_paths = args->dump_paths;
@@ -615,6 +659,7 @@ solstice_init
     if(res != RES_OK) goto error;
     solstice->render_mode = args->render_mode;
     solstice->spp = args->img.spp;
+    d3_set(solstice->up, args->camera.up);
   }
 
 exit:
@@ -635,6 +680,7 @@ solstice_release(struct solstice* solstice)
   if(solstice->ssol) SSOL(device_ref_put(solstice->ssol));
   if(solstice->scene) SSOL(scene_ref_put(solstice->scene));
   if(solstice->sun) SSOL(sun_ref_put(solstice->sun));
+  if(solstice->atmosphere) SSOL(atmosphere_ref_put(solstice->atmosphere));
   if(solstice->parser) solparser_ref_put(solstice->parser);
   if(solstice->camera) SSOL(camera_ref_put(solstice->camera));
   if(solstice->framebuffer) SSOL(image_ref_put(solstice->framebuffer));
@@ -644,10 +690,12 @@ solstice_release(struct solstice* solstice)
   htable_object_release(&solstice->objects);
   htable_anchor_release(&solstice->anchors);
   htable_receiver_release(&solstice->receivers);
+  htable_primary_release(&solstice->primaries);
   darray_nodes_release(&solstice->roots);
   darray_nodes_release(&solstice->pivots);
   darray_double_release(&solstice->sun_dirs);
   darray_double_release(&solstice->sun_angles);
+  logger_release(&solstice->logger);
 }
 
 res_T

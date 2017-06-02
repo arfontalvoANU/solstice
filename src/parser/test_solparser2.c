@@ -40,6 +40,7 @@ main(int argc, char** argv)
   const struct solparser_material_mirror* mirror;
   const struct solparser_shape_sphere* sphere;
   const struct solparser_sun* sun;
+  const struct solparser_spectrum* spectrum;
   size_t nmtls = 0;
   size_t ngeoms = 0;
   double tmp[3];
@@ -78,6 +79,8 @@ main(int argc, char** argv)
   fprintf(stream, "- sun:\n");
   fprintf(stream, "    dni: 1\n");
   fprintf(stream, "    spectrum: [ { wavelength: 1, data: 1} ]\n");
+  fprintf(stream, "- atmosphere:\n");
+  fprintf(stream, "    absorption: 0\n");
   rewind(stream);
 
   CHECK(solparser_setup(parser, NULL, stream), RES_OK);
@@ -114,7 +117,7 @@ main(int argc, char** argv)
 
   entity_id = solparser_entity_iterator_get(&it);
   entity = solparser_get_entity(parser, entity_id);
-  
+
   CHECK(strcmp("lvl 0", str_cget(&entity->name)), 0);
   CHECK(solparser_entity_get_children_count(entity), 2);
   CHECK(entity->type, SOLPARSER_ENTITY_GEOMETRY);
@@ -136,7 +139,8 @@ main(int argc, char** argv)
   CHECK(mtl == mtls[0] || mtl == mtls[1], 1);
   CHECK(mtl->type, SOLPARSER_MATERIAL_MATTE);
   matte = solparser_get_material_matte(parser, mtl->data.matte);
-  CHECK(matte->reflectivity, 1);
+  CHECK(matte->reflectivity.type, SOLPARSER_MTL_DATA_REAL);
+  CHECK(matte->reflectivity.value.real, 1);
 
   entity_id = solparser_entity_get_child(entity, 0);
   entity1a = solparser_get_entity(parser, entity_id);
@@ -164,8 +168,10 @@ main(int argc, char** argv)
   CHECK(mtl == mtls[0] || mtl == mtls[1], 1);
   CHECK(mtl->type, SOLPARSER_MATERIAL_MIRROR);
   mirror = solparser_get_material_mirror(parser, mtl->data.mirror);
-  CHECK(mirror->reflectivity, 0.9);
-  CHECK(mirror->roughness, 0.1);
+  CHECK(mirror->reflectivity.type, SOLPARSER_MTL_DATA_REAL);
+  CHECK(mirror->reflectivity.value.real, 0.9);
+  CHECK(mirror->roughness.type, SOLPARSER_MTL_DATA_REAL);
+  CHECK(mirror->roughness.value.real, 0.1);
 
   entity_id = solparser_entity_get_child(entity, 1);
   entity1b = solparser_get_entity(parser, entity_id);
@@ -203,9 +209,11 @@ main(int argc, char** argv)
   NCHECK(sun, NULL);
   CHECK(sun->dni, 1.0);
   CHECK(sun->radang_distrib_type, SOLPARSER_SUN_RADANG_DISTRIB_DIRECTIONAL);
-  CHECK(darray_spectrum_data_size_get(&sun->spectrum), 1);
-  CHECK(darray_spectrum_data_cdata_get(&sun->spectrum)[0].wavelength, 1.0);
-  CHECK(darray_spectrum_data_cdata_get(&sun->spectrum)[0].data, 1.0);
+  CHECK(SOLPARSER_ID_IS_VALID(sun->spectrum), 1);
+  spectrum = solparser_get_spectrum(parser, sun->spectrum);
+  CHECK(darray_spectrum_data_size_get(&spectrum->data), 1);
+  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[0].wavelength, 1.0);
+  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[0].data, 1.0);
 
   CHECK(solparser_load(parser), RES_BAD_OP);
   solparser_ref_put(parser);

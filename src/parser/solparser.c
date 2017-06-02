@@ -114,10 +114,12 @@ parse_item
    const yaml_node_t* item)
 {
   /* Temporary dummy variables */
-  struct solparser_material_double_sided_id mtl2;
   struct solparser_entity_id entity;
   struct solparser_geometry_id geometry;
+  struct solparser_material_double_sided_id mtl2;
+  struct solparser_medium_id medium;
   struct solparser_sun* sun;
+  struct solparser_atmosphere* atmosphere;
 
   yaml_node_t* key;
   yaml_node_t* val;
@@ -147,21 +149,24 @@ parse_item
     goto error;
   }
 
+  /* The parsing of the templates/spectra is deferred to their explicit use */
   if(!strcmp((char*)key->data.scalar.value, "material")) {
     res = parse_material(parser, doc, val, &mtl2);
+  } else if(!strcmp((char*)key->data.scalar.value, "medium")) {
+    res = parse_medium(parser, doc, val, &medium);
   } else if(!strcmp((char*)key->data.scalar.value, "entity")) {
     res = parse_entity(parser, doc, val, &parser->str2entities, &entity);
     if(res == RES_OK) {
       res = flush_deferred_target_aliases(parser, item, entity);
     }
-  } else if(!strcmp((char*)key->data.scalar.value, "template")) {
-    /* The parsing of the template data is deferred to its explicit used in the
-     * definition of an entity. If the parsing of the template becomes a
-     * bottleneck, parse the data only once here and cache them for reuse. */
+  } else if(!strcmp((char*)key->data.scalar.value, "template")) { /* Deferred */
   } else if(!strcmp((char*)key->data.scalar.value, "geometry")) {
     res = parse_geometry(parser, doc, val, &geometry);
   } else if(!strcmp((char*)key->data.scalar.value, "sun")) {
     res = parse_sun(parser, doc, val, &sun);
+  } else if (!strcmp((char*)key->data.scalar.value, "atmosphere")) {
+    res = parse_atmosphere(parser, doc, val, &atmosphere);
+  } else if(!strcmp((char*)key->data.scalar.value, "spectrum")) { /* Deferred */
   } else {
     log_err(parser, key, "unknown item `%s'.\n", key->data.scalar.value);
     res = RES_BAD_ARG;
@@ -186,13 +191,17 @@ parser_clear(struct solparser* parser)
 
   /* Materials */
   htable_yaml2sols_clear(&parser->yaml2mtls);
+  darray_image_clear(&parser->images);
   darray_material_clear(&parser->mtls);
   darray_material2_clear(&parser->mtls2);
-  darray_medium_clear(&parser->mediums);
   darray_dielectric_clear(&parser->dielectrics);
   darray_matte_clear(&parser->mattes);
   darray_mirror_clear(&parser->mirrors);
   darray_thin_dielectric_clear(&parser->thin_dielectrics);
+
+  /* Mediums */
+  htable_yaml2sols_clear(&parser->yaml2mediums);
+  darray_medium_clear(&parser->mediums);
 
   /* Deferred targeted anchors */
   darray_tgtalias_clear(&parser->tgtaliases);
@@ -205,6 +214,7 @@ parser_clear(struct solparser* parser)
   darray_paraboloid_clear(&parser->parabols);
   darray_paraboloid_clear(&parser->parabolic_cylinders);
   darray_hyperboloid_clear(&parser->hyperbols);
+  darray_hemisphere_clear(&parser->hemispheres);
   darray_plane_clear(&parser->planes);
   darray_sphere_clear(&parser->spheres);
   darray_impgeom_clear(&parser->stls);
@@ -218,6 +228,10 @@ parser_clear(struct solparser* parser)
   solparser_sun_clear(&parser->sun);
   parser->sun_key = 0;
 
+  /* Atmosphere */
+  solparser_atmosphere_clear(&parser->atmosphere);
+  parser->atmosphere_key = 0;
+
   /* Entities */
   htable_str2sols_clear(&parser->str2entities);
   darray_entity_clear(&parser->entities);
@@ -226,6 +240,7 @@ parser_clear(struct solparser* parser)
   darray_anchor_clear(&parser->anchors);
   darray_x_pivot_clear(&parser->x_pivots);
   darray_zx_pivot_clear(&parser->zx_pivots);
+  darray_spectrum_clear(&parser->spectra);
 }
 
 static void
@@ -240,13 +255,17 @@ parser_release(ref_T* ref)
 
   /* Materials */
   htable_yaml2sols_release(&parser->yaml2mtls);
+  darray_image_release(&parser->images);
   darray_material_release(&parser->mtls);
   darray_material2_release(&parser->mtls2);
-  darray_medium_release(&parser->mediums);
   darray_dielectric_release(&parser->dielectrics);
   darray_matte_release(&parser->mattes);
   darray_mirror_release(&parser->mirrors);
   darray_thin_dielectric_release(&parser->thin_dielectrics);
+
+  /* Mediums */
+  htable_yaml2sols_release(&parser->yaml2mediums);
+  darray_medium_release(&parser->mediums);
 
   /* Deferred targeted anchors */
   darray_tgtalias_release(&parser->tgtaliases);
@@ -259,6 +278,7 @@ parser_release(ref_T* ref)
   darray_paraboloid_release(&parser->parabols);
   darray_paraboloid_release(&parser->parabolic_cylinders);
   darray_hyperboloid_release(&parser->hyperbols);
+  darray_hemisphere_release(&parser->hemispheres);
   darray_plane_release(&parser->planes);
   darray_sphere_release(&parser->spheres);
   darray_impgeom_release(&parser->stls);
@@ -271,6 +291,9 @@ parser_release(ref_T* ref)
   /* Sun */
   solparser_sun_release(&parser->sun);
 
+  /* Atmosphere */
+  solparser_atmosphere_release(&parser->atmosphere);
+
   /* Entities */
   htable_str2sols_release(&parser->str2entities);
   darray_entity_release(&parser->entities);
@@ -279,6 +302,7 @@ parser_release(ref_T* ref)
   darray_anchor_release(&parser->anchors);
   darray_x_pivot_release(&parser->x_pivots);
   darray_zx_pivot_release(&parser->zx_pivots);
+  darray_spectrum_release(&parser->spectra);
 
   MEM_RM(parser->allocator, parser);
 }
@@ -383,7 +407,8 @@ parse_realX
   ASSERT(doc && realX && dst && dim > 0);
 
   if(realX->type != YAML_SEQUENCE_NODE) {
-    log_err(parser, realX, "expect a sequence of 3 reals.\n");
+    log_err(parser, realX, "expect a sequence of %lu reals.\n", 
+      (unsigned long)dim);
     res = RES_BAD_ARG;
     goto error;
   }
@@ -568,13 +593,17 @@ solparser_create
 
   /* Materials */
   htable_yaml2sols_init(mem_allocator, &parser->yaml2mtls);
+  darray_image_init(mem_allocator, &parser->images);
   darray_material_init(mem_allocator, &parser->mtls);
   darray_material2_init(mem_allocator, &parser->mtls2);
-  darray_medium_init(mem_allocator, &parser->mediums);
   darray_dielectric_init(mem_allocator, &parser->dielectrics);
   darray_matte_init(mem_allocator, &parser->mattes);
   darray_mirror_init(mem_allocator, &parser->mirrors);
   darray_thin_dielectric_init(mem_allocator, &parser->thin_dielectrics);
+
+  /* Mediums */
+  htable_yaml2sols_init(mem_allocator, &parser->yaml2mediums);
+  darray_medium_init(mem_allocator, &parser->mediums);
 
   /* Deferred targeted anchors */
   darray_tgtalias_init(mem_allocator, &parser->tgtaliases);
@@ -587,6 +616,7 @@ solparser_create
   darray_paraboloid_init(mem_allocator, &parser->parabols);
   darray_paraboloid_init(mem_allocator, &parser->parabolic_cylinders);
   darray_hyperboloid_init(mem_allocator, &parser->hyperbols);
+  darray_hemisphere_init(mem_allocator, &parser->hemispheres);
   darray_plane_init(mem_allocator, &parser->planes);
   darray_sphere_init(mem_allocator, &parser->spheres);
   darray_impgeom_init(mem_allocator, &parser->stls);
@@ -599,14 +629,18 @@ solparser_create
   /* Sun */
   solparser_sun_init(mem_allocator, &parser->sun);
 
+  /* Atmosphere */
+  solparser_atmosphere_init(mem_allocator, &parser->atmosphere);
+
   /* Entities */
   htable_str2sols_init(mem_allocator, &parser->str2entities);
   darray_entity_init(mem_allocator, &parser->entities);
 
-  /* Anchors and pivot(2)s */
+  /* Miscellaneous */
   darray_anchor_init(mem_allocator, &parser->anchors);
   darray_x_pivot_init(mem_allocator, &parser->x_pivots);
   darray_zx_pivot_init(mem_allocator, &parser->zx_pivots);
+  darray_spectrum_init(mem_allocator, &parser->spectra);
 
 exit:
   *out_parser = parser;
@@ -882,6 +916,15 @@ solparser_get_entity
   return darray_entity_cdata_get(&parser->entities) + entity.i;
 }
 
+const struct solparser_image*
+solparser_get_image
+  (const struct solparser* parser,
+   const struct solparser_image_id image)
+{
+  ASSERT(parser && image.i < darray_image_size_get(&parser->images));
+  return darray_image_cdata_get(&parser->images) + image.i;
+}
+
 const struct solparser_geometry*
 solparser_get_geometry
   (const struct solparser* parser,
@@ -1047,6 +1090,15 @@ solparser_get_shape_hyperbol
   return darray_hyperboloid_cdata_get(&parser->hyperbols) + hyperboloid.i;
 }
 
+const struct solparser_shape_hemisphere*
+solparser_get_shape_hemisphere
+  (const struct solparser* parser,
+   const struct solparser_shape_hemisphere_id hemisphere)
+{
+  ASSERT(parser && hemisphere.i < darray_hemisphere_size_get(&parser->hemispheres));
+  return darray_hemisphere_cdata_get(&parser->hemispheres) + hemisphere.i;
+}
+
 const struct solparser_shape_plane*
 solparser_get_shape_plane
   (const struct solparser* parser,
@@ -1074,11 +1126,35 @@ solparser_get_shape_stl
   return darray_impgeom_cdata_get(&parser->stls) + impgeom.i;
 }
 
+const struct solparser_spectrum*
+solparser_get_spectrum
+  (const struct solparser* parser,
+   const struct solparser_spectrum_id spectrum)
+{
+  ASSERT(parser && spectrum.i < darray_spectrum_size_get(&parser->spectra));
+  return darray_spectrum_cdata_get(&parser->spectra) + spectrum.i;
+}
+
+int
+solparser_has_spectrum(const struct solparser* parser)
+{
+  ASSERT(parser);
+  return darray_spectrum_size_get(&parser->spectra) != 0;
+}
+
 const struct solparser_sun*
 solparser_get_sun(const struct solparser* parser)
 {
   ASSERT(parser && parser->sun_key);
   return &parser->sun;
+}
+
+const struct solparser_atmosphere*
+solparser_get_atmosphere(const struct solparser* parser)
+{
+  ASSERT(parser);
+  if(parser->atmosphere_key) return &parser->atmosphere;
+  else return NULL;
 }
 
 void

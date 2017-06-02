@@ -22,6 +22,7 @@
 
 #include <rsys/dynamic_array_double.h>
 #include <rsys/hash_table.h>
+#include <rsys/logger.h>
 #include <rsys/mem_allocator.h>
 #include <rsys/str.h>
 
@@ -36,6 +37,10 @@ struct solstice_receiver {
   struct solstice_node* node;
   enum srcvl_side side;
   int per_primitive;
+};
+
+struct solstice_primary {
+  struct solstice_node* node;
 };
 
 #define DARRAY_NAME nodes
@@ -69,10 +74,22 @@ struct solstice_receiver {
 #define HTABLE_DATA struct solstice_receiver
 #include <rsys/hash_table.h>
 
+#define HTABLE_NAME primary
+#define HTABLE_KEY struct str
+#define HTABLE_KEY_FUNCTOR_INIT str_init
+#define HTABLE_KEY_FUNCTOR_RELEASE str_release
+#define HTABLE_KEY_FUNCTOR_COPY str_copy
+#define HTABLE_KEY_FUNCTOR_COPY_AND_RELEASE str_copy_and_release
+#define HTABLE_KEY_FUNCTOR_EQ str_eq
+#define HTABLE_KEY_FUNCTOR_HASH str_hash
+#define HTABLE_DATA struct solstice_primary
+#include <rsys/hash_table.h>
+
 struct solstice {
   struct ssol_device* ssol;
   struct ssol_scene* scene;
   struct ssol_sun* sun;
+  struct ssol_atmosphere* atmosphere;
 
   struct solparser* parser;
 
@@ -80,6 +97,7 @@ struct solstice {
   struct htable_object objects;
   struct htable_anchor anchors;
   struct htable_receiver receivers;
+  struct htable_primary primaries;
   struct darray_nodes roots;
   struct darray_nodes pivots;
   struct ssol_material* mtl_virtual; /* Shared virtual material */
@@ -88,6 +106,7 @@ struct solstice {
   struct ssol_camera* camera;
   struct ssol_image* framebuffer;
   enum solstice_args_render_mode render_mode;
+  double up[3];
   unsigned spp; /* #Samples per pixel */
 
   /* Dump geometry */
@@ -102,9 +121,9 @@ struct solstice {
 
   size_t nexperiments; /* # MC experiments */
   FILE* output; /* Output stream */
-  int output_hits; /* Output per receiver hits */
   int dump_paths;
 
+  struct logger logger;
   struct mem_allocator* allocator;
 };
 

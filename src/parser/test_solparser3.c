@@ -32,9 +32,18 @@ static const char* input[] = {
   "        - operation : AND\n",
   "          vertices : [[1, 2],[3, 4],[6, 7]]\n",
   "      material: *lambertian\n",
+  "- geometry: &hemisphere1\n",
+  "    - hemisphere:\n",
+  "        radius: 100\n",
+  "        clip:\n",
+  "        - operation : AND\n",
+  "          circle: { radius: 4 }\n",
+  "      material: *lambertian\n",
   "- sun: \n",
   "    dni: 1\n",
   "    spectrum: [{wavelength: 1, data: 1}]\n",
+  "- atmosphere:\n",
+  "    absorption: [{wavelength: 1, data: 1}]\n",
   "- entity:\n",
   "    name: entity0\n",
   "    primary: 0\n",
@@ -61,6 +70,9 @@ static const char* input[] = {
   "      - name: entity0c\n",
   "        primary: 0\n",
   "        geometry: *hyperbol1\n",
+  "      - name: entity0d\n",
+  "        primary: 0\n",
+  "        geometry: *hemisphere1\n",
   "- entity:\n",
   "    name: entity1\n",
   "    x_pivot:\n",
@@ -95,7 +107,7 @@ check_entity0
   struct solparser_anchor_id anchor_id;
   struct solparser_entity_id entity_id;
   struct solparser_object_id obj_id;
-  const struct solparser_entity *entity0a, *entity0b;
+  const struct solparser_entity *entity0a, *entity0b, *entity0c, *entity0d;
   const struct solparser_material_matte* matte;
   const struct solparser_material* mtl;
   const struct solparser_material_double_sided* mtl2;
@@ -135,9 +147,10 @@ check_entity0
   CHECK(mtl->type, SOLPARSER_MATERIAL_MATTE);
 
   matte = solparser_get_material_matte(parser, mtl->data.matte);
-  CHECK(matte->reflectivity, 0.5);
+  CHECK(matte->reflectivity.type, SOLPARSER_MTL_DATA_REAL);
+  CHECK(matte->reflectivity.value.real, 0.5);
 
-  CHECK(solparser_entity_get_children_count(entity0), 3);
+  CHECK(solparser_entity_get_children_count(entity0), 4);
   CHECK(solparser_entity_get_anchors_count(entity0), 3);
 
   anchor_id = solparser_entity_get_anchor(entity0, 0);
@@ -186,6 +199,22 @@ check_entity0
   entity0_entity0b_entity0b = solparser_get_anchor(parser, anchor_id);
   CHECK(strcmp(str_cget(&entity0_entity0b_entity0b->name), "entity0b"), 0);
   CHECK(d3_eq(entity0_entity0b_entity0b->position, d3(tmp, 7, 8, 9)), 1);
+
+  entity_id = solparser_entity_get_child(entity0, 2);
+  entity0c = solparser_get_entity(parser, entity_id);
+  CHECK(strcmp(str_cget(&entity0c->name), "entity0c"), 0);
+  CHECK(entity0c->type, SOLPARSER_ENTITY_GEOMETRY);
+  NCHECK(entity0->data.geometry.i, entity0c->data.geometry.i);
+  CHECK(solparser_entity_get_anchors_count(entity0c), 0);
+  CHECK(solparser_entity_get_children_count(entity0c), 0);
+
+  entity_id = solparser_entity_get_child(entity0, 3);
+  entity0d = solparser_get_entity(parser, entity_id);
+  CHECK(strcmp(str_cget(&entity0d->name), "entity0d"), 0);
+  CHECK(entity0d->type, SOLPARSER_ENTITY_GEOMETRY);
+  NCHECK(entity0->data.geometry.i, entity0d->data.geometry.i);
+  CHECK(solparser_entity_get_anchors_count(entity0d), 0);
+  CHECK(solparser_entity_get_children_count(entity0d), 0);
 }
 
 static void

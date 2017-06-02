@@ -3,8 +3,8 @@
 - material: &thin_dielectric
     thin_dielectric:
       thickness: 1
-      medium_i: { absorptivity: 0, refractive_index: 1.00027 }
-      medium_t: { absorptivity: 0.1, refractive_index: 1.5 }
+      medium_i: { absorption: 0, refractive_index: 1.00027 }
+      medium_t: { absorption: 0.1, refractive_index: 1.5 }
 
 - entity:
     name: "entity"
@@ -18,8 +18,8 @@
 - material: &thin_dielectric
     thin_dielectric:
       thickness: 0
-      medium_i: { absorptivity: 0, refractive_index: 0.00027 }
-      medium_t: { absorptivity: 0.1, refractive_index: 1.5 }
+      medium_i: { absorption: 0, refractive_index: 0.00027 }
+      medium_t: { absorption: 0.1, refractive_index: 1.5 }
 
 - entity:
     name: "entity"
@@ -38,6 +38,6 @@
         material:
           thin_dielectric:
             thickness: 10
-            medium_i: { absorptivity: 0, refractive_index: 1 }
-            medium_t: { absorptivity: 20, refractive_index: 1.5 }
+            medium_i: { absorption: 0, refractive_index: 1 }
+            medium_t: { absorption: 20, refractive_index: 1.5 }
 

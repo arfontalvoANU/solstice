@@ -61,6 +61,10 @@ solstice_create_sun
   (struct solstice* solstice);
 
 extern LOCAL_SYM res_T
+solstice_create_atmosphere
+  (struct solstice* solstice);
+
+extern LOCAL_SYM res_T
 solstice_setup_entities
   (struct solstice* solstice);
 
@@ -68,6 +72,18 @@ extern LOCAL_SYM res_T
 solstice_update_entities
   (struct solstice* solstice,
    const double sun_dir[3]);
+
+extern LOCAL_SYM res_T
+solstice_create_ssol_spectrum
+  (struct solstice* solstice,
+   const struct solparser_spectrum_id spectrum_id,
+   struct ssol_spectrum** spectrum);
+
+extern LOCAL_SYM res_T
+mtl_to_ssol_data
+  (struct solstice* solstice,
+   const struct solparser_mtl_data* mtl_data,
+   struct ssol_data* data);
 
 extern LOCAL_SYM res_T
 solstice_create_ssol_material

@@ -16,6 +16,7 @@
 #define _POSIX_C_SOURCE 200112L /* nextafter support */
 
 #include "solparser_c.h"
+#include <rsys/double2.h>
 #include <math.h> /* nextafter */
 
 /*******************************************************************************
@@ -100,13 +101,97 @@ error:
 }
 
 static res_T
+parse_circle
+  (struct solparser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* circle,
+   struct solparser_circleclip* clip)
+{
+  enum { RADIUS, CENTER, SEGMENTS };
+  intptr_t i, n;
+  int mask = 0; /* Register the parsed attributes */
+  res_T res = RES_OK;
+  ASSERT(doc && circle && clip);
+
+  if(circle->type != YAML_MAPPING_NODE) {
+    log_err(parser, circle,
+      "expect a mapping of clipping circles parameters.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  n = circle->data.mapping.pairs.top - circle->data.mapping.pairs.start;
+  clip->segments = 64; /* default value */
+  d2_splat(clip->center, 0); /* default value */
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, circle->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, circle->data.mapping.pairs.start[i].value);
+    if (key->type != YAML_SCALAR_NODE) {
+      log_err(parser, key, "expect a clipping circle parameter.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(parser, key,                                                   \
+          "the clipping circle parameter `"Name"' is already defined.\n");     \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if(!strcmp((char*)key->data.scalar.value, "radius")) {
+      SETUP_MASK(RADIUS, "radius");
+      res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &clip->radius);
+    }
+    else if(!strcmp((char*)key->data.scalar.value, "center")) {
+      SETUP_MASK(CENTER, "center");
+      res = parse_real2(parser, doc, val, -DBL_MAX, DBL_MAX, clip->center);
+    }
+    else if(!strcmp((char*)key->data.scalar.value, "segments")) {
+      SETUP_MASK(SEGMENTS, "segments");
+      res = parse_integer(parser, val, 3, 4096, &clip->segments);
+    } else {
+      log_err(parser, key, "unknown clipping circle parameter `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    if(res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
+  #undef SETUP_MASK
+  }
+
+  #define CHECK_PARAM(Flag, Name)                                              \
+    if(!(mask & BIT(Flag))) {                                                  \
+      log_err(parser, circle,                                                  \
+        "the clipping circle parameter `"Name"' is missing.\n");               \
+      res = RES_BAD_ARG;                                                       \
+      goto error;                                                              \
+    } (void)0
+  CHECK_PARAM(RADIUS, "radius");
+  #undef CHECK_PARAM
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+static res_T
 parse_polyclip
   (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* polyclip,
    struct solparser_polyclip* clip)
 {
-  enum { OPERATION, VERTICES };
+  enum { OPERATION, CONTOUR };
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
@@ -145,8 +230,14 @@ parse_polyclip
       SETUP_MASK(OPERATION, "operation");
       res = parse_clip_op(parser, val, &clip->op);
     } else if(!strcmp((char*)key->data.scalar.value, "vertices")) {
-      SETUP_MASK(VERTICES, "vertices");
+      SETUP_MASK(CONTOUR, "contour");
+      clip->contour_type = SOLPARSER_CLIP_CONTOUR_POLY;
       res = parse_vertices(parser, doc, val, &clip->vertices);
+    }
+    else if(!strcmp((char*)key->data.scalar.value, "circle")) {
+      SETUP_MASK(CONTOUR, "contour");
+      clip->contour_type = SOLPARSER_CLIP_CONTOUR_CIRCLE;
+      res = parse_circle(parser, doc, val, &clip->circle);
     } else {
       log_err(parser, key, "unknown clipping polygon parameter `%s'.\n",
         key->data.scalar.value);
@@ -168,7 +259,7 @@ parse_polyclip
       goto error;                                                              \
     } (void)0
   CHECK_PARAM(OPERATION, "operation");
-  CHECK_PARAM(VERTICES, "vertices");
+  CHECK_PARAM(CONTOUR, "contour");
   #undef CHECK_PARAM
 
 exit:
@@ -305,7 +396,7 @@ parse_cylinder
    const yaml_node_t* cylinder,
    struct solparser_shape_cylinder_id* out_ishape)
 {
-  enum { HEIGHT, RADIUS, SLICES };
+  enum { HEIGHT, RADIUS, SLICES, STACKS };
   struct solparser_shape_cylinder* shape = NULL;
   size_t ishape = SIZE_MAX;
   intptr_t i, n;
@@ -329,6 +420,8 @@ parse_cylinder
   shape = darray_cylinder_data_get(&parser->cylinders) + ishape;
 
   n = cylinder->data.mapping.pairs.top - cylinder->data.mapping.pairs.start;
+  shape->nslices = 16; /* default value */
+  shape->nstacks = 1; /* default value */
   FOR_EACH(i, 0, n) {
     yaml_node_t* key;
     yaml_node_t* val;
@@ -358,6 +451,10 @@ parse_cylinder
     } else if(!strcmp((char*)key->data.scalar.value, "slices")) {
       SETUP_MASK(SLICES, "slices");
       res = parse_integer(parser, val, 4, 4096, &shape->nslices);
+    }
+    else if(!strcmp((char*)key->data.scalar.value, "stacks")) {
+      SETUP_MASK(STACKS, "stacks");
+      res = parse_integer(parser, val, 1, 4096, &shape->nstacks);
     } else {
       log_err(parser, key, "unknown cylinder parameter `%s'.\n",
         key->data.scalar.value);
@@ -381,13 +478,6 @@ parse_cylinder
   CHECK_PARAM(HEIGHT, "height");
   CHECK_PARAM(RADIUS, "radius");
   #undef CHECK_PARAM
-
-  #define DEFAULT_PARAM(Flag, Ptr, Value)                                      \
-    if(!(mask & BIT(Flag))) {                                                  \
-      *(Ptr) = Value;                                                          \
-    } (void)0
-  DEFAULT_PARAM(SLICES, &shape->nslices, 16);
-  #undef DEFAULT_PARAM
 
 exit:
   out_ishape->i = ishape;
@@ -692,6 +782,102 @@ error:
 }
 
 static res_T
+parse_hemisphere
+  (struct solparser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* hemisphere,
+   struct solparser_shape_hemisphere_id* out_ishape)
+{
+  enum { CLIP, RADIUS, SLICES };
+  struct solparser_shape_hemisphere* shape = NULL;
+  size_t ishape = SIZE_MAX;
+  intptr_t i, n;
+  int mask = 0; /* Register the parsed attributes */
+  res_T res = RES_OK;
+  ASSERT(doc && hemisphere && out_ishape);
+
+  if(hemisphere->type != YAML_MAPPING_NODE) {
+    log_err(parser, hemisphere, "expect a mapping of hemisphere parameters.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  /* Allocate a hemispheric shape */
+  ishape = darray_hemisphere_size_get(&parser->hemispheres);
+  res = darray_hemisphere_resize(&parser->hemispheres, ishape + 1);
+  if(res != RES_OK) {
+    log_err(parser, hemisphere, "could not allocate the hemisphere shape.\n");
+    goto error;
+  }
+  shape = darray_hemisphere_data_get(&parser->hemispheres) + ishape;
+
+  n = hemisphere->data.mapping.pairs.top - hemisphere->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, hemisphere->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, hemisphere->data.mapping.pairs.start[i].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(parser, key, "expect hemisphere parameters.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(parser, key,                                                   \
+          "the hemisphere parameter `"Name"' is already defined.\n");          \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if(!strcmp((char*)key->data.scalar.value, "clip")) {
+      SETUP_MASK(CLIP, "clip");
+      res = parse_clip(parser, doc, val, &shape->polyclips);
+    }
+    else if(!strcmp((char*)key->data.scalar.value, "radius")) {
+      SETUP_MASK(RADIUS, "radius");
+      res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &shape->radius);
+    }
+    else if(!strcmp((char*)key->data.scalar.value, "slices")) {
+      SETUP_MASK(SLICES, "slices");
+      res = parse_integer(parser, val, 4, 4096, &shape->nslices);
+    }
+    else {
+      log_err(parser, key, "unknown hemisphere parameter `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    if (res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
+  #undef SETUP_MASK
+  }
+  #define CHECK_PARAM(Flag, Name)                                              \
+    if(!(mask & BIT(Flag))) {                                                  \
+      log_err(parser, hemisphere,                                              \
+        "the hemisphere parameter `"Name"' is missing.\n");                    \
+      res = RES_BAD_ARG;                                                       \
+      goto error;                                                              \
+    } (void)0
+  CHECK_PARAM(RADIUS, "radius");
+  #undef CHECK_PARAM
+
+exit :
+  out_ishape->i = ishape;
+  return res;
+error:
+  if(shape) {
+    darray_hemisphere_pop_back(&parser->hemispheres);
+    ishape = SIZE_MAX;
+  }
+  goto exit;
+}
+
+static res_T
 parse_plane
   (struct solparser* parser,
    yaml_document_t* doc,
@@ -722,6 +908,7 @@ parse_plane
   shape = darray_plane_data_get(&parser->planes) + ishape;
 
   n = plane->data.mapping.pairs.top - plane->data.mapping.pairs.start;
+  shape->nslices = 1; /* default value */
   FOR_EACH(i, 0, n) {
     yaml_node_t* key;
     yaml_node_t* val;
@@ -785,7 +972,7 @@ parse_sphere
    const yaml_node_t* sphere,
    struct solparser_shape_sphere_id* out_ishape)
 {
-  enum { RADIUS, SLICES };
+  enum { RADIUS, SLICES, STACKS };
   struct solparser_shape_sphere* shape = NULL;
   size_t ishape = SIZE_MAX;
   intptr_t i, n;
@@ -809,6 +996,8 @@ parse_sphere
   shape = darray_sphere_data_get(&parser->spheres) + ishape;
 
   n = sphere->data.mapping.pairs.top - sphere->data.mapping.pairs.start;
+  shape->nslices = 16; /* default value */
+  shape->nstacks = 8; /* initial default value */
   FOR_EACH(i, 0, n) {
     yaml_node_t* key;
     yaml_node_t* val;
@@ -835,6 +1024,11 @@ parse_sphere
     } else if(!strcmp((char*)key->data.scalar.value, "slices")) {
       SETUP_MASK(SLICES, "slices");
       res = parse_integer(parser, val, 4, 4096, &shape->nslices);
+      if(!(mask & BIT(STACKS)))
+        shape->nstacks = shape->nslices / 2; /* if unset, new default value */
+    } else if(!strcmp((char*)key->data.scalar.value, "stacks")) {
+      SETUP_MASK(STACKS, "stacks");
+      res = parse_integer(parser, val, 2, 4096, &shape->nstacks);
     } else {
       log_err(parser, key, "unknown sphere parameter `%s'.\n",
         key->data.scalar.value);
@@ -857,13 +1051,6 @@ parse_sphere
     } (void)0
   CHECK_PARAM(RADIUS, "radius");
   #undef CHECK_PARAM
-
-  #define DEFAULT_PARAM(Flag, Ptr, Value)                                      \
-    if(!(mask & BIT(Flag))) {                                                  \
-      *(Ptr) = Value;                                                          \
-    } (void)0
-  DEFAULT_PARAM(SLICES, &shape->nslices, 16);
-  #undef DEFAULT_PARAM
 
 exit:
   out_ishape->i = ishape;
@@ -975,6 +1162,11 @@ parse_object
       SETUP_MASK(SHAPE, "shape");
       shape->type = SOLPARSER_SHAPE_HYPERBOL;
       res = parse_hyperboloid(parser, doc, val, &shape->data.hyperbol);
+    }
+    else if(!strcmp((char*)key->data.scalar.value, "hemisphere")) {
+      SETUP_MASK(SHAPE, "shape");
+      shape->type = SOLPARSER_SHAPE_HEMISPHERE;
+      res = parse_hemisphere(parser, doc, val, &shape->data.hemisphere);
     } else if(!strcmp((char*)key->data.scalar.value, "plane")) {
       SETUP_MASK(SHAPE, "shape");
       shape->type = SOLPARSER_SHAPE_PLANE;

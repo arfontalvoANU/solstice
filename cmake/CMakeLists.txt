@@ -16,7 +16,22 @@
 cmake_minimum_required(VERSION 2.8)
 project(solstice C)
 enable_testing()
+
 option(NO_TEST "Do not build tests" OFF)
+
+if(CMAKE_HOST_UNIX)
+  set(SOLSTICE_DOC "TROFF & HTML" CACHE STRING
+    "Type of documentation to generate and install.")
+else()
+  set(SOLSTICE_DOC "HTML" CACHE STRING
+    "Type of documentation to generate and install.")
+endif()
+
+set_property(CACHE SOLSTICE_DOC PROPERTY STRINGS
+  "HTML"
+  "TROFF"
+  "TROFF & HTML"
+  "NONE")
 
 set(SOLSTICE_SOURCE_DIR ${PROJECT_SOURCE_DIR}/../src/)
 
@@ -30,10 +45,10 @@ find_package(LibYAML REQUIRED)
 find_package(RCMake 0.2.3 REQUIRED)
 find_package(RSys 0.4 REQUIRED)
 find_package(SolAnim 0.1 REQUIRED)
-find_package(SolSolver 0.1.1 REQUIRED)
-find_package(Star3DUT REQUIRED)
+find_package(SolSolver 0.2 REQUIRED)
+find_package(Star3DUT 0.2 REQUIRED)
 find_package(StarSP 0.4 REQUIRED)
-find_package(StarSTL 0.3 REQUIRED)
+find_package(StarSTL 0.3.1 REQUIRED)
 
 if(MSVC)
   find_package(MuslGetopt REQUIRED)
@@ -57,6 +72,9 @@ include_directories(
 ################################################################################
 # Build subprojects
 ################################################################################
+if(NOT SOLSTICE_DOC STREQUAL "NONE")
+  add_subdirectory(doc)
+endif()
 add_subdirectory(parser)
 add_subdirectory(receivers)
 
@@ -74,18 +92,21 @@ set(SOLSTICE_ARGS_DEFAULT_IMG_SPP "1")
 
 configure_file(${SOLSTICE_SOURCE_DIR}/solstice_args.h.in
   ${CMAKE_CURRENT_BINARY_DIR}/solstice_args.h @ONLY)
+configure_file(${SOLSTICE_SOURCE_DIR}/../doc/solstice.1.txt.in
+  ${CMAKE_CURRENT_BINARY_DIR}/doc/solstice.1.txt @ONLY)
 
 ################################################################################
 # Configure and define targets
 ################################################################################
 set(VERSION_MAJOR 0)
-set(VERSION_MINOR 1)
-set(VERSION_PATCH 1)
+set(VERSION_MINOR 2)
+set(VERSION_PATCH 0)
 set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
 set(SOLSTICE_FILES_SRC
   solstice.c
   solstice_args.c
+  solstice_atmosphere.c
   solstice_draw.c
   solstice_dump.c
   solstice_entity.c
@@ -93,11 +114,14 @@ set(SOLSTICE_FILES_SRC
   solstice_node.c
   solstice_object.c
   solstice_solve.c
-  solstice_sun.c)
+  solstice_spectrum.c
+  solstice_sun.c
+  solstice_sun_spectrum.c)
 set(SOLSTICE_FILES_INC
   solstice.h
   solstice_args.h.in
-  solstice_c.h)
+  solstice_c.h
+  solstice_sun_spectrum.h)
 set(SOLSTICE_FILES_DOC COPYING README.md)
 
 # Prepend each file in the `SOLSTICE_FILES_<SRC|INC>' list by `SOLSTICE_SOURCE_DIR'
@@ -143,7 +167,7 @@ if(NOT NO_TEST)
   build_test(test_solstice_simulation)
   function(add_test_simulation _name)
     add_test(NAME test_solstice_simulation_${_name}
-      COMMAND test_solstice_simulation 
+      COMMAND test_solstice_simulation
         $<TARGET_FILE:solstice>
         ${SOLSTICE_SOURCE_DIR}/../yaml/
         ${_name})
@@ -155,6 +179,9 @@ if(NOT NO_TEST)
   add_test_simulation(test03)
   add_test_simulation(test04)
   add_test_simulation(test05)
+  add_test_simulation(test06)
+  add_test_simulation(test07)
+  add_test_simulation(test08)
 
 endif()
 

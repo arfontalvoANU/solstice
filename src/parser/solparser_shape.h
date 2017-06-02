@@ -26,6 +26,11 @@ enum solparser_clip_op {
   SOLPARSER_CLIP_OP_SUB
 };
 
+enum solparser_clip_contour_type {
+  SOLPARSER_CLIP_CONTOUR_CIRCLE,
+  SOLPARSER_CLIP_CONTOUR_POLY
+};
+
 enum solparser_shape_type {
   SOLPARSER_SHAPE_CUBOID,
   SOLPARSER_SHAPE_CYLINDER,
@@ -33,6 +38,7 @@ enum solparser_shape_type {
   SOLPARSER_SHAPE_PARABOL,
   SOLPARSER_SHAPE_PARABOLIC_CYLINDER,
   SOLPARSER_SHAPE_HYPERBOL,
+  SOLPARSER_SHAPE_HEMISPHERE,
   SOLPARSER_SHAPE_PLANE,
   SOLPARSER_SHAPE_SPHERE,
   SOLPARSER_SHAPE_STL /* Imported STereo Lithography */
@@ -41,9 +47,17 @@ enum solparser_shape_type {
 /*******************************************************************************
  * Clipping polygon
  ******************************************************************************/
+struct solparser_circleclip {
+  double radius;
+  double center[2];
+  long segments;
+};
+
 struct solparser_polyclip {
   enum solparser_clip_op op;
+  enum solparser_clip_contour_type contour_type;
   struct darray_double vertices;
+  struct solparser_circleclip circle;
 };
 
 static INLINE void
@@ -260,6 +274,55 @@ solparser_shape_hyperboloid_copy_and_release
 }
 
 /*******************************************************************************
+* Hemisphere shape
+******************************************************************************/
+struct solparser_shape_hemisphere {
+  double radius;
+  struct darray_polyclip polyclips;
+  long nslices; /* < 0 if not defined */
+};
+
+static INLINE void
+solparser_shape_hemisphere_init
+  (struct mem_allocator* allocator,
+   struct solparser_shape_hemisphere* hemisphere)
+{
+  ASSERT(hemisphere);
+  hemisphere->nslices = -1;
+  darray_polyclip_init(allocator, &hemisphere->polyclips);
+}
+
+static INLINE void
+solparser_shape_hemisphere_release
+  (struct solparser_shape_hemisphere* hemisphere)
+{
+  ASSERT(hemisphere);
+  darray_polyclip_release(&hemisphere->polyclips);
+}
+
+static INLINE res_T
+solparser_shape_hemisphere_copy
+  (struct solparser_shape_hemisphere* dst,
+   const struct solparser_shape_hemisphere* src)
+{
+  ASSERT(dst && src);
+  dst->radius = src->radius;
+  dst->nslices = src->nslices;
+  return darray_polyclip_copy(&dst->polyclips, &src->polyclips);
+}
+
+static INLINE res_T
+solparser_shape_hemisphere_copy_and_release
+  (struct solparser_shape_hemisphere* dst,
+   struct solparser_shape_hemisphere* src)
+{
+  ASSERT(dst && src);
+  dst->radius = src->radius;
+  dst->nslices = src->nslices;
+  return darray_polyclip_copy_and_release(&dst->polyclips, &src->polyclips);
+}
+
+/*******************************************************************************
  * Plane shape
  ******************************************************************************/
 struct solparser_shape_plane {
@@ -315,11 +378,13 @@ struct solparser_shape_cylinder {
   double height;
   double radius;
   long nslices;
+  long nstacks;
 };
 
 struct solparser_shape_sphere {
   double radius;
   long nslices;
+  long nstacks;
 };
 
 struct solparser_shape_cuboid_id { size_t i; };
@@ -327,6 +392,7 @@ struct solparser_shape_cylinder_id { size_t i; };
 struct solparser_shape_imported_geometry_id { size_t i; };
 struct solparser_shape_paraboloid_id { size_t i; };
 struct solparser_shape_hyperboloid_id { size_t i; };
+struct solparser_shape_hemisphere_id { size_t i; };
 struct solparser_shape_plane_id { size_t i; };
 struct solparser_shape_sphere_id { size_t i; };
 
@@ -339,6 +405,7 @@ struct solparser_shape {
     struct solparser_shape_paraboloid_id parabol;
     struct solparser_shape_paraboloid_id parabolic_cylinder;
     struct solparser_shape_hyperboloid_id hyperbol;
+    struct solparser_shape_hemisphere_id hemisphere;
     struct solparser_shape_plane_id plane;
     struct solparser_shape_sphere_id sphere;
     struct solparser_shape_imported_geometry_id stl;

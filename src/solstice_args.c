@@ -38,8 +38,9 @@ print_help(const char* program)
 {
   printf(
 "Usage: %s [OPTIONS] [FILE]\n"
-"Integrate the solar flux in a complex solar facility described in FILE. If\n"
-"not define, the solar facility is read from standard input.\n\n",
+"Integrate the solar flux in a complex solar facility described in FILE. If not\n"
+"define, the solar facility is read from standard input. Refer to solstice(1)\n"
+"man page for more informations.\n\n",
     program);
   printf(
 "  -D <dirs>        list of sun directions.\n");
@@ -47,14 +48,12 @@ print_help(const char* program)
 "  -f               do not prompt before overwriting the output file submitted\n"
 "                   with the '-o' option.\n");
   printf(
-"  -H               output hit-on-receiver data (binary format).\n");
+"  -g <dump>        switch in dump geometry mode and configure it.\n");
   printf(
 "  -h               display this help and exit.\n");
   printf(
 "  -n EXPERIMENTS   number of Monte Carlo experiments. Default is %lu.\n",
     SOLSTICE_ARGS_DEFAULT.nexperiments);
-  printf(
-"  -g <dump>        switch in dump geometry mode and configure it.\n");
   printf(
 "  -o OUTPUT        write results to OUTPUT. If not defined, write results to\n"
 "                   standard output.\n");
@@ -69,6 +68,8 @@ print_help(const char* program)
   printf(
 "  -t THREADS       hint on the number of threads to use. By default use as\n"
 "                   many threads as CPU cores.\n");
+  printf(
+"  -v               make the program more verbose.\n");
   printf("\n");
   printf(
 "Solstice (C) 2016-2017 CNRS. This is a free software released under the GNU GPL\n"
@@ -492,13 +493,12 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
   *args = SOLSTICE_ARGS_DEFAULT;
 
   optind = 0;
-  while((opt = getopt(argc, argv, "D:fg:Hhn:o:p:qR:r:t:")) != -1) {
+  while((opt = getopt(argc, argv, "D:fg:hn:o:p:qR:r:t:v")) != -1) {
     switch(opt) {
       case 'D': /* Sun directions */
         res = parse_sun_dir_list(optarg, args);
         break;
       case 'f': args->force_overwriting = 1; break;
-      case 'H': args->output_hits = 1; break;
       case 'h': /* Print short help and exit */
         print_help(argv[0]);
         solstice_args_release(args);
@@ -531,6 +531,7 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
         res = cstr_to_uint(optarg, &args->nthreads);
         if(res == RES_OK && !args->nthreads) res = RES_BAD_ARG;
         break;
+      case 'v': args->verbose = 1; break;
       default: res = RES_BAD_ARG; break;
     }
     if(res != RES_OK) {

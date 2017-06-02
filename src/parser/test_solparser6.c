@@ -35,6 +35,7 @@ main(int argc, char** argv)
   const struct solparser_shape_paraboloid* parabol;
   const struct solparser_shape_plane* plane;
   const struct solparser_shape_hyperboloid* hyperbol;
+  const struct solparser_shape_hemisphere* hemisphere;
   const struct solparser_polyclip* polyclip;
   double pos[2];
   FILE* stream;
@@ -70,7 +71,13 @@ main(int argc, char** argv)
   fprintf(stream, "    - plane:\n");
   fprintf(stream, "        clip :\n");
   fprintf(stream, "        - operation : AND\n");
-  fprintf(stream, "          vertices : [[1, 2], [3, 4], [6, 7]]\n");
+  fprintf(stream, "          circle : { radius: 1, center: [-1, 1], segments: 8 }\n");
+  fprintf(stream, "      material: { ?virtual }\n");
+  fprintf(stream, "    - hemisphere:\n");
+  fprintf(stream, "        radius: 100\n");
+  fprintf(stream, "        clip :\n");
+  fprintf(stream, "          - operation : AND\n");
+  fprintf(stream, "            circle : { radius: 1 }\n");
   fprintf(stream, "      material: { ?virtual }\n");
   rewind(stream);
 
@@ -88,7 +95,7 @@ main(int argc, char** argv)
   CHECK(solparser_entity_get_children_count(entity), 0);
   CHECK(entity->type, SOLPARSER_ENTITY_GEOMETRY);
   geom = solparser_get_geometry(parser, entity->data.geometry);
-  CHECK(solparser_geometry_get_objects_count(geom), 4);
+  CHECK(solparser_geometry_get_objects_count(geom), 5);
 
   obj_id = solparser_geometry_get_object(geom, 0);
   obj = solparser_get_object(parser, obj_id);
@@ -108,6 +115,7 @@ main(int argc, char** argv)
   CHECK(darray_polyclip_size_get(&parabol->polyclips), 1);
   polyclip = darray_polyclip_cdata_get(&parabol->polyclips);
   CHECK(polyclip->op, SOLPARSER_CLIP_OP_AND);
+  CHECK(polyclip->contour_type, SOLPARSER_CLIP_CONTOUR_POLY);
   CHECK(solparser_polyclip_get_vertices_count(polyclip), 3);
   solparser_polyclip_get_vertex(polyclip, 0, pos);
   CHECK(pos[0], 1);
@@ -139,6 +147,28 @@ main(int argc, char** argv)
   CHECK(shape->type, SOLPARSER_SHAPE_PLANE);
   plane = solparser_get_shape_plane(parser, shape->data.plane);
   CHECK(plane->nslices, 1); /* Default value */
+  CHECK(darray_polyclip_size_get(&plane->polyclips), 1);
+  polyclip = darray_polyclip_cdata_get(&plane->polyclips);
+  CHECK(polyclip->contour_type, SOLPARSER_CLIP_CONTOUR_CIRCLE);
+  CHECK(polyclip->circle.radius, 1);
+  CHECK(polyclip->circle.center[0], -1);
+  CHECK(polyclip->circle.center[1], 1);
+  CHECK(polyclip->circle.segments, 8);
+
+  obj_id = solparser_geometry_get_object(geom, 4);
+  obj = solparser_get_object(parser, obj_id);
+  shape = solparser_get_shape(parser, obj->shape);
+  CHECK(shape->type, SOLPARSER_SHAPE_HEMISPHERE);
+  hemisphere = solparser_get_shape_hemisphere(parser, shape->data.hemisphere);;
+  CHECK(hemisphere->radius, 100);
+  CHECK(hemisphere->nslices, -1); /* Default value: auto */
+  CHECK(darray_polyclip_size_get(&hemisphere->polyclips), 1);
+  polyclip = darray_polyclip_cdata_get(&hemisphere->polyclips);
+  CHECK(polyclip->contour_type, SOLPARSER_CLIP_CONTOUR_CIRCLE);
+  CHECK(polyclip->circle.radius, 1);
+  CHECK(polyclip->circle.center[0], 0); /* default value */
+  CHECK(polyclip->circle.center[1], 0); /* default value */
+  CHECK(polyclip->circle.segments, 64); /* Default value */
 
   solparser_entity_iterator_next(&it);
   CHECK(solparser_entity_iterator_eq(&it, &end), 1);

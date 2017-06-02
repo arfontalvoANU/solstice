@@ -39,3 +39,16 @@
     geometry:
       - material: { matte: { reflectivity: 1 } }
         stl: { path: "path/path/path" }
+---
+- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
+- material: &lambertian
+    matte:
+      reflectivity: 0.123
+      normal_map: { path: "path/to my normal map" }
+- entity:
+    name: hop
+    primary: 1
+    geometry:
+      - material: *lambertian
+        stl: { path: "path/path/path" }
+

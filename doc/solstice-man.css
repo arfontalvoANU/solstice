@@ -1,0 +1,87 @@
+/* Copyright (C) CNRS 2016-2017
+ *
+ * This is free style sheet: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This CSS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://www.gnu.org/licenses/. */
+
+body.manpage {
+  font-family:monospace;
+  font-size:2ex;
+  text-align: justify;
+  max-width: 55em;
+  margin: 1em;
+  background: #ffffff
+}
+
+body.manpage .monospaced, .literalblock {
+  margin: 2em;
+  color: #636261
+}
+
+body.manpage em {
+  color: #660000
+}
+
+body.manpage div.verseblock > pre.content {
+  font-family: inherit;
+}
+
+body.manpage h1 {
+  padding-bottom: 0.5em;
+}
+body.manpage h2 {
+  border-style: none;
+}
+body.manpage div.sectionbody {
+  margin-left: 3em;
+}
+
+body.manpage #footer { display: none; }
+
+body.manpage div#toctitle { display: none; }
+
+body.manpage div#toc {
+  display.block ! important; 
+  position:fixed;
+  top:0;
+  left:60em;
+  height:100%;
+  width: 100%;
+  padding:3em 0 0 0;
+  border-left:1px solid #dbdbdb;
+  background: #eeeeee
+}
+
+body.manpage div#toc a, div#toc a:link, div#toc a:visited {
+  margin:0;
+  padding-left: 2em;
+  color:#999999;
+  text-decoration:none;
+}
+
+body.manpage div.toclevel1 {
+  line-height: 1.5em;
+}
+
+body.manpage div.toclevel2 {
+  margin-left: 2em;
+
+}
+
+body.manpage div#toc a:hover {
+  color:#666666;
+}
+
+@media print {
+  body.manpage div#toc { display: none; }
+}
+

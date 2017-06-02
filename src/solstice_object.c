@@ -99,13 +99,23 @@ get_carving_pos(const size_t ivert, double pos[2], void* ctx)
 }
 
 static INLINE enum ssol_clipping_op
-solparser_clip_op_to_ssol_clipping_op(const enum solparser_clip_op op)
+solparser_to_ssol_clip_op(const enum solparser_clip_op op)
 {
   switch(op) {
     case SOLPARSER_CLIP_OP_SUB: return SSOL_SUB;
     case SOLPARSER_CLIP_OP_AND: return SSOL_AND;
     default: FATAL("Unreachable code.\n");
   }
+}
+
+static void
+get_circular(const size_t ivert, double position[2], void* ctx)
+{
+  struct solparser_circleclip* data = (struct solparser_circleclip*)ctx;
+  const double a = (double)ivert * 2 * PI / (double)data->segments;
+  ASSERT(ivert < (size_t)data->segments);
+  position[0] = data->center[0] + data->radius * cos(a);
+  position[1] = data->center[1] + data->radius * sin(a);
 }
 
 static res_T
@@ -190,6 +200,7 @@ error:
   goto exit;
 }
 
+
 static res_T
 create_cylinder
   (struct solstice* solstice,
@@ -243,7 +254,7 @@ create_sphere
   sphere = solparser_get_shape_sphere(solstice->parser, sphere_id);
   ASSERT(sphere->nslices > 0 && sphere->nslices < UINT_MAX);
   res = s3dut_create_sphere(solstice->allocator, sphere->radius,
-    (unsigned)sphere->nslices, (unsigned)(sphere->nslices/2), &mesh);
+    (unsigned)sphere->nslices, (unsigned)(sphere->nslices / 2), &mesh);
   if(res != RES_OK) {
     fprintf(stderr, "Could not create the sphere 3D data.\n");
     goto error;
@@ -283,7 +294,7 @@ create_stl
   stl = solparser_get_shape_stl(solstice->parser, stl_id);
   ASSERT(str_cget(&stl->filename));
 
-  res = sstl_create(NULL, solstice->allocator, 0, &tmp_stl);
+  res = sstl_create(NULL, solstice->allocator, 1, &tmp_stl);
   if(res != RES_OK) {
     fprintf(stderr, "Could not create a Solstice Solver STL shape.\n");
     goto error;
@@ -352,10 +363,21 @@ create_ssol_shape_punched_surface
     const struct solparser_polyclip* clip;
     clip = darray_polyclip_cdata_get(clips) + iclip;
 
-    carvings[iclip].get = get_carving_pos;
-    carvings[iclip].nb_vertices = solparser_polyclip_get_vertices_count(clip);
-    carvings[iclip].operation = solparser_clip_op_to_ssol_clipping_op(clip->op);
-    carvings[iclip].context = (void*)clip;
+    switch(clip->contour_type) {
+      case SOLPARSER_CLIP_CONTOUR_POLY:
+        carvings[iclip].get = get_carving_pos;
+        carvings[iclip].nb_vertices = solparser_polyclip_get_vertices_count(clip);
+        carvings[iclip].operation = solparser_to_ssol_clip_op(clip->op);
+        carvings[iclip].context = (void*)clip;
+        break;
+      case SOLPARSER_CLIP_CONTOUR_CIRCLE:
+        carvings[iclip].get = get_circular;
+        carvings[iclip].nb_vertices = (size_t)clip->circle.segments;
+        carvings[iclip].operation = solparser_to_ssol_clip_op(clip->op);
+        carvings[iclip].context = (void*)&clip->circle;
+        break;
+      default: FATAL("Unreachable code.\n");
+    }
   }
 
   punched_surf.quadric = quadric;
@@ -432,7 +454,6 @@ create_parabolic_cylinder
 
   return create_ssol_shape_punched_surface
     (solstice, &paraboloid->polyclips, &quadric, out_ssol_shape);
-
 }
 
 static res_T
@@ -458,7 +479,32 @@ create_hyperbol
   }
 
   return create_ssol_shape_punched_surface
-  (solstice, &hyperboloid->polyclips, &quadric, out_ssol_shape);
+    (solstice, &hyperboloid->polyclips, &quadric, out_ssol_shape);
+}
+
+static res_T
+create_hemisphere
+  (struct solstice* solstice,
+   const double transform[12],
+   const struct solparser_shape_hemisphere_id id,
+   struct ssol_shape** out_ssol_shape)
+{
+  const struct solparser_shape_hemisphere* hemisphere;
+  struct ssol_quadric quadric = SSOL_QUADRIC_DEFAULT;
+  ASSERT(solstice);
+
+  hemisphere = solparser_get_shape_hemisphere(solstice->parser, id);
+
+  quadric.type = SSOL_QUADRIC_HEMISPHERE;
+  quadric.data.hemisphere.radius = hemisphere->radius;
+  d33_set(quadric.transform, transform);
+  d3_set(quadric.transform + 9, transform + 9);
+  if(hemisphere->nslices > 0) { /* nslices is set */
+    quadric.slices_count_hint = (size_t)hemisphere->nslices;
+  }
+
+  return create_ssol_shape_punched_surface
+    (solstice, &hemisphere->polyclips, &quadric, out_ssol_shape);
 }
 
 static res_T
@@ -500,11 +546,17 @@ create_shaded_shape
   res_T res = RES_OK;
   ASSERT(solstice && ssol_front && ssol_back && ssol_shape);
 
+  *ssol_front = NULL;
+  *ssol_back = NULL;
+  *ssol_shape = NULL;
+
   obj = solparser_get_object(solstice->parser, obj_id);
 
   mtl2 = solparser_get_material_double_sided(solstice->parser, obj->mtl2);
-  solstice_create_ssol_material(solstice, mtl2->front, ssol_front);
-  solstice_create_ssol_material(solstice, mtl2->back, ssol_back);
+  res = solstice_create_ssol_material(solstice, mtl2->front, ssol_front);
+  if(res != RES_OK) goto error;
+  res = solstice_create_ssol_material(solstice, mtl2->back, ssol_back);
+  if(res != RES_OK) goto error;
 
   /* Define the shape transformation */
   rotation[0] = MDEG2RAD(obj->rotation[0]);
@@ -536,6 +588,10 @@ create_shaded_shape
     case SOLPARSER_SHAPE_HYPERBOL:
       res = create_hyperbol(solstice, transform, shape->data.hyperbol, ssol_shape);
       break;
+    case SOLPARSER_SHAPE_HEMISPHERE:
+      res = create_hemisphere
+        (solstice, transform, shape->data.hemisphere, ssol_shape);
+      break;
     case SOLPARSER_SHAPE_PLANE:
       res = create_plane(solstice, transform, shape->data.plane, ssol_shape);
       break;
@@ -547,7 +603,15 @@ create_shaded_shape
       break;
     default: FATAL("Unreachable code.\n"); break;
   }
+  if(res != RES_OK) goto error;
+
+exit:
   return res;
+error:
+  if(*ssol_front) SSOL(material_ref_put(*ssol_front)), *ssol_front = NULL;
+  if(*ssol_back) SSOL(material_ref_put(*ssol_back)), *ssol_back = NULL;
+  if(*ssol_shape) SSOL(shape_ref_put(*ssol_shape)), *ssol_shape = NULL;
+  goto exit;
 }
 
 /*******************************************************************************

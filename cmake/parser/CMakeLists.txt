@@ -31,18 +31,26 @@ include_directories(
 ################################################################################
 set(SOLPARSER_FILES_SRC
   solparser.c
+  solparser_atmosphere.c
   solparser_entity.c
+  solparser_image.c
   solparser_geometry.c
   solparser_material.c
+  solparser_medium.c
+  solparser_mtl_data.c
   solparser_pivot.c
   solparser_sun.c
   solparser_spectrum.c)
 set(SOLPARSER_FILES_INC
   solparser.h
   solparser_c.h
+  solparser_atmosphere.h
   solparser_entity.h
   solparser_geometry.h
+  solparser_image.h
   solparser_material.h
+  solparser_medium.h
+  solparser_mtl_data.h
   solparser_pivot.h
   solparser_shape.h
   solparser_sun.h
@@ -103,8 +111,9 @@ if(NOT NO_TEST)
   new_test(test_solparser6)
   new_test(test_solparser7)
   new_test(test_solparser8)
+  new_test(test_solparser_normal_map)
+  new_test(test_solparser_spectrum)
 
   rcmake_copy_runtime_libraries(test_solparser)
 endif()
-
 

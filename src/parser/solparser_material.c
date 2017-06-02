@@ -22,105 +22,13 @@
  * Helper functions
  ******************************************************************************/
 static res_T
-parse_medium
-  (struct solparser* parser,
-   yaml_document_t* doc,
-   const yaml_node_t* medium,
-   struct solparser_medium_id* out_imedium)
-{
-  enum { ABSORPTIVITY, REFRACTIVE_INDEX };
-  struct solparser_medium* mdm = NULL;
-  size_t imedium = SIZE_MAX;
-  int mask = 0; /* Register the parsed attributes */
-  intptr_t i, n;
-  res_T res = RES_OK;
-  ASSERT(doc && medium && out_imedium);
-
-  if(medium->type != YAML_MAPPING_NODE) {
-    log_err(parser, medium, "expect a mapping of medium attributes.\n");
-    res = RES_BAD_ARG;
-    goto error;
-  }
-
-  /* Allocate the medium */
-  imedium = darray_medium_size_get(&parser->mediums);
-  res = darray_medium_resize(&parser->mediums, imedium + 1);
-  if(res != RES_OK) {
-    log_err(parser, medium, "could not allocate the medium.\n");
-    res = RES_BAD_ARG;
-    goto error;
-  }
-  mdm = darray_medium_data_get(&parser->mediums) + imedium;
-
-  n = medium->data.mapping.pairs.top - medium->data.mapping.pairs.start;
-  FOR_EACH(i, 0, n) {
-    yaml_node_t* key;
-    yaml_node_t* val;
-
-    key = yaml_document_get_node(doc, medium->data.mapping.pairs.start[i].key);
-    val = yaml_document_get_node(doc, medium->data.mapping.pairs.start[i].value);
-    if(key->type != YAML_SCALAR_NODE) {
-      log_err(parser, key, "expect a medium parameter.\n");
-      res = RES_BAD_ARG;
-      goto error;
-    }
-    #define SETUP_MASK(Flag, Name) {                                           \
-      if(mask & BIT(Flag)) {                                                   \
-         log_err(parser, key,"the "Name" of the medium is already defined.\n");\
-         res = RES_BAD_ARG;                                                    \
-         goto error;                                                           \
-      }                                                                        \
-      mask |= BIT(Flag);                                                       \
-    } (void)0
-    if(!strcmp((char*)key->data.scalar.value, "absorptivity")) {
-      SETUP_MASK(ABSORPTIVITY, "absorptivity");
-      res = parse_real(parser, val, 0, DBL_MAX, &mdm->absorptivity);
-    } else if(!strcmp((char*)key->data.scalar.value, "refractive_index")) {
-      SETUP_MASK(REFRACTIVE_INDEX, "refractive_index");
-      res = parse_real
-        (parser, val, nextafter(0, 1), DBL_MAX, &mdm->refractive_index);
-    } else {
-      log_err(parser, key, "unknown medium parameter `%s'.\n",
-        key->data.scalar.value);
-      res = RES_BAD_ARG;
-      goto error;
-    }
-    if(res != RES_OK) {
-      log_node(parser, key);
-      goto error;
-    }
-    #undef SETUP_MASK
-  }
-
-  #define CHECK_PARAM(Flag, Name)                                              \
-  if(!(mask & BIT(Flag))) {                                                    \
-    log_err(parser, medium, "the "Name" of the medium is missing.\n");         \
-    res = RES_BAD_ARG;                                                         \
-    goto error;                                                                \
-  } (void)0
-  CHECK_PARAM(ABSORPTIVITY, "absorptivity");
-  CHECK_PARAM(REFRACTIVE_INDEX, "refractive_index");
-  #undef CHECK_PARAM
-
-exit:
-  out_imedium->i = imedium;
-  return res;
-error:
-  if(imedium) {
-    darray_medium_pop_back(&parser->mediums);
-    imedium = SIZE_MAX;
-  }
-  goto exit;
-}
-
-static res_T
 parse_material_dielectric
   (struct solparser* parser,
    yaml_document_t* doc,
    const yaml_node_t* dielec,
    struct solparser_material_dielectric_id* out_imtl)
 {
-  enum { MEDIUM_I, MEDIUM_T };
+  enum { MEDIUM_I, MEDIUM_T, NORMAL_MAP };
   struct solparser_material_dielectric* mtl = NULL;
   size_t imtl = SIZE_MAX;
   int mask = 0; /* Register the parsed attributes */
@@ -166,7 +74,10 @@ parse_material_dielectric
       }                                                                        \
       mask |= BIT(Flag);                                                       \
     } (void)0
-    if(!strcmp((char*)key->data.scalar.value, "medium_i")) {
+    if(!strcmp((char*)key->data.scalar.value, "normal_map")) {
+      SETUP_MASK(NORMAL_MAP, "normal_map");
+      res = parse_image(parser, doc, val, &mtl->normal_map);
+    } else if(!strcmp((char*)key->data.scalar.value, "medium_i")) {
       SETUP_MASK(MEDIUM_I, "medium_i");
       res = parse_medium(parser, doc, val, &mtl->medium_i);
     } else if(!strcmp((char*)key->data.scalar.value, "medium_t")) {
@@ -214,7 +125,7 @@ parse_material_matte
    const yaml_node_t* matte,
    struct solparser_material_matte_id* out_imtl)
 {
-  enum { REFLECTIVITY };
+  enum { NORMAL_MAP, REFLECTIVITY };
   struct solparser_material_matte* mtl = NULL;
   size_t imtl = SIZE_MAX;
   intptr_t i, n;
@@ -250,14 +161,21 @@ parse_material_matte
       goto error;
     }
 
-    if(!strcmp((char*)key->data.scalar.value, "reflectivity")) {
-      if(mask & BIT(REFLECTIVITY)) {
-        log_err(parser, key, "the matte reflectivity is already defined.\n");
-        res = RES_BAD_ARG;
-        goto error;
-      }
-      mask |= BIT(REFLECTIVITY);
-      res = parse_real(parser, val, 0, 1, &mtl->reflectivity);
+    #define SETUP_MASK(Flag, Name) {                                           \
+      if(mask & BIT(Flag)) {                                                   \
+        log_err(parser, key,                                                   \
+          "the "Name" of the matte material is already defined.\n");           \
+        res = RES_BAD_ARG;                                                     \
+        goto error;                                                            \
+      }                                                                        \
+      mask |= BIT(Flag);                                                       \
+    } (void)0
+    if(!strcmp((char*)key->data.scalar.value, "normal_map")) {
+      SETUP_MASK(NORMAL_MAP, "normal_map");
+      res = parse_image(parser, doc, val, &mtl->normal_map);
+    } else if(!strcmp((char*)key->data.scalar.value, "reflectivity")) {
+      SETUP_MASK(REFLECTIVITY, "reflectivity");
+      res = parse_mtl_data(parser, doc, val, 0, 1, &mtl->reflectivity);
     } else {
       log_err(parser, key, "unknown matte parameter `%s'.\n",
         key->data.scalar.value);
@@ -268,6 +186,7 @@ parse_material_matte
       log_node(parser, key);
       goto error;
     }
+    #undef SETUP_MASK
   }
 
   if(!(mask & BIT(REFLECTIVITY))) {
@@ -294,7 +213,7 @@ parse_material_mirror
    const yaml_node_t* mirror,
    struct solparser_material_mirror_id* out_imtl)
 {
-  enum { REFLECTIVITY, ROUGHNESS };
+  enum { NORMAL_MAP, REFLECTIVITY, ROUGHNESS };
   struct solparser_material_mirror* mtl = NULL;
   size_t imtl = SIZE_MAX;
   int mask = 0; /* Register the parsed attributes */
@@ -340,12 +259,15 @@ parse_material_mirror
       }                                                                        \
       mask |= BIT(Flag);                                                       \
     } (void)0
-    if(!strcmp((char*)key->data.scalar.value, "reflectivity")) {
+    if(!strcmp((char*)key->data.scalar.value, "normal_map")) {
+      SETUP_MASK(NORMAL_MAP, "normal_map");
+      res = parse_image(parser, doc, val, &mtl->normal_map);
+    } else if(!strcmp((char*)key->data.scalar.value, "reflectivity")) {
       SETUP_MASK(REFLECTIVITY, "reflectivity");
-      res = parse_real(parser, val, 0, 1, &mtl->reflectivity);
+      res = parse_mtl_data(parser, doc, val, 0, 1, &mtl->reflectivity);
     } else if(!strcmp((char*)key->data.scalar.value, "roughness")) {
       SETUP_MASK(ROUGHNESS, "roughness");
-      res = parse_real(parser, val, 0, 1, &mtl->roughness);
+      res = parse_mtl_data(parser, doc, val, 0, 1, &mtl->roughness);
     } else {
       log_err(parser, key, "unknown mirror attribute `%s'.\n",
         key->data.scalar.value);
@@ -387,7 +309,7 @@ parse_material_thin_dielectric
    yaml_node_t* thin,
    struct solparser_material_thin_dielectric_id* out_imtl)
 {
-  enum { MEDIUM_I, MEDIUM_T, THICKNESS };
+  enum { MEDIUM_I, MEDIUM_T, NORMAL_MAP, THICKNESS };
   struct solparser_material_thin_dielectric* mtl = NULL;
   size_t imtl = SIZE_MAX;
   int mask = 0; /* Register the parsed attributes */
@@ -434,7 +356,10 @@ parse_material_thin_dielectric
       }                                                                        \
       mask |= BIT(Flag);                                                       \
     } (void)0
-    if(!strcmp((char*)key->data.scalar.value, "medium_i")) {
+    if(!strcmp((char*)key->data.scalar.value, "normal_map")) {
+      SETUP_MASK(NORMAL_MAP, "normal_map");
+      res = parse_image(parser, doc, val, &mtl->normal_map);
+    } else if(!strcmp((char*)key->data.scalar.value, "medium_i")) {
       SETUP_MASK(MEDIUM_I, "medium_i");
       res = parse_medium(parser, doc, val, &mtl->medium_i);
     } else if(!strcmp((char*)key->data.scalar.value, "medium_t")) {

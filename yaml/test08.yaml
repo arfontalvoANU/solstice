@@ -1,0 +1,43 @@
+- sun: &sun { dni: 1 }
+
+- atmosphere:
+    absorption: 0
+
+- material: &lambertian
+    front:
+      matte: { reflectivity: 1 }
+    back:
+      matte: { reflectivity: 1 }
+      
+- material: &specular
+    mirror: { reflectivity: 1, roughness: 0 }
+
+- template: &self_oriented_parabol
+    name: "pivot"
+    transform: { translation: [0, 0, 4], rotation: [0, 0, 90] }
+    x_pivot:
+      target: { sun: *sun }
+    children:
+    - name: "parabol"
+      primary: 1
+      geometry:
+      - material: *specular
+        parabol:
+          focal: 4
+          clip:
+          - operation: AND
+            circle: { radius: 5 }
+    - name: "small_square"
+      transform: { translation: [0, 0, 4] }
+      primary: 0
+      geometry:
+      - material:  { virtual: }
+        plane:
+          clip:
+          - operation: AND
+            vertices: [ [-0.50, -0.50], [-0.50, 0.50], [0.50, 0.50], [0.50, -0.50] ]
+
+- entity:
+    name: "reflector"
+    transform: { rotation: [0, 0, 0], translation: [0, 0, 0] }
+    children: [ *self_oriented_parabol ]

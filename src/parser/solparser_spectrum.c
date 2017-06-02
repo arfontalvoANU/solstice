@@ -13,25 +13,39 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>. */
 
+#define _POSIX_C_SOURCE 200112L /* nextafter support */
+
 #include "solparser_c.h"
 
 /*******************************************************************************
  * Helper functions
  ******************************************************************************/
+static int
+cmp_spectrum_data(const void* op0, const void* op1)
+{
+  const struct solparser_spectrum_data* a = op0;
+  const struct solparser_spectrum_data* b = op1;
+  ASSERT(a && b);
+  if(a->wavelength < b->wavelength) return -1;
+  if(a->wavelength > b->wavelength) return 1;
+  return 0;
+}
+
 static res_T
 parse_spectrum_data
   (struct solparser* parser,
    yaml_document_t* doc,
+   const yaml_node_t* sdata,
    const double lower_bound,
    const double upper_bound,
-   const yaml_node_t* sdata,
    struct solparser_spectrum_data* spectrum_data)
 {
   enum { DATA, WAVELENGTH };
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
-  ASSERT(doc && sdata && lower_bound < upper_bound && spectrum_data);
+  ASSERT(doc && sdata && spectrum_data);
+  ASSERT(lower_bound <= upper_bound);
 
   if(sdata->type != YAML_MAPPING_NODE) {
     log_err(parser, sdata, "expect the definition of a spectrum data.\n");
@@ -63,10 +77,12 @@ parse_spectrum_data
     } (void)0
     if(!strcmp((char*)key->data.scalar.value, "data")) {
       SETUP_MASK(DATA, "data");
-      res = parse_real(parser, val, lower_bound, upper_bound, &spectrum_data->data);
+      res = parse_real
+        (parser, val, lower_bound, upper_bound, &spectrum_data->data);
     } else if(!strcmp((char*)key->data.scalar.value, "wavelength")) {
       SETUP_MASK(WAVELENGTH, "wavelength");
-      res = parse_real(parser, val, 0, DBL_MAX, &spectrum_data->wavelength);
+      res = parse_real(parser, val, nextafter(0, DBL_MAX), DBL_MAX,
+        &spectrum_data->wavelength);
     } else {
       log_err(parser, key, "unknown spectrum data parameter `%s'.\n",
         key->data.scalar.value);
@@ -103,14 +119,17 @@ res_T
 parse_spectrum
   (struct solparser* parser,
    yaml_document_t* doc,
+   const yaml_node_t* spectrum,
    const double lower_bound,
    const double upper_bound,
-   const yaml_node_t* spectrum,
-   struct darray_spectrum_data* data)
+   struct solparser_spectrum_id* out_ispectrum)
 {
+  struct solparser_spectrum* spec = NULL;
+  size_t ispec = SIZE_MAX;
   intptr_t i, n;
   res_T res = RES_OK;
-  ASSERT(doc && spectrum && lower_bound < upper_bound && data);
+  ASSERT(doc && spectrum && out_ispectrum);
+  ASSERT(lower_bound <= upper_bound);
 
   if(spectrum->type != YAML_SEQUENCE_NODE) {
     log_err(parser, spectrum, "expect a list of spectrum data.\n");
@@ -118,8 +137,17 @@ parse_spectrum
     goto error;
   }
 
+  /* Allocate the spectrum */
+  ispec = darray_spectrum_size_get(&parser->spectra);
+  res = darray_spectrum_resize(&parser->spectra, ispec + 1);
+  if(res != RES_OK) {
+    log_err(parser, spectrum, "could not allocate the spectrum.\n");
+    goto error;
+  }
+  spec = darray_spectrum_data_get(&parser->spectra) + ispec;
+
   n = spectrum->data.sequence.items.top - spectrum->data.sequence.items.start;
-  res = darray_spectrum_data_resize(data, (size_t)n);
+  res = darray_spectrum_data_resize(&spec->data, (size_t)n);
   if(res != RES_OK) {
     log_err(parser, spectrum, "could not allocate the list of spectrum data.\n");
     goto error;
@@ -130,16 +158,42 @@ parse_spectrum
     struct solparser_spectrum_data* spectrum_data;
 
     sdata = yaml_document_get_node(doc, spectrum->data.sequence.items.start[i]);
-    spectrum_data = darray_spectrum_data_data_get(data) + i;
+    spectrum_data = darray_spectrum_data_data_get(&spec->data) + i;
     res = parse_spectrum_data
-      (parser, doc, lower_bound, upper_bound, sdata, spectrum_data);
+      (parser, doc, sdata, lower_bound, upper_bound, spectrum_data);
     if(res != RES_OK) goto error;
   }
 
+  if(n == 1) goto exit;
+
+  qsort
+    (darray_spectrum_data_data_get(&spec->data),
+     darray_spectrum_data_size_get(&spec->data),
+     sizeof(struct solparser_spectrum_data),
+     cmp_spectrum_data);
+
+  FOR_EACH(i, 1, n) {
+    const struct solparser_spectrum_data* a;
+    const struct solparser_spectrum_data* b;
+    a = darray_spectrum_data_cdata_get(&spec->data) + i - 1;
+    b = darray_spectrum_data_cdata_get(&spec->data) + i;
+    ASSERT(cmp_spectrum_data(a, b) <= 0);
+    if(a->wavelength == b->wavelength) {
+      log_err(parser, spectrum,
+        "duplicated spectrum entry for the wavelength %g\n", a->wavelength);
+      res = RES_BAD_ARG;
+      goto error;
+    }
+  }
+
 exit:
+  out_ispectrum->i = ispec;
   return res;
 error:
-  darray_spectrum_data_clear(data);
+  if(spec) {
+    darray_spectrum_pop_back(&parser->spectra);
+    ispec = SIZE_MAX;
+  }
   goto exit;
 }
 

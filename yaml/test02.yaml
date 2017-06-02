@@ -1,13 +1,13 @@
-- sun: &sun
-    dni: 1
-    spectrum: [{wavelength: 1, data: 1}]
+- sun: &sun { dni: 1 }
 
 - material: &specular
     mirror: { reflectivity: 1, roughness: 0 }
       
       
 - geometry: &small_square
-    - material: { virtual: }
+    - material: 
+        front: { virtual: }
+        back: { matte: { reflectivity: 0 } }
       plane:
         clip:
           - operation: AND

@@ -33,6 +33,7 @@ main(int argc, char** argv)
   const struct solparser_medium* medium;
   const struct solparser_object* obj;
   const struct solparser_shape* shape;
+  const struct solparser_spectrum* spectrum;
   FILE* stream;
   (void)argc, (void)argv;
 
@@ -53,10 +54,18 @@ main(int argc, char** argv)
   fprintf(stream, "            thickness: 0.123\n");
   fprintf(stream, "            medium_i: &outside\n");
   fprintf(stream, "              refractive_index: 1\n");
-  fprintf(stream, "              absorptivity: 0\n");
+  fprintf(stream, "              absorption: 0\n");
   fprintf(stream, "            medium_t: &inside\n");
-  fprintf(stream, "              refractive_index: 1.5\n");
-  fprintf(stream, "              absorptivity: 20\n");
+  fprintf(stream, "              refractive_index: \n");
+  fprintf(stream, "              - {wavelength: 1.2, data: 2.3}\n");
+  fprintf(stream, "              - {wavelength: 4.5, data: 6.7}\n");
+  fprintf(stream, "              - {wavelength: 0.5, data: 0.25}\n");
+  fprintf(stream, "              absorption:\n");
+  fprintf(stream, "              - {wavelength: 3, data: 3}\n");
+  fprintf(stream, "              - {wavelength: 1, data: 1}\n");
+  fprintf(stream, "              - {wavelength: 5, data: 5}\n");
+  fprintf(stream, "              - {wavelength: 4, data: 4}\n");
+  fprintf(stream, "              - {wavelength: 2, data: 2}\n");
   rewind(stream);
 
   CHECK(solparser_setup(parser, NULL, stream), RES_OK);
@@ -87,11 +96,35 @@ main(int argc, char** argv)
   CHECK(thin->thickness, 0.123);
 
   medium = solparser_get_medium(parser, thin->medium_i);
-  CHECK(medium->refractive_index, 1);
-  CHECK(medium->absorptivity, 0);
+  CHECK(medium->refractive_index.type, SOLPARSER_MTL_DATA_REAL);
+  CHECK(medium->refractive_index.value.real, 1);
+  CHECK(medium->absorption.type, SOLPARSER_MTL_DATA_REAL);
+  CHECK(medium->absorption.value.real, 0);
   medium = solparser_get_medium(parser, thin->medium_t);
-  CHECK(medium->refractive_index, 1.5);
-  CHECK(medium->absorptivity, 20);
+
+  CHECK(medium->refractive_index.type, SOLPARSER_MTL_DATA_SPECTRUM);
+  spectrum = solparser_get_spectrum(parser, medium->refractive_index.value.spectrum);
+  CHECK(darray_spectrum_data_size_get(&spectrum->data), 3);
+  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[0].wavelength, 0.5);
+  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[1].wavelength, 1.2);
+  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[2].wavelength, 4.5);
+  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[0].data, 0.25);
+  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[1].data, 2.3);
+  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[2].data, 6.7);
+
+  CHECK(medium->absorption.type, SOLPARSER_MTL_DATA_SPECTRUM);
+  spectrum = solparser_get_spectrum(parser, medium->absorption.value.spectrum);
+  CHECK(darray_spectrum_data_size_get(&spectrum->data), 5);
+  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[0].wavelength, 1);
+  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[1].wavelength, 2);
+  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[2].wavelength, 3);
+  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[3].wavelength, 4);
+  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[4].wavelength, 5);
+  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[0].data, 1);
+  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[1].data, 2);
+  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[2].data, 3);
+  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[3].data, 4);
+  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[4].data, 5);
 
   CHECK(solparser_load(parser), RES_BAD_OP);
   solparser_ref_put(parser);

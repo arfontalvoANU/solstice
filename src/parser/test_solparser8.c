@@ -27,22 +27,34 @@ main(int argc, char** argv)
   struct solparser_object_id obj_id;
   const struct solparser_entity* entity;
   const struct solparser_geometry* geom;
-  const struct solparser_medium* medium;
+  const struct solparser_medium* vacuum;
+  const struct solparser_medium* glass;
   const struct solparser_material_double_sided* mtl2;
   const struct solparser_material* mtl;
   const struct solparser_material_dielectric* dielec;
   const struct solparser_object* obj;
   const struct solparser_shape* shape;
+  const struct solparser_spectrum* spectrum;
   FILE* stream;
   (void)argc, (void)argv;
 
   CHECK(mem_init_proxy_allocator(&allocator, &mem_default_allocator), RES_OK);
-  solparser_create(&allocator, &parser);
+  CHECK(solparser_create(&allocator, &parser), RES_OK);
 
   stream = tmpfile();
   NCHECK(stream, NULL);
 
   fprintf(stream, "- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1 }] }\n");
+  fprintf(stream, "- medium: &vacuum {refractive_index: 1, absorption: 0}\n");
+  fprintf(stream, "- medium: &glass \n");
+  fprintf(stream, "    refractive_index: 1.5\n");
+  fprintf(stream, "    absorption: \n");
+  fprintf(stream, "    - {wavelength: 1, data: 21}\n");
+  fprintf(stream, "    - {wavelength: 2, data: 22}\n");
+  fprintf(stream, "    - {wavelength: 3, data: 23}\n");
+  fprintf(stream, "    - {wavelength: 4, data: 24}\n");
+  fprintf(stream, "    - {wavelength: 5, data: 25}\n");
+  fprintf(stream, "    - {wavelength: 6, data: 26}\n");
   fprintf(stream, "- entity:\n");
   fprintf(stream, "    name: test\n");
   fprintf(stream, "    primary: 0\n");
@@ -51,16 +63,12 @@ main(int argc, char** argv)
   fprintf(stream, "        material:\n");
   fprintf(stream, "          front:\n");
   fprintf(stream, "            dielectric:\n");
-  fprintf(stream, "              medium_i: &outside\n");
-  fprintf(stream, "                refractive_index: 1\n");
-  fprintf(stream, "                absorptivity: 0\n");
-  fprintf(stream, "              medium_t: &inside\n");
-  fprintf(stream, "                refractive_index: 1.5\n");
-  fprintf(stream, "                absorptivity: 20\n");
+  fprintf(stream, "              medium_i: *vacuum\n");
+  fprintf(stream, "              medium_t: *glass\n");
   fprintf(stream, "          back:\n");
   fprintf(stream, "            dielectric:\n");
-  fprintf(stream, "              medium_i: *inside\n");
-  fprintf(stream, "              medium_t: *outside\n");
+  fprintf(stream, "              medium_i: *glass\n");
+  fprintf(stream, "              medium_t: *vacuum\n");
   rewind(stream);
 
   CHECK(solparser_setup(parser, NULL, stream), RES_OK);
@@ -88,22 +96,36 @@ main(int argc, char** argv)
   mtl = solparser_get_material(parser, mtl2->front);
   CHECK(mtl->type, SOLPARSER_MATERIAL_DIELECTRIC);
   dielec = solparser_get_material_dielectric(parser, mtl->data.dielectric);
-  medium = solparser_get_medium(parser, dielec->medium_i);
-  CHECK(medium->refractive_index, 1);
-  CHECK(medium->absorptivity, 0);
-  medium = solparser_get_medium(parser, dielec->medium_t);
-  CHECK(medium->refractive_index, 1.5);
-  CHECK(medium->absorptivity, 20);
+  vacuum = solparser_get_medium(parser, dielec->medium_i);
+  CHECK(vacuum->refractive_index.type, SOLPARSER_MTL_DATA_REAL);
+  CHECK(vacuum->refractive_index.value.real, 1);
+  CHECK(vacuum->absorption.type, SOLPARSER_MTL_DATA_REAL);
+  CHECK(vacuum->absorption.value.real, 0);
+
+  glass = solparser_get_medium(parser, dielec->medium_t);
+  CHECK(glass->refractive_index.type, SOLPARSER_MTL_DATA_REAL);
+  CHECK(glass->refractive_index.value.real, 1.5);
+  CHECK(glass->absorption.type, SOLPARSER_MTL_DATA_SPECTRUM);
+  spectrum = solparser_get_spectrum(parser, glass->absorption.value.spectrum);
+  CHECK(darray_spectrum_data_size_get(&spectrum->data), 6);
+  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[0].wavelength, 1);
+  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[1].wavelength, 2);
+  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[2].wavelength, 3);
+  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[3].wavelength, 4);
+  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[4].wavelength, 5);
+  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[5].wavelength, 6);
+  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[0].data, 21);
+  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[1].data, 22);
+  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[2].data, 23);
+  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[3].data, 24);
+  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[4].data, 25);
+  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[5].data, 26);
 
   mtl = solparser_get_material(parser, mtl2->back);
   CHECK(mtl->type, SOLPARSER_MATERIAL_DIELECTRIC);
   dielec = solparser_get_material_dielectric(parser, mtl->data.dielectric);
-  medium = solparser_get_medium(parser, dielec->medium_i);
-  CHECK(medium->refractive_index, 1.5);
-  CHECK(medium->absorptivity, 20);
-  medium = solparser_get_medium(parser, dielec->medium_t);
-  CHECK(medium->refractive_index, 1);
-  CHECK(medium->absorptivity, 0);
+  CHECK(solparser_get_medium(parser, dielec->medium_i), glass);
+  CHECK(solparser_get_medium(parser, dielec->medium_t), vacuum);
 
   CHECK(solparser_load(parser), RES_BAD_OP);
   solparser_ref_put(parser);

@@ -159,8 +159,10 @@ main(int argc, char** argv)
   mtl = solparser_get_material(parser, mtl2->front);
   CHECK(mtl->type, SOLPARSER_MATERIAL_MIRROR);
   mirror = solparser_get_material_mirror(parser, mtl->data.mirror);
-  CHECK(mirror->reflectivity, 0.2);
-  CHECK(mirror->roughness, 0.1);
+  CHECK(mirror->reflectivity.type, SOLPARSER_MTL_DATA_REAL);
+  CHECK(mirror->reflectivity.value.real, 0.2);
+  CHECK(mirror->roughness.type, SOLPARSER_MTL_DATA_REAL);
+  CHECK(mirror->roughness.value.real, 0.1);
 
   shape = solparser_get_shape(parser, obj->shape);
   CHECK(shape->type, SOLPARSER_SHAPE_CUBOID);

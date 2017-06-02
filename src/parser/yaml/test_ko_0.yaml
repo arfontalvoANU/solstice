@@ -39,11 +39,17 @@
 # data should be a number
 - sun: { spectrum: [{wavelength: 1, data: "dummy"}] }
 ---
+# 0 invalid
+- sun: { spectrum: [{wavelength: 0, data: 1}] }
+---
 # -1 invalid
 - sun: { spectrum: [{wavelength: -1, data: 1}] }
 ---
 # -1 invalid
 - sun: { spectrum: [{wavelength: 1, data: -1}] }
+---
+# invalid non-increasing wavelengths
+- sun: { spectrum: [{wavelength: 1, data: 1}, {wavelength: 1, data: 2}] }
 ---
 
 #
@@ -130,9 +136,6 @@
 #    <pillbox> | <buie>
 #
 
-# missing spectrum
-- sun: { dni: 1 }
----
 # missing dni
 - sun: { spectrum: [{wavelength: 1, data: 1}] }
 ---
@@ -201,6 +204,7 @@
 # <matte> ::=
 #   matte:
 #     reflectivity: REAL # in [0, 1]
+# [   normal_map: { path: PATH } ]
 #
 
 # missing matte parameters
@@ -221,7 +225,25 @@
 # 2x reflectivity
 - material: { matte: { reflectivity: 1, reflectivity: 1 } }
 ---
-
+# bad normal map
+- material:
+    matte: { reflectivity: 1, normal_map: map }
+---
+# bad normal map
+- material:
+    matte: { reflectivity: 1, normal_map: { path: } }
+---
+# Missing reflectivity
+- material:
+    matte: { normal_map: { path: test } }
+---
+# 2x normal map
+- material:
+    matte:
+      reflectivity: 1
+      normal_map: { path: test }
+      normal_map: { path: test2}
+#
 #
 # <thin-dielectric> ::=
 #   thin_dielectric:
@@ -230,31 +252,31 @@
 #     medium_t: <dielectric-medium>
 #
 
-# invalid absorptivity
+# invalid absorption
 - material:
     thin_dielectric:
       thickness: 0
-      medium_i: &m { refractive_index: 1, absorptivity: -1 }
+      medium_i: &m { refractive_index: 1, absorption: -1 }
       medium_t: *m
 ---
 # invalid thickness
 - material:
     thin_dielectric:
       thickness: -0.01
-      medium_i: &m { refractive_index: 1, absorptivity: 0 }
+      medium_i: &m { refractive_index: 1, absorption: 0 }
       medium_t: *m
 ---
 # invalid refractive index
 - material:
     thin_dielectric:
       thickness: 0
-      medium_i: &m { refractive_index: 0, absorptivity: 0 }
+      medium_i: &m { refractive_index: 0, absorption: 0 }
       medium_t: *m
 ---
 # missing thickness
 - material:
     thin_dielectric:
-      medium_i: &m { refractive_index: 1, absorptivity: 0 }
+      medium_i: &m { refractive_index: 1, absorption: 0 }
       medium_t: *m
 ---
 
@@ -268,22 +290,22 @@
 # invalid refractive_index
 - material:
     dielectric:
-      medium_i: &m { refractive_index: 0, absorptivity: 0 }
+      medium_i: &m { refractive_index: 0, absorption: 0 }
       medium_t: *m
 ---
-# invalid absorptivity
+# invalid absorption
 - material:
     dielectric:
-      medium_i: &m { refractive_index: 1, absorptivity: -1 }
+      medium_i: &m { refractive_index: 1, absorption: -1 }
       medium_t: *m
 ---
 # missing refractive_index
 - material:
     dielectric:
-      medium_i: &m { absorptivity: 0 }
+      medium_i: &m { absorption: 0 }
       medium_t: *m
 ---
-# missing absorptivity
+# missing absorption
 - material:
     dielectric:
       medium_i: &m { refractive_index: 1 }
@@ -292,12 +314,12 @@
 # missing medium_i
 - material:
     dielectric:
-      medium_t: { refractive_index: 1, absorptivity: 0 }
+      medium_t: { refractive_index: 1, absorption: 0 }
 ---
 # missing medium_t
 - material:
     dielectric:
-      medium_i: { refractive_index: 1, absorptivity: 0 }
+      medium_i: { refractive_index: 1, absorption: 0 }
 ---
 
 #
@@ -372,7 +394,21 @@
 #
 # <polyclip> ::=
 #   operation: <AND|SUB>
-#   vertices: <vertices-list>
+#   <contour-descriptor>
+#  
+# <contour-descriptor> ::=
+#    <vertices-descriptor>
+#  | <circle-descriptor>
+#  
+# <vertices-descriptor> ::=
+#  vertices: <vertices-list>
+#
+# <circle-descriptor> ::=
+#  circle: 
+#    radius: REAL # in ]0, INF)
+# [  center: <real2>. Default 0,0 ]
+# [  segments: INTEGER # in [3, 4096). Default 64 ]
+#
 #
 # <vertices-list> ::=
 #   - <real2>
@@ -410,7 +446,7 @@
         clip:
           - operation: dummy
 ---
-# missing vertices parameter
+# missing contour parameter
 - geometry:
     - plane:
         clip:
@@ -448,6 +484,108 @@
         clip:
           - operation: AND
             vertices: [ [0, 1, 2], [3, 4], [6, 7] ]
+---
+# missing circle definition
+- geometry:
+    - plane:
+        clip:
+          - circle: 
+---
+# missing radius value
+- geometry:
+    - plane:
+        clip:
+          - circle: { radius: }
+---
+# missing center description
+- geometry:
+    - plane:
+        clip:
+          - circle: { center: }
+---
+# invalid number "dummy"
+- geometry:
+    - plane:
+        clip:
+          - operation: AND
+            circle: { radius: "dummy" }
+---
+# invalid point "dummy"
+- geometry:
+    - plane:
+        clip:
+          - operation: AND
+            circle: { center: "dummy" }
+---
+# invalid point 1
+- geometry:
+    - plane:
+        clip:
+          - operation: AND
+            circle: { center: 1 }
+---
+# invalid number "dummy"
+- geometry:
+    - plane:
+        clip:
+          - operation: AND
+            circle: { segments: "dummy" }
+---
+# 0 invalid
+- geometry:
+    - plane:
+        clip:
+          - circle: { radius: 0 }
+---
+# 2 invalid
+- geometry:
+    - plane:
+        clip:
+          - circle: { segments: 2 }
+---
+# missing radius
+- geometry:
+    - plane:
+        clip:
+          - circle: { center: [4, -10] }
+---
+# missing radius
+- geometry:
+    - plane:
+        clip:
+          - circle: { segments: 10 }
+---
+# 2x radius
+- geometry:
+    - plane:
+        clip:
+          - circle: { radius: 1, radius: 1 }
+---
+# 2x center
+- geometry:
+    - plane:
+        clip:
+          - circle: { center: [4, -10], center: [4, -10] }
+---
+# 2x segments
+- geometry:
+    - plane:
+        clip:
+          - circle: { segments: 10, segments: 10 }
+---
+# 2x contour
+- geometry:
+    - plane:
+        clip:
+          - vertices: [ [1, 2], [3, 4], [6, 7] ]
+            circle: { radius: 1 }
+---
+# 2x operation
+- geometry:
+    - plane:
+        clip:
+          - operation: AND
+            operation: OR
 ---
 
 #
@@ -493,6 +631,7 @@
 #     height: REAL # in ]0, INF)
 #     radius: REAL # in ]0, INF)
 # [   slices: INTEGER ] # in [4, 4096]. Default 16
+# [   stacks: INTEGER ] # in [1, 4096]. Default 1
 #
 
 # missing cylinder definition
@@ -522,6 +661,9 @@
 # slices should be a number
 - geometry: [ { cylinder: { slices: "dummy" } } ]
 ---
+#   stacks
+- geometry: [ { cylinder: {   stacks: "dummy" } } ]
+---
 # -1 invalid
 - geometry: [ { cylinder: { radius: -1 } } ]
 ---
@@ -543,14 +685,26 @@
 # 2x slices
 - geometry: [ { cylinder: { slices: 10, slices: 10 } } ]
 ---
+#   stacks
+- geometry: [ { cylinder: {   stacks: 10,   stacks: 10 } } ]
+---
 # 1 invalid
 - geometry: [ {  cylinder: { height: 1, radius: 1, slices: 1 } } ]
 ---
 # 4097 invalid
 - geometry: [ {  cylinder: { height: 1, radius: 1, slices: 4097 } } ]
 ---
+# 0 invalid
+- geometry: [ {  cylinder: { height: 1, radius: 1,   stacks: 0 } } ]
+---
+# 4097 invalid
+- geometry: [ {  cylinder: { height: 1, radius: 1,   stacks: 4097 } } ]
+---
 # 12.5 invalid
 - geometry: [ {  cylinder: { height: 1, radius: 1, slices: 12.5 } } ]
+---
+# 12.5 invalid
+- geometry: [ {  cylinder: { height: 1, radius: 1,   stacks: 12.5 } } ]
 ---
 
 #
@@ -862,6 +1016,9 @@
 # slices should be a number
 - geometry: [ { sphere: { slices: "dummy" } } ]
 ---
+# stacks should be a number
+- geometry: [ { sphere: { stacks: "dummy" } } ]
+---
 # -1 invalid
 - geometry: [ { sphere: { radius: -1 } } ]
 ---
@@ -874,11 +1031,20 @@
 # 4097 invalid
 - geometry: [ { sphere: { radius: 1, slices: 4097 } } ]
 ---
+# 0 invalid
+- geometry: [ { sphere: { radius: 1, stacks: 0 } } ]
+---
+# 4097 invalid
+- geometry: [ { sphere: { radius: 1, stacks: 4097 } } ]
+---
 # 2x radius
 - geometry: [ { sphere: { radius: 1,  radius: 1 } } ]
 ---
 # 2x slices
 - geometry: [ { sphere: { slices: 10,  slices: 10 } } ]
+---
+# 2x stacks
+- geometry: [ { sphere: { stacks: 10,  stacks: 10 } } ]
 ---
 
 #
@@ -1729,9 +1895,49 @@
 ---
 
 #
+# <atmosphere> ::=
+#   atmosphere: 
+#     absorption: <mtl-data> # in [0, 1]
+#
+
+# missing atmosphere definition
+- atmosphere:
+---
+# unknown dummy parameter
+- atmosphere:
+    dummy: 1
+---
+# missing absorption definition
+- atmosphere:
+    absorption: 
+---
+# absorption should be a number
+- atmosphere:
+    absorption: "dummy"
+---
+# 2 invalid
+- atmosphere:
+    absorption: 2
+---
+# 0 invalid
+- atmosphere:
+    absorption: [{wavelength: 0, data: 1}]
+---
+# 2 invalid
+- atmosphere:
+    absorption: [{wavelength: 0, data: 2}]
+---
+# 2x absorption
+- atmosphere:
+    absorption: 0.1
+    absorption: [{wavelength: 1, data: 1}]
+---
+
+#
 # <solar-factory> ::=
 #   <sun>
 #   <items>
+# [ <atmosphere> ]
 #
 # <items> ::=
 #   - <item>
@@ -1754,4 +1960,13 @@
     geometry:
       - cuboid: { size: [1, 2, 3] }
         material: { matte: { reflectivity: 1 } }
-
+---
+# 2x sun
+- sun: { dni: 1000, spectrum: [{wavelength: 1, data: 1}] }
+- sun: { dni: 1000, spectrum: [{wavelength: 1, data: 1}] }
+---
+# 2x atmosphere
+- atmosphere:
+    absorption: 0.1
+- atmosphere:
+    absorption: 0.1

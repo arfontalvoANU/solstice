@@ -1,0 +1,39 @@
+- sun: &sun { dni: 1 }
+
+- atmosphere:
+    absorption: [{wavelength: 1, data: 0},{wavelength: 10, data: 0}]
+
+- material: &specular
+    front:
+      mirror: { reflectivity: 1, roughness: 0 }
+    back:
+      mirror: { reflectivity: 1, roughness: 0 }
+
+- geometry: &hemisphere
+    - material: *specular
+      hemisphere:
+        radius: 3
+        slices: 32
+
+- geometry: &big_square
+    - material: { virtual: }
+      plane:
+        clip:
+          - operation: AND
+            vertices:
+              - [-5.00, -5.00]
+              - [-5.00, 5.00]
+              - [5.00, 5.00]
+              - [5.00, -5.00]
+
+- entity:
+    name: "reflector"
+    primary: 1
+    transform: { rotation: [0, 0, 0], translation: [0, 0, 0] }
+    geometry: *hemisphere
+
+- entity:
+    name: "square_receiver"
+    primary: 0
+    transform: { rotation: [0, 0, 0], translation: [0, 0, 4] }
+    geometry: *big_square
