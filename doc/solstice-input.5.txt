@@ -998,6 +998,142 @@ purely specular while the back faces are diffuse:
 - entity: {name: H9, children: [*H], transform: {translation: [80, 20,20]}}
 .......
 
+This example illustrates the use of quadrics and refractive materials: in this
+example, three partial *parabols* with various focal distances and positions
+concentrate incoming radiation at a common focal position. But a *hyperbol* is
+located between the parabols and their common focal position, which is also
+one of the two focals of the hyperbol. Radiation is therefore redirected to
+the second focal of the hyperbol, where the square target is located. Finally,
+a *cuboid* using a glass material is located between the hyperbol and the
+target. In this example, a small fraction of incoming power is absorbed by the
+target. The rest is either missing the target, absorbed or refracted by the
+glass. Furthermore, this example illustrates the use of a *spectrum* for
+*refractive index* and *absorption* by various *media* (air and glass).
+.......
+# Spectra
+- spectrum: &solar_spectrum
+  - {wavelength: 0.3, data: 1.0}
+  - {wavelength: 0.4, data: 2.0}
+  - {wavelength: 0.5, data: 0.5}
+  - {wavelength: 0.6, data: 3.5}
+  - {wavelength: 0.7, data: 1.5}
+  - {wavelength: 0.8, data: 0.8}
+
+- spectrum: &air_kabs
+  - {wavelength: 0.3, data: 1.0e-4}
+  - {wavelength: 0.4, data: 1.0e-5}
+  - {wavelength: 0.5, data: 2.0e-5}
+  - {wavelength: 0.6, data: 2.0e-4}
+  - {wavelength: 0.7, data: 3.0e-5}
+  - {wavelength: 0.8, data: 1.0e-4}
+
+- spectrum: &glass_kabs
+  - {wavelength: 0.3, data: 1.0e-2}
+  - {wavelength: 0.4, data: 1.0e-3}
+  - {wavelength: 0.5, data: 2.0e-3}
+  - {wavelength: 0.6, data: 2.0e-2}
+  - {wavelength: 0.7, data: 3.0e-3}
+  - {wavelength: 0.8, data: 1.0e-3}
+
+- spectrum: &glass_ref_index
+  - {wavelength: 0.30, data: 1.40}
+  - {wavelength: 0.40, data: 1.39}
+  - {wavelength: 0.50, data: 1.37}
+  - {wavelength: 0.60, data: 1.34}
+  - {wavelength: 0.70, data: 1.30}
+  - {wavelength: 0.80, data: 1.25}
+
+# Media
+- medium: &air_medium
+    refractive_index: 1
+    absorption: *air_kabs
+
+- medium: &glass_medium
+    refractive_index: *glass_ref_index
+    absorption: *glass_kabs
+
+# Sun & atmosphere
+- sun: {dni: 1, spectrum: *solar_spectrum}
+- atmosphere: {absorption: *air_kabs}
+
+# Materials
+- material: &specular {mirror: {reflectivity: 1, roughness: 0}}
+- material: &black {matte: {reflectivity: 0}}
+- material: &glass
+    front: {dielectric: {medium_i: *air_medium, medium_t: *glass_medium}}
+    back:  {dielectric: {medium_i: *glass_medium, medium_t: *air_medium}}
+
+# Pimary reflectors
+- entity:
+    name: "primary_reflector1"
+    primary: 1
+    transform: {translation: [0, 0, -2.0]}
+    geometry:
+    - material: *specular
+      parabol:
+        focal: 12
+        clip:
+        - {operation: AND, circle: {radius: 10}}
+        - {operation: SUB, circle: {radius: 5}}
+
+- entity:
+    name: "primary_reflector2"
+    primary: 1
+    transform: {translation: [0, 0, -4]}
+    geometry:
+    - material: *specular
+      parabol:
+        focal: 14
+        clip:
+        - {operation: AND, circle: {radius: 15}}
+        - {operation: SUB, circle: {radius: 10}}
+
+- entity:
+    name: "primary_reflector3"
+    primary: 1
+    transform: {translation: [0, 0, -6]}
+    geometry:
+    - material: *specular
+      parabol:
+        focal: 16
+        clip:
+        - {operation: AND, circle: {radius: 20}}
+        - {operation: SUB, circle: {radius: 15}}
+
+# Secondary reflector
+- entity:
+    name: "secondary_reflector"
+    primary: 0
+    transform: {translation: [0, 0, 6]}
+    geometry:
+    - material: *specular
+      hyperbol:
+        focals: {real: 16.0, image: 4}
+        clip: [{operation: AND, circle: {radius: 5}}]
+
+# Glass box
+- entity:
+    name: "glass_slide"
+    primary: 0 # The entity is not sampled as a primary reflector
+    geometry:
+    - material: *glass
+      cuboid: {size: [10,10,0.5]}
+      transform: {translation: [0, 0, 0.25]}
+
+# Receiver
+- entity:
+    name: "square_receiver"
+    primary: 0 # The entity is not sampled as a primary reflector
+    transform: {translation: [0, 0, -10] }
+    geometry:
+    - material: *black
+      plane:
+        clip:
+        - operation: AND
+          vertices: [[-0.5,-0.5],[-0.5,0.5],[0.5,0.5],[0.5,-0.5]]
+.......
+
+
 NOTES
 -----
 1. YAML Ain't Markup Language - <http://yaml.org>
