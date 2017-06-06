@@ -2,7 +2,7 @@
 
 The purpose of this program is to compute the total power collected by a
 concentrated solar plant, and to evaluate various efficiencies for each primary
-reflector: it compute losses due to cosine effect, to shadowing and
+reflector: it computes losses due to cosine effect, to shadowing and
 masking, to orientation and surface irregularities, to reflectivity and to
 atmospheric transmission. The efficiency for each one of these effects is
 subsequently computed for each reflector, which provides insightful information
@@ -48,7 +48,7 @@ It also depends on the
 The documentation is written with the
 [AsciiDoc](http://www.methods.co.nz/asciidoc/) text format and relies on its
 tool suite to generate HTML and/or ROFF man pages. If the AsciiDoc tools cannot
-be find, the documentation will be not built.
+be found, the documentation will be not built.
 
 First ensure that CMake is installed on your system. Then install the RCMake
 package as well as the aforementioned prerequisites. Finally generate the
@@ -64,7 +64,7 @@ informations on CMake.
 
 - Add the support of an optional normal map to the materials. It defines
   spatially varying normals in the tangent space of the surface. Currently,
-  only the quadric surfaces are parameterized: using a normal mapped material
+  only the quadric surfaces are parameterizable: using a normal mapped material
   on the other shapes will produce unforeseen behaviors.
 - Add the support of spectral data to the materials: a material attribute can be
   either a scalar or follow a spectral distribution.
