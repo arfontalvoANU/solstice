@@ -60,6 +60,11 @@ informations on CMake.
 
 ## Release notes
 
+### Version 0.2.1
+
+- Fix the install target on Windows: copy the solstice runtime libraries in the
+  solstice installation path.
+
 ### Version 0.2
 
 - Add the support of an optional normal map to the materials. It defines
