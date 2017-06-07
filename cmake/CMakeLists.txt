@@ -193,4 +193,4 @@ install(TARGETS solstice
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin)
 install(FILES ${SOLSTICE_FILES_DOC} DESTINATION share/doc/solstice)
-
+rcmake_install_runtime_libraries(solstice)
