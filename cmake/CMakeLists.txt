@@ -100,7 +100,7 @@ configure_file(${SOLSTICE_SOURCE_DIR}/../doc/solstice.1.txt.in
 ################################################################################
 set(VERSION_MAJOR 0)
 set(VERSION_MINOR 2)
-set(VERSION_PATCH 0)
+set(VERSION_PATCH 1)
 set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
 set(SOLSTICE_FILES_SRC
@@ -193,4 +193,4 @@ install(TARGETS solstice
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin)
 install(FILES ${SOLSTICE_FILES_DOC} DESTINATION share/doc/solstice)
-
+rcmake_install_runtime_libraries(solstice)
