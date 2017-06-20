@@ -171,7 +171,7 @@ OPTIONS
     {@SOLSTICE_ARGS_DEFAULT_CAMERA_UP@}.
 
 *-t* _threads-count_::
-  Hint on the number of threads to use. By default us as many threads as CPU
+  Hint on the number of threads to use. By default use as many threads as CPU
   cores.
 
 *-v*::

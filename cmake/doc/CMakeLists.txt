@@ -24,7 +24,7 @@ set(SOLSTICE_DOC_DIR ${PROJECT_SOURCE_DIR}/../doc)
 # Look for asciidoc and a2x programs
 ################################################################################
 if(_html)
-  find_program(ASCIIDOC asciidoc)
+  find_program(ASCIIDOC NAMES asciidoc asciidoc.py)
   if(NOT ASCIIDOC)
     unset(_html)
     message(WARNING
@@ -34,7 +34,7 @@ if(_html)
 endif()
 
 if(_roff)
-  find_program(A2X a2x)
+  find_program(A2X NAMES a2x a2x.py)
   if(NOT A2X)
     unset(_roff)
     message(WARNING
