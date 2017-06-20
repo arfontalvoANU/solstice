@@ -60,6 +60,11 @@ informations on CMake.
 
 ## Release notes
 
+### Version 0.2.2
+
+- Fix how the AsciiDoc tool suite is looking for on Windows; it was never found
+  and consequently the documentation was not generated.
+
 ### Version 0.2.1
 
 - Fix the install target on Windows: copy the solstice runtime libraries in the
