@@ -45,8 +45,7 @@ print_help(const char* program)
   printf(
 "  -D <dirs>        list of sun directions.\n");
   printf(
-"  -f               do not prompt before overwriting the output file submitted\n"
-"                   with the '-o' option.\n");
+"  -f               overwrite the OUTPUT file if it already exists.\n");
   printf(
 "  -g <dump>        switch in dump geometry mode and configure it.\n");
   printf(
