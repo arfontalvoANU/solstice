@@ -168,6 +168,7 @@ _______
 <missing-loss>        ::= <estimate>
 <reflectivity-loss>   ::= <estimate>
 <shadow-loss>         ::= <estimate>
+<efficiency>          ::= <estimate>
 
 <estimate>            ::= <expected-value> <standard-error>
 <expected-value>      ::= REAL
