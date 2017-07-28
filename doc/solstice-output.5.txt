@@ -168,6 +168,7 @@ _______
 <missing-loss>        ::= <estimate>
 <reflectivity-loss>   ::= <estimate>
 <shadow-loss>         ::= <estimate>
+<efficiency>          ::= <estimate>
 
 <estimate>            ::= <expected-value> <standard-error>
 <expected-value>      ::= REAL
@@ -349,8 +350,7 @@ VTK-RECEIVER-MAP      ::= # vtk DataFile Version 2.0
 <map-front-data>      ::= <map-side-data>
 <map-back-data>       ::= <map-side-data>
 
-<map-side-data>       ::= CELL_DATA <#triangles>
-                          SCALARS <side-name> float 2
+<map-side-data>       ::= SCALARS <side-name> float 2
                           LOOKUP_TABLE default
                           <irradiance>
                         [ <irradiance> ... ]

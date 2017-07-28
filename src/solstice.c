@@ -741,8 +741,9 @@ solstice_run(struct solstice* solstice)
   } else {
     FOR_EACH(i, 0, nsun_dirs) {
       const double* sun_dir = sun_dirs + i*3/*#dims*/;
+      const double* sun_angle = sun_angles + i*2/*#angles*/;
       fprintf(solstice->output, "#--- Sun direction: %g %g (%g %g %g)\n",
-        SPLIT2(sun_angles), SPLIT3(sun_dir));
+        SPLIT2(sun_angle), SPLIT3(sun_dir));
 
       res = solstice_update_entities(solstice, sun_dir);
       if(res != RES_OK) goto error;
