@@ -44,6 +44,7 @@ main(int argc, char** argv)
   size_t nmtls = 0;
   size_t ngeoms = 0;
   double tmp[3];
+  long fp;
   FILE* stream;
   (void)argc, (void)argv;
 
@@ -57,9 +58,29 @@ main(int argc, char** argv)
   fprintf(stream, "    - sphere: { radius: 1  }\n");
   fprintf(stream, "      material: { matte: { reflectivity: 1 } }\n");
   fprintf(stream, "- entity:\n");
-  fprintf(stream, "    name: lvl 0\n");
   fprintf(stream, "    primary: 0\n");
   fprintf(stream, "    geometry: *sphere\n");
+
+  fp = ftell(stream);
+  fprintf(stream, "    name: invalid name\n");
+  rewind(stream);
+  CHECK(solparser_setup(parser, NULL, stream), RES_OK);
+  CHECK(solparser_load(parser), RES_BAD_ARG);
+
+  NCHECK(fseek(stream, fp, SEEK_SET), -1);
+  fprintf(stream, "    name: invalid\tname\n");
+  rewind(stream);
+  CHECK(solparser_setup(parser, NULL, stream), RES_OK);
+  CHECK(solparser_load(parser), RES_BAD_ARG);
+
+  NCHECK(fseek(stream, fp, SEEK_SET), -1);
+  fprintf(stream, "    name: invalid.name\n");
+  rewind(stream);
+  CHECK(solparser_setup(parser, NULL, stream), RES_OK);
+  CHECK(solparser_load(parser), RES_BAD_ARG);
+
+  NCHECK(fseek(stream, fp, SEEK_SET), -1);
+  fprintf(stream, "    name: \t\t\t lvl0  \t \n");
   fprintf(stream, "    transform: { translation: [1,2,3], rotation: [4,5,6]}\n");
   fprintf(stream, "    children:\n");
   fprintf(stream, "      - name: lvl1a\n");
@@ -118,7 +139,7 @@ main(int argc, char** argv)
   entity_id = solparser_entity_iterator_get(&it);
   entity = solparser_get_entity(parser, entity_id);
 
-  CHECK(strcmp("lvl 0", str_cget(&entity->name)), 0);
+  CHECK(strcmp("lvl0", str_cget(&entity->name)), 0);
   CHECK(solparser_entity_get_children_count(entity), 2);
   CHECK(entity->type, SOLPARSER_ENTITY_GEOMETRY);
   geom_id = entity->data.geometry;
@@ -192,17 +213,17 @@ main(int argc, char** argv)
   CHECK(entity2->type, SOLPARSER_ENTITY_GEOMETRY);
   CHECK(entity2->data.geometry.i, geom_id.i);
 
-  entity3 = solparser_find_entity(parser, "lvl 0");
+  entity3 = solparser_find_entity(parser, "lvl0");
   CHECK(entity3, entity);
   entity3 = solparser_find_entity(parser, "lvl1a");
   CHECK(entity3, NULL);
-  entity3 = solparser_find_entity(parser, "lvl 0.lvl1a");
+  entity3 = solparser_find_entity(parser, "lvl0.lvl1a");
   CHECK(entity3, entity1a);
-  entity3 = solparser_find_entity(parser, "lvl 0.lvl1b");
+  entity3 = solparser_find_entity(parser, "lvl0.lvl1b");
   CHECK(entity3, entity1b);
-  entity3 = solparser_find_entity(parser, "lvl 0.lvl1b.lvl2");
+  entity3 = solparser_find_entity(parser, "lvl0.lvl1b.lvl2");
   CHECK(entity3, entity2);
-  entity3 = solparser_find_entity(parser,"lvl 0.lvl1b.bad_name");
+  entity3 = solparser_find_entity(parser,"lvl0.lvl1b.bad_name");
   CHECK(entity3, NULL);
 
   sun = solparser_get_sun(parser);

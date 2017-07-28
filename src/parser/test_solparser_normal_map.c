@@ -186,7 +186,7 @@ test_mirror(struct solparser* parser)
 
   fprintf(stream, "- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1} ] }\n");
   fprintf(stream, "- entity: \n");
-  fprintf(stream, "    name: my entity\n");
+  fprintf(stream, "    name: my_entity\n");
   fprintf(stream, "    primary: 0\n");
   fprintf(stream, "    geometry: \n");
   fprintf(stream, "      - cuboid: { size: [1, 1, 1] }\n");
@@ -207,7 +207,7 @@ test_mirror(struct solparser* parser)
   entity_id = solparser_entity_iterator_get(&it);
   entity = solparser_get_entity(parser, entity_id);
 
-  CHECK(strcmp("my entity",  str_cget(&entity->name)), 0);
+  CHECK(strcmp("my_entity",  str_cget(&entity->name)), 0);
   CHECK(solparser_entity_get_children_count(entity), 0);
   CHECK(entity->primary, 0);
   CHECK(entity->type, SOLPARSER_ENTITY_GEOMETRY);

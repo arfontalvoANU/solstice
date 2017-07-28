@@ -42,7 +42,7 @@ test_sun(struct solparser* parser)
   fprintf(stream, "    spectrum: *my_spectrum\n");
   fprintf(stream, "- material: &matte { matte: { reflectivity: 1 } }\n");
   fprintf(stream, "- entity:\n");
-  fprintf(stream, "    name: foo bar\n");
+  fprintf(stream, "    name: foo-bar\n");
   fprintf(stream, "    primary: 0\n");
   fprintf(stream, "    geometry: [{sphere: {radius: 1}, material: *matte}]\n");
   rewind(stream);

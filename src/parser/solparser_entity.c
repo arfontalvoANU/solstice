@@ -95,6 +95,13 @@ parse_identifier_string
   if(strchr(str_cget(str), '.')) {
     log_err(parser, name, "invalid character `.' in the name `%s'.\n",
       str_cget(str));
+    res = RES_BAD_ARG;
+    goto error;
+  }
+  if(strchr(str_cget(str), ' ') || strchr(str_cget(str), '\t')) {
+    log_err(parser, name, "invalid space or tabulation in the name `%s'.\n",
+      str_cget(str));
+    res = RES_BAD_ARG;
     goto error;
   }
 
