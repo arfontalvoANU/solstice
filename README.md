@@ -60,6 +60,16 @@ informations on CMake.
 
 ## Release notes
 
+### Version 0.2.3
+
+- Update the solstice-input file format. The anchor and entity name cannot
+  contain spaces or tabulations anymore.
+- Fix the reported sun directions in the solstice-output. For each submitted
+  sun direction, solstice correctly output its Cartesian coordinates but always
+  wrote the azimuthal and elevation angles of the first direction.
+- Update the solstice-output map page: add the missing `<efficiency>` grammar
+  rule and fix the definition of the `<map-side-data>` grammar rule.
+
 ### Version 0.2.2
 
 - Fix how the AsciiDoc tool suite is looking for on Windows; it was never found
