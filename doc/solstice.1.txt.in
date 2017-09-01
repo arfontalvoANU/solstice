@@ -177,6 +177,9 @@ OPTIONS
 *-v*::
   Make solstice more verbose.
 
+*--version*::
+  Output version information and exit.
+
 EXAMPLES
 --------
 

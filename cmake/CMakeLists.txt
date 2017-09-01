@@ -95,14 +95,17 @@ configure_file(${SOLSTICE_SOURCE_DIR}/solstice_args.h.in
 configure_file(${SOLSTICE_SOURCE_DIR}/../doc/solstice.1.txt.in
   ${CMAKE_CURRENT_BINARY_DIR}/doc/solstice.1.txt @ONLY)
 
-################################################################################
-# Configure and define targets
-################################################################################
 set(VERSION_MAJOR 0)
 set(VERSION_MINOR 2)
 set(VERSION_PATCH 3)
 set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
+configure_file(${SOLSTICE_SOURCE_DIR}/solstice_version.h.in
+  ${CMAKE_CURRENT_BINARY_DIR}/solstice_version.h @ONLY)
+
+################################################################################
+# Configure and define targets
+################################################################################
 set(SOLSTICE_FILES_SRC
   solstice.c
   solstice_args.c
@@ -121,7 +124,8 @@ set(SOLSTICE_FILES_INC
   solstice.h
   solstice_args.h.in
   solstice_c.h
-  solstice_sun_spectrum.h)
+  solstice_sun_spectrum.h
+  solstice_version.h.in)
 set(SOLSTICE_FILES_DOC COPYING README.md)
 
 # Prepend each file in the `SOLSTICE_FILES_<SRC|INC>' list by `SOLSTICE_SOURCE_DIR'
