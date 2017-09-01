@@ -210,7 +210,7 @@ first line that stores the sun direction from which the radiative paths come
 from. The remaining data that list the radiative paths geometry are redirected
 into the *paths.vtk* file:
 
-    $ solstice -n 100 -D0,90 -R rcvs.yaml -p default input.yaml | sed '1d' > paths.vtk
+    $ solstice -n 100 -D0,90 -R rcvs.yaml -p default input.yaml | sed '1d'>paths.vtk
 
 Use the path-tracing rendering algorithm to draw the solar plant
 *solplant.yaml* with respect to the sun direction whose azimuthal and elevation
@@ -237,5 +237,5 @@ SEE ALSO
 *sed*(1),
 *solstice-input*(5),
 *solstice-output*(5),
-*solstice-receivers*(5)
+*solstice-receiver*(5)
 
