@@ -66,7 +66,8 @@ enum receiver_result_type {
 
 enum primary_result_type {
   FIRST_PRIMARY_RESULT,
-  PRIMARY_SHADOW = FIRST_PRIMARY_RESULT,
+  PRIMARY_COS = FIRST_PRIMARY_RESULT,
+  PRIMARY_SHADOW,
   PRIMARY_RESULTS_COUNT__
 };
 
@@ -282,7 +283,7 @@ read_recv(FILE* file, char name[], double E[], double SE[])
 
 static void
 read_primary
-  (FILE* file, char name[], double* area, double* cos, double E[], double SE[])
+  (FILE* file, char name[], double* area, double E[], double SE[])
 {
   char line[MAX_LINE_LEN];
 
@@ -296,13 +297,15 @@ read_primary
   CHECK(
     sscanf(line,
       "%s %*u   "
-      "%lg %*u %lg   "
-      "%lg %lg\n",
+      "%lg %*u   "
+      "%lg %lg   %lg %lg\n",
       name, /* ID */
-      area, /* count, */ cos,
+      area, /* count, */
+      &E[PRIMARY_COS], &SE[PRIMARY_COS],
       &E[PRIMARY_SHADOW], &SE[PRIMARY_SHADOW]),
-    2 * PRIMARY_RESULTS_COUNT__ + 3);
+    2 * PRIMARY_RESULTS_COUNT__ + 2);
 }
+
 
 static void
 read_recvXprim
@@ -423,14 +426,12 @@ check_1_reference
     double reference_SE[PRIMARY_RESULTS_COUNT__];
     double test_E[PRIMARY_RESULTS_COUNT__];
     double test_SE[PRIMARY_RESULTS_COUNT__];
-    double ref_area, ref_cos;
-    double test_area, test_cos;
+    double ref_area, test_area;
     enum primary_result_type r;
 
-    read_primary(ref_file, ref_prim_name, &ref_area, &ref_cos, reference_E, reference_SE);
-    read_primary(test_file, test_prim_name, &test_area, &test_cos, test_E, test_SE);
+    read_primary(ref_file, ref_prim_name, &ref_area, reference_E, reference_SE);
+    read_primary(test_file, test_prim_name, &test_area, test_E, test_SE);
     check_estimate(ref_area, 0, test_area, 0);
-    check_estimate(ref_cos, 0, test_cos, 0);
     CHECK(strcmp(ref_prim_name, test_prim_name), 0);
     FOR_EACH(r, FIRST_RECEIVER_RESULT, PRIMARY_RESULTS_COUNT__) {
       check_estimate(reference_E[r], reference_SE[r], test_E[r], test_SE[r]);
