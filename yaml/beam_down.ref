@@ -9,11 +9,11 @@
 0 0
 tower.secondary.hyperbol 10 421.957   0 0   465.462 0.00578398   0 0   0 0   0 0   0 0   0 0   0 0   0 0   0 0
 tower.receptor 14 25   465.462 0.00578398   465.462 0.00578398   0 0   0 0   0.930843 1.1567e-05   -1 -1   -1 -1   -1 -1   -1 -1   -1 -1
-heliostat4.temp-heliostat150.pivot.reflector 6 100.009 19934   0.185708 0.00117696   0 0
-heliostat5.temp-heliostat150.pivot.reflector 30 100.009 20264   0.188378 0.00118168   0 0
-heliostat3.temp-heliostat150.pivot.reflector 22 100.009 19746   0.183977 0.0011729   0 0
-heliostat2.temp-heliostat150.pivot.reflector 26 100.009 20054   0.186834 0.00117966   0 0
-heliostat1.temp-heliostat150.pivot.reflector 34 100.009 20002   0.185941 0.00117593   0 0
+heliostat4.temp-heliostat150.pivot.reflector 6 100.009 19915   0.931616 2.47038e-05   0 0
+heliostat5.temp-heliostat150.pivot.reflector 30 100.009 20068   0.929594 2.509e-05   0 0
+heliostat3.temp-heliostat150.pivot.reflector 22 100.009 19919   0.931716 2.47979e-05   0 0
+heliostat2.temp-heliostat150.pivot.reflector 26 100.009 20054   0.93164 2.4549e-05   0 0
+heliostat1.temp-heliostat150.pivot.reflector 34 100.009 20044   0.929616 2.5199e-05   0 0
 10 6   0 0   92.8625 0.588533   0 0   0 0   0 0   0 0   0 0   0 0
 10 30   0 0   94.198 0.590895   0 0   0 0   0 0   0 0   0 0   0 0
 10 22   0 0   91.9969 0.586504   0 0   0 0   0 0   0 0   0 0   0 0
@@ -35,11 +35,11 @@ heliostat1.temp-heliostat150.pivot.reflector 34 100.009 20002   0.185941 0.00117
 0 0
 tower.secondary.hyperbol 10 421.957   0 0   400.083 0.0351855   0 0   0 0   0 0   0 0   0 0   0 0   0 0   0 0
 tower.receptor 14 25   135.955 0.602452   135.955 0.602452   0 0   0 0   0.271887 0.0012048   -1 -1   -1 -1   -1 -1   -1 -1   -1 -1
-heliostat4.temp-heliostat150.pivot.reflector 6 100.009 20121   0.157986 0.000995464   0 0
-heliostat5.temp-heliostat150.pivot.reflector 30 100.009 20226   0.155708 0.000977921   0 0
-heliostat3.temp-heliostat150.pivot.reflector 22 100.009 19829   0.15861 0.00100856   0 0
-heliostat2.temp-heliostat150.pivot.reflector 26 100.009 20002   0.163177 0.00103199   0 0
-heliostat1.temp-heliostat150.pivot.reflector 34 100.009 19822   0.164613 0.00104696   0 0
+heliostat4.temp-heliostat150.pivot.reflector 6 100.009 20099   0.785213 4.2172e-05   0 0
+heliostat5.temp-heliostat150.pivot.reflector 30 100.009 19986   0.769737 4.34569e-05   0 0
+heliostat3.temp-heliostat150.pivot.reflector 22 100.009 19776   0.79991 4.08808e-05   0 0
+heliostat2.temp-heliostat150.pivot.reflector 26 100.009 20013   0.815837 3.91828e-05   0 0
+heliostat1.temp-heliostat150.pivot.reflector 34 100.009 20126   0.830522 3.78847e-05   0 0
 10 6   0 0   79.0003 0.497778   0 0   0 0   0 0   0 0   0 0   0 0
 10 30   0 0   77.8612 0.489006   0 0   0 0   0 0   0 0   0 0   0 0
 10 22   0 0   79.3121 0.504326   0 0   0 0   0 0   0 0   0 0   0 0
