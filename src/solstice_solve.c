@@ -479,7 +479,7 @@ solstice_solve(struct solstice* solstice)
   }
 
   res = ssol_solve(solstice->scene, rng, solstice->nexperiments,
-    solstice->dump_paths ? &solstice->path_tracker : NULL, NULL, &estimator);
+    solstice->dump_paths ? &solstice->path_tracker : NULL, &estimator);
   if(res != RES_OK) {
     fprintf(stderr, "Error in integrating the solar flux.\n");
     if(!estimator) goto error;
