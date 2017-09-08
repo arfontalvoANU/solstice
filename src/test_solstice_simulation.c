@@ -287,7 +287,6 @@ read_primary
 
   NCHECK(file, NULL);
   NCHECK(area, NULL);
-  NCHECK(cos, NULL);
   NCHECK(E, NULL);
   NCHECK(SE, NULL);
 
