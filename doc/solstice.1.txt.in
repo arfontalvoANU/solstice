@@ -37,8 +37,8 @@ described in the *solstice-input*(5) _file_. If the _file_ argument is not
 provided, the solar plant is read from standard input. To evaluate various
 efficiencies for each primary reflector, it computes losses due to cosine
 effect, shadowing and masking, orientation and surface irregularities,
-reflectivity and atmospheric transmission. The efficiency for each one of these
-effects is subsequently computed for each reflector.
+materials properties and atmospheric extinction. The efficiency for each
+one of these effects is subsequently computed for each reflector.
 
 The entities on which computations must be performed are listed in the
 *solstice-receiver*(5) file submitted through the *-R* option. The estimated

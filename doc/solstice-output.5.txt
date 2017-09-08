@@ -94,8 +94,8 @@ _______
                           <cos-factor>
                           <shadow-loss>
                           <missing-loss>
-                          <reflectivity-loss>
-                          <absorptivity-loss>
+                          <materials-loss>
+                          <atmospheric-loss>
 
 -------------------------------------
 
@@ -113,7 +113,7 @@ _______
 <back>                ::= <side>
 
 <side>                ::= "<absorbed-irradiance> <irradiance>
-                           <reflectivity-loss> <absorptivity-loss>
+                           <materials-loss> <atmospheric-loss>
                            <efficiency>"
 
 -------------------------------------
@@ -140,7 +140,7 @@ _______
 <rcvXprim-back>       ::= <rcvXprim-side>
 
 <rcvXprim-side>       ::= "<absorbed-irradiance> <irradiance>
-                           <reflectivity-loss> <absorptivity-loss>"
+                           <materials-loss> <atmospheric-loss>"
 
 -------------------------------------
 
@@ -162,11 +162,11 @@ _______
 
 <potential-irradiance>::= <estimate>
 <absorbed-irradiance> ::= <estimate>
-<absorptivity-loss>   ::= <estimate>
+<atmospheric-loss>    ::= <estimate>
 <cos-factor>          ::= <estimate>
 <irradiance>          ::= <estimate>
 <missing-loss>        ::= <estimate>
-<reflectivity-loss>   ::= <estimate>
+<materials-loss>      ::= <estimate>
 <shadow-loss>         ::= <estimate>
 <efficiency>          ::= <estimate>
 
@@ -212,10 +212,10 @@ standard error. The global results are, in this order:
   absorbed by a receiver; this irradiance could have been blocked along its
   path, can have missed the receivers, or can have reach a receiver but
   without being absorbed;
-- *reflectivity-loss*: additional irradiance that could have been absorbed
-  by receivers if reflections had occurred on materials with reflectivity 1.0;
-- *absorptivity-loss*: irradiance that could have been absorbed by
-  receivers if atmospheric absorption had not been taken into account.
+- *materials-loss*: additional irradiance that could have been absorbed
+  by receivers if no absorption had occurred on non-receivers material until then;
+- *atmospheric-loss*: irradiance that could have been absorbed by
+  receivers if atmospheric extinction had not been taken into account.
 
 Per receiver results
 ~~~~~~~~~~~~~~~~~~~~
@@ -238,10 +238,10 @@ expected value and its standard error.
 
 - *absorbed-irradiance*: irradiance absorbed by the receiver side;
 - *irradiance*: irradiance that reaches the receiver side;
-- *reflectivity-loss*: irradiance that could have been absorbed by the
-  receiver side if reflections had occurred on materials with reflectivity 1.0;
-- *absorptivity-loss*: irradiance that could have been absorbed by the
-  receiver side if atmospheric absorption had not been taken into account;
+- *materials-loss*: irradiance that could have been absorbed by the
+  receiver side if no absorption had occurred on non-receivers material until then;
+- *atmospheric-loss*: irradiance that could have been absorbed by the
+  receiver side if atmospheric extinction had not been taken into account;
 - *efficiency*: fraction of incoming irradiance absorbed by the receiver side.
 
 Both *front* and *back* side estimates are output, even if the receiver has
@@ -288,12 +288,12 @@ expected value and its standard error.
   from the primary geometry;
 - *irradiance*: irradiance reaching the receiver side coming from the primary
   geometry;
-- *reflectivity-loss*: irradiance that could have been absorbed by the
-  receiver side coming from the primary geometry if reflections had occurred
-  on materials with reflectivity 1.0;
-- *absorptivity-loss*: irradiance that could have been absorbed by
+- *materials-loss*: irradiance that could have been absorbed by the
+  receiver side coming from the primary geometry if no absorption had occurred
+  on non-receivers material until then;
+- *atmospheric-loss*: irradiance that could have been absorbed by
   the receiver side coming from the primary geometry if atmospheric
-  absorption had not been taken into account.
+  extinction had not been taken into account.
 
 Both front and back side estimates are output, even if the receiver has only a
 single receiving side. In this case, the results of the non-receiving side are
