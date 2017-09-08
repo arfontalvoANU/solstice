@@ -16,6 +16,7 @@
 #define _POSIX_C_SOURCE 2
 
 #include "solstice_args.h"
+#include "solstice_version.h"
 
 #include <rsys/cstr.h>
 #include <rsys/double3.h>
@@ -69,6 +70,8 @@ print_help(const char* program)
 "                   many threads as CPU cores.\n");
   printf(
 "  -v               make the program more verbose.\n");
+  printf(
+"  --version        display version information and exit.\n");
   printf("\n");
   printf(
 "Solstice (C) 2016-2017 CNRS. This is a free software released under the GNU GPL\n"
@@ -486,10 +489,22 @@ res_T
 solstice_args_init(struct solstice_args* args, const int argc, char** argv)
 {
   int opt;
+  int i;
   res_T res = RES_OK;
   ASSERT(args && argc && argv);
 
   *args = SOLSTICE_ARGS_DEFAULT;
+
+  FOR_EACH(i, 1, argc) {
+    if(!strcmp(argv[i], "--version")) {
+      printf("Solstice %d.%d.%d\n",
+        SOLSTICE_VERSION_MAJOR,
+        SOLSTICE_VERSION_MINOR,
+        SOLSTICE_VERSION_PATCH);
+      args->quit = 1;
+      goto exit;
+    }
+  }
 
   optind = 0;
   while((opt = getopt(argc, argv, "D:fg:hn:o:p:qR:r:t:v")) != -1) {

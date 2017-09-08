@@ -14,8 +14,8 @@
  * along with this program. If not, see http://www.gnu.org/licenses/. */
 
 body.manpage {
-  font-family:monospace;
-  font-size:2ex;
+  font-family:"Liberation Sans",sans-serif;
+  font-size:10pt;
   text-align: justify;
   max-width: 55em;
   margin: 1em;
@@ -32,7 +32,7 @@ body.manpage em {
 }
 
 body.manpage div.verseblock > pre.content {
-  font-family: inherit;
+  font-family: "Liberation Mono",monospace;
 }
 
 body.manpage h1 {
@@ -45,12 +45,16 @@ body.manpage div.sectionbody {
   margin-left: 3em;
 }
 
+body.manpage code {
+  font-family: "Liberation Mono",monospace;
+}
+
 body.manpage #footer { display: none; }
 
 body.manpage div#toctitle { display: none; }
 
 body.manpage div#toc {
-  display.block ! important; 
+  display: block;
   position:fixed;
   top:0;
   left:60em;
@@ -61,11 +65,17 @@ body.manpage div#toc {
   background: #eeeeee
 }
 
+body.manpage a {
+  font-weight: bold;
+  color: #225588;
+}
+
 body.manpage div#toc a, div#toc a:link, div#toc a:visited {
   margin:0;
   padding-left: 2em;
   color:#999999;
   text-decoration:none;
+  font-weight: normal;
 }
 
 body.manpage div.toclevel1 {
@@ -74,7 +84,6 @@ body.manpage div.toclevel1 {
 
 body.manpage div.toclevel2 {
   margin-left: 2em;
-
 }
 
 body.manpage div#toc a:hover {

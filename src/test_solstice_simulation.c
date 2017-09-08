@@ -51,22 +51,23 @@ enum global_result_type {
 
 enum receiver_result_type {
   FIRST_RECEIVER_RESULT,
-  FRONT_INTEGRATED_ABSORBED_IRRADIANCE = FIRST_RECEIVER_RESULT,
-  FRONT_INTEGRATED_IRRADIANCE,
-  FRONT_REFLECTIVITY_LOSS,
-  FRONT_ABSORPTIVITY_LOSS,
+  FRONT_ABSORBED_FLUX = FIRST_RECEIVER_RESULT,
+  FRONT_INCOMING_FLUX,
+  FRONT_ABSORBED_FIELD_GAIN,
+  FRONT_ABSORBED_ATM_GAIN,
   FRONT_EFFICIENCY,
-  BACK_INTEGRATED_ABSORBED_IRRADIANCE,
-  BACK_INTEGRATED_IRRADIANCE,
-  BACK_REFLECTIVITY_LOSS,
-  BACK_ABSORPTIVITY_LOSS,
+  BACK_ABSORBED_FLUX,
+  BACK_INCOMING_FLUX,
+  BACK_ABSORBED_FIELD_GAIN,
+  BACK_ABSORBED_ATM_GAIN,
   BACK_EFFICIENCY,
   RECEIVER_RESULTS_COUNT__
 };
 
 enum primary_result_type {
   FIRST_PRIMARY_RESULT,
-  PRIMARY_SHADOW = FIRST_PRIMARY_RESULT,
+  PRIMARY_COS = FIRST_PRIMARY_RESULT,
+  PRIMARY_SHADOW,
   PRIMARY_RESULTS_COUNT__
 };
 
@@ -265,30 +266,27 @@ read_recv(FILE* file, char name[], double E[], double SE[])
       "%lg %lg   %lg %lg   %lg %lg   %lg %lg   %lg %lg  "
       "%lg %lg   %lg %lg   %lg %lg   %lg %lg   %lg %lg",
       name, /* ID, area */
-      &E[FRONT_INTEGRATED_ABSORBED_IRRADIANCE],
-      &SE[FRONT_INTEGRATED_ABSORBED_IRRADIANCE],
-      &E[FRONT_INTEGRATED_IRRADIANCE], &SE[FRONT_INTEGRATED_IRRADIANCE],
-      &E[FRONT_REFLECTIVITY_LOSS], &SE[FRONT_REFLECTIVITY_LOSS],
-      &E[FRONT_ABSORPTIVITY_LOSS], &SE[FRONT_ABSORPTIVITY_LOSS],
+      &E[FRONT_ABSORBED_FLUX], &SE[FRONT_ABSORBED_FLUX],
+      &E[FRONT_INCOMING_FLUX], &SE[FRONT_INCOMING_FLUX],
+      &E[FRONT_ABSORBED_FIELD_GAIN], &SE[FRONT_ABSORBED_FIELD_GAIN],
+      &E[FRONT_ABSORBED_ATM_GAIN], &SE[FRONT_ABSORBED_ATM_GAIN],
       &E[FRONT_EFFICIENCY], &SE[FRONT_EFFICIENCY],
-      &E[BACK_INTEGRATED_ABSORBED_IRRADIANCE],
-      &SE[BACK_INTEGRATED_ABSORBED_IRRADIANCE],
-      &E[BACK_INTEGRATED_IRRADIANCE], &SE[BACK_INTEGRATED_IRRADIANCE],
-      &E[BACK_REFLECTIVITY_LOSS], &SE[BACK_REFLECTIVITY_LOSS],
-      &E[BACK_ABSORPTIVITY_LOSS], &SE[BACK_ABSORPTIVITY_LOSS],
+      &E[BACK_ABSORBED_FLUX], &SE[BACK_ABSORBED_FLUX],
+      &E[BACK_INCOMING_FLUX], &SE[BACK_INCOMING_FLUX],
+      &E[BACK_ABSORBED_FIELD_GAIN], &SE[BACK_ABSORBED_FIELD_GAIN],
+      &E[BACK_ABSORBED_ATM_GAIN], &SE[BACK_ABSORBED_ATM_GAIN],
       &E[BACK_EFFICIENCY], &SE[BACK_EFFICIENCY]),
     2 * RECEIVER_RESULTS_COUNT__ + 1);
 }
 
 static void
 read_primary
-  (FILE* file, char name[], double* area, double* cos, double E[], double SE[])
+  (FILE* file, char name[], double* area, double E[], double SE[])
 {
   char line[MAX_LINE_LEN];
 
   NCHECK(file, NULL);
   NCHECK(area, NULL);
-  NCHECK(cos, NULL);
   NCHECK(E, NULL);
   NCHECK(SE, NULL);
 
@@ -296,13 +294,15 @@ read_primary
   CHECK(
     sscanf(line,
       "%s %*u   "
-      "%lg %*u %lg   "
-      "%lg %lg\n",
+      "%lg %*u   "
+      "%lg %lg   %lg %lg\n",
       name, /* ID */
-      area, /* count, */ cos,
+      area, /* count, */
+      &E[PRIMARY_COS], &SE[PRIMARY_COS],
       &E[PRIMARY_SHADOW], &SE[PRIMARY_SHADOW]),
-    2 * PRIMARY_RESULTS_COUNT__ + 3);
+    2 * PRIMARY_RESULTS_COUNT__ + 2);
 }
+
 
 static void
 read_recvXprim
@@ -327,16 +327,14 @@ read_recvXprim
       "%lg %lg   %lg %lg   %lg %lg   %lg %lg   "
       "%lg %lg   %lg %lg   %lg %lg   %lg %lg",
       rcv_id, prim_id,
-      &E[FRONT_INTEGRATED_ABSORBED_IRRADIANCE],
-      &SE[FRONT_INTEGRATED_ABSORBED_IRRADIANCE],
-      &E[FRONT_INTEGRATED_IRRADIANCE], &SE[FRONT_INTEGRATED_IRRADIANCE],
-      &E[FRONT_REFLECTIVITY_LOSS], &SE[FRONT_REFLECTIVITY_LOSS],
-      &E[FRONT_ABSORPTIVITY_LOSS], &SE[FRONT_ABSORPTIVITY_LOSS],
-      &E[BACK_INTEGRATED_ABSORBED_IRRADIANCE],
-      &SE[BACK_INTEGRATED_ABSORBED_IRRADIANCE],
-      &E[BACK_INTEGRATED_IRRADIANCE], &SE[BACK_INTEGRATED_IRRADIANCE],
-      &E[BACK_REFLECTIVITY_LOSS], &SE[BACK_REFLECTIVITY_LOSS],
-      &E[BACK_ABSORPTIVITY_LOSS], &SE[BACK_ABSORPTIVITY_LOSS]),
+      &E[FRONT_ABSORBED_FLUX], &SE[FRONT_ABSORBED_FLUX],
+      &E[FRONT_INCOMING_FLUX], &SE[FRONT_INCOMING_FLUX],
+      &E[FRONT_ABSORBED_FIELD_GAIN], &SE[FRONT_ABSORBED_FIELD_GAIN],
+      &E[FRONT_ABSORBED_ATM_GAIN], &SE[FRONT_ABSORBED_ATM_GAIN],
+      &E[BACK_ABSORBED_FLUX], &SE[BACK_ABSORBED_FLUX],
+      &E[BACK_INCOMING_FLUX], &SE[BACK_INCOMING_FLUX],
+      &E[BACK_ABSORBED_FIELD_GAIN], &SE[BACK_ABSORBED_FIELD_GAIN],
+      &E[BACK_ABSORBED_ATM_GAIN], &SE[BACK_ABSORBED_ATM_GAIN]),
     2 * (RECEIVER_RESULTS_COUNT__ - 2 /* efficiencies not read */) + 2);
 }
 
@@ -423,14 +421,12 @@ check_1_reference
     double reference_SE[PRIMARY_RESULTS_COUNT__];
     double test_E[PRIMARY_RESULTS_COUNT__];
     double test_SE[PRIMARY_RESULTS_COUNT__];
-    double ref_area, ref_cos;
-    double test_area, test_cos;
+    double ref_area, test_area;
     enum primary_result_type r;
 
-    read_primary(ref_file, ref_prim_name, &ref_area, &ref_cos, reference_E, reference_SE);
-    read_primary(test_file, test_prim_name, &test_area, &test_cos, test_E, test_SE);
+    read_primary(ref_file, ref_prim_name, &ref_area, reference_E, reference_SE);
+    read_primary(test_file, test_prim_name, &test_area, test_E, test_SE);
     check_estimate(ref_area, 0, test_area, 0);
-    check_estimate(ref_cos, 0, test_cos, 0);
     CHECK(strcmp(ref_prim_name, test_prim_name), 0);
     FOR_EACH(r, FIRST_RECEIVER_RESULT, PRIMARY_RESULTS_COUNT__) {
       check_estimate(reference_E[r], reference_SE[r], test_E[r], test_SE[r]);

@@ -45,7 +45,7 @@ find_package(LibYAML REQUIRED)
 find_package(RCMake 0.2.3 REQUIRED)
 find_package(RSys 0.4 REQUIRED)
 find_package(SolAnim 0.1 REQUIRED)
-find_package(SolSolver 0.2 REQUIRED)
+find_package(SolSolver 0.3 REQUIRED)
 find_package(Star3DUT 0.2 REQUIRED)
 find_package(StarSP 0.4 REQUIRED)
 find_package(StarSTL 0.3.1 REQUIRED)
@@ -95,14 +95,17 @@ configure_file(${SOLSTICE_SOURCE_DIR}/solstice_args.h.in
 configure_file(${SOLSTICE_SOURCE_DIR}/../doc/solstice.1.txt.in
   ${CMAKE_CURRENT_BINARY_DIR}/doc/solstice.1.txt @ONLY)
 
+set(VERSION_MAJOR 0)
+set(VERSION_MINOR 3)
+set(VERSION_PATCH 0)
+set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
+
+configure_file(${SOLSTICE_SOURCE_DIR}/solstice_version.h.in
+  ${CMAKE_CURRENT_BINARY_DIR}/solstice_version.h @ONLY)
+
 ################################################################################
 # Configure and define targets
 ################################################################################
-set(VERSION_MAJOR 0)
-set(VERSION_MINOR 2)
-set(VERSION_PATCH 3)
-set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
-
 set(SOLSTICE_FILES_SRC
   solstice.c
   solstice_args.c
@@ -121,7 +124,8 @@ set(SOLSTICE_FILES_INC
   solstice.h
   solstice_args.h.in
   solstice_c.h
-  solstice_sun_spectrum.h)
+  solstice_sun_spectrum.h
+  solstice_version.h.in)
 set(SOLSTICE_FILES_DOC COPYING README.md)
 
 # Prepend each file in the `SOLSTICE_FILES_<SRC|INC>' list by `SOLSTICE_SOURCE_DIR'

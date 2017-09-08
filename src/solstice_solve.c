@@ -55,12 +55,12 @@ write_mc_global(struct solstice* solstice, struct ssol_estimator* estimator)
   #define PRINT_MC_GLOBAL(Name) \
     fprintf(solstice->output, "%g %g\n", mc_global.Name.E, mc_global.Name.SE)
   fprintf(solstice->output, "%g %g\n", potential, 0.);
-  PRINT_MC_GLOBAL(absorbed);
+  PRINT_MC_GLOBAL(absorbed_by_receivers);
   PRINT_MC_GLOBAL(cos_factor);
   PRINT_MC_GLOBAL(shadowed);
   PRINT_MC_GLOBAL(missing);
-  PRINT_MC_GLOBAL(reflectivity);
-  PRINT_MC_GLOBAL(atmosphere);
+  PRINT_MC_GLOBAL(other_absorbed);
+  PRINT_MC_GLOBAL(absorbed_by_atmosphere);
   #undef PRINT_MC_GLOBAL
 
   /* Receivers' data */
@@ -80,21 +80,21 @@ write_mc_global(struct solstice* solstice, struct ssol_estimator* estimator)
     switch(rcv->side) {
       case SRCVL_FRONT:
         SSOL(estimator_get_mc_receiver(estimator, inst, SSOL_FRONT, &front));
-        f_eff_E = front.integrated_absorbed_irradiance.E * irradiance_factor;
-        f_eff_SE = front.integrated_absorbed_irradiance.SE * irradiance_factor;
+        f_eff_E = front.absorbed_flux.E * irradiance_factor;
+        f_eff_SE = front.absorbed_flux.SE * irradiance_factor;
         break;
       case SRCVL_BACK:
         SSOL(estimator_get_mc_receiver(estimator, inst, SSOL_BACK, &back));
-        b_eff_E = back.integrated_absorbed_irradiance.E * irradiance_factor;
-        b_eff_SE = back.integrated_absorbed_irradiance.SE * irradiance_factor;
+        b_eff_E = back.absorbed_flux.E * irradiance_factor;
+        b_eff_SE = back.absorbed_flux.SE * irradiance_factor;
         break;
       case SRCVL_FRONT_AND_BACK:
         SSOL(estimator_get_mc_receiver(estimator, inst, SSOL_FRONT, &front));
         SSOL(estimator_get_mc_receiver(estimator, inst, SSOL_BACK, &back));
-        f_eff_E = front.integrated_absorbed_irradiance.E * irradiance_factor;
-        f_eff_SE = front.integrated_absorbed_irradiance.SE * irradiance_factor;
-        b_eff_E = back.integrated_absorbed_irradiance.E * irradiance_factor;
-        b_eff_SE = back.integrated_absorbed_irradiance.SE * irradiance_factor;
+        f_eff_E = front.absorbed_flux.E * irradiance_factor;
+        f_eff_SE = front.absorbed_flux.SE * irradiance_factor;
+        b_eff_E = back.absorbed_flux.E * irradiance_factor;
+        b_eff_SE = back.absorbed_flux.SE * irradiance_factor;
         break;
       default: FATAL("Unreachable code.\n"); break;
     }
@@ -105,15 +105,15 @@ write_mc_global(struct solstice* solstice, struct ssol_estimator* estimator)
       "%g %g   %g %g   %g %g   %g %g   %g %g   "
       "%g %g   %g %g   %g %g   %g %g   %g %g\n",
       str_cget(name), (unsigned)id, area,
-      front.integrated_absorbed_irradiance.E, front.integrated_absorbed_irradiance.SE,
-      front.integrated_irradiance.E, front.integrated_irradiance.SE,
-      front.reflectivity_loss.E, front.reflectivity_loss.SE,
-      front.absorptivity_loss.E, front.absorptivity_loss.SE,
+      front.absorbed_flux.E, front.absorbed_flux.SE,
+      front.incoming_flux.E, front.incoming_flux.SE,
+      front.incoming_lost_in_field.E, front.incoming_lost_in_field.SE,
+      front.incoming_lost_in_atmosphere.E, front.incoming_lost_in_atmosphere.SE,
       f_eff_E, f_eff_SE,
-      back.integrated_absorbed_irradiance.E, back.integrated_absorbed_irradiance.SE,
-      back.integrated_irradiance.E, back.integrated_irradiance.SE,
-      back.reflectivity_loss.E, back.reflectivity_loss.SE,
-      back.absorptivity_loss.E, back.absorptivity_loss.SE,
+      back.absorbed_flux.E, back.absorbed_flux.SE,
+      back.incoming_flux.E, back.incoming_flux.SE,
+      back.absorbed_lost_in_field.E, back.absorbed_lost_in_field.SE,
+      back.absorbed_lost_in_atmosphere.E, back.absorbed_lost_in_atmosphere.SE,
       b_eff_E, b_eff_SE);
   }
 
@@ -179,14 +179,14 @@ write_mc_global(struct solstice* solstice, struct ssol_estimator* estimator)
         "%g %g   %g %g   %g %g   %g %g   "
         "%g %g   %g %g   %g %g   %g %g\n",
         (unsigned) rcv_id, (unsigned) prim_id,
-        front.integrated_absorbed_irradiance.E, front.integrated_absorbed_irradiance.SE,
-        front.integrated_irradiance.E, front.integrated_irradiance.SE,
-        front.reflectivity_loss.E, front.reflectivity_loss.SE,
-        front.absorptivity_loss.E, front.absorptivity_loss.SE,
-        back.integrated_absorbed_irradiance.E, back.integrated_absorbed_irradiance.SE,
-        back.integrated_irradiance.E, back.integrated_irradiance.SE,
-        back.reflectivity_loss.E, back.reflectivity_loss.SE,
-        back.absorptivity_loss.E, back.absorptivity_loss.SE);
+        front.absorbed_flux.E, front.absorbed_flux.SE,
+        front.incoming_flux.E, front.incoming_flux.SE,
+        front.incoming_lost_in_field.E, front.incoming_lost_in_field.SE,
+        front.incoming_lost_in_atmosphere.E, front.incoming_lost_in_atmosphere.SE,
+        back.absorbed_flux.E, back.absorbed_flux.SE,
+        back.incoming_flux.E, back.incoming_flux.SE,
+        back.absorbed_lost_in_field.E, back.absorbed_lost_in_field.SE,
+        back.absorbed_lost_in_atmosphere.E, back.absorbed_lost_in_atmosphere.SE);
       htable_primary_iterator_next(&p_it);
     }
     htable_receiver_iterator_next(&r_it);
@@ -244,8 +244,8 @@ dump_mc_shape
     struct ssol_mc_primitive mc_prim;
     SSOL(mc_shape_get_mc_primitive(mc_shape, itri, &mc_prim));
     fprintf(solstice->output, "%g %g\n",
-      mc_prim.integrated_irradiance.E,
-      mc_prim.integrated_irradiance.SE);
+      mc_prim.incoming_flux.E,
+      mc_prim.incoming_flux.SE);
   }
 }
 
@@ -479,7 +479,7 @@ solstice_solve(struct solstice* solstice)
   }
 
   res = ssol_solve(solstice->scene, rng, solstice->nexperiments,
-    solstice->dump_paths ? &solstice->path_tracker : NULL, NULL, &estimator);
+    solstice->dump_paths ? &solstice->path_tracker : NULL, &estimator);
   if(res != RES_OK) {
     fprintf(stderr, "Error in integrating the solar flux.\n");
     if(!estimator) goto error;

@@ -37,8 +37,8 @@ described in the *solstice-input*(5) _file_. If the _file_ argument is not
 provided, the solar plant is read from standard input. To evaluate various
 efficiencies for each primary reflector, it computes losses due to cosine
 effect, shadowing and masking, orientation and surface irregularities,
-reflectivity and atmospheric transmission. The efficiency for each one of these
-effects is subsequently computed for each reflector.
+materials properties and atmospheric extinction. The efficiency for each
+one of these effects is subsequently computed for each reflector.
 
 The entities on which computations must be performed are listed in the
 *solstice-receiver*(5) file submitted through the *-R* option. The estimated
@@ -177,6 +177,9 @@ OPTIONS
 *-v*::
   Make solstice more verbose.
 
+*--version*::
+  Output version information and exit.
+
 EXAMPLES
 --------
 
@@ -210,7 +213,7 @@ first line that stores the sun direction from which the radiative paths come
 from. The remaining data that list the radiative paths geometry are redirected
 into the *paths.vtk* file:
 
-    $ solstice -n 100 -D0,90 -R rcvs.yaml -p default input.yaml | sed '1d' > paths.vtk
+    $ solstice -n 100 -D0,90 -R rcvs.yaml -p default input.yaml | sed '1d'>paths.vtk
 
 Use the path-tracing rendering algorithm to draw the solar plant
 *solplant.yaml* with respect to the sun direction whose azimuthal and elevation
@@ -237,5 +240,5 @@ SEE ALSO
 *sed*(1),
 *solstice-input*(5),
 *solstice-output*(5),
-*solstice-receivers*(5)
+*solstice-receiver*(5)
 

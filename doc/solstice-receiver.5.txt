@@ -68,7 +68,7 @@ _______
                         | BACK
                         | FRONT_AND_BACK
 
-<entity-identifier>   # Defined in *solstice-input*(1)
+<entity-identifier>   # Defined in *solstice-input*(5)
 _______
 
 EXAMPLES
