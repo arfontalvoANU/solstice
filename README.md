@@ -60,6 +60,13 @@ informations on CMake.
 
 ## Release notes
 
+### Version 0.3
+
+- Fix several issues in the output results. Refer to the Solsice-Solver 0.3
+  release notes for more informations.
+- Add the `--version` option.
+- Update the man pages to fix some issues and improve the output documentation.
+
 ### Version 0.2.3
 
 - Update the solstice-input file format. The anchor and entity name cannot
