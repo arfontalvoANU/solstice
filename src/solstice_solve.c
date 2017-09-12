@@ -60,7 +60,7 @@ write_mc_global(struct solstice* solstice, struct ssol_estimator* estimator)
   PRINT_MC_GLOBAL(shadowed);
   PRINT_MC_GLOBAL(missing);
   PRINT_MC_GLOBAL(other_absorbed);
-  PRINT_MC_GLOBAL(absorbed_by_atmosphere);
+  PRINT_MC_GLOBAL(extinguished_by_atmosphere);
   #undef PRINT_MC_GLOBAL
 
   /* Receivers' data */

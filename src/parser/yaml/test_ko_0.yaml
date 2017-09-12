@@ -252,31 +252,31 @@
 #     medium_t: <dielectric-medium>
 #
 
-# invalid absorption
+# invalid extinction
 - material:
     thin_dielectric:
       thickness: 0
-      medium_i: &m { refractive_index: 1, absorption: -1 }
+      medium_i: &m { refractive_index: 1, extinction: -1 }
       medium_t: *m
 ---
 # invalid thickness
 - material:
     thin_dielectric:
       thickness: -0.01
-      medium_i: &m { refractive_index: 1, absorption: 0 }
+      medium_i: &m { refractive_index: 1, extinction: 0 }
       medium_t: *m
 ---
 # invalid refractive index
 - material:
     thin_dielectric:
       thickness: 0
-      medium_i: &m { refractive_index: 0, absorption: 0 }
+      medium_i: &m { refractive_index: 0, extinction: 0 }
       medium_t: *m
 ---
 # missing thickness
 - material:
     thin_dielectric:
-      medium_i: &m { refractive_index: 1, absorption: 0 }
+      medium_i: &m { refractive_index: 1, extinction: 0 }
       medium_t: *m
 ---
 
@@ -290,22 +290,22 @@
 # invalid refractive_index
 - material:
     dielectric:
-      medium_i: &m { refractive_index: 0, absorption: 0 }
+      medium_i: &m { refractive_index: 0, extinction: 0 }
       medium_t: *m
 ---
-# invalid absorption
+# invalid extinction
 - material:
     dielectric:
-      medium_i: &m { refractive_index: 1, absorption: -1 }
+      medium_i: &m { refractive_index: 1, extinction: -1 }
       medium_t: *m
 ---
 # missing refractive_index
 - material:
     dielectric:
-      medium_i: &m { absorption: 0 }
+      medium_i: &m { extinction: 0 }
       medium_t: *m
 ---
-# missing absorption
+# missing extinction
 - material:
     dielectric:
       medium_i: &m { refractive_index: 1 }
@@ -314,12 +314,12 @@
 # missing medium_i
 - material:
     dielectric:
-      medium_t: { refractive_index: 1, absorption: 0 }
+      medium_t: { refractive_index: 1, extinction: 0 }
 ---
 # missing medium_t
 - material:
     dielectric:
-      medium_i: { refractive_index: 1, absorption: 0 }
+      medium_i: { refractive_index: 1, extinction: 0 }
 ---
 
 #
@@ -1897,7 +1897,7 @@
 #
 # <atmosphere> ::=
 #   atmosphere: 
-#     absorption: <mtl-data> # in [0, 1]
+#     extinction: <mtl-data> # in [0, 1]
 #
 
 # missing atmosphere definition
@@ -1907,30 +1907,30 @@
 - atmosphere:
     dummy: 1
 ---
-# missing absorption definition
+# missing extinction definition
 - atmosphere:
-    absorption: 
+    extinction: 
 ---
-# absorption should be a number
+# extinction should be a number
 - atmosphere:
-    absorption: "dummy"
+    extinction: "dummy"
 ---
 # 2 invalid
 - atmosphere:
-    absorption: 2
+    extinction: 2
 ---
 # 0 invalid
 - atmosphere:
-    absorption: [{wavelength: 0, data: 1}]
+    extinction: [{wavelength: 0, data: 1}]
 ---
 # 2 invalid
 - atmosphere:
-    absorption: [{wavelength: 0, data: 2}]
+    extinction: [{wavelength: 0, data: 2}]
 ---
-# 2x absorption
+# 2x extinction
 - atmosphere:
-    absorption: 0.1
-    absorption: [{wavelength: 1, data: 1}]
+    extinction: 0.1
+    extinction: [{wavelength: 1, data: 1}]
 ---
 
 #
@@ -1967,6 +1967,6 @@
 ---
 # 2x atmosphere
 - atmosphere:
-    absorption: 0.1
+    extinction: 0.1
 - atmosphere:
-    absorption: 0.1
+    extinction: 0.1

@@ -1,7 +1,7 @@
 - sun: &sun { dni: 1 }
 
 - atmosphere:
-    absorption: [{wavelength: 1, data: 0},{wavelength: 10, data: 0}]
+    extinction: [{wavelength: 1, data: 0},{wavelength: 10, data: 0}]
 
 - material: &specular
     front:

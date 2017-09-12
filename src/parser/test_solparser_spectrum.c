@@ -210,10 +210,10 @@ test_thin_dielectric(struct solparser* parser)
   fprintf(stream, "- material:\n");
   fprintf(stream, "    thin_dielectric:\n");
   fprintf(stream, "      thickness: 1\n");
-  fprintf(stream, "      medium_i: { refractive_index: 1, absorption: 0 }\n");
+  fprintf(stream, "      medium_i: { refractive_index: 1, extinction: 0 }\n");
   fprintf(stream, "      medium_t: \n");
   fprintf(stream, "        refractive_index: *refractive_index\n");
-  fprintf(stream, "        absorption: *absorption\n");
+  fprintf(stream, "        extinction: *absorption\n");
   rewind(stream);
 
   CHECK(solparser_setup(parser, NULL, stream), RES_OK);
@@ -232,8 +232,8 @@ test_thin_dielectric(struct solparser* parser)
   mdm = solparser_get_medium(parser, thin->medium_i);
   CHECK(mdm->refractive_index.type, SOLPARSER_MTL_DATA_REAL);
   CHECK(mdm->refractive_index.value.real, 1);
-  CHECK(mdm->absorption.type, SOLPARSER_MTL_DATA_REAL);
-  CHECK(mdm->absorption.value.real, 0);
+  CHECK(mdm->extinction.type, SOLPARSER_MTL_DATA_REAL);
+  CHECK(mdm->extinction.value.real, 0);
 
   mdm = solparser_get_medium(parser, thin->medium_t);
   CHECK(mdm->refractive_index.type, SOLPARSER_MTL_DATA_SPECTRUM);
@@ -245,7 +245,7 @@ test_thin_dielectric(struct solparser* parser)
   CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[0].data, 1.1);
   CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[1].data, 2.2);
   CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[2].data, 3.3);
-  spectrum = solparser_get_spectrum(parser, mdm->absorption.value.spectrum);
+  spectrum = solparser_get_spectrum(parser, mdm->extinction.value.spectrum);
   CHECK(darray_spectrum_data_size_get(&spectrum->data), 2);
   CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[0].wavelength, 0.123);
   CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[1].wavelength, 0.456);
@@ -281,10 +281,10 @@ test_dielectric(struct solparser* parser)
   fprintf(stream, "  - { wavelength: 0.123, data: 0.1 }\n");
   fprintf(stream, "- material:\n");
   fprintf(stream, "    dielectric:\n");
-  fprintf(stream, "      medium_i: { refractive_index: 1, absorption: 0 }\n");
+  fprintf(stream, "      medium_i: { refractive_index: 1, extinction: 0 }\n");
   fprintf(stream, "      medium_t: \n");
   fprintf(stream, "        refractive_index: *refractive_index\n");
-  fprintf(stream, "        absorption: *absorption\n");
+  fprintf(stream, "        extinction: *absorption\n");
   rewind(stream);
 
   CHECK(solparser_setup(parser, NULL, stream), RES_OK);
@@ -302,8 +302,8 @@ test_dielectric(struct solparser* parser)
   mdm = solparser_get_medium(parser, dielec->medium_i);
   CHECK(mdm->refractive_index.type, SOLPARSER_MTL_DATA_REAL);
   CHECK(mdm->refractive_index.value.real, 1);
-  CHECK(mdm->absorption.type, SOLPARSER_MTL_DATA_REAL);
-  CHECK(mdm->absorption.value.real, 0);
+  CHECK(mdm->extinction.type, SOLPARSER_MTL_DATA_REAL);
+  CHECK(mdm->extinction.value.real, 0);
 
   mdm = solparser_get_medium(parser, dielec->medium_t);
   CHECK(mdm->refractive_index.type, SOLPARSER_MTL_DATA_SPECTRUM);
@@ -315,7 +315,7 @@ test_dielectric(struct solparser* parser)
   CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[0].data, 1.1);
   CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[1].data, 2.2);
   CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[2].data, 3.3);
-  spectrum = solparser_get_spectrum(parser, mdm->absorption.value.spectrum);
+  spectrum = solparser_get_spectrum(parser, mdm->extinction.value.spectrum);
   CHECK(darray_spectrum_data_size_get(&spectrum->data), 2);
   CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[0].wavelength, 0.123);
   CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[1].wavelength, 0.456);
