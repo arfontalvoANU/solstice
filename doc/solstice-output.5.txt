@@ -89,8 +89,8 @@ _______
 <#samples>            ::= INTEGER # in [0, INF)
 <#failed>             ::= INTEGER # in [0, INF)
 
-<global>              ::= <potential-irradiance>
-                          <absorbed-irradiance>
+<global>              ::= <potential-flux>
+                          <absorbed-flux>
                           <cos-factor>
                           <shadow-loss>
                           <missing-loss>
@@ -112,8 +112,10 @@ _______
 <front>               ::= <side>
 <back>                ::= <side>
 
-<side>                ::= "<absorbed-irradiance> <irradiance>
-                           <materials-loss> <atmospheric-loss>
+<side>                ::= "<incoming-flux> <in-if-no-mat-loss> <in-if-no-atm-loss>
+                           <in-mat-loss> <in-atm-loss>
+                           <absorbed-flux> <abs-if-no-mat-loss> <abs-if-no-atm-loss>
+                           <abs-mat-loss> <abs-atm-loss>
                            <efficiency>"
 
 -------------------------------------
@@ -139,8 +141,10 @@ _______
 <rcvXprim-front>      ::= <rcvXprim-side>
 <rcvXprim-back>       ::= <rcvXprim-side>
 
-<rcvXprim-side>       ::= "<absorbed-irradiance> <irradiance>
-                           <materials-loss> <atmospheric-loss>"
+<rcvXprim-side>       ::= "<incoming-flux> <in-if-no-mat-loss> <in-if-no-atm-loss>
+                           <in-mat-loss> <in-atm-loss>
+                           <absorbed-flux> <abs-if-no-mat-loss> <abs-if-no-atm-loss>
+                           <abs-mat-loss> <abs-atm-loss>"
 
 -------------------------------------
 
@@ -160,15 +164,23 @@ _______
 <azimuth>             ::= REAL # Degrees in [0, 360[
 <elevation>           ::= REAL # Degrees in [0, 90]
 
-<potential-irradiance>::= <estimate>
-<absorbed-irradiance> ::= <estimate>
-<atmospheric-loss>    ::= <estimate>
-<cos-factor>          ::= <estimate>
-<irradiance>          ::= <estimate>
-<missing-loss>        ::= <estimate>
-<materials-loss>      ::= <estimate>
-<shadow-loss>         ::= <estimate>
-<efficiency>          ::= <estimate>
+<incoming-flux>      ::= <estimate>
+<in-if-no-mat-loss>  ::= <estimate>
+<in-if-no-atm-loss>  ::= <estimate>
+<in-mat-loss>        ::= <estimate>
+<in-atm-loss>        ::= <estimate>
+<absorbed-flux>      ::= <estimate>
+<abs-if-no-mat-loss> ::= <estimate>
+<abs-if-no-atm-loss> ::= <estimate>
+<abs-mat-loss>       ::= <estimate>
+<abs-atm-loss>       ::= <estimate>
+<cos-factor>         ::= <estimate>
+<incoming-flux>      ::= <estimate>
+<missing-loss>       ::= <estimate>
+<materials-loss>     ::= <estimate>
+<atmospheric-loss>   ::= <estimate>
+<shadow-loss>        ::= <estimate>
+<efficiency>         ::= <estimate>
 
 <estimate>            ::= <expected-value> <standard-error>
 <expected-value>      ::= REAL
@@ -200,27 +212,31 @@ the exact number of lines being part of the headers. Currently this number is
 7. Each global result is a pair of real numbers: the expected value and its
 standard error. The global results are, in this order:
 
-- *potential-irradiance*: maximum irradiance that all the primary
-  geometries could intercept if properly oriented;
-- *absorbed-irradiance*: absorbed part of the irradiance reaching any
-  receiver geometry. At most equal to potential irradiance;
-- *cos-factor*: fraction of incoming irradiance not intercepted by the
-  primary geometries due to their orientation;
-- *shadow-loss*: irradiance lost before reaching primary geometries due to the
-  shadow of another geometry;
-- *missing-loss*: irradiance that reaches a primary geometry, but not
-  absorbed by a receiver; this irradiance could have been blocked along its
-  path, can have missed the receivers, or can have reach a receiver but
-  without being absorbed;
-- *materials-loss*: additional irradiance that could have been absorbed
-  by receivers if no absorption had occurred on non-receivers material until then;
-- *atmospheric-loss*: irradiance that could have been absorbed by
-  receivers if atmospheric extinction had not been taken into account.
+- *potential-flux*: maximum flux that all the primary
+  geometries could intercept if properly oriented and flat-shaped;
+- *absorbed-flux*: absorbed part of the flux reaching any
+  receiver geometry. At most equal to the potential flux;
+- *cos-factor*: cos of the angle between the sun direction and the normal of
+  the primary surfaces (average cos over all primary geometries);
+- *shadow-loss*: flux intercepted by another geometry before reaching a 
+  primary geometry.
+- *missing-loss*: part of the flux that reaches a primary geometry, follows a
+  radiative path, but is not absorbed; this flux could have bounced on geometries,
+  including receivers, but without being absorbed;
+- *materials-loss*: total flux absorbed by non-receivers along radiative paths;
+  includes both surface and volume absorption;
+- *atmospheric-loss*: total flux extinction by the atmosphere along radiative paths.
+
+This results can be used to check conservation of energy:
+
+potential-flux * cos-factor and (absorbed-flux + shadow-loss + 
+missing-loss + materials-loss + atmospheric-loss)
+should be equal whithin their respective uncertainty ranges.
 
 Per receiver results
 ~~~~~~~~~~~~~~~~~~~~
 
-After the global results, the output includes various per-receiver lines, one
+Following global results, the output includes various per-receiver lines, one
 line per receiver, the exact number of lines being part of the headers. Each
 line contains the following data:
 
@@ -236,13 +252,21 @@ The estimates of the *front* and *back* sides are listed bellow. Note that
 each of the following estimates is actually a pair of real numbers: the
 expected value and its standard error.
 
-- *absorbed-irradiance*: irradiance absorbed by the receiver side;
-- *irradiance*: irradiance that reaches the receiver side;
-- *materials-loss*: irradiance that could have been absorbed by the
-  receiver side if no absorption had occurred on non-receivers material until then;
-- *atmospheric-loss*: irradiance that could have been absorbed by the
-  receiver side if atmospheric extinction had not been taken into account;
-- *efficiency*: fraction of incoming irradiance absorbed by the receiver side.
+- *incoming-flux*: flux that reaches the receiver side;
+- *in-if-no-mat-loss*: incoming-flux if
+   absorption on non-receivers is not taken into account;
+- *in-if-no-atm-loss*: incoming-flux if
+   atmospheric extinction is not taken into account;
+- *in-mat-loss*: in-if-no-mat-loss - incoming-flux;
+- *in-atm-loss*: in-if-no-atm-loss - incoming-flux;
+- *absorbed-flux*: flux absorbed by the receiver side;
+- *abs-if-no-mat-loss*: absorbed-flux if
+  absorption by non-receivers is not taken into account;
+- *abs-if-no-atm-loss*: absorbed-flux if
+   atmospheric extinction is not taken into account;
+- *abs-mat-loss*: abs-if-no-mat-loss - absorbed-flux;
+- *abs-atm-loss*: abs-if-no-atm-loss - absorbed-flux;
+- *efficiency*: fraction of the potential flux absorbed by this receiver side.
 
 Both *front* and *back* side estimates are output, even if the receiver has
 only a single receiving side. In this case, the results of the non-receiving
@@ -251,7 +275,7 @@ side are meaningless (invalid -1 value).
 Per primary results
 ~~~~~~~~~~~~~~~~~~~
 
-After the per-receiver results, the output includes various per-primary result
+Following the per-receiver results, the output includes various per-primary result
 lines, one line per primary geometry, the exact number of lines being part of
 the headers. Each line contains:
 
@@ -262,15 +286,15 @@ the headers. Each line contains:
 - *area*: area of the primary geometry;
 - *#sample*: number of Monte-Carlo experiments sampled on the primary
   geometry;
-- *cos-factor*: expected value and standard error of the fraction of incoming
-  irradiance not intercepted by the primary geometry due to its orientation;
-- *shadow-loss*: expected value and standard error of the irradiance lost
-  before reaching the primary geometry due to the shadow of another geometry.
+- *cos-factor*: cos of the angle between the sun direction and the normal of
+  the primary surface (average cos on the primary geometry);
+- *shadow-loss*: flux intercepted by another geometry before reaching the 
+  primary geometry of interest.
 
 Per receiver and per primary results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-After the per-primary results, the output includes various result lines, each
+Following the per-primary results, the output includes various result lines, each
 describing the contribution of a primary geometry to a given receiver. The
 total number of such lines is the number of receivers times the number of
 primary geometries. Each line contains:
@@ -284,16 +308,20 @@ The estimated values of *rcvXprim-front* and *rcvXprim-back* are listed
 bellow. Each of these estimates is actually a pair of real numbers: the
 expected value and its standard error.
 
-- *absorbed-irradiance*: irradiance absorbed by the receiver side coming
-  from the primary geometry;
-- *irradiance*: irradiance reaching the receiver side coming from the primary
-  geometry;
-- *materials-loss*: irradiance that could have been absorbed by the
-  receiver side coming from the primary geometry if no absorption had occurred
-  on non-receivers material until then;
-- *atmospheric-loss*: irradiance that could have been absorbed by
-  the receiver side coming from the primary geometry if atmospheric
-  extinction had not been taken into account.
+- *incoming-flux*: flux that reaches the receiver side;
+- *in-if-no-mat-loss*: incoming-flux if
+   absorption on non-receivers is not taken into account;
+- *in-if-no-atm-loss*: incoming-flux if
+   atmospheric extinction is not taken into account;
+- *in-mat-loss*: in-if-no-mat-loss - incoming-flux;
+- *in-atm-loss*: in-if-no-atm-loss - incoming-flux;
+- *absorbed-flux*: flux absorbed by the receiver side;
+- *abs-if-no-mat-loss*: absorbed-flux if
+  absorption by non-receivers is not taken into account;
+- *abs-if-no-atm-loss*: absorbed-flux if
+   atmospheric extinction is not taken into account;
+- *abs-mat-loss*: abs-if-no-mat-loss - absorbed-flux;
+- *abs-atm-loss*: abs-if-no-atm-loss - absorbed-flux;
 
 Both front and back side estimates are output, even if the receiver has only a
 single receiving side. In this case, the results of the non-receiving side are
@@ -303,13 +331,13 @@ Receiver map
 ~~~~~~~~~~~~
 
 A receiver defined in the submitted *solstice-receiver*(5) file, can have a
-per-primitive irradiance estimate if its *per_primitive* flag is active. In
+per-primitive incoming-flux estimate if its *per_primitive* flag is active. In
 this case, *solstice*(1) generates a *receiver-map* that is actually an ASCII
 VTK file [2] that stores the triangular mesh of the receiver and, for each
-triangle, the estimate of its associated irradiance. The "definition" of the
+triangle, the estimate of its associated incoming-flux. The "definition" of the
 receiver map is thus controlled by the discretisation of the receiver's shape,
 as described in the *solstice-input*(5) file. Note that to obtain a good
-estimate of the per-triangle irradiance, one have to ensure that the number
+estimate of the per-triangle incoming-flux, one have to ensure that the number
 of per-triangle experiments is sufficient regarding the targeted accuracy.
 Since only a small fraction of the overall sampled radiative paths reach a
 given triangle, the total number of experiments required through the *-n*
@@ -317,9 +345,9 @@ option of *solstice*(1) should be increased significantly, as 1 or 2 order of
 magnitude.
 
 If only the front or the back side of the receiver is active, then only one set
-of per triangle irradiance estimate is written. If the *side* attribute of
-the receiver is set to *FRONT_AND_BACK*, the irradiance estimate for the
-front facing triangles are written before  to the estimate of the back facing
+of per triangle incoming-flux estimate is written. If the *side* attribute of
+the receiver is set to *FRONT_AND_BACK*, the incoming-flux estimates for the
+front facing triangles are written before the estimates of the back facing
 ones. The following grammar gives a brief description of the formatting of a
 *VTK-RECEIVER-MAP*. Please refer to the VTK format specification [2] for more
 informations on the VTK file format.
@@ -352,8 +380,8 @@ VTK-RECEIVER-MAP      ::= # vtk DataFile Version 2.0
 
 <map-side-data>       ::= SCALARS <side-name> float 2
                           LOOKUP_TABLE default
-                          <irradiance>
-                        [ <irradiance> ... ]
+                          <incoming-flux>
+                        [ <incoming-flux> ... ]
 
 <map-side-name>       ::= Front_faces | Back_faces
 

@@ -102,16 +102,30 @@ write_mc_global(struct solstice* solstice, struct ssol_estimator* estimator)
     SSOL(instance_get_area(inst, &area));
     fprintf(solstice->output,
       "%s %u %g   "
+      "%g %g   %g %g   %g %g   %g %g   %g %g   %g %g   "
       "%g %g   %g %g   %g %g   %g %g   %g %g   "
+      "%g %g   %g %g   %g %g   %g %g   %g %g   %g %g   "
       "%g %g   %g %g   %g %g   %g %g   %g %g\n",
       str_cget(name), (unsigned)id, area,
-      front.absorbed_flux.E, front.absorbed_flux.SE,
       front.incoming_flux.E, front.incoming_flux.SE,
+      front.incoming_if_no_field_loss.E, front.incoming_if_no_field_loss.SE,
+      front.incoming_if_no_atm_loss.E, front.incoming_if_no_atm_loss.SE,
+      front.incoming_lost_in_field.E, front.incoming_lost_in_field.SE,
+      front.incoming_lost_in_atmosphere.E, front.incoming_lost_in_atmosphere.SE,
+      front.absorbed_flux.E, front.absorbed_flux.SE,
+      front.absorbed_if_no_field_loss.E, front.absorbed_if_no_field_loss.SE,
+      front.absorbed_if_no_atm_loss.E, front.absorbed_if_no_atm_loss.SE,
       front.absorbed_lost_in_field.E, front.absorbed_lost_in_field.SE,
       front.absorbed_lost_in_atmosphere.E, front.absorbed_lost_in_atmosphere.SE,
       f_eff_E, f_eff_SE,
-      back.absorbed_flux.E, back.absorbed_flux.SE,
       back.incoming_flux.E, back.incoming_flux.SE,
+      back.incoming_if_no_field_loss.E, back.incoming_if_no_field_loss.SE,
+      back.incoming_if_no_atm_loss.E, back.incoming_if_no_atm_loss.SE,
+      back.incoming_lost_in_field.E, back.incoming_lost_in_field.SE,
+      back.incoming_lost_in_atmosphere.E, back.incoming_lost_in_atmosphere.SE,
+      back.absorbed_flux.E, back.absorbed_flux.SE,
+      back.absorbed_if_no_field_loss.E, back.absorbed_if_no_field_loss.SE,
+      back.absorbed_if_no_atm_loss.E, back.absorbed_if_no_atm_loss.SE,
       back.absorbed_lost_in_field.E, back.absorbed_lost_in_field.SE,
       back.absorbed_lost_in_atmosphere.E, back.absorbed_lost_in_atmosphere.SE,
       b_eff_E, b_eff_SE);
@@ -176,15 +190,29 @@ write_mc_global(struct solstice* solstice, struct ssol_estimator* estimator)
       }
       fprintf(solstice->output,
         "%u %u   "
+        "%g %g   %g %g   %g %g   %g %g   %g %g   %g %g   "
         "%g %g   %g %g   %g %g   %g %g   "
+        "%g %g   %g %g   %g %g   %g %g   %g %g   %g %g   "
         "%g %g   %g %g   %g %g   %g %g\n",
         (unsigned) rcv_id, (unsigned) prim_id,
-        front.absorbed_flux.E, front.absorbed_flux.SE,
         front.incoming_flux.E, front.incoming_flux.SE,
+        front.incoming_if_no_field_loss.E, front.incoming_if_no_field_loss.SE,
+        front.incoming_if_no_atm_loss.E, front.incoming_if_no_atm_loss.SE,
+        front.incoming_lost_in_field.E, front.incoming_lost_in_field.SE,
+        front.incoming_lost_in_atmosphere.E, front.incoming_lost_in_atmosphere.SE,
+        front.absorbed_flux.E, front.absorbed_flux.SE,
+        front.absorbed_if_no_field_loss.E, front.absorbed_if_no_field_loss.SE,
+        front.absorbed_if_no_atm_loss.E, front.absorbed_if_no_atm_loss.SE,
         front.absorbed_lost_in_field.E, front.absorbed_lost_in_field.SE,
         front.absorbed_lost_in_atmosphere.E, front.absorbed_lost_in_atmosphere.SE,
-        back.absorbed_flux.E, back.absorbed_flux.SE,
         back.incoming_flux.E, back.incoming_flux.SE,
+        back.incoming_if_no_field_loss.E, back.incoming_if_no_field_loss.SE,
+        back.incoming_if_no_atm_loss.E, back.incoming_if_no_atm_loss.SE,
+        back.incoming_lost_in_field.E, back.incoming_lost_in_field.SE,
+        back.incoming_lost_in_atmosphere.E, back.incoming_lost_in_atmosphere.SE,
+        back.absorbed_flux.E, back.absorbed_flux.SE,
+        back.absorbed_if_no_field_loss.E, back.absorbed_if_no_field_loss.SE,
+        back.absorbed_if_no_atm_loss.E, back.absorbed_if_no_atm_loss.SE,
         back.absorbed_lost_in_field.E, back.absorbed_lost_in_field.SE,
         back.absorbed_lost_in_atmosphere.E, back.absorbed_lost_in_atmosphere.SE);
       htable_primary_iterator_next(&p_it);
