@@ -449,16 +449,19 @@ write_paths(struct solstice* solstice, struct ssol_estimator* estimator)
     SSOL(estimator_get_tracked_path(estimator, ipath, &path));
     SSOL(path_get_type(&path, &type));
     switch(type) {
-      case SSOL_PATH_MISSING: fprintf(solstice->output, "1.0\n"); break;
+      case SSOL_PATH_ERROR: fprintf(solstice->output, "0.0\n"); break;
       case SSOL_PATH_SUCCESS: fprintf(solstice->output, "0.5\n"); break;
-      case SSOL_PATH_SHADOW: fprintf(solstice->output, "0.0\n"); break;
+      case SSOL_PATH_MISSING: fprintf(solstice->output, "0.75\n"); break;
+      case SSOL_PATH_SHADOW: fprintf(solstice->output, "1.0\n"); break;
       default: FATAL("Unreachable code.\n"); break;
     }
   }
-  fprintf(solstice->output, "LOOKUP_TABLE path_type 3\n");
-  fprintf(solstice->output, "1.0 0.0 0.0 1.0\n");
-  fprintf(solstice->output, "0.0 0.0 1.0 1.0\n");
-  fprintf(solstice->output, "1.0 1.0 0.0 1.0\n");
+  fprintf(solstice->output, "LOOKUP_TABLE path_type 5\n");
+  fprintf(solstice->output, "1.0 0.0 0.0 1.0\n"); /* 0.0 = Red: for error paths */
+  fprintf(solstice->output, "0.0 1.0 0.0 1.0\n"); /* 0.25 = Green: unused */
+  fprintf(solstice->output, "0.0 0.0 1.0 1.0\n"); /* 0.5 = Blue: for success paths */
+  fprintf(solstice->output, "0.0 1.0 1.0 1.0\n"); /* 0.75 = Turquoise: for missing paths */
+  fprintf(solstice->output, "1.0 1.0 0.0 1.0\n"); /* 1.0 = Yellow: for occluded paths */
 }
 
 /*******************************************************************************
