@@ -60,6 +60,14 @@ informations on CMake.
 
 ## Release notes
 
+### Version 0.4
+
+- Update the color of the paths outputted with the `-p` option. A path is blue,
+  turquoise or yellow if it reaches a receiver, misses the receivers or is
+  occluded before it reaches a primary reflector, respectively. 
+- Add a new type of paths tracked with the `-p` option: a path is red if it
+  travels unforeseen mediums.
+
 ### Version 0.3
 
 - Fix several issues in the output results. Refer to the Solsice-Solver 0.3
