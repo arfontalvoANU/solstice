@@ -217,7 +217,8 @@ create_cylinder
   cylinder = solparser_get_shape_cylinder(solstice->parser, cylinder_id);
   ASSERT(cylinder->nslices > 0 && cylinder->nslices < UINT_MAX);
   res = s3dut_create_cylinder(solstice->allocator, cylinder->radius,
-    cylinder->height, (unsigned)cylinder->nslices, 1, &mesh);
+    cylinder->height, (unsigned)cylinder->nslices, (unsigned)cylinder->nstacks, 
+    &mesh);
   if(res != RES_OK) {
     fprintf(stderr, "Could not create the cylinder 3D data.\n");
     goto error;

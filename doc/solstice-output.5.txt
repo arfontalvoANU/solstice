@@ -415,10 +415,13 @@ DUMP RADIATIVE PATHS
 
 For each sun direction, the *dump-radiative-paths-output* lists the geometric
 data of the radiative paths sampled during a simulation. Each path is colored
-with respect to its trajectory: the path is blue or yellow whether it reaches
-or not a receiver, respectively. A path can be red if its first segment, i.e.
-the ray starting from the sun toward a primary geometry, is occluded by a non
-virtual object. The following grammar describes the formatting of a
+with respect to its type: the path is yellow if its first segment, i.e.
+the ray starting from the sun towards a primary geometry, is occluded by a non
+virtual object. If not occluded, the path can be blue or turquoise whether it
+reaches a receiver or not, respectively. Finally, the path can also be red if
+it was canceled due to a topologically incoherent impact (i.e. an impact on
+a surface not at the boundary of the medium in which the rays was propagating).
+The following grammar describes the formatting of a
 *VTK-RADIATIVE-PATHS* file. Refer to the VTK format specification [2] for more
 informations on the VTK file format.
 
@@ -436,10 +439,12 @@ VTK-RADIATIVE-PATHS   ::= # vtk DataFile Version 2.0
                           SCALAR Radiative_path_type float 1
                           LOOKUP_TABLE path_type
                           <paths-type>
-                          LOOKUP_TABLE path_type 3
-                          <color-occlude>
+                          LOOKUP_TABLE path_type 5
+                          <color-error>
+                          <color-unused>
                           <color-success>
                           <color-missing>
+                          <color-occluded>
 
 <paths-vertices>      ::= <real3>
                         [ <real3> ... ] # up to <#vertices>
@@ -452,13 +457,17 @@ VTK-RADIATIVE-PATHS   ::= # vtk DataFile Version 2.0
 <paths-type>          ::= <color-id>
                         [ <color-id> ... ] # up to <#paths>
 
-<color-id>            ::= 0.0 # occlude
-                        | 0.5 # success
-                        | 1.0 # missing
-
-<color-occlude>       ::= 1.0 0.0 0.0 1.0
+<color-id>            ::= 0.0  # Red: for error paths
+                        | 0.25 # Green: unused
+                        | 0.5  # Blue: for success paths
+                        | 0.75 # Turquoise: for missing paths
+                        | 1.0  # Yellow: for occluded paths
+  
+<color-error>         ::= 1.0 0.0 0.0 1.0
+<color-unused>        ::= 0.0 1.0 0.0 1.0
 <color-success>       ::= 0.0 0.0 1.0 1.0
-<color-missing>       ::= 1.0 1.0 0.0 1.0
+<color-missing>       ::= 0.0 1.0 1.0 1.0
+<color-occluded>      ::= 1.0 1.0 0.0 1.0
 
 <#paths>              ::= INTEGER
 <#path-segments>      ::= INTEGER
