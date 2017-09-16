@@ -67,6 +67,7 @@ informations on CMake.
   occluded before it reaches a primary reflector, respectively. 
 - Add a new type of paths tracked with the `-p` option: a path is red if it
   travels unforeseen mediums.
+- Correctly handle the `stacks` parameter of the cylinder.
 
 ### Version 0.3
 
