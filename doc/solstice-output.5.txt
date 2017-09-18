@@ -164,23 +164,23 @@ _______
 <azimuth>             ::= REAL # Degrees in [0, 360[
 <elevation>           ::= REAL # Degrees in [0, 90]
 
-<incoming-flux>      ::= <estimate>
-<in-if-no-mat-loss>  ::= <estimate>
-<in-if-no-atm-loss>  ::= <estimate>
-<in-mat-loss>        ::= <estimate>
-<in-atm-loss>        ::= <estimate>
-<absorbed-flux>      ::= <estimate>
-<abs-if-no-mat-loss> ::= <estimate>
-<abs-if-no-atm-loss> ::= <estimate>
-<abs-mat-loss>       ::= <estimate>
-<abs-atm-loss>       ::= <estimate>
-<cos-factor>         ::= <estimate>
-<incoming-flux>      ::= <estimate>
-<missing-loss>       ::= <estimate>
-<materials-loss>     ::= <estimate>
-<atmospheric-loss>   ::= <estimate>
-<shadow-loss>        ::= <estimate>
-<efficiency>         ::= <estimate>
+<incoming-flux>       ::= <estimate>
+<in-if-no-mat-loss>   ::= <estimate>
+<in-if-no-atm-loss>   ::= <estimate>
+<in-mat-loss>         ::= <estimate>
+<in-atm-loss>         ::= <estimate>
+<absorbed-flux>       ::= <estimate>
+<abs-if-no-mat-loss>  ::= <estimate>
+<abs-if-no-atm-loss>  ::= <estimate>
+<abs-mat-loss>        ::= <estimate>
+<abs-atm-loss>        ::= <estimate>
+<cos-factor>          ::= <estimate>
+<incoming-flux>       ::= <estimate>
+<missing-loss>        ::= <estimate>
+<materials-loss>      ::= <estimate>
+<atmospheric-loss>    ::= <estimate>
+<shadow-loss>         ::= <estimate>
+<efficiency>          ::= <estimate>
 
 <estimate>            ::= <expected-value> <standard-error>
 <expected-value>      ::= REAL
@@ -218,8 +218,8 @@ standard error. The global results are, in this order:
   receiver geometry. At most equal to the potential flux;
 - *cos-factor*: cos of the angle between the sun direction and the normal of
   the primary surfaces (average cos over all primary geometries);
-- *shadow-loss*: flux intercepted by another geometry before reaching a 
-  primary geometry.
+- *shadow-loss*: potential flux intercepted by another geometry before reaching
+  a primary geometry;
 - *missing-loss*: part of the flux that reaches a primary geometry, follows a
   radiative path, but is not absorbed; this flux could have bounced on geometries,
   including receivers, but without being absorbed;
@@ -288,8 +288,8 @@ the headers. Each line contains:
   geometry;
 - *cos-factor*: cos of the angle between the sun direction and the normal of
   the primary surface (average cos on the primary geometry);
-- *shadow-loss*: flux intercepted by another geometry before reaching the 
-  primary geometry of interest.
+- *shadow-loss*: potential flux intercepted by another geometry before reaching
+  the primary geometry of interest.
 
 Per receiver and per primary results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
