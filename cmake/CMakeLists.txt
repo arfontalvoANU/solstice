@@ -44,7 +44,7 @@ set(LibYAML_DIR ${_current_source_dir}/)
 find_package(LibYAML REQUIRED)
 find_package(RCMake 0.2.3 REQUIRED)
 find_package(RSys 0.4 REQUIRED)
-find_package(SolAnim 0.1 REQUIRED)
+find_package(SolAnim 0.2 REQUIRED)
 find_package(SolSolver 0.4 REQUIRED)
 find_package(Star3DUT 0.2 REQUIRED)
 find_package(StarSP 0.4 REQUIRED)
@@ -97,7 +97,7 @@ configure_file(${SOLSTICE_SOURCE_DIR}/../doc/solstice.1.txt.in
 
 set(VERSION_MAJOR 0)
 set(VERSION_MINOR 4)
-set(VERSION_PATCH 0)
+set(VERSION_PATCH 1)
 set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
 configure_file(${SOLSTICE_SOURCE_DIR}/solstice_version.h.in

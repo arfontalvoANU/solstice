@@ -120,7 +120,6 @@ res_T
 solstice_dump(struct solstice* solstice)
 {
   struct dump_context ctx;
-  double dummy_dir[3] = {0, 0, 1};
   size_t i, n;
   res_T res = RES_OK;
   ASSERT(solstice && solstice->dump_format == SOLSTICE_ARGS_DUMP_OBJ);
@@ -135,9 +134,7 @@ solstice_dump(struct solstice* solstice)
 
     fprintf(solstice->output, "# %s\n", solstice_node_get_name(node));
 
-    /* TODO use a anim tree visitor that neither resolve the pivot
-     * transformations nor compute the node transforms */
-    res = sanim_node_visit_tree(&node->anim, dummy_dir, &ctx, dump_geometry);
+    res = sanim_node_visit_tree(&node->anim, NULL, &ctx, dump_geometry);
     if(res != RES_OK) {
       fprintf(stderr, "Could not dump the solstice geometry.\n");
       goto error;
