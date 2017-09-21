@@ -60,6 +60,11 @@ informations on CMake.
 
 ## Release notes
 
+### Version 0.5
+
+- Improve the performances of the solver up to 50% in situations where the
+  radiative random walks bounce on many surfaces.
+
 ### Version 0.4.1
 
 - Update the name of the outputted data in the solstice-output man page.
