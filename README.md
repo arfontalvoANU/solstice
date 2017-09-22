@@ -67,13 +67,13 @@ informations on CMake.
 
 ### Version 0.4.1
 
-- Update the name of the outputted data in the solstice-output man page.
+- Update the name of the output data in the solstice-output man page.
 - Fix an issue in "dump geometry" mode, i.e. option `-g`. Solstice might fail
   to export the solar plant geometry due to a wrong constraint on the pivots.
 
 ### Version 0.4
 
-- Update the color of the paths outputted with the `-p` option. A path is blue,
+- Update the color of the paths output with the `-p` option. A path is blue,
   turquoise or yellow if it reaches a receiver, misses the receivers or is
   occluded before it reaches a primary reflector, respectively.
 - Add a new type of paths tracked with the `-p` option: a path is red if it
