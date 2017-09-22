@@ -391,6 +391,8 @@ parse_entity
     } else if(!strcmp((char*) key->data.scalar.value, "primary")) {
       long tmp;
       SETUP_MASK(PRIMARY, "primary");
+      /* FIXME: add NONE/ FRONT / BACK / FRONT_AND_BACK qualifier
+       * to avoid a misunderstanding about shadows results */
       res = parse_integer(parser, val, 0, 1, &tmp);
       solent.primary = (int)tmp;
     } else {
