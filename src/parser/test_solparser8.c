@@ -45,10 +45,10 @@ main(int argc, char** argv)
   NCHECK(stream, NULL);
 
   fprintf(stream, "- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1 }] }\n");
-  fprintf(stream, "- medium: &vacuum {refractive_index: 1, absorption: 0}\n");
+  fprintf(stream, "- medium: &vacuum {refractive_index: 1, extinction: 0}\n");
   fprintf(stream, "- medium: &glass \n");
   fprintf(stream, "    refractive_index: 1.5\n");
-  fprintf(stream, "    absorption: \n");
+  fprintf(stream, "    extinction: \n");
   fprintf(stream, "    - {wavelength: 1, data: 21}\n");
   fprintf(stream, "    - {wavelength: 2, data: 22}\n");
   fprintf(stream, "    - {wavelength: 3, data: 23}\n");
@@ -99,14 +99,14 @@ main(int argc, char** argv)
   vacuum = solparser_get_medium(parser, dielec->medium_i);
   CHECK(vacuum->refractive_index.type, SOLPARSER_MTL_DATA_REAL);
   CHECK(vacuum->refractive_index.value.real, 1);
-  CHECK(vacuum->absorption.type, SOLPARSER_MTL_DATA_REAL);
-  CHECK(vacuum->absorption.value.real, 0);
+  CHECK(vacuum->extinction.type, SOLPARSER_MTL_DATA_REAL);
+  CHECK(vacuum->extinction.value.real, 0);
 
   glass = solparser_get_medium(parser, dielec->medium_t);
   CHECK(glass->refractive_index.type, SOLPARSER_MTL_DATA_REAL);
   CHECK(glass->refractive_index.value.real, 1.5);
-  CHECK(glass->absorption.type, SOLPARSER_MTL_DATA_SPECTRUM);
-  spectrum = solparser_get_spectrum(parser, glass->absorption.value.spectrum);
+  CHECK(glass->extinction.type, SOLPARSER_MTL_DATA_SPECTRUM);
+  spectrum = solparser_get_spectrum(parser, glass->extinction.value.spectrum);
   CHECK(darray_spectrum_data_size_get(&spectrum->data), 6);
   CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[0].wavelength, 1);
   CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[1].wavelength, 2);

@@ -28,7 +28,7 @@ parse_atmosphere
    yaml_node_t* atm,
    struct solparser_atmosphere** out_solatm)
 {
-  enum { ABSORPTION };
+  enum { EXTINCTION };
   struct solparser_atmosphere* solatm = NULL;
   int mask = 0; /* Register the parsed attributes */
   intptr_t i, n;
@@ -77,10 +77,10 @@ parse_atmosphere
       }                                                                        \
       mask |= BIT(Flag);                                                       \
     } (void)0
-    if(!strcmp((char*)key->data.scalar.value, "absorption")) {
-      SETUP_MASK(ABSORPTION, "absorption");
+    if(!strcmp((char*)key->data.scalar.value, "extinction")) {
+      SETUP_MASK(EXTINCTION, "extinction");
       res = parse_mtl_data
-        (parser, doc, val, 0, 1, &solatm->absorption);
+        (parser, doc, val, 0, 1, &solatm->extinction);
     } else {
       log_err(parser, key, "unknown atmosphere parameter `%s'.\n",
         key->data.scalar.value);
@@ -100,7 +100,7 @@ parse_atmosphere
     res = RES_BAD_ARG;                                                         \
     goto error;                                                                \
   } (void)0
-  CHECK_PARAM(ABSORPTION, "absorption");
+  CHECK_PARAM(EXTINCTION, "extinction");
   #undef CHECK_PARAM
 
 exit:

@@ -19,7 +19,7 @@
 #include "solparser_mtl_data.h"
 
 struct solparser_atmosphere {
-  struct solparser_mtl_data absorption;
+  struct solparser_mtl_data extinction;
 };
 
 static INLINE void

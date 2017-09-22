@@ -40,8 +40,8 @@ test_dielectric(struct solparser* parser)
   fprintf(stream, "- material: &glass\n");
   fprintf(stream, "    front:\n");
   fprintf(stream, "      dielectric:\n");
-  fprintf(stream, "        medium_i: &out {refractive_index: 1, absorption: 0}\n");
-  fprintf(stream, "        medium_t: &in  {refractive_index: 1.5, absorption: 20}\n");
+  fprintf(stream, "        medium_i: &out {refractive_index: 1, extinction: 0}\n");
+  fprintf(stream, "        medium_t: &in  {refractive_index: 1.5, extinction: 20}\n");
   fprintf(stream, "        normal_map: {path: my_normal_map}\n");
   fprintf(stream, "    back: {dielectric: {medium_i: *in, medium_t: *out}}\n");
   fprintf(stream, "\n");
@@ -267,10 +267,10 @@ test_thin_dielectric(struct solparser* parser)
   fprintf(stream, "            thickness: 0.1\n");
   fprintf(stream, "            medium_i:\n");
   fprintf(stream, "              refractive_index: 1\n");
-  fprintf(stream, "              absorption: 0\n");
+  fprintf(stream, "              extinction: 0\n");
   fprintf(stream, "            medium_t:\n");
   fprintf(stream, "              refractive_index: 1.5\n");
-  fprintf(stream, "              absorption: 20\n");
+  fprintf(stream, "              extinction: 20\n");
   fprintf(stream, "            normal_map: { path: Bump }\n");
   rewind(stream);
 

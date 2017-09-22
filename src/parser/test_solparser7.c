@@ -54,13 +54,13 @@ main(int argc, char** argv)
   fprintf(stream, "            thickness: 0.123\n");
   fprintf(stream, "            medium_i: &outside\n");
   fprintf(stream, "              refractive_index: 1\n");
-  fprintf(stream, "              absorption: 0\n");
+  fprintf(stream, "              extinction: 0\n");
   fprintf(stream, "            medium_t: &inside\n");
   fprintf(stream, "              refractive_index: \n");
   fprintf(stream, "              - {wavelength: 1.2, data: 2.3}\n");
   fprintf(stream, "              - {wavelength: 4.5, data: 6.7}\n");
   fprintf(stream, "              - {wavelength: 0.5, data: 0.25}\n");
-  fprintf(stream, "              absorption:\n");
+  fprintf(stream, "              extinction:\n");
   fprintf(stream, "              - {wavelength: 3, data: 3}\n");
   fprintf(stream, "              - {wavelength: 1, data: 1}\n");
   fprintf(stream, "              - {wavelength: 5, data: 5}\n");
@@ -98,8 +98,8 @@ main(int argc, char** argv)
   medium = solparser_get_medium(parser, thin->medium_i);
   CHECK(medium->refractive_index.type, SOLPARSER_MTL_DATA_REAL);
   CHECK(medium->refractive_index.value.real, 1);
-  CHECK(medium->absorption.type, SOLPARSER_MTL_DATA_REAL);
-  CHECK(medium->absorption.value.real, 0);
+  CHECK(medium->extinction.type, SOLPARSER_MTL_DATA_REAL);
+  CHECK(medium->extinction.value.real, 0);
   medium = solparser_get_medium(parser, thin->medium_t);
 
   CHECK(medium->refractive_index.type, SOLPARSER_MTL_DATA_SPECTRUM);
@@ -112,8 +112,8 @@ main(int argc, char** argv)
   CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[1].data, 2.3);
   CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[2].data, 6.7);
 
-  CHECK(medium->absorption.type, SOLPARSER_MTL_DATA_SPECTRUM);
-  spectrum = solparser_get_spectrum(parser, medium->absorption.value.spectrum);
+  CHECK(medium->extinction.type, SOLPARSER_MTL_DATA_SPECTRUM);
+  spectrum = solparser_get_spectrum(parser, medium->extinction.value.spectrum);
   CHECK(darray_spectrum_data_size_get(&spectrum->data), 5);
   CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[0].wavelength, 1);
   CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[1].wavelength, 2);
