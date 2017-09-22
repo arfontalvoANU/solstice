@@ -143,7 +143,7 @@ create_default_sun_spectrum
   size_t size;
   res_T res = RES_OK;
 
-  /* The solparser_sun may be used if the defautl spectrum is defined wrt the
+  /* The solparser_sun may be used if the default spectrum is defined wrt the
    * sun type */
   (void)solparser_sun;
 
