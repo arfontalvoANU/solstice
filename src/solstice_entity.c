@@ -389,9 +389,6 @@ create_node
 
     res = solstice_node_add_child(node, tgt);
     if(res != RES_OK) goto error;
-
-    solstice_node_ref_put(tgt);
-    tgt = NULL;
   }
 
   /* Setup children */

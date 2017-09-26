@@ -115,6 +115,22 @@ clear_nodes(struct darray_nodes* nodes)
   darray_nodes_clear(nodes);
 }
 
+static void
+clear_anchors(struct htable_anchor* anchors)
+{
+  struct htable_anchor_iterator it, end;
+  ASSERT(anchors);
+
+  htable_anchor_begin(anchors, &it);
+  htable_anchor_end(anchors, &end);
+  while(!htable_anchor_iterator_eq(&it, &end)) {
+    struct solstice_node* node = *htable_anchor_iterator_data_get(&it);
+    solstice_node_ref_put(node);
+    htable_anchor_iterator_next(&it);
+  }
+  htable_anchor_clear(anchors);
+}
+
 static res_T
 auto_look_at
   (struct ssol_scene* scn,
@@ -676,6 +692,7 @@ solstice_release(struct solstice* solstice)
   clear_materials(&solstice->materials);
   clear_objects(&solstice->objects);
   clear_nodes(&solstice->roots);
+  clear_anchors(&solstice->anchors);
   /* Don't clear pivots, as they are cleared from some root */
   if(solstice->ssol) SSOL(device_ref_put(solstice->ssol));
   if(solstice->scene) SSOL(scene_ref_put(solstice->scene));
