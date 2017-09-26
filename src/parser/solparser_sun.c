@@ -93,7 +93,7 @@ parse_pillbox
    const yaml_node_t* pillbox,
    struct solparser_sun_pillbox* sun)
 {
-  enum { APERTURE };
+  enum { THETA_MAX };
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
@@ -118,14 +118,14 @@ parse_pillbox
       res = RES_BAD_ARG;
       goto error;
     }
-    if(!strcmp((char*)key->data.scalar.value, "aperture")) {
-      if(mask & BIT(APERTURE)) {
-        log_err(parser, key, "the pillbox `aperture' is already defined.\n");
+    if(!strcmp((char*)key->data.scalar.value, "theta_max")) {
+      if(mask & BIT(THETA_MAX)) {
+        log_err(parser, key, "the pillbox `theta_max' is already defined.\n");
         res = RES_BAD_ARG;
         goto error;
       }
-      mask |= BIT(APERTURE);
-      res = parse_real(parser, val, nextafter(0, 1), 90, &sun->aperture);
+      mask |= BIT(THETA_MAX);
+      res = parse_real(parser, val, nextafter(0, 1), 90, &sun->theta_max);
     } else {
       log_err(parser, pillbox, "unknown pillbox parameter `%s'.\n",
         key->data.scalar.value);
@@ -138,8 +138,8 @@ parse_pillbox
     }
   }
 
-  if(!(mask & BIT(APERTURE))) {
-    log_err(parser, pillbox, "the pillbox aperture parameter is missing.\n");
+  if(!(mask & BIT(THETA_MAX))) {
+    log_err(parser, pillbox, "the pillbox theta_max parameter is missing.\n");
     res = RES_BAD_ARG;
     goto error;
   }
