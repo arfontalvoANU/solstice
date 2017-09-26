@@ -461,15 +461,6 @@ solstice_setup_entities(struct solstice* solstice)
       goto error;
     }
 
-    /* Initialialised the world space position of the entity geometry */
-    res = sanim_node_visit_tree
-      (&root->anim, dummy_sun_dir, solstice, update_instance_transform);
-    if(res != RES_OK) {
-      fprintf(stderr,
-        "Could not setup the transformation of the entity geometries.\n");
-      goto error;
-    }
-
     res = darray_nodes_push_back(&solstice->roots, &root);
     if(res != RES_OK) {
       fprintf(stderr, "Could not register a root entity.\n");
@@ -478,6 +469,13 @@ solstice_setup_entities(struct solstice* solstice)
 
     solparser_entity_iterator_next(&it);
     root = NULL;
+  }
+
+  /* Initialise the world space position of the geometries */
+  res = solstice_update_entities(solstice, dummy_sun_dir);
+  if(res != RES_OK) {
+    fprintf(stderr, "Could not setup the initial position of the entities.\n");
+    goto error;
   }
 
 exit:
@@ -499,7 +497,6 @@ solstice_update_entities(struct solstice* solstice, const double sun_dir[3])
   FOR_EACH(i, 0, n) {
     struct solstice_node* node = darray_nodes_data_get(&solstice->roots)[i];
 
-    /* Initialialised the world space position of the entity geometry */
     res = sanim_node_visit_tree
       (&node->anim, sun_dir, solstice, update_instance_transform);
     if(res != RES_OK) {
