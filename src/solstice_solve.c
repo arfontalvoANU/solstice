@@ -19,6 +19,11 @@
 #include <solstice/ssol.h>
 #include <star/ssp.h>
 
+/* How many percent of random walk realisations may fail before solve() stops
+ * in a standard solve() invocation.
+ * It is not used when solve() is invoked in order to dump paths. */
+#define MAX_PERCENT_FAILURES 0.01
+
 /*******************************************************************************
  * Helper function
  ******************************************************************************/
@@ -500,6 +505,7 @@ solstice_solve(struct solstice* solstice)
 {
   struct ssol_estimator* estimator = NULL;
   struct ssp_rng* rng = NULL;
+  size_t max_failure;
   res_T res = RES_OK;
   ASSERT(solstice);
 
@@ -509,7 +515,11 @@ solstice_solve(struct solstice* solstice)
     goto error;
   }
 
-  res = ssol_solve(solstice->scene, rng, solstice->nexperiments,
+  max_failure = solstice->dump_paths ?
+    solstice->nexperiments
+    : (size_t)((double)solstice->nexperiments * MAX_PERCENT_FAILURES);
+
+  res = ssol_solve(solstice->scene, rng, solstice->nexperiments, max_failure,
     solstice->dump_paths ? &solstice->path_tracker : NULL, &estimator);
   if(res != RES_OK) {
     fprintf(stderr, "Error in integrating the solar flux.\n");
