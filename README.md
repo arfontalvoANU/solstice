@@ -60,6 +60,24 @@ informations on CMake.
 
 ## Release notes
 
+### Version 0.6
+
+- Rename the atmosphere `absorption` parameter in `extinction`.
+- Add several global and per-receiver estimations. The outputs now fully
+  describe the incoming and absorbed fluxes: overall flux, flux without
+  material loss, flux without atmospheric loss, material losses and atmospheric
+  losses.
+- Rename the pillbox `aperture` parameter in `theta_max`.
+- Fix the distribution of the pillbox sun: the pdf was wrong and its angular
+  parameter was internally used as an angular diameter while it is a angular
+  radius.
+- Fix the solver for non parallel sun: the angle between the principal sun
+  direction and the sampled direction was not correctly taken into account
+  leading to a wrong initial weight for the optical paths.
+- Fix the solver with shapes having perturbed normals: perturbed normals
+  must be taken into account in the bounces of the optical paths only, not in
+  the energy computations.
+
 ### Version 0.5
 
 - Improve the performances of the solver up to 50% in situations where the
