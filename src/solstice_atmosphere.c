@@ -23,7 +23,7 @@ res_T
 solstice_create_atmosphere(struct solstice* solstice)
 {
   struct ssol_atmosphere* atm = NULL;
-  struct ssol_data absorption = SSOL_DATA_NULL;
+  struct ssol_data extinction = SSOL_DATA_NULL;
   const struct solparser_atmosphere* solparser_atm = NULL;
   res_T res = RES_OK;
   ASSERT(solstice);
@@ -34,12 +34,12 @@ solstice_create_atmosphere(struct solstice* solstice)
   res = ssol_atmosphere_create(solstice->ssol, &atm);
   if(res != RES_OK) goto error;
   
-  res = mtl_to_ssol_data(solstice, &solparser_atm->absorption, &absorption);
+  res = mtl_to_ssol_data(solstice, &solparser_atm->extinction, &extinction);
   if(res != RES_OK) goto error;
 
-  res = ssol_atmosphere_set_absorption(atm, &absorption);
+  res = ssol_atmosphere_set_extinction(atm, &extinction);
   if(res != RES_OK) {
-    fprintf(stderr, "Could not set atmosphere absorbtion.\n");
+    fprintf(stderr, "Could not set atmosphere extinction.\n");
     goto error;
   }
 
@@ -50,7 +50,7 @@ solstice_create_atmosphere(struct solstice* solstice)
   }
 
 exit:
-  ssol_data_clear(&absorption);
+  ssol_data_clear(&extinction);
   solstice->atmosphere = atm;
   return res;
 error:

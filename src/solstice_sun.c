@@ -105,10 +105,10 @@ create_sun_pillbox
     goto error;
   }
 
-  res = ssol_sun_set_pillbox_aperture
-    (sun, MDEG2RAD(solparser_sun->radang_distrib.pillbox.aperture));
+  res = ssol_sun_pillbox_set_theta_max
+    (sun, MDEG2RAD(solparser_sun->radang_distrib.pillbox.theta_max));
   if(res != RES_OK) {
-    fprintf(stderr, "Could not setup the aperture of the solver pillbox sun.\n");
+    fprintf(stderr, "Could not setup theta_max for the solver pillbox sun.\n");
     goto error;
   }
 
@@ -143,7 +143,7 @@ create_default_sun_spectrum
   size_t size;
   res_T res = RES_OK;
 
-  /* The solparser_sun may be used if the defautl spectrum is defined wrt the
+  /* The solparser_sun may be used if the default spectrum is defined wrt the
    * sun type */
   (void)solparser_sun;
 

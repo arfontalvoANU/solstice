@@ -21,7 +21,7 @@
 
 struct solparser_medium {
   struct solparser_mtl_data refractive_index;
-  struct solparser_mtl_data absorption;
+  struct solparser_mtl_data extinction;
 };
 
 struct solparser_medium_id { size_t i; };
