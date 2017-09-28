@@ -72,26 +72,26 @@
 #
 # <pillbox> ::=
 #   pillbox:
-#     aperture: REAL # in ]0, 90]
+#     half_angle: REAL # in ]0, 90]
 #
 
 # missing pillbox definition
 - sun: { pillbox: }
 ---
-# missing aperture value
-- sun: { pillbox: { aperture: } }
+# missing half_angle value
+- sun: { pillbox: { half_angle: } }
 ---
-# aperture should be a number
-- sun: { pillbox: { aperture: "dummy"} }
+# half_angle should be a number
+- sun: { pillbox: { half_angle: "dummy"} }
 ---
 # 0 invalid
-- sun: { pillbox: { aperture: 0} }
+- sun: { pillbox: { half_angle: 0} }
 ---
 # 91 invalid
-- sun: { pillbox: { aperture: 91} }
+- sun: { pillbox: { half_angle: 91} }
 ---
-# 2x aperture
-- sun: { pillbox: { aperture: 1, aperture: 1} }
+# 2x half_angle
+- sun: { pillbox: { half_angle: 1, half_angle: 1} }
 ---
 # unknown dummy parameter
 - sun: { pillbox: { dummy: 1} }
@@ -152,7 +152,7 @@
 ---
 # 2x radial-angular-distribution
 - sun:
-    pillbox: { aperture: 1}
+    pillbox: { half_angle: 1}
     buie: { csr: 0.5}
 ---
 

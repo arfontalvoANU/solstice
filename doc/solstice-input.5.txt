@@ -205,7 +205,7 @@ _______
 <medium>              ::= medium: <medium-descriptor>
 
 <medium-descriptor>   ::= refractive_index: <mtl-data> # in ]0, INF)
-                          absorption: <mtl-data> # in [0, INF)
+                          extinction: <mtl-data> # in [0, INF)
 
 ----------------------------------------
 
@@ -253,12 +253,12 @@ _______
                             csr: REAL # in [1e-6, 0.849]
 
 <pillbox>             ::= pillbox:
-                            theta_max: REAL # in ]0, 90]
+                            half_angle: REAL # in ]0, 90]
 
 ----------------------------------------
 
 <atmosphere>          ::= atmosphere:
-                            absorption: <mtl-data> # in [0, 1]
+                            extinction: <mtl-data> # in [0, 1]
 
 ----------------------------------------
 
@@ -318,8 +318,8 @@ shapes are:
 
 *pillbox*::
   The *pillbox* distribution defines an uniform intensity over the sun's disk.
-  Its single *theta_max* parameter is the sun's disk half-angle in degrees, that
-  is linked to the apparent size of the sun. A typical theta_max is 0.2664.
+  Its single *half_angle* parameter is the sun's disk half-angle in degrees, that
+  is linked to the apparent size of the sun. A typical half_angle is 0.2664.
 
 *buie*::
   The *buie* distribution, as first discribed in [3]. Its single *csr*
@@ -331,13 +331,13 @@ ATMOSPHERE
 ----------
 
 The *atmosphere*, when provided, describes the medium surrounding the
-solar plant. Its only parameter is its absorption coefficient in m^-1, that
-can either be a scalar if the *absorption* is constant over the spectrum, or
-can be spectrally described. The absorption along light paths is only computed
+solar plant. Its only parameter is its extinction coefficient in m^-1, that
+can either be a scalar if the *extinction* is constant over the spectrum, or
+can be spectrally described. The extinction along light paths is only computed
 after the first reflector, as sun description must include all the atmospheric
 effects before the first reflector (see sun description for more details).
 
-If no atmosphere is provided, atmospheric absorption after the first reflector
+If no atmosphere is provided, atmospheric extinction after the first reflector
 is not taken into account.
 
 MATERIAL
@@ -387,8 +387,8 @@ dielectrics with inverted media:
 material:
   front:
     dielectric:
-      medium_i: &vacuum { refractive_index: 1, absorption: 0 }
-      medium_t: &glass { refractive_index: 1.5, absorption: 20 }
+      medium_i: &vacuum { refractive_index: 1, extinction: 0 }
+      medium_t: &glass { refractive_index: 1.5, extinction: 20 }
   back:
     dielectric:
       medium_i: *glass
@@ -397,13 +397,13 @@ material:
 +
 If the media consistency is not ensured, *solstice*(1) will fail to run
 simulations. Note that by default, the surrounding medium is assumed to be
-the vacuum, i.e.  its refractive index and its absorption are scalars whose
+the vacuum, i.e.  its refractive index and its extinction are scalars whose
 values are 1 and 0, respectively. If an atmosphere is defined, the refractive
-index of the surrounding medium is still the scalar 1 but its absorption is
+index of the surrounding medium is still the scalar 1 but its extinction is
 the one of the atmosphere. In other words, to reference the surrounding medium
 in the *medium_i* or the *medium_t* attribute of a *dielectric* interface, one
-has to define a medium whose refractive index is the scalar 1 and absorption
-is either 0 or the absorption of the atmosphere if the latter is defined or
+has to define a medium whose refractive index is the scalar 1 and extinction
+is either 0 or the extinction of the atmosphere if the latter is defined or
 not, respectively.
 
 *matte*::
@@ -450,12 +450,12 @@ ray travelling in a medium _A_ can only encounter a medium interface whose
 *medium_i* attribute is _A_. If the media consistency is not ensured,
 *solstice*(1) will fail to run simulations. Note that by default, the
 surrounding medium is assumed to be the vacuum, i.e. its refractive index and
-its absorption are scalars whose values are 1 and 0, respectively. If an
+its extinction are scalars whose values are 1 and 0, respectively. If an
 atmosphere is defined, the refractive index of the surrounding medium is still
-the scalar 1 but its absorption is the one of the atmosphere. In other words,
+the scalar 1 but its extinction is the one of the atmosphere. In other words,
 to reference the surrounding medium in the *medium_i* attribute of a
 *thin-dielectric* interface, one has to define a medium whose refractive
-index is the scalar 1 and absorption is either 0 or the absorption of the
+index is the scalar 1 and extinction is either 0 or the extinction of the
 atmosphere if the latter is defined.
 
 *virtual*::
@@ -877,12 +877,12 @@ is 1 and its center is positioned at {0,0,2}:
 .......
 
 Define a circular diffuse reflector surrounded by a virtual sphere and a
-pillbox-shaped sun whose theta_max is 0.1 degree. Use anchors and tags of the
+pillbox-shaped sun whose *half_angle* is 0.1 degree. Use anchors and tags of the
 YAML format to reference into the entities a pre-declared geometry. Rely on
 the YAML compact notation to reduce the number of lines required to describe
 the scene:
 .......
-- sun: {dni: 1000, pillbox: {theta_max: 0.1}}
+- sun: {dni: 1000, pillbox: {half_angle: 0.1}}
 
 - geometry: &small-circle
   - material: {matte: {reflectivity: 1}}
@@ -1011,7 +1011,7 @@ a *cuboid* using a glass material is located between the hyperbol and the
 target. In this example, a small fraction of incoming power is absorbed by the
 target. The rest is either missing the target, absorbed or refracted by the
 glass. Furthermore, this example illustrates the use of a *spectrum* for
-*refractive index* and *absorption* by various *media* (air and glass).
+*refractive index* and *extinction* by various *media* (air and glass).
 .......
 # Spectra
 - spectrum: &solar_spectrum
@@ -1049,15 +1049,15 @@ glass. Furthermore, this example illustrates the use of a *spectrum* for
 # Media
 - medium: &air_medium
     refractive_index: 1
-    absorption: *air_kabs
+    extinction: *air_kabs
 
 - medium: &glass_medium
     refractive_index: *glass_ref_index
-    absorption: *glass_kabs
+    extinction: *glass_kabs
 
 # Sun & atmosphere
 - sun: {dni: 1, spectrum: *solar_spectrum}
-- atmosphere: {absorption: *air_kabs}
+- atmosphere: {extinction: *air_kabs}
 
 # Materials
 - material: &specular {mirror: {reflectivity: 1, roughness: 0}}

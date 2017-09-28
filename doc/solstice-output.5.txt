@@ -112,10 +112,10 @@ _______
 <front>               ::= <side>
 <back>                ::= <side>
 
-<side>                ::= "<incoming-flux> <in-if-no-mat-loss> <in-if-no-atm-loss>
-                           <in-mat-loss> <in-atm-loss>
-                           <absorbed-flux> <abs-if-no-mat-loss> <abs-if-no-atm-loss>
-                           <abs-mat-loss> <abs-atm-loss>
+<side>                ::= "<incoming-flux> <in-if-no-mat-loss>
+                           <in-if-no-atm-loss> <in-mat-loss> <in-atm-loss>
+                           <absorbed-flux> <abs-if-no-mat-loss>
+                           <abs-if-no-atm-loss> <abs-mat-loss> <abs-atm-loss>
                            <efficiency>"
 
 -------------------------------------
@@ -141,10 +141,10 @@ _______
 <rcvXprim-front>      ::= <rcvXprim-side>
 <rcvXprim-back>       ::= <rcvXprim-side>
 
-<rcvXprim-side>       ::= "<incoming-flux> <in-if-no-mat-loss> <in-if-no-atm-loss>
-                           <in-mat-loss> <in-atm-loss>
-                           <absorbed-flux> <abs-if-no-mat-loss> <abs-if-no-atm-loss>
-                           <abs-mat-loss> <abs-atm-loss>"
+<rcvXprim-side>       ::= "<incoming-flux> <in-if-no-mat-loss>
+                           <in-if-no-atm-loss> <in-mat-loss> <in-atm-loss>
+                           <absorbed-flux> <abs-if-no-mat-loss>
+                           <abs-if-no-atm-loss> <abs-mat-loss> <abs-atm-loss>"
 
 -------------------------------------
 
@@ -212,24 +212,25 @@ the exact number of lines being part of the headers. Currently this number is
 7. Each global result is a pair of real numbers: the expected value and its
 standard error. The global results are, in this order:
 
-- *potential-flux*: maximum flux that all the primary
-  geometries could intercept if properly oriented and flat-shaped;
-- *absorbed-flux*: absorbed part of the flux reaching any
-  receiver geometry. At most equal to the potential flux;
+- *potential-flux*: maximum flux that all the primary geometries could
+  intercept if properly oriented and flat-shaped;
+- *absorbed-flux*: absorbed part of the flux reaching any receiver geometry.
+  At most equal to the potential flux;
 - *cos-factor*: cos of the angle between the sun direction and the normal of
   the primary surfaces (average cos over all primary geometries);
-- *shadow-loss*: potential flux intercepted by another geometry before reaching
-  a primary geometry;
+- *shadow-loss*: potential flux intercepted by another geometry before
+  reaching a primary geometry;
 - *missing-loss*: part of the flux that reaches a primary geometry, follows a
-  radiative path, but is not absorbed; this flux could have bounced on geometries,
-  including receivers, but without being absorbed;
-- *materials-loss*: total flux absorbed by non-receivers along radiative paths;
-  includes both surface and volume absorption;
-- *atmospheric-loss*: total flux extinction by the atmosphere along radiative paths.
+  radiative path, but is not absorbed; this flux could have bounced on
+  geometries, including receivers, but without being absorbed;
+- *materials-loss*: total flux absorbed by non-receivers along radiative
+  paths; includes both surface and volume absorption;
+- *atmospheric-loss*: total flux extinction by the atmosphere along radiative
+  paths.
 
 This results can be used to check conservation of energy:
 
-potential-flux * cos-factor and (absorbed-flux + shadow-loss + 
+potential-flux * cos-factor and (absorbed-flux + shadow-loss +
 missing-loss + materials-loss + atmospheric-loss)
 should be equal whithin their respective uncertainty ranges.
 
@@ -253,17 +254,17 @@ each of the following estimates is actually a pair of real numbers: the
 expected value and its standard error.
 
 - *incoming-flux*: flux that reaches the receiver side;
-- *in-if-no-mat-loss*: incoming-flux if
-   absorption on non-receivers is not taken into account;
-- *in-if-no-atm-loss*: incoming-flux if
-   atmospheric extinction is not taken into account;
+- *in-if-no-mat-loss*: incoming-flux if absorption on non-receivers is not
+  taken into account;
+- *in-if-no-atm-loss*: incoming-flux if atmospheric extinction is not taken
+  into account;
 - *in-mat-loss*: in-if-no-mat-loss - incoming-flux;
 - *in-atm-loss*: in-if-no-atm-loss - incoming-flux;
 - *absorbed-flux*: flux absorbed by the receiver side;
-- *abs-if-no-mat-loss*: absorbed-flux if
-  absorption by non-receivers is not taken into account;
-- *abs-if-no-atm-loss*: absorbed-flux if
-   atmospheric extinction is not taken into account;
+- *abs-if-no-mat-loss*: absorbed-flux if absorption by non-receivers is not
+  taken into account;
+- *abs-if-no-atm-loss*: absorbed-flux if atmospheric extinction is not taken
+  into account;
 - *abs-mat-loss*: abs-if-no-mat-loss - absorbed-flux;
 - *abs-atm-loss*: abs-if-no-atm-loss - absorbed-flux;
 - *efficiency*: fraction of the potential flux absorbed by this receiver side.
@@ -275,9 +276,9 @@ side are meaningless (invalid -1 value).
 Per primary results
 ~~~~~~~~~~~~~~~~~~~
 
-Following the per-receiver results, the output includes various per-primary result
-lines, one line per primary geometry, the exact number of lines being part of
-the headers. Each line contains:
+Following the per-receiver results, the output includes various per-primary
+result lines, one line per primary geometry, the exact number of lines being
+part of the headers. Each line contains:
 
 - *primary-name*: name of the primary geometry, i.e. *entity-identifier* of
   the entity in in which the primary geometry is  defined (see the
@@ -294,9 +295,9 @@ the headers. Each line contains:
 Per receiver and per primary results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Following the per-primary results, the output includes various result lines, each
-describing the contribution of a primary geometry to a given receiver. The
-total number of such lines is the number of receivers times the number of
+Following the per-primary results, the output includes various result lines,
+each describing the contribution of a primary geometry to a given receiver.
+The total number of such lines is the number of receivers times the number of
 primary geometries. Each line contains:
 
 - *receiver-id*: identifier of the involved receiver;
@@ -309,17 +310,17 @@ bellow. Each of these estimates is actually a pair of real numbers: the
 expected value and its standard error.
 
 - *incoming-flux*: flux that reaches the receiver side;
-- *in-if-no-mat-loss*: incoming-flux if
-   absorption on non-receivers is not taken into account;
-- *in-if-no-atm-loss*: incoming-flux if
-   atmospheric extinction is not taken into account;
+- *in-if-no-mat-loss*: incoming-flux if absorption on non-receivers is not
+  taken into account;
+- *in-if-no-atm-loss*: incoming-flux if atmospheric extinction is not taken
+  into account;
 - *in-mat-loss*: in-if-no-mat-loss - incoming-flux;
 - *in-atm-loss*: in-if-no-atm-loss - incoming-flux;
 - *absorbed-flux*: flux absorbed by the receiver side;
-- *abs-if-no-mat-loss*: absorbed-flux if
-  absorption by non-receivers is not taken into account;
-- *abs-if-no-atm-loss*: absorbed-flux if
-   atmospheric extinction is not taken into account;
+- *abs-if-no-mat-loss*: absorbed-flux if absorption by non-receivers is not
+  taken into account;
+- *abs-if-no-atm-loss*: absorbed-flux if atmospheric extinction is not taken
+  into account;
 - *abs-mat-loss*: abs-if-no-mat-loss - absorbed-flux;
 - *abs-atm-loss*: abs-if-no-atm-loss - absorbed-flux;
 
@@ -490,7 +491,7 @@ VTK-RADIATIVE-PATHS   ::= # vtk DataFile Version 2.0
                         | 0.5  # Blue: for success paths
                         | 0.75 # Turquoise: for missing paths
                         | 1.0  # Yellow: for occluded paths
-  
+
 <color-error>         ::= 1.0 0.0 0.0 1.0
 <color-unused>        ::= 0.0 1.0 0.0 1.0
 <color-success>       ::= 0.0 0.0 1.0 1.0

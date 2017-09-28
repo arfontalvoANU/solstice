@@ -26,7 +26,7 @@ enum solparser_sun_radang_distrib_type { /* Radial Angular distribution */
 };
 
 struct solparser_sun_buie { double csr; };
-struct solparser_sun_pillbox { double theta_max; };
+struct solparser_sun_pillbox { double half_angle; };
 
 struct solparser_sun {
   double dni; /* In ]0, INF) */

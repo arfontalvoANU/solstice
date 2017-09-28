@@ -38,7 +38,10 @@
     primary: 0
     geometry: *cylinder
 ---
-- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1}] }
+- sun: 
+    dni: 1
+    pillbox: {half_angle: 0.064}
+
 - entity:
     name: entity
     primary: 1
