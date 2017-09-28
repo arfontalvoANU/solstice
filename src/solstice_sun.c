@@ -105,10 +105,10 @@ create_sun_pillbox
     goto error;
   }
 
-  res = ssol_sun_pillbox_set_theta_max
-    (sun, MDEG2RAD(solparser_sun->radang_distrib.pillbox.theta_max));
+  res = ssol_sun_pillbox_set_half_angle
+    (sun, MDEG2RAD(solparser_sun->radang_distrib.pillbox.half_angle));
   if(res != RES_OK) {
-    fprintf(stderr, "Could not setup theta_max for the solver pillbox sun.\n");
+    fprintf(stderr, "Could not setup half_angle for the solver pillbox sun.\n");
     goto error;
   }
 

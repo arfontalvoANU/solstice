@@ -253,7 +253,7 @@ _______
                             csr: REAL # in [1e-6, 0.849]
 
 <pillbox>             ::= pillbox:
-                            theta_max: REAL # in ]0, 90]
+                            half_angle: REAL # in ]0, 90]
 
 ----------------------------------------
 
@@ -318,8 +318,8 @@ shapes are:
 
 *pillbox*::
   The *pillbox* distribution defines an uniform intensity over the sun's disk.
-  Its single *theta_max* parameter is the sun's disk half-angle in degrees, that
-  is linked to the apparent size of the sun. A typical theta_max is 0.2664.
+  Its single *half_angle* parameter is the sun's disk half-angle in degrees, that
+  is linked to the apparent size of the sun. A typical half_angle is 0.2664.
 
 *buie*::
   The *buie* distribution, as first discribed in [3]. Its single *csr*
@@ -877,12 +877,12 @@ is 1 and its center is positioned at {0,0,2}:
 .......
 
 Define a circular diffuse reflector surrounded by a virtual sphere and a
-pillbox-shaped sun whose theta_max is 0.1 degree. Use anchors and tags of the
+pillbox-shaped sun whose *half_angle* is 0.1 degree. Use anchors and tags of the
 YAML format to reference into the entities a pre-declared geometry. Rely on
 the YAML compact notation to reduce the number of lines required to describe
 the scene:
 .......
-- sun: {dni: 1000, pillbox: {theta_max: 0.1}}
+- sun: {dni: 1000, pillbox: {half_angle: 0.1}}
 
 - geometry: &small-circle
   - material: {matte: {reflectivity: 1}}

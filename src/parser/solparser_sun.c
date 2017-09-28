@@ -93,7 +93,7 @@ parse_pillbox
    const yaml_node_t* pillbox,
    struct solparser_sun_pillbox* sun)
 {
-  enum { THETA_MAX };
+  enum { HALF_ANGLE };
   intptr_t i, n;
   int mask = 0; /* Register the parsed attributes */
   res_T res = RES_OK;
@@ -118,14 +118,14 @@ parse_pillbox
       res = RES_BAD_ARG;
       goto error;
     }
-    if(!strcmp((char*)key->data.scalar.value, "theta_max")) {
-      if(mask & BIT(THETA_MAX)) {
-        log_err(parser, key, "the pillbox `theta_max' is already defined.\n");
+    if(!strcmp((char*)key->data.scalar.value, "half_angle")) {
+      if(mask & BIT(HALF_ANGLE)) {
+        log_err(parser, key, "the pillbox `half_angle' is already defined.\n");
         res = RES_BAD_ARG;
         goto error;
       }
-      mask |= BIT(THETA_MAX);
-      res = parse_real(parser, val, nextafter(0, 1), 90, &sun->theta_max);
+      mask |= BIT(HALF_ANGLE);
+      res = parse_real(parser, val, nextafter(0, 1), 90, &sun->half_angle);
     } else {
       log_err(parser, pillbox, "unknown pillbox parameter `%s'.\n",
         key->data.scalar.value);
@@ -138,8 +138,8 @@ parse_pillbox
     }
   }
 
-  if(!(mask & BIT(THETA_MAX))) {
-    log_err(parser, pillbox, "the pillbox theta_max parameter is missing.\n");
+  if(!(mask & BIT(HALF_ANGLE))) {
+    log_err(parser, pillbox, "the pillbox half_angle parameter is missing.\n");
     res = RES_BAD_ARG;
     goto error;
   }
