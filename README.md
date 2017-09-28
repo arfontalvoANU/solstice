@@ -60,9 +60,16 @@ informations on CMake.
 
 ## Release notes
 
+### Version 0.6.1
+
+- Fix the solstice-input man page. The `extinction` parameter of the medium and
+  the atmosphere was named `absorption`.
+- Rename the pillbox `theta_max` parameter in `half_angle`.
+
 ### Version 0.6
 
-- Rename the atmosphere `absorption` parameter in `extinction`.
+- Rename the `absorption` parameter of the medium and the athmosphere in
+  `extinction`.
 - Add several global and per-receiver estimations. The outputs now fully
   describe the incoming and absorbed fluxes: overall flux, flux without
   material loss, flux without atmospheric loss, material losses and atmospheric
