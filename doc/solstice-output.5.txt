@@ -230,7 +230,7 @@ standard error. The global results are, in this order:
 
 This results can be used to check conservation of energy:
 
-potential-flux * cos-factor and (absorbed-flux + shadow-loss + 
+potential-flux * cos-factor and (absorbed-flux + shadow-loss +
 missing-loss + materials-loss + atmospheric-loss)
 should be equal whithin their respective uncertainty ranges.
 
@@ -254,17 +254,17 @@ each of the following estimates is actually a pair of real numbers: the
 expected value and its standard error.
 
 - *incoming-flux*: flux that reaches the receiver side;
-- *in-if-no-mat-loss*: incoming-flux if
-   absorption on non-receivers is not taken into account;
-- *in-if-no-atm-loss*: incoming-flux if
-   atmospheric extinction is not taken into account;
+- *in-if-no-mat-loss*: incoming-flux if absorption on non-receivers is not
+  taken into account;
+- *in-if-no-atm-loss*: incoming-flux if atmospheric extinction is not taken
+  into account;
 - *in-mat-loss*: in-if-no-mat-loss - incoming-flux;
 - *in-atm-loss*: in-if-no-atm-loss - incoming-flux;
 - *absorbed-flux*: flux absorbed by the receiver side;
-- *abs-if-no-mat-loss*: absorbed-flux if
-  absorption by non-receivers is not taken into account;
-- *abs-if-no-atm-loss*: absorbed-flux if
-   atmospheric extinction is not taken into account;
+- *abs-if-no-mat-loss*: absorbed-flux if absorption by non-receivers is not
+  taken into account;
+- *abs-if-no-atm-loss*: absorbed-flux if atmospheric extinction is not taken
+  into account;
 - *abs-mat-loss*: abs-if-no-mat-loss - absorbed-flux;
 - *abs-atm-loss*: abs-if-no-atm-loss - absorbed-flux;
 - *efficiency*: fraction of the potential flux absorbed by this receiver side.
@@ -310,17 +310,17 @@ bellow. Each of these estimates is actually a pair of real numbers: the
 expected value and its standard error.
 
 - *incoming-flux*: flux that reaches the receiver side;
-- *in-if-no-mat-loss*: incoming-flux if
-   absorption on non-receivers is not taken into account;
-- *in-if-no-atm-loss*: incoming-flux if
-   atmospheric extinction is not taken into account;
+- *in-if-no-mat-loss*: incoming-flux if absorption on non-receivers is not
+  taken into account;
+- *in-if-no-atm-loss*: incoming-flux if atmospheric extinction is not taken
+  into account;
 - *in-mat-loss*: in-if-no-mat-loss - incoming-flux;
 - *in-atm-loss*: in-if-no-atm-loss - incoming-flux;
 - *absorbed-flux*: flux absorbed by the receiver side;
-- *abs-if-no-mat-loss*: absorbed-flux if
-  absorption by non-receivers is not taken into account;
-- *abs-if-no-atm-loss*: absorbed-flux if
-   atmospheric extinction is not taken into account;
+- *abs-if-no-mat-loss*: absorbed-flux if absorption by non-receivers is not
+  taken into account;
+- *abs-if-no-atm-loss*: absorbed-flux if atmospheric extinction is not taken
+  into account;
 - *abs-mat-loss*: abs-if-no-mat-loss - absorbed-flux;
 - *abs-atm-loss*: abs-if-no-atm-loss - absorbed-flux;
 
@@ -491,7 +491,7 @@ VTK-RADIATIVE-PATHS   ::= # vtk DataFile Version 2.0
                         | 0.5  # Blue: for success paths
                         | 0.75 # Turquoise: for missing paths
                         | 1.0  # Yellow: for occluded paths
-  
+
 <color-error>         ::= 1.0 0.0 0.0 1.0
 <color-unused>        ::= 0.0 1.0 0.0 1.0
 <color-success>       ::= 0.0 0.0 1.0 1.0
