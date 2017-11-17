@@ -1066,7 +1066,7 @@ glass. Furthermore, this example illustrates the use of a *spectrum* for
     front: {dielectric: {medium_i: *air_medium, medium_t: *glass_medium}}
     back:  {dielectric: {medium_i: *glass_medium, medium_t: *air_medium}}
 
-# Pimary reflectors
+# Primary reflectors
 - entity:
     name: "primary_reflector1"
     primary: 1
