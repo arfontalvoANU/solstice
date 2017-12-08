@@ -247,13 +247,16 @@ _______
                         [   <spectrum> ] # Default is the smarts295 spectrum
                         [   <sun-shape> ]
 
-<sun-shape>           ::= <pillbox> | <buie>
+<sun-shape>           ::= <pillbox> | <gaussian> | <buie>
 
 <buie>                ::= buie:
                             csr: REAL # in [1e-6, 0.849]
 
 <pillbox>             ::= pillbox:
                             half_angle: REAL # in ]0, 90]
+
+<gaussian>            ::= gaussian:
+                            std_dev: REAL # in ]0, INF)
 
 ----------------------------------------
 
@@ -321,6 +324,14 @@ shapes are:
   Its single *half_angle* parameter is the sun's disk half-angle in degrees, that
   is linked to the apparent size of the sun. A typical half_angle is 0.2664.
 
+*gaussian*::
+  The *gaussian* distribution defines a gaussian distribution of the solar
+  incoming direction. Its single *std_dev* parameter is the standard deviation
+  of the distribution in degrees. Values around 0.2 are typical.
+  As the gaussian distribution is not truncated, the resulting sun vector can
+  theoreticaly be oriented towards the sun, especially with a big, non-typical
+  *std_dev* value.
+  
 *buie*::
   The *buie* distribution, as first discribed in [3]. Its single *csr*
   parameter is the ratio between the circumsolar irradiance and the sum of

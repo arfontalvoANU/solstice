@@ -150,6 +150,70 @@ error:
   goto exit;
 }
 
+static res_T
+parse_gaussian
+  (struct solparser* parser,
+   yaml_document_t* doc,
+   const yaml_node_t* gaussian,
+   struct solparser_sun_gaussian* sun)
+{
+  enum { STD_DEV };
+  intptr_t i, n;
+  int mask = 0; /* Register the parsed attributes */
+  res_T res = RES_OK;
+  ASSERT(doc && gaussian && sun);
+
+  if(gaussian->type != YAML_MAPPING_NODE) {
+    log_err(parser, gaussian,
+      "expect a gaussian definition of the sun radial angular distribution.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  n = gaussian->data.mapping.pairs.top - gaussian->data.mapping.pairs.start;
+  FOR_EACH(i, 0, n) {
+    yaml_node_t* key;
+    yaml_node_t* val;
+
+    key = yaml_document_get_node(doc, gaussian->data.mapping.pairs.start[i].key);
+    val = yaml_document_get_node(doc, gaussian->data.mapping.pairs.start[i].value);
+    if(key->type != YAML_SCALAR_NODE) {
+      log_err(parser, key, "expect a gaussian parameter.\n");
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    if(!strcmp((char*)key->data.scalar.value, "std_dev")) {
+      if(mask & BIT(STD_DEV)) {
+        log_err(parser, key, "the gaussian `std_dev' is already defined.\n");
+        res = RES_BAD_ARG;
+        goto error;
+      }
+      mask |= BIT(STD_DEV);
+      res = parse_real(parser, val, nextafter(0, 1), 90, &sun->std_dev);
+    } else {
+      log_err(parser, gaussian, "unknown gaussian parameter `%s'.\n",
+        key->data.scalar.value);
+      res = RES_BAD_ARG;
+      goto error;
+    }
+    if(res != RES_OK) {
+      log_node(parser, key);
+      goto error;
+    }
+  }
+
+  if(!(mask & BIT(STD_DEV))) {
+    log_err(parser, gaussian, "the gaussian std_dev parameter is missing.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
 /*******************************************************************************
  * Local functions
  ******************************************************************************/
@@ -220,6 +284,10 @@ parse_sun
       SETUP_MASK(RADIAL_ANGULAR_DISTRIB, "radial angular distribution");
       solsun->radang_distrib_type = SOLPARSER_SUN_RADANG_DISTRIB_PILLBOX;
       res = parse_pillbox(parser, doc, val, &solsun->radang_distrib.pillbox);
+    } else if(!strcmp((char*)key->data.scalar.value, "gaussian")) {
+      SETUP_MASK(RADIAL_ANGULAR_DISTRIB, "radial angular distribution");
+      solsun->radang_distrib_type = SOLPARSER_SUN_RADANG_DISTRIB_GAUSSIAN;
+      res = parse_gaussian(parser, doc, val, &solsun->radang_distrib.gaussian);
     } else if(!strcmp((char*)key->data.scalar.value, "spectrum")) {
       SETUP_MASK(SPECTRUM, "spectrum");
       res = parse_spectrum(parser, doc, val, 0, DBL_MAX, &solsun->spectrum);

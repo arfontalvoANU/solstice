@@ -123,6 +123,42 @@ error:
   goto exit;
 }
 
+static res_T
+create_sun_gaussian
+  (struct solstice* solstice,
+   const struct solparser_sun* solparser_sun,
+   struct ssol_sun** out_sun)
+{
+  struct ssol_sun* sun = NULL;
+  res_T res = RES_OK;
+  ASSERT(solstice && solparser_sun && out_sun);
+  ASSERT(solparser_sun->radang_distrib_type
+    == SOLPARSER_SUN_RADANG_DISTRIB_GAUSSIAN);
+
+  res = ssol_sun_create_gaussian(solstice->ssol, &sun);
+  if(res != RES_OK) {
+    fprintf(stderr, "Could not create the solver gaussian sun.\n");
+    goto error;
+  }
+
+  res = ssol_sun_gaussian_set_std_dev
+    (sun, MDEG2RAD(solparser_sun->radang_distrib.gaussian.std_dev));
+  if(res != RES_OK) {
+    fprintf(stderr, "Could not setup standard deviation for the solver gaussian sun.\n");
+    goto error;
+  }
+
+exit:
+  *out_sun = sun;
+  return res;
+error:
+  if(sun) {
+    SSOL(sun_ref_put(sun));
+    sun = NULL;
+  }
+  goto exit;
+}
+
 static void
 get_wavelength(const size_t i, double* wlen, double* data, void* ctx)
 {
@@ -200,6 +236,9 @@ solstice_create_sun(struct solstice* solstice)
       break;
     case SOLPARSER_SUN_RADANG_DISTRIB_PILLBOX:
       res = create_sun_pillbox(solstice, solparser_sun, &sun);
+      break;
+    case SOLPARSER_SUN_RADANG_DISTRIB_GAUSSIAN:
+      res = create_sun_gaussian(solstice, solparser_sun, &sun);
       break;
     default: FATAL("Unreachable code.\n"); break;
   }
