@@ -41,11 +41,11 @@ main(int argc, char** argv)
   FILE* stream;
   (void)argc, (void)argv;
 
-  CHECK(mem_init_proxy_allocator(&allocator, &mem_default_allocator), RES_OK);
+  CHK(mem_init_proxy_allocator(&allocator, &mem_default_allocator) == RES_OK);
   solparser_create(&allocator, &parser);
 
   stream = tmpfile();
-  NCHECK(stream, NULL);
+  CHK(stream != NULL);
 
   fprintf(stream, "- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1 }] }\n");
   fprintf(stream, "- entity:\n");
@@ -81,106 +81,106 @@ main(int argc, char** argv)
   fprintf(stream, "      material: { ?virtual }\n");
   rewind(stream);
 
-  CHECK(solparser_setup(parser, NULL, stream), RES_OK);
-  CHECK(solparser_load(parser), RES_OK);
+  CHK(solparser_setup(parser, NULL, stream) == RES_OK);
+  CHK(solparser_load(parser) == RES_OK);
 
   solparser_entity_iterator_begin(parser, &it);
   solparser_entity_iterator_end(parser, &end);
-  CHECK(solparser_entity_iterator_eq(&it, &end), 0);
+  CHK(solparser_entity_iterator_eq(&it, &end) == 0);
 
   entity_id = solparser_entity_iterator_get(&it);
   entity = solparser_get_entity(parser, entity_id);
 
-  CHECK(strcmp("test",  str_cget(&entity->name)), 0);
-  CHECK(solparser_entity_get_children_count(entity), 0);
-  CHECK(entity->type, SOLPARSER_ENTITY_GEOMETRY);
+  CHK(strcmp("test",  str_cget(&entity->name)) == 0);
+  CHK(solparser_entity_get_children_count(entity) == 0);
+  CHK(entity->type == SOLPARSER_ENTITY_GEOMETRY);
   geom = solparser_get_geometry(parser, entity->data.geometry);
-  CHECK(solparser_geometry_get_objects_count(geom), 5);
+  CHK(solparser_geometry_get_objects_count(geom) == 5);
 
   obj_id = solparser_geometry_get_object(geom, 0);
   obj = solparser_get_object(parser, obj_id);
   shape = solparser_get_shape(parser, obj->shape);
-  CHECK(shape->type, SOLPARSER_SHAPE_SPHERE);
+  CHK(shape->type == SOLPARSER_SHAPE_SPHERE);
   sphere = solparser_get_shape_sphere(parser, shape->data.sphere);
-  CHECK(sphere->radius, 1);
-  CHECK(sphere->nslices, 16);
+  CHK(sphere->radius == 1);
+  CHK(sphere->nslices == 16);
 
   obj_id = solparser_geometry_get_object(geom, 1);
   obj = solparser_get_object(parser, obj_id);
   shape = solparser_get_shape(parser, obj->shape);
-  CHECK(shape->type, SOLPARSER_SHAPE_PARABOL);
+  CHK(shape->type == SOLPARSER_SHAPE_PARABOL);
   parabol = solparser_get_shape_parabol(parser, shape->data.parabol);
-  CHECK(parabol->focal, 10);
-  CHECK(parabol->nslices, 10);
-  CHECK(darray_polyclip_size_get(&parabol->polyclips), 1);
+  CHK(parabol->focal == 10);
+  CHK(parabol->nslices == 10);
+  CHK(darray_polyclip_size_get(&parabol->polyclips) == 1);
   polyclip = darray_polyclip_cdata_get(&parabol->polyclips);
-  CHECK(polyclip->op, SOLPARSER_CLIP_OP_AND);
-  CHECK(polyclip->contour_type, SOLPARSER_CLIP_CONTOUR_POLY);
-  CHECK(solparser_polyclip_get_vertices_count(polyclip), 3);
+  CHK(polyclip->op == SOLPARSER_CLIP_OP_AND);
+  CHK(polyclip->contour_type == SOLPARSER_CLIP_CONTOUR_POLY);
+  CHK(solparser_polyclip_get_vertices_count(polyclip) == 3);
   solparser_polyclip_get_vertex(polyclip, 0, pos);
-  CHECK(pos[0], 1);
-  CHECK(pos[1], 2);
+  CHK(pos[0] == 1);
+  CHK(pos[1] == 2);
   solparser_polyclip_get_vertex(polyclip, 1, pos);
-  CHECK(pos[0], 3);
-  CHECK(pos[1], 4);
+  CHK(pos[0] == 3);
+  CHK(pos[1] == 4);
   solparser_polyclip_get_vertex(polyclip, 2, pos);
-  CHECK(pos[0], 6);
-  CHECK(pos[1], 7);
+  CHK(pos[0] == 6);
+  CHK(pos[1] == 7);
 
   obj_id = solparser_geometry_get_object(geom, 2);
   obj = solparser_get_object(parser, obj_id);
   shape = solparser_get_shape(parser, obj->shape);
-  CHECK(shape->type, SOLPARSER_SHAPE_HYPERBOL);
+  CHK(shape->type == SOLPARSER_SHAPE_HYPERBOL);
   hyperbol = solparser_get_shape_hyperbol(parser, shape->data.hyperbol);
-  CHECK(hyperbol->focals.real, 10);
-  CHECK(hyperbol->focals.image, 2);
-  CHECK(hyperbol->nslices, 20);
+  CHK(hyperbol->focals.real == 10);
+  CHK(hyperbol->focals.image == 2);
+  CHK(hyperbol->nslices == 20);
 
   mtl2 = solparser_get_material_double_sided(parser, obj->mtl2);
-  CHECK(mtl2->front.i, mtl2->back.i);
+  CHK(mtl2->front.i == mtl2->back.i);
   mtl = solparser_get_material(parser, mtl2->front);
-  CHECK(mtl->type, SOLPARSER_MATERIAL_VIRTUAL);
+  CHK(mtl->type == SOLPARSER_MATERIAL_VIRTUAL);
 
   obj_id = solparser_geometry_get_object(geom, 3);
   obj = solparser_get_object(parser, obj_id);
   shape = solparser_get_shape(parser, obj->shape);
-  CHECK(shape->type, SOLPARSER_SHAPE_PLANE);
+  CHK(shape->type == SOLPARSER_SHAPE_PLANE);
   plane = solparser_get_shape_plane(parser, shape->data.plane);
-  CHECK(plane->nslices, 1); /* Default value */
-  CHECK(darray_polyclip_size_get(&plane->polyclips), 1);
+  CHK(plane->nslices == 1); /* Default value */
+  CHK(darray_polyclip_size_get(&plane->polyclips) == 1);
   polyclip = darray_polyclip_cdata_get(&plane->polyclips);
-  CHECK(polyclip->contour_type, SOLPARSER_CLIP_CONTOUR_CIRCLE);
-  CHECK(polyclip->circle.radius, 1);
-  CHECK(polyclip->circle.center[0], -1);
-  CHECK(polyclip->circle.center[1], 1);
-  CHECK(polyclip->circle.segments, 8);
+  CHK(polyclip->contour_type == SOLPARSER_CLIP_CONTOUR_CIRCLE);
+  CHK(polyclip->circle.radius == 1);
+  CHK(polyclip->circle.center[0] == -1);
+  CHK(polyclip->circle.center[1] == 1);
+  CHK(polyclip->circle.segments == 8);
 
   obj_id = solparser_geometry_get_object(geom, 4);
   obj = solparser_get_object(parser, obj_id);
   shape = solparser_get_shape(parser, obj->shape);
-  CHECK(shape->type, SOLPARSER_SHAPE_HEMISPHERE);
+  CHK(shape->type == SOLPARSER_SHAPE_HEMISPHERE);
   hemisphere = solparser_get_shape_hemisphere(parser, shape->data.hemisphere);;
-  CHECK(hemisphere->radius, 100);
-  CHECK(hemisphere->nslices, -1); /* Default value: auto */
-  CHECK(darray_polyclip_size_get(&hemisphere->polyclips), 1);
+  CHK(hemisphere->radius == 100);
+  CHK(hemisphere->nslices == -1); /* Default value: auto */
+  CHK(darray_polyclip_size_get(&hemisphere->polyclips) == 1);
   polyclip = darray_polyclip_cdata_get(&hemisphere->polyclips);
-  CHECK(polyclip->contour_type, SOLPARSER_CLIP_CONTOUR_CIRCLE);
-  CHECK(polyclip->circle.radius, 1);
-  CHECK(polyclip->circle.center[0], 0); /* default value */
-  CHECK(polyclip->circle.center[1], 0); /* default value */
-  CHECK(polyclip->circle.segments, 64); /* Default value */
+  CHK(polyclip->contour_type == SOLPARSER_CLIP_CONTOUR_CIRCLE);
+  CHK(polyclip->circle.radius == 1);
+  CHK(polyclip->circle.center[0] == 0); /* default value */
+  CHK(polyclip->circle.center[1] == 0); /* default value */
+  CHK(polyclip->circle.segments == 64); /* Default value */
 
   solparser_entity_iterator_next(&it);
-  CHECK(solparser_entity_iterator_eq(&it, &end), 1);
+  CHK(solparser_entity_iterator_eq(&it, &end) == 1);
 
-  CHECK(solparser_load(parser), RES_BAD_OP);
+  CHK(solparser_load(parser) == RES_BAD_OP);
   solparser_ref_put(parser);
 
   fclose(stream);
 
   check_memory_allocator(&allocator);
   mem_shutdown_proxy_allocator(&allocator);
-  CHECK(mem_allocated_size(), 0);
+  CHK(mem_allocated_size() == 0);
   return 0;
 }
 

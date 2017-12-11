@@ -337,7 +337,7 @@ write_per_receiver_mc_primitive
     htable_receiver_iterator_next(&it);
 
     SSOL(instance_is_receiver(inst, &mask, &prim));
-    NCHECK(mask, 0);
+    CHK(mask != 0);
     if(!prim) continue;
 
     SSOL(instance_get_shaded_shapes_count(inst, &nshapes));

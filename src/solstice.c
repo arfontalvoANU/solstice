@@ -560,10 +560,10 @@ exit:
 error:
   res = RES_IO_ERR;
   if(fp) {
-    CHECK(fclose(fp), 0);
+    CHK(fclose(fp) == 0);
     fp = NULL;
   } else if(fd >= 0) {
-    CHECK(close(fd), 0);
+    CHK(close(fd) == 0);
   }
   goto exit;
 }

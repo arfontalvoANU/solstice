@@ -78,8 +78,8 @@ struct counts {
 static int
 counts_ok(const struct counts* ref, const struct counts* c)
 {
-  CHECK(ref->global, GLOBAL_RESULTS_COUNT__);
-  CHECK(c->global, GLOBAL_RESULTS_COUNT__);
+  CHK(ref->global == GLOBAL_RESULTS_COUNT__);
+  CHK(c->global == GLOBAL_RESULTS_COUNT__);
   return ref->receiver == c->receiver
     && ref->primary == c->primary
     && ref->failed >= c->failed;
@@ -200,7 +200,7 @@ read_line(char* line, size_t max_line_len, FILE* stream)
   ASSERT(stream && line && max_line_len);
   line = fgets(line, (int)max_line_len, stream);
   if(!line) return 0;
-  CHECK(strlen(line) + 1 < max_line_len, 1);
+  CHK(strlen(line) + 1 < max_line_len);
   return 1;
 }
 
@@ -213,29 +213,26 @@ get_angles_and_counts
   char line[MAX_LINE_LEN];
   int r;
 
-  NCHECK(file, NULL);
-  NCHECK(angles, NULL);
-  NCHECK(counts, NULL);
+  CHK(file != NULL);
+  CHK(angles != NULL);
+  CHK(counts != NULL);
 
   /* Get sun dir */
   r = read_line(line, sizeof(line), file);
   if (!r) {
-    CHECK(feof(file), 1);
+    CHK(feof(file) == 1);
     return 0;
   }
-  CHECK(IS_NEW_BLOCK(line, sundir_header), 1);
-  CHECK(
-    sscanf(line+strlen(sundir_header), "%lg%lg", &angles[0], &angles[1]),
-    2);
+  CHK(IS_NEW_BLOCK(line, sundir_header) == 1);
+  CHK(sscanf(line+strlen(sundir_header), "%lg%lg", &angles[0], &angles[1]) == 2);
 
   /* Get counts */
-  CHECK(read_line(line, sizeof(line), file), 1);
-  CHECK(
+  CHK(read_line(line, sizeof(line), file) == 1);
+  CHK(
     sscanf(line,
       "%lu %lu %lu %lu %lu",
       &counts->global, &counts->receiver, &counts->primary,
-      &counts->realisation, &counts->failed),
-    5);
+      &counts->realisation, &counts->failed) == 5);
   return 1;
 }
 
@@ -243,10 +240,8 @@ static void
 read_global(FILE* file, double* E, double* SE)
 {
   char line[MAX_LINE_LEN];
-  CHECK(read_line(line, sizeof(line), file), 1);
-  CHECK(
-    sscanf(line, "%lg %lg", E, SE),
-    2);
+  CHK(read_line(line, sizeof(line), file) == 1);
+  CHK(sscanf(line, "%lg %lg", E, SE) == 2);
 }
 
 static void
@@ -254,13 +249,13 @@ read_recv(FILE* file, char name[], double E[], double SE[])
 {
   char line[MAX_LINE_LEN];
 
-  NCHECK(file, NULL);
-  NCHECK(name, NULL);
-  NCHECK(E, NULL);
-  NCHECK(SE, NULL);
+  CHK(file != NULL);
+  CHK(name != NULL);
+  CHK(E != NULL);
+  CHK(SE != NULL);
 
-  CHECK(read_line(line, sizeof(line), file), 1);
-  CHECK(
+  CHK(read_line(line, sizeof(line), file) == 1);
+  CHK(
     sscanf(line,
       "%s %*u %*g   "
       "%lg %lg   %lg %lg   %lg %lg   %lg %lg   %lg %lg  "
@@ -275,7 +270,7 @@ read_recv(FILE* file, char name[], double E[], double SE[])
       &E[BACK_INCOMING_FLUX], &SE[BACK_INCOMING_FLUX],
       &E[BACK_ABSORBED_FIELD_GAIN], &SE[BACK_ABSORBED_FIELD_GAIN],
       &E[BACK_ABSORBED_ATM_GAIN], &SE[BACK_ABSORBED_ATM_GAIN],
-      &E[BACK_EFFICIENCY], &SE[BACK_EFFICIENCY]),
+      &E[BACK_EFFICIENCY], &SE[BACK_EFFICIENCY]) ==
     2 * RECEIVER_RESULTS_COUNT__ + 1);
 }
 
@@ -285,13 +280,13 @@ read_primary
 {
   char line[MAX_LINE_LEN];
 
-  NCHECK(file, NULL);
-  NCHECK(area, NULL);
-  NCHECK(E, NULL);
-  NCHECK(SE, NULL);
+  CHK(file != NULL);
+  CHK(area != NULL);
+  CHK(E != NULL);
+  CHK(SE != NULL);
 
-  CHECK(read_line(line, sizeof(line), file), 1);
-  CHECK(
+  CHK(read_line(line, sizeof(line), file) == 1);
+  CHK(
     sscanf(line,
       "%s %*u   "
       "%lg %*u   "
@@ -299,7 +294,7 @@ read_primary
       name, /* ID */
       area, /* count, */
       &E[PRIMARY_COS], &SE[PRIMARY_COS],
-      &E[PRIMARY_SHADOW], &SE[PRIMARY_SHADOW]),
+      &E[PRIMARY_SHADOW], &SE[PRIMARY_SHADOW]) ==
     2 * PRIMARY_RESULTS_COUNT__ + 2);
 }
 
@@ -314,14 +309,14 @@ read_recvXprim
 {
   char line[MAX_LINE_LEN];
 
-  NCHECK(file, NULL);
-  NCHECK(rcv_id, NULL);
-  NCHECK(prim_id, NULL);
-  NCHECK(E, NULL);
-  NCHECK(SE, NULL);
+  CHK(file != NULL);
+  CHK(rcv_id != NULL);
+  CHK(prim_id != NULL);
+  CHK(E != NULL);
+  CHK(SE != NULL);
 
-  CHECK(read_line(line, sizeof(line), file), 1);
-  CHECK(
+  CHK(read_line(line, sizeof(line), file) == 1);
+  CHK(
     sscanf(line,
       "%lu %lu  "
       "%lg %lg   %lg %lg   %lg %lg   %lg %lg   "
@@ -334,7 +329,7 @@ read_recvXprim
       &E[BACK_ABSORBED_FLUX], &SE[BACK_ABSORBED_FLUX],
       &E[BACK_INCOMING_FLUX], &SE[BACK_INCOMING_FLUX],
       &E[BACK_ABSORBED_FIELD_GAIN], &SE[BACK_ABSORBED_FIELD_GAIN],
-      &E[BACK_ABSORBED_ATM_GAIN], &SE[BACK_ABSORBED_ATM_GAIN]),
+      &E[BACK_ABSORBED_ATM_GAIN], &SE[BACK_ABSORBED_ATM_GAIN]) ==
     2 * (RECEIVER_RESULTS_COUNT__ - 2 /* efficiencies not read */) + 2);
 }
 
@@ -348,7 +343,7 @@ compute_estimate_intersection
    const double SE1)
 {
   double interval0[2], interval1[2];
-  CHECK(scale > 0, 1);
+  CHK(scale > 0);
   interval0[0] = E0 - scale*SE0;
   interval0[1] = E0 + scale*SE0;
   interval1[0] = E1 - scale*SE1;
@@ -365,18 +360,18 @@ check_estimate
    double test_SE)
 {
   if(ref_E == -1) {
-    CHECK(ref_SE, -1);
-    CHECK(test_E, -1);
-    CHECK(test_SE, -1);
+    CHK(ref_SE == -1);
+    CHK(test_E == -1);
+    CHK(test_SE == -1);
   } else {
     double interval[2];
-    CHECK(ref_SE >= 0, 1);
-    CHECK(test_E >= 0, 1);
-    CHECK(test_SE >= 0, 1);
+    CHK(ref_SE >= 0);
+    CHK(test_E >= 0);
+    CHK(test_SE >= 0);
     if(!ref_SE) ref_SE = ref_E / 1000.0;
     if(!test_SE) test_SE = test_E / 1000.0;
     compute_estimate_intersection(interval, 2, ref_E, ref_SE, test_E, test_SE);
-    CHECK(interval[0] <= interval[1], 1);
+    CHK(interval[0] <= interval[1]);
   }
 }
 
@@ -388,9 +383,9 @@ check_1_reference
 {
   unsigned n;
 
-  NCHECK(ref_file, NULL);
-  NCHECK(test_file, NULL);
-  NCHECK(counts, NULL);
+  CHK(ref_file != NULL);
+  CHK(test_file != NULL);
+  CHK(counts != NULL);
 
   /* both files' pointer are just past the new bloc header */
 
@@ -410,7 +405,7 @@ check_1_reference
 
     read_recv(ref_file, ref_rcv_name, reference_E, reference_SE);
     read_recv(test_file, test_rcv_name, test_E, test_SE);
-    CHECK(strcmp(ref_rcv_name, test_rcv_name), 0);
+    CHK(strcmp(ref_rcv_name, test_rcv_name) == 0);
     FOR_EACH(r, FIRST_RECEIVER_RESULT, RECEIVER_RESULTS_COUNT__) {
       check_estimate(reference_E[r], reference_SE[r], test_E[r], test_SE[r]);
     }
@@ -427,7 +422,7 @@ check_1_reference
     read_primary(ref_file, ref_prim_name, &ref_area, reference_E, reference_SE);
     read_primary(test_file, test_prim_name, &test_area, test_E, test_SE);
     check_estimate(ref_area, 0, test_area, 0);
-    CHECK(strcmp(ref_prim_name, test_prim_name), 0);
+    CHK(strcmp(ref_prim_name, test_prim_name) == 0);
     FOR_EACH(r, FIRST_RECEIVER_RESULT, PRIMARY_RESULTS_COUNT__) {
       check_estimate(reference_E[r], reference_SE[r], test_E[r], test_SE[r]);
     }
@@ -444,8 +439,8 @@ check_1_reference
     read_recvXprim(ref_file, &ref_rcv_id, &ref_prim_id, reference_E, reference_SE);
     read_recvXprim(test_file, &test_rcv_id, &test_prim_id, test_E, test_SE);
     /* we rely on the order of outputs */
-    CHECK(ref_rcv_id, test_rcv_id);
-    CHECK(ref_prim_id, test_prim_id);
+    CHK(ref_rcv_id == test_rcv_id);
+    CHK(ref_prim_id == test_prim_id);
     FOR_EACH(r, FIRST_RECEIVER_RESULT, RECEIVER_RESULTS_COUNT__) {
       if (r == FRONT_EFFICIENCY || r == BACK_EFFICIENCY)
         continue; /* not read */
@@ -459,11 +454,11 @@ create_tmp_file(char* name, const size_t max_sizeof_name)
 {
   const char* template = "solstice_tmp_file_XXXXXX";
   int fd;
-  NCHECK(name, NULL);
-  CHECK(strlen(template)+1 <= max_sizeof_name-1, 1);
+  CHK(name != NULL);
+  CHK(strlen(template)+1 <= max_sizeof_name-1);
   strcpy(name, template);
   fd = mkstemp(name);
-  NCHECK(fd, -1);
+  CHK(fd != -1);
   return fd;
 }
 
@@ -478,10 +473,10 @@ do_check(const char* binary, const char* dir, const char* base_name)
   ASSERT(base_name);
 
   n = snprintf(ref_file_name, sizeof(ref_file_name), "%s%s.ref", dir, base_name);
-  CHECK((size_t)n < sizeof(ref_file_name), 1);
+  CHK((size_t)n < sizeof(ref_file_name));
 
   ref_file = fopen(ref_file_name, "r");
-  NCHECK(ref_file, NULL);
+  CHK(ref_file != NULL);
 
   while(!feof(ref_file)) {
     char cmd[512];
@@ -495,20 +490,20 @@ do_check(const char* binary, const char* dir, const char* base_name)
 
     fd = create_tmp_file(test_file_name, sizeof(test_file_name));
     test_file = fdopen(fd, "r");
-    NCHECK(test_file, NULL);
+    CHK(test_file != NULL);
 
     n = snprintf(cmd, sizeof(cmd),
       "%s -o %s -f -D %g,%g -n %lu -R %s%s_receiver.yaml %s%s.yaml",
       binary, test_file_name, SPLIT2(ref_sun_angles), ref_counts.realisation,
       dir, base_name, dir, base_name);
-    CHECK((unsigned)n < sizeof(cmd), 1);
+    CHK((unsigned)n < sizeof(cmd));
 
     err = system(cmd);
-    CHECK(err, 0);
+    CHK(err == 0);
 
     get_angles_and_counts(test_file, test_sun_angles, &test_counts);
-    CHECK(d2_eq(ref_sun_angles, test_sun_angles), 1);
-    CHECK(counts_ok(&ref_counts, &test_counts), 1);
+    CHK(d2_eq(ref_sun_angles, test_sun_angles) == 1);
+    CHK(counts_ok(&ref_counts, &test_counts) == 1);
     check_1_reference(ref_file, test_file, &ref_counts);
 
     fclose(test_file);

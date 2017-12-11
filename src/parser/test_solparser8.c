@@ -38,11 +38,11 @@ main(int argc, char** argv)
   FILE* stream;
   (void)argc, (void)argv;
 
-  CHECK(mem_init_proxy_allocator(&allocator, &mem_default_allocator), RES_OK);
-  CHECK(solparser_create(&allocator, &parser), RES_OK);
+  CHK(mem_init_proxy_allocator(&allocator, &mem_default_allocator) == RES_OK);
+  CHK(solparser_create(&allocator, &parser) == RES_OK);
 
   stream = tmpfile();
-  NCHECK(stream, NULL);
+  CHK(stream != NULL);
 
   fprintf(stream, "- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1 }] }\n");
   fprintf(stream, "- medium: &vacuum {refractive_index: 1, extinction: 0}\n");
@@ -71,70 +71,70 @@ main(int argc, char** argv)
   fprintf(stream, "              medium_t: *vacuum\n");
   rewind(stream);
 
-  CHECK(solparser_setup(parser, NULL, stream), RES_OK);
-  CHECK(solparser_load(parser), RES_OK);
+  CHK(solparser_setup(parser, NULL, stream) == RES_OK);
+  CHK(solparser_load(parser) == RES_OK);
 
   solparser_entity_iterator_begin(parser, &it);
   solparser_entity_iterator_end(parser, &end);
-  CHECK(solparser_entity_iterator_eq(&it, &end), 0);
+  CHK(solparser_entity_iterator_eq(&it, &end) == 0);
 
   entity_id = solparser_entity_iterator_get(&it);
   entity = solparser_get_entity(parser, entity_id);
 
-  CHECK(strcmp("test",  str_cget(&entity->name)), 0);
-  CHECK(solparser_entity_get_children_count(entity), 0);
-  CHECK(entity->type, SOLPARSER_ENTITY_GEOMETRY);
+  CHK(strcmp("test",  str_cget(&entity->name)) == 0);
+  CHK(solparser_entity_get_children_count(entity) == 0);
+  CHK(entity->type == SOLPARSER_ENTITY_GEOMETRY);
   geom = solparser_get_geometry(parser, entity->data.geometry);
-  CHECK(solparser_geometry_get_objects_count(geom), 1);
+  CHK(solparser_geometry_get_objects_count(geom) == 1);
   obj_id = solparser_geometry_get_object(geom, 0);
   obj = solparser_get_object(parser, obj_id);
   shape = solparser_get_shape(parser, obj->shape);
-  CHECK(shape->type, SOLPARSER_SHAPE_SPHERE);
+  CHK(shape->type == SOLPARSER_SHAPE_SPHERE);
   mtl2 = solparser_get_material_double_sided(parser, obj->mtl2);
-  NCHECK(mtl2->front.i, mtl2->back.i);
+  CHK(mtl2->front.i != mtl2->back.i);
 
   mtl = solparser_get_material(parser, mtl2->front);
-  CHECK(mtl->type, SOLPARSER_MATERIAL_DIELECTRIC);
+  CHK(mtl->type == SOLPARSER_MATERIAL_DIELECTRIC);
   dielec = solparser_get_material_dielectric(parser, mtl->data.dielectric);
   vacuum = solparser_get_medium(parser, dielec->medium_i);
-  CHECK(vacuum->refractive_index.type, SOLPARSER_MTL_DATA_REAL);
-  CHECK(vacuum->refractive_index.value.real, 1);
-  CHECK(vacuum->extinction.type, SOLPARSER_MTL_DATA_REAL);
-  CHECK(vacuum->extinction.value.real, 0);
+  CHK(vacuum->refractive_index.type == SOLPARSER_MTL_DATA_REAL);
+  CHK(vacuum->refractive_index.value.real == 1);
+  CHK(vacuum->extinction.type == SOLPARSER_MTL_DATA_REAL);
+  CHK(vacuum->extinction.value.real == 0);
 
   glass = solparser_get_medium(parser, dielec->medium_t);
-  CHECK(glass->refractive_index.type, SOLPARSER_MTL_DATA_REAL);
-  CHECK(glass->refractive_index.value.real, 1.5);
-  CHECK(glass->extinction.type, SOLPARSER_MTL_DATA_SPECTRUM);
+  CHK(glass->refractive_index.type == SOLPARSER_MTL_DATA_REAL);
+  CHK(glass->refractive_index.value.real == 1.5);
+  CHK(glass->extinction.type == SOLPARSER_MTL_DATA_SPECTRUM);
   spectrum = solparser_get_spectrum(parser, glass->extinction.value.spectrum);
-  CHECK(darray_spectrum_data_size_get(&spectrum->data), 6);
-  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[0].wavelength, 1);
-  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[1].wavelength, 2);
-  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[2].wavelength, 3);
-  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[3].wavelength, 4);
-  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[4].wavelength, 5);
-  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[5].wavelength, 6);
-  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[0].data, 21);
-  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[1].data, 22);
-  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[2].data, 23);
-  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[3].data, 24);
-  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[4].data, 25);
-  CHECK(darray_spectrum_data_cdata_get(&spectrum->data)[5].data, 26);
+  CHK(darray_spectrum_data_size_get(&spectrum->data) == 6);
+  CHK(darray_spectrum_data_cdata_get(&spectrum->data)[0].wavelength == 1);
+  CHK(darray_spectrum_data_cdata_get(&spectrum->data)[1].wavelength == 2);
+  CHK(darray_spectrum_data_cdata_get(&spectrum->data)[2].wavelength == 3);
+  CHK(darray_spectrum_data_cdata_get(&spectrum->data)[3].wavelength == 4);
+  CHK(darray_spectrum_data_cdata_get(&spectrum->data)[4].wavelength == 5);
+  CHK(darray_spectrum_data_cdata_get(&spectrum->data)[5].wavelength == 6);
+  CHK(darray_spectrum_data_cdata_get(&spectrum->data)[0].data == 21);
+  CHK(darray_spectrum_data_cdata_get(&spectrum->data)[1].data == 22);
+  CHK(darray_spectrum_data_cdata_get(&spectrum->data)[2].data == 23);
+  CHK(darray_spectrum_data_cdata_get(&spectrum->data)[3].data == 24);
+  CHK(darray_spectrum_data_cdata_get(&spectrum->data)[4].data == 25);
+  CHK(darray_spectrum_data_cdata_get(&spectrum->data)[5].data == 26);
 
   mtl = solparser_get_material(parser, mtl2->back);
-  CHECK(mtl->type, SOLPARSER_MATERIAL_DIELECTRIC);
+  CHK(mtl->type == SOLPARSER_MATERIAL_DIELECTRIC);
   dielec = solparser_get_material_dielectric(parser, mtl->data.dielectric);
-  CHECK(solparser_get_medium(parser, dielec->medium_i), glass);
-  CHECK(solparser_get_medium(parser, dielec->medium_t), vacuum);
+  CHK(solparser_get_medium(parser, dielec->medium_i) == glass);
+  CHK(solparser_get_medium(parser, dielec->medium_t) == vacuum);
 
-  CHECK(solparser_load(parser), RES_BAD_OP);
+  CHK(solparser_load(parser) == RES_BAD_OP);
   solparser_ref_put(parser);
 
   fclose(stream);
 
   check_memory_allocator(&allocator);
   mem_shutdown_proxy_allocator(&allocator);
-  CHECK(mem_allocated_size(), 0);
+  CHK(mem_allocated_size() == 0);
   return 0;
 }
 

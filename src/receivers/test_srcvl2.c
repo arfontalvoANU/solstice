@@ -28,11 +28,11 @@ main(int argc, char** argv)
   int seek;
   (void)argc, (void)argv;
 
-  CHECK(mem_init_proxy_allocator(&allocator, &mem_default_allocator), RES_OK);
+  CHK(mem_init_proxy_allocator(&allocator, &mem_default_allocator) == RES_OK);
   srcvl_create(&allocator, &srcvl);
 
   stream = tmpfile();
-  NCHECK(stream, NULL);
+  CHK(stream != NULL);
   fprintf(stream, "- { name: entity0 }\n");
   fprintf(stream, "- { name: \"entity1\" }\n");
   fprintf(stream, "- { name: entity2, side: FRONT }\n");
@@ -43,69 +43,69 @@ main(int argc, char** argv)
   fprintf(stream, "- { name: entity6, per_primitive: 0, side: FRONT }\n");
   rewind(stream);
 
-  CHECK(srcvl_setup_stream(srcvl, NULL, stream), RES_OK);
-  CHECK(srcvl_load(srcvl), RES_OK);
-  CHECK(srcvl_count(srcvl), 7);
+  CHK(srcvl_setup_stream(srcvl, NULL, stream) == RES_OK);
+  CHK(srcvl_load(srcvl) == RES_OK);
+  CHK(srcvl_count(srcvl) == 7);
 
   srcvl_get(srcvl, 0, &receiver);
-  CHECK(strcmp(receiver.name, "entity0"), 0);
-  CHECK(receiver.side, SRCVL_FRONT_AND_BACK);
-  CHECK(receiver.per_primitive, 0);
+  CHK(strcmp(receiver.name, "entity0") == 0);
+  CHK(receiver.side == SRCVL_FRONT_AND_BACK);
+  CHK(receiver.per_primitive == 0);
 
   srcvl_get(srcvl, 1, &receiver);
-  CHECK(strcmp(receiver.name, "entity1"), 0);
-  CHECK(receiver.side, SRCVL_FRONT_AND_BACK);
-  CHECK(receiver.per_primitive, 0);
+  CHK(strcmp(receiver.name, "entity1") == 0);
+  CHK(receiver.side == SRCVL_FRONT_AND_BACK);
+  CHK(receiver.per_primitive == 0);
 
   srcvl_get(srcvl, 2, &receiver);
-  CHECK(strcmp(receiver.name, "entity2"), 0);
-  CHECK(receiver.side, SRCVL_FRONT);
-  CHECK(receiver.per_primitive, 0);
+  CHK(strcmp(receiver.name, "entity2") == 0);
+  CHK(receiver.side == SRCVL_FRONT);
+  CHK(receiver.per_primitive == 0);
 
   srcvl_get(srcvl, 3, &receiver);
-  CHECK(strcmp(receiver.name, "entity3"), 0);
-  CHECK(receiver.side, SRCVL_BACK);
-  CHECK(receiver.per_primitive, 0);
+  CHK(strcmp(receiver.name, "entity3") == 0);
+  CHK(receiver.side == SRCVL_BACK);
+  CHK(receiver.per_primitive == 0);
 
   srcvl_get(srcvl, 4, &receiver);
-  CHECK(strcmp(receiver.name, "entity4"), 0);
-  CHECK(receiver.side, SRCVL_FRONT_AND_BACK);
-  CHECK(receiver.per_primitive, 0);
+  CHK(strcmp(receiver.name, "entity4") == 0);
+  CHK(receiver.side == SRCVL_FRONT_AND_BACK);
+  CHK(receiver.per_primitive == 0);
 
   srcvl_get(srcvl, 5, &receiver);
-  CHECK(strcmp(receiver.name, "entity5"), 0);
-  CHECK(receiver.side, SRCVL_BACK);
-  CHECK(receiver.per_primitive, 1);
+  CHK(strcmp(receiver.name, "entity5") == 0);
+  CHK(receiver.side == SRCVL_BACK);
+  CHK(receiver.per_primitive == 1);
 
   srcvl_get(srcvl, 6, &receiver);
-  CHECK(strcmp(receiver.name, "entity6"), 0);
-  CHECK(receiver.side, SRCVL_FRONT);
-  CHECK(receiver.per_primitive, 0);
+  CHK(strcmp(receiver.name, "entity6") == 0);
+  CHK(receiver.side == SRCVL_FRONT);
+  CHK(receiver.per_primitive == 0);
 
-  CHECK(srcvl_load(srcvl), RES_BAD_OP);
+  CHK(srcvl_load(srcvl) == RES_BAD_OP);
 
   seek = (int)ftell(stream);
   fprintf(stream, "---\n");
   fprintf(stream, "[{name: test 0, side: FRONT}, {name: test 1, side: BACK}]\n");
   fseek(stream, seek, SEEK_SET);
 
-  CHECK(srcvl_setup_stream(srcvl, NULL, stream), RES_OK);
-  CHECK(srcvl_load(srcvl), RES_OK);
-  CHECK(srcvl_count(srcvl), 2);
+  CHK(srcvl_setup_stream(srcvl, NULL, stream) == RES_OK);
+  CHK(srcvl_load(srcvl) == RES_OK);
+  CHK(srcvl_count(srcvl) == 2);
 
   srcvl_get(srcvl, 0, &receiver);
-  CHECK(strcmp(receiver.name, "test 0"), 0);
-  CHECK(receiver.side, SRCVL_FRONT);
+  CHK(strcmp(receiver.name, "test 0") == 0);
+  CHK(receiver.side == SRCVL_FRONT);
 
   srcvl_get(srcvl, 1, &receiver);
-  CHECK(strcmp(receiver.name, "test 1"), 0);
-  CHECK(receiver.side, SRCVL_BACK);
+  CHK(strcmp(receiver.name, "test 1") == 0);
+  CHK(receiver.side == SRCVL_BACK);
 
   fclose(stream);
   srcvl_ref_put(srcvl);
 
   check_memory_allocator(&allocator);
   mem_shutdown_proxy_allocator(&allocator);
-  CHECK(mem_allocated_size(), 0);
+  CHK(mem_allocated_size() == 0);
   return 0;
 }
