@@ -470,7 +470,7 @@ create_material_mirror
 
   shader.reflectivity = mirror_get_reflectivity;
   shader.roughness = mirror_get_roughness;
-  SSOL(mirror_setup(mtl, &shader));
+  SSOL(mirror_setup(mtl, &shader, SSOL_MICROFACET_BECKMANN));
   SSOL(material_set_param_buffer(mtl, pbuf));
 
 exit:
