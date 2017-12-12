@@ -72,7 +72,7 @@ solparser_to_ssol_ufacet_distrib
 {
   enum ssol_microfacet_distribution ufacet_distrib;
   switch(distrib) {
-    case SOLPARSER_MICROFACET_BECKMANN: 
+    case SOLPARSER_MICROFACET_BECKMANN:
       ufacet_distrib = SSOL_MICROFACET_BECKMANN;
       break;
     case SOLPARSER_MICROFACET_PILLBOX:

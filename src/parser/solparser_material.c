@@ -28,7 +28,7 @@ parse_microfacet
    enum solparser_microfacet_distribution* distrib)
 {
   res_T res = RES_OK;
-  ASSERT(doc && microfacet && distrib);
+  ASSERT(microfacet && distrib);
 
   if(microfacet->type != YAML_SCALAR_NODE) {
     log_err(parser, microfacet,

@@ -229,7 +229,7 @@
 - material: { mirror: { roughness: 1, reflectivity: 1, microfacet: BECKBOX }}
 ---
 # 2x microfacet
-- material: 
+- material:
     mirror: 
       roughness: 1
       reflectivity: 1
