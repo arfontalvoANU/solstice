@@ -163,6 +163,7 @@ main(int argc, char** argv)
   CHK(mirror->reflectivity.value.real == 0.2);
   CHK(mirror->roughness.type == SOLPARSER_MTL_DATA_REAL);
   CHK(mirror->roughness.value.real == 0.1);
+  CHK(mirror->ufacet_distrib == SOLPARSER_MICROFACET_BECKMANN);
 
   shape = solparser_get_shape(parser, obj->shape);
   CHK(shape->type == SOLPARSER_SHAPE_CUBOID);
