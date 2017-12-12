@@ -28,12 +28,16 @@ enum solparser_material_type {
   SOLPARSER_MATERIAL_VIRTUAL
 };
 
+enum solparser_microfacet_distribution {
+  SOLPARSER_MICROFACET_BECKMANN,
+  SOLPARSER_MICROFACET_PILLBOX
+};
+
 struct solparser_material_dielectric {
   struct solparser_medium_id medium_i; /* Medium the material "looks at" */
   struct solparser_medium_id medium_t; /* Opposite medium */
   struct solparser_image_id normal_map;
 };
-
 struct solparser_material_dielectric_id { size_t i; };
 
 static INLINE void
@@ -66,6 +70,7 @@ solparser_material_matte_init
 struct solparser_material_mirror {
   struct solparser_mtl_data roughness; /* In [0, 1] */
   struct solparser_mtl_data reflectivity; /* In [0, 1] */
+  enum solparser_microfacet_distribution ufacet_distrib;
   struct solparser_image_id normal_map;
 };
 
@@ -78,6 +83,9 @@ solparser_material_mirror_init
 {
   ASSERT(mirror);
   (void)allocator;
+  mirror->roughness.type = SOLPARSER_MTL_DATA_REAL;
+  mirror->roughness.value.real = 0;
+  mirror->ufacet_distrib = SOLPARSER_MICROFACET_BECKMANN;
   mirror->normal_map.i = SIZE_MAX;
 }
 

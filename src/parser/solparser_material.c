@@ -22,6 +22,38 @@
  * Helper functions
  ******************************************************************************/
 static res_T
+parse_microfacet
+  (struct solparser* parser,
+   const yaml_node_t* microfacet,
+   enum solparser_microfacet_distribution* distrib)
+{
+  res_T res = RES_OK;
+  ASSERT(doc && microfacet && distrib);
+
+  if(microfacet->type != YAML_SCALAR_NODE) {
+    log_err(parser, microfacet,
+      "expect the name of a microfacet distribution.\n");
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  if(!strcmp((char*)microfacet->data.scalar.value, "BECKMANN")) {
+    *distrib = SOLPARSER_MICROFACET_BECKMANN;
+  } else if(!strcmp((char*)microfacet->data.scalar.value, "PILLBOX")) {
+    *distrib = SOLPARSER_MICROFACET_PILLBOX;
+  } else {
+    log_err(parser, microfacet, "unknown microfacet distribution `%s'.\n",
+      microfacet->data.scalar.value);
+    res = RES_BAD_ARG;
+    goto error;
+  }
+exit:
+  return res;
+error:
+  goto exit;
+}
+
+static res_T
 parse_material_dielectric
   (struct solparser* parser,
    yaml_document_t* doc,
@@ -213,7 +245,7 @@ parse_material_mirror
    const yaml_node_t* mirror,
    struct solparser_material_mirror_id* out_imtl)
 {
-  enum { NORMAL_MAP, REFLECTIVITY, ROUGHNESS };
+  enum { MICROFACET, NORMAL_MAP, REFLECTIVITY, ROUGHNESS };
   struct solparser_material_mirror* mtl = NULL;
   size_t imtl = SIZE_MAX;
   int mask = 0; /* Register the parsed attributes */
@@ -259,7 +291,10 @@ parse_material_mirror
       }                                                                        \
       mask |= BIT(Flag);                                                       \
     } (void)0
-    if(!strcmp((char*)key->data.scalar.value, "normal_map")) {
+    if(!strcmp((char*)key->data.scalar.value, "microfacet")) {
+      SETUP_MASK(MICROFACET, "microfacet");
+      res = parse_microfacet(parser, val, &mtl->ufacet_distrib);
+    } else if(!strcmp((char*)key->data.scalar.value, "normal_map")) {
       SETUP_MASK(NORMAL_MAP, "normal_map");
       res = parse_image(parser, doc, val, &mtl->normal_map);
     } else if(!strcmp((char*)key->data.scalar.value, "reflectivity")) {
