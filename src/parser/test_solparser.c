@@ -44,26 +44,26 @@ main(int argc, char** argv)
     }
   }
 
-  CHECK(mem_init_proxy_allocator(&allocator, &mem_default_allocator), RES_OK);
+  CHK(mem_init_proxy_allocator(&allocator, &mem_default_allocator) == RES_OK);
   solparser_create(&allocator, &parser);
 
-  CHECK(solparser_setup(parser, NULL, tmpfile()), RES_OK);
-  CHECK(solparser_setup(parser, "yop", tmpfile()), RES_OK);
-  CHECK(solparser_load(parser), RES_BAD_OP); /* Empty stream */
+  CHK(solparser_setup(parser, NULL, tmpfile()) == RES_OK);
+  CHK(solparser_setup(parser, "yop", tmpfile()) == RES_OK);
+  CHK(solparser_load(parser) == RES_BAD_OP); /* Empty stream */
 
   FOR_EACH(i, ifile, argc) {
     FILE* file = fopen(argv[i], "rb");
     int count = 0;
-    NCHECK(file, NULL);
-    CHECK(solparser_setup(parser, argv[i], file), RES_OK);
+    CHK(file != NULL);
+    CHK(solparser_setup(parser, argv[i], file) == RES_OK);
     for(;;) {
       const res_T res = solparser_load(parser);
       if(count == 0 && load_res == RES_OK) {
-        CHECK(res, RES_OK);
+        CHK(res == RES_OK);
       } else if(res == RES_BAD_OP) {
         break;
       }
-      CHECK(res, load_res);
+      CHK(res == load_res);
       ++count;
     }
     fclose(file);
@@ -75,6 +75,6 @@ main(int argc, char** argv)
 
   check_memory_allocator(&allocator);
   mem_shutdown_proxy_allocator(&allocator);
-  CHECK(mem_allocated_size(), 0);
+  CHK(mem_allocated_size() == 0);
   return 0;
 }

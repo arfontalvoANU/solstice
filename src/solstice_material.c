@@ -66,6 +66,23 @@ perturb_normal
   d3_normalize(normal, N);
 }
 
+static enum ssol_microfacet_distribution
+solparser_to_ssol_ufacet_distrib
+  (const enum solparser_microfacet_distribution distrib)
+{
+  enum ssol_microfacet_distribution ufacet_distrib;
+  switch(distrib) {
+    case SOLPARSER_MICROFACET_BECKMANN:
+      ufacet_distrib = SSOL_MICROFACET_BECKMANN;
+      break;
+    case SOLPARSER_MICROFACET_PILLBOX:
+      ufacet_distrib = SSOL_MICROFACET_PILLBOX;
+      break;
+    default: FATAL("Unreachable code.\n"); break;
+  }
+  return ufacet_distrib;
+}
+
 static void
 mtl_get_normal
   (struct ssol_device* dev,
@@ -427,6 +444,7 @@ create_material_mirror
   struct ssol_material* mtl = NULL;
   struct ssol_param_buffer* pbuf = NULL;
   struct mirror_param* param;
+  enum ssol_microfacet_distribution ufacet_distrib;
   res_T res = RES_OK;
   ASSERT(solstice && mirror && out_mtl);
 
@@ -470,7 +488,9 @@ create_material_mirror
 
   shader.reflectivity = mirror_get_reflectivity;
   shader.roughness = mirror_get_roughness;
-  SSOL(mirror_setup(mtl, &shader));
+
+  ufacet_distrib = solparser_to_ssol_ufacet_distrib(mirror->ufacet_distrib);
+  SSOL(mirror_setup(mtl, &shader, ufacet_distrib));
   SSOL(material_set_param_buffer(mtl, pbuf));
 
 exit:

@@ -50,26 +50,26 @@ check_entity0
   struct solparser_entity_id entity_id;
   double tmp[3];
 
-  NCHECK(parser, NULL);
-  NCHECK(entity0, NULL);
+  CHK(parser != NULL);
+  CHK(entity0 != NULL);
 
-  CHECK(strcmp(str_cget(&entity0->name), "entity0"), 0);
-  CHECK(d3_eq(entity0->rotation, d3_splat(tmp, 0)), 1);
-  CHECK(d3_eq(entity0->translation, d3(tmp, 1, 2, 3)), 1);
-  CHECK(entity0->type, SOLPARSER_ENTITY_EMPTY);
+  CHK(strcmp(str_cget(&entity0->name), "entity0") == 0);
+  CHK(d3_eq(entity0->rotation, d3_splat(tmp, 0)) == 1);
+  CHK(d3_eq(entity0->translation, d3(tmp, 1, 2, 3)) == 1);
+  CHK(entity0->type == SOLPARSER_ENTITY_EMPTY);
 
-  CHECK(solparser_entity_get_children_count(entity0), 1);
-  CHECK(solparser_entity_get_anchors_count(entity0), 0);
+  CHK(solparser_entity_get_children_count(entity0) == 1);
+  CHK(solparser_entity_get_anchors_count(entity0) == 0);
 
   entity_id = solparser_entity_get_child(entity0, 0);
   entity = solparser_get_entity(parser, entity_id);
-  CHECK(strcmp(str_cget(&entity->name), "template0"), 0);
-  CHECK(d3_eq(entity->translation, d3_splat(tmp, 0)), 1);
-  CHECK(d3_eq(entity->rotation, d3_splat(tmp, 0)), 1);
+  CHK(strcmp(str_cget(&entity->name), "template0") == 0);
+  CHK(d3_eq(entity->translation, d3_splat(tmp, 0)) == 1);
+  CHK(d3_eq(entity->rotation, d3_splat(tmp, 0)) == 1);
 
-  CHECK(entity->type, SOLPARSER_ENTITY_GEOMETRY);
-  CHECK(solparser_get_geometry(parser, entity->data.geometry), geometry);
-  CHECK(solparser_find_entity(parser, "entity0.template0"), entity);
+  CHK(entity->type == SOLPARSER_ENTITY_GEOMETRY);
+  CHK(solparser_get_geometry(parser, entity->data.geometry) == geometry);
+  CHK(solparser_find_entity(parser, "entity0.template0") == entity);
 }
 
 static void
@@ -80,26 +80,26 @@ check_entity1
   struct solparser_entity_id entity_id;
   double tmp[3];
 
-  NCHECK(parser, NULL);
-  NCHECK(entity1, NULL);
+  CHK(parser != NULL);
+  CHK(entity1 != NULL);
 
-  CHECK(strcmp(str_cget(&entity1->name), "entity1"), 0);
-  CHECK(d3_eq(entity1->rotation, d3_splat(tmp, 0)), 1);
-  CHECK(d3_eq(entity1->translation, d3(tmp, 3, 4, 5)), 1);
-  CHECK(entity1->type, SOLPARSER_ENTITY_EMPTY);
+  CHK(strcmp(str_cget(&entity1->name), "entity1") == 0);
+  CHK(d3_eq(entity1->rotation, d3_splat(tmp, 0)) == 1);
+  CHK(d3_eq(entity1->translation, d3(tmp, 3, 4, 5)) == 1);
+  CHK(entity1->type == SOLPARSER_ENTITY_EMPTY);
 
-  CHECK(solparser_entity_get_children_count(entity1), 1);
-  CHECK(solparser_entity_get_anchors_count(entity1), 0);
+  CHK(solparser_entity_get_children_count(entity1) == 1);
+  CHK(solparser_entity_get_anchors_count(entity1) == 0);
 
   entity_id = solparser_entity_get_child(entity1, 0);
   entity = solparser_get_entity(parser, entity_id);
-  CHECK(strcmp(str_cget(&entity->name), "template0"), 0);
-  CHECK(d3_eq(entity->rotation, d3_splat(tmp, 0)), 1);
-  CHECK(d3_eq(entity->translation, d3_splat(tmp, 0)), 1);
+  CHK(strcmp(str_cget(&entity->name), "template0") == 0);
+  CHK(d3_eq(entity->rotation, d3_splat(tmp, 0)) == 1);
+  CHK(d3_eq(entity->translation, d3_splat(tmp, 0)) == 1);
 
-  CHECK(entity->type, SOLPARSER_ENTITY_GEOMETRY);
-  CHECK(solparser_get_geometry(parser, entity->data.geometry), geometry);
-  CHECK(solparser_find_entity(parser, "entity1.template0"), entity);
+  CHK(entity->type == SOLPARSER_ENTITY_GEOMETRY);
+  CHK(solparser_get_geometry(parser, entity->data.geometry) == geometry);
+  CHK(solparser_find_entity(parser, "entity1.template0") == entity);
 }
 
 int
@@ -124,56 +124,57 @@ main(int argc, char** argv)
   int entity1 = 0;
   (void)argc, (void)argv;
 
-  CHECK(mem_init_proxy_allocator(&allocator, &mem_default_allocator), RES_OK);
+  CHK(mem_init_proxy_allocator(&allocator, &mem_default_allocator) == RES_OK);
   solparser_create(&allocator, &parser);
 
   stream = tmpfile();
-  NCHECK(stream, NULL);
+  CHK(stream != NULL);
   i = 0;
   while(input[i]) {
     const size_t len = strlen(input[i]);
-    CHECK(fwrite(input[i], 1, len, stream), len);
+    CHK(fwrite(input[i], 1, len, stream) == len);
     ++i;
   }
   rewind(stream);
 
-  CHECK(solparser_setup(parser, NULL, stream), RES_OK);
-  CHECK(solparser_load(parser), RES_OK);
+  CHK(solparser_setup(parser, NULL, stream) == RES_OK);
+  CHK(solparser_load(parser) == RES_OK);
 
   solparser_geometry_iterator_begin(parser, &it_geom);
   solparser_geometry_iterator_end(parser, &it_end_geom);
-  CHECK(solparser_geometry_iterator_eq(&it_geom, &it_end_geom), 0);
+  CHK(solparser_geometry_iterator_eq(&it_geom, &it_end_geom) == 0);
   geom_id = solparser_geometry_iterator_get(&it_geom);
   geometry = solparser_get_geometry(parser, geom_id);
   solparser_geometry_iterator_next(&it_geom);
-  CHECK(solparser_geometry_iterator_eq(&it_geom, &it_end_geom), 1);
+  CHK(solparser_geometry_iterator_eq(&it_geom, &it_end_geom) == 1);
 
-  CHECK(solparser_geometry_get_objects_count(geometry), 1);
+  CHK(solparser_geometry_get_objects_count(geometry) == 1);
   obj_id = solparser_geometry_get_object(geometry, 0);
   obj = solparser_get_object(parser, obj_id);
-  CHECK(d3_eq(obj->rotation, d3_splat(tmp, 0)), 1);
-  CHECK(d3_eq(obj->translation, d3_splat(tmp, 0)), 1);
+  CHK(d3_eq(obj->rotation, d3_splat(tmp, 0)) == 1);
+  CHK(d3_eq(obj->translation, d3_splat(tmp, 0)) == 1);
 
   mtl2 = solparser_get_material_double_sided(parser, obj->mtl2);
-  CHECK(mtl2->front.i, mtl2->back.i);
+  CHK(mtl2->front.i == mtl2->back.i);
   mtl = solparser_get_material(parser, mtl2->front);
-  CHECK(mtl->type, SOLPARSER_MATERIAL_MIRROR);
+  CHK(mtl->type == SOLPARSER_MATERIAL_MIRROR);
   mirror = solparser_get_material_mirror(parser, mtl->data.mirror);
-  CHECK(mirror->reflectivity.type, SOLPARSER_MTL_DATA_REAL);
-  CHECK(mirror->reflectivity.value.real, 0.2);
-  CHECK(mirror->roughness.type, SOLPARSER_MTL_DATA_REAL);
-  CHECK(mirror->roughness.value.real, 0.1);
+  CHK(mirror->reflectivity.type == SOLPARSER_MTL_DATA_REAL);
+  CHK(mirror->reflectivity.value.real == 0.2);
+  CHK(mirror->roughness.type == SOLPARSER_MTL_DATA_REAL);
+  CHK(mirror->roughness.value.real == 0.1);
+  CHK(mirror->ufacet_distrib == SOLPARSER_MICROFACET_BECKMANN);
 
   shape = solparser_get_shape(parser, obj->shape);
-  CHECK(shape->type, SOLPARSER_SHAPE_CUBOID);
+  CHK(shape->type == SOLPARSER_SHAPE_CUBOID);
   cuboid = solparser_get_shape_cuboid(parser, shape->data.cuboid);
-  CHECK(cuboid->size[0], 1);
-  CHECK(cuboid->size[1], 2);
-  CHECK(cuboid->size[2], 3);
+  CHK(cuboid->size[0] == 1);
+  CHK(cuboid->size[1] == 2);
+  CHK(cuboid->size[2] == 3);
 
   solparser_entity_iterator_begin(parser, &it);
   solparser_entity_iterator_end(parser, &it_end);
-  CHECK(solparser_entity_iterator_eq(&it, &it_end), 0);
+  CHK(solparser_entity_iterator_eq(&it, &it_end) == 0);
 
   while(!solparser_entity_iterator_eq(&it, &it_end)) {
     struct solparser_entity_id entity_id;
@@ -183,11 +184,11 @@ main(int argc, char** argv)
     entity = solparser_get_entity(parser, entity_id);
 
     if(!strcmp(str_cget(&entity->name), "entity0")) {
-      CHECK(entity0, 0);
+      CHK(entity0 == 0);
       entity0 = 1;
       check_entity0(parser, entity);
     } else if(!strcmp(str_cget(&entity->name), "entity1")) {
-      CHECK(entity1, 0);
+      CHK(entity1 == 0);
       entity1 = 1;
       check_entity1(parser, entity);
     } else {
@@ -196,16 +197,16 @@ main(int argc, char** argv)
 
     solparser_entity_iterator_next(&it);
   }
-  CHECK(entity0, 1);
-  CHECK(entity1, 1);
+  CHK(entity0 == 1);
+  CHK(entity1 == 1);
 
-  CHECK(solparser_load(parser), RES_BAD_OP);
+  CHK(solparser_load(parser) == RES_BAD_OP);
   solparser_ref_put(parser);
   fclose(stream);
 
   check_memory_allocator(&allocator);
   mem_shutdown_proxy_allocator(&allocator);
-  CHECK(mem_allocated_size(), 0);
+  CHK(mem_allocated_size() == 0);
   return 0;
 }
 

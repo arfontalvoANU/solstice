@@ -186,8 +186,12 @@ _______
 
 <mirror>              ::= mirror:
                             reflectivity: <mtl-data> # in [0, 1]
-                            roughness: <mtl-data> # in [0, 1]
+                            roughness: <mtl-data>
+                        [   microfacet: <normal-distrib> ] # Default is BECKMANN
                         [   <normal-map> ]
+
+<normal-distrib>      ::= BECKMANN
+                        | PILLBOX
 
 <virtual>             ::= virtual: EMPTY-STRING
 
@@ -247,13 +251,16 @@ _______
                         [   <spectrum> ] # Default is the smarts295 spectrum
                         [   <sun-shape> ]
 
-<sun-shape>           ::= <pillbox> | <buie>
+<sun-shape>           ::= <pillbox> | <gaussian> | <buie>
 
 <buie>                ::= buie:
                             csr: REAL # in [1e-6, 0.849]
 
 <pillbox>             ::= pillbox:
                             half_angle: REAL # in ]0, 90]
+
+<gaussian>            ::= gaussian:
+                            std_dev: REAL # in ]0, INF)
 
 ----------------------------------------
 
@@ -320,6 +327,14 @@ shapes are:
   The *pillbox* distribution defines an uniform intensity over the sun's disk.
   Its single *half_angle* parameter is the sun's disk half-angle in degrees, that
   is linked to the apparent size of the sun. A typical half_angle is 0.2664.
+
+*gaussian*::
+  The *gaussian* distribution defines a gaussian distribution of the solar
+  incoming direction. Its single *std_dev* parameter is the standard deviation
+  of the distribution in degrees. Values around 0.2 are typical.
+  As the gaussian distribution is not truncated, the resulting sun vector can
+  theoreticaly be oriented towards the sun, especially with a big, non-typical
+  *std_dev* value.
 
 *buie*::
   The *buie* distribution, as first discribed in [3]. Its single *csr*
@@ -412,14 +427,24 @@ of the incoming direction.
 
 *mirror*::
 Specular or glossy reflection whether the *roughness* parameter is 0 or not,
-respectively. Glossy reflections are controlled by a microfacet BRDF with the
-Beckmann normal distribution defined as:
+respectively. Glossy reflections are controlled by a microfacet BRDF. The
+microfacet normals are distributed with respect to the Beckmann or the Pillbox
+distribution according to the *normal-distrib* attribute.
++
+Let m the *roughness* parameter in ]0, 1]. The Beckmann distribution is
+defined as:
 +
 .......
 D(wh) = exp(-tan^2(a) / m^2) / (PI * m^2 * cos^4(a))
 .......
 +
-with a = arccos(wh.N) and m the *roughness* in ]0,1] of the interface.
+with a = arccos(wh.N), while the pillbox distribution is defined as:
++
+.......
+        | 0; if |wh.N| >= m
+D(wh) = |
+        | 1 / (PI * (1 - cos^2(m))); if |wh.N| < m
+.......
 
 *thin-dielectric*::
 The interface is assumed to be a thin slab of a dielectric material. The

@@ -22,11 +22,13 @@
 enum solparser_sun_radang_distrib_type { /* Radial Angular distribution */
   SOLPARSER_SUN_RADANG_DISTRIB_BUIE,
   SOLPARSER_SUN_RADANG_DISTRIB_DIRECTIONAL,
-  SOLPARSER_SUN_RADANG_DISTRIB_PILLBOX
+  SOLPARSER_SUN_RADANG_DISTRIB_PILLBOX,
+  SOLPARSER_SUN_RADANG_DISTRIB_GAUSSIAN
 };
 
 struct solparser_sun_buie { double csr; };
 struct solparser_sun_pillbox { double half_angle; };
+struct solparser_sun_gaussian { double std_dev; };
 
 struct solparser_sun {
   double dni; /* In ]0, INF) */
@@ -35,6 +37,7 @@ struct solparser_sun {
   union {
     struct solparser_sun_buie buie;
     struct solparser_sun_pillbox pillbox;
+    struct solparser_sun_gaussian gaussian;
   } radang_distrib;
 };
 

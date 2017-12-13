@@ -33,7 +33,7 @@ test_dielectric(struct solparser* parser)
   FILE* stream;
 
   stream = tmpfile();
-  NCHECK(stream, NULL);
+  CHK(stream != NULL);
 
   fprintf(stream, "- sun: {dni: 1, spectrum: [{wavelength: 1, data: 1} ]}\n");
   fprintf(stream, "\n");
@@ -53,45 +53,45 @@ test_dielectric(struct solparser* parser)
   fprintf(stream, "      material: *glass\n");
   rewind(stream);
 
-  CHECK(solparser_setup(parser, NULL, stream), RES_OK);
-  CHECK(solparser_load(parser), RES_OK);
+  CHK(solparser_setup(parser, NULL, stream) == RES_OK);
+  CHK(solparser_load(parser) == RES_OK);
 
   solparser_entity_iterator_begin(parser, &it);
   solparser_entity_iterator_end(parser, &end);
-  CHECK(solparser_entity_iterator_eq(&it, &end), 0);
+  CHK(solparser_entity_iterator_eq(&it, &end) == 0);
 
   entity_id = solparser_entity_iterator_get(&it);
   entity = solparser_get_entity(parser, entity_id);
 
-  CHECK(strcmp("foo",  str_cget(&entity->name)), 0);
-  CHECK(solparser_entity_get_children_count(entity), 0);
-  CHECK(entity->type, SOLPARSER_ENTITY_GEOMETRY);
-  CHECK(entity->primary, 1);
+  CHK(strcmp("foo",  str_cget(&entity->name)) == 0);
+  CHK(solparser_entity_get_children_count(entity) == 0);
+  CHK(entity->type == SOLPARSER_ENTITY_GEOMETRY);
+  CHK(entity->primary == 1);
   geom = solparser_get_geometry(parser, entity->data.geometry);
-  CHECK(solparser_geometry_get_objects_count(geom), 1);
+  CHK(solparser_geometry_get_objects_count(geom) == 1);
   obj_id = solparser_geometry_get_object(geom, 0);
   obj = solparser_get_object(parser, obj_id);
   shape = solparser_get_shape(parser, obj->shape);
-  CHECK(shape->type, SOLPARSER_SHAPE_CYLINDER);
+  CHK(shape->type == SOLPARSER_SHAPE_CYLINDER);
   mtl2 = solparser_get_material_double_sided(parser, obj->mtl2);
-  NCHECK(mtl2->front.i, mtl2->back.i);
+  CHK(mtl2->front.i != mtl2->back.i);
 
   mtl = solparser_get_material(parser, mtl2->front);
-  CHECK(mtl->type, SOLPARSER_MATERIAL_DIELECTRIC);
+  CHK(mtl->type == SOLPARSER_MATERIAL_DIELECTRIC);
   dielectric = solparser_get_material_dielectric(parser, mtl->data.dielectric);
-  CHECK(SOLPARSER_ID_IS_VALID(dielectric->normal_map), 1);
+  CHK(SOLPARSER_ID_IS_VALID(dielectric->normal_map) == 1);
   img = solparser_get_image(parser, dielectric->normal_map);
-  CHECK(strcmp(str_cget(&img->filename), "my_normal_map"), 0);
+  CHK(strcmp(str_cget(&img->filename), "my_normal_map") == 0);
 
   mtl = solparser_get_material(parser, mtl2->back);
-  CHECK(mtl->type, SOLPARSER_MATERIAL_DIELECTRIC);
+  CHK(mtl->type == SOLPARSER_MATERIAL_DIELECTRIC);
   dielectric = solparser_get_material_dielectric(parser, mtl->data.dielectric);
-  CHECK(SOLPARSER_ID_IS_VALID(dielectric->normal_map), 0);
+  CHK(SOLPARSER_ID_IS_VALID(dielectric->normal_map) == 0);
 
   solparser_entity_iterator_next(&it);
-  CHECK(solparser_entity_iterator_eq(&it, &end), 1);
+  CHK(solparser_entity_iterator_eq(&it, &end) == 1);
 
-  CHECK(solparser_load(parser), RES_BAD_OP);
+  CHK(solparser_load(parser) == RES_BAD_OP);
   fclose(stream);
 }
 
@@ -112,7 +112,7 @@ test_matte(struct solparser* parser)
   FILE* stream;
 
   stream = tmpfile();
-  NCHECK(stream, NULL);
+  CHK(stream != NULL);
 
   fprintf(stream, "- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1} ] }\n");
   fprintf(stream, "- entity:\n");
@@ -126,42 +126,42 @@ test_matte(struct solparser* parser)
   fprintf(stream, "            normal_map: { path: \"path to normal map\" }\n");
   rewind(stream);
 
-  CHECK(solparser_setup(parser, NULL, stream), RES_OK);
-  CHECK(solparser_load(parser), RES_OK);
+  CHK(solparser_setup(parser, NULL, stream) == RES_OK);
+  CHK(solparser_load(parser) == RES_OK);
 
   solparser_entity_iterator_begin(parser, &it);
   solparser_entity_iterator_end(parser, &end);
-  CHECK(solparser_entity_iterator_eq(&it, &end), 0);
+  CHK(solparser_entity_iterator_eq(&it, &end) == 0);
 
   entity_id = solparser_entity_iterator_get(&it);
   entity = solparser_get_entity(parser, entity_id);
 
-  CHECK(strcmp("test",  str_cget(&entity->name)), 0);
-  CHECK(solparser_entity_get_children_count(entity), 0);
-  CHECK(entity->primary, 0);
-  CHECK(entity->type, SOLPARSER_ENTITY_GEOMETRY);
+  CHK(strcmp("test",  str_cget(&entity->name)) == 0);
+  CHK(solparser_entity_get_children_count(entity) == 0);
+  CHK(entity->primary == 0);
+  CHK(entity->type == SOLPARSER_ENTITY_GEOMETRY);
   geom = solparser_get_geometry(parser, entity->data.geometry);
-  CHECK(solparser_geometry_get_objects_count(geom), 1);
+  CHK(solparser_geometry_get_objects_count(geom) == 1);
   obj_id = solparser_geometry_get_object(geom, 0);
   obj = solparser_get_object(parser, obj_id);
   shape = solparser_get_shape(parser, obj->shape);
-  CHECK(shape->type, SOLPARSER_SHAPE_SPHERE);
+  CHK(shape->type == SOLPARSER_SHAPE_SPHERE);
   mtl2 = solparser_get_material_double_sided(parser, obj->mtl2);
-  CHECK(mtl2->front.i, mtl2->back.i);
+  CHK(mtl2->front.i == mtl2->back.i);
 
   mtl = solparser_get_material(parser, mtl2->front);
-  CHECK(mtl->type, SOLPARSER_MATERIAL_MATTE);
+  CHK(mtl->type == SOLPARSER_MATERIAL_MATTE);
   matte = solparser_get_material_matte(parser, mtl->data.matte);
-  CHECK(matte->reflectivity.type, SOLPARSER_MTL_DATA_REAL);
-  CHECK(matte->reflectivity.value.real, 0.123);
-  CHECK(SOLPARSER_ID_IS_VALID(matte->normal_map), 1);
+  CHK(matte->reflectivity.type == SOLPARSER_MTL_DATA_REAL);
+  CHK(matte->reflectivity.value.real == 0.123);
+  CHK(SOLPARSER_ID_IS_VALID(matte->normal_map) == 1);
   img = solparser_get_image(parser, matte->normal_map);
-  CHECK(strcmp(str_cget(&img->filename), "path to normal map"), 0);
+  CHK(strcmp(str_cget(&img->filename), "path to normal map") == 0);
 
   solparser_entity_iterator_next(&it);
-  CHECK(solparser_entity_iterator_eq(&it, &end), 1);
+  CHK(solparser_entity_iterator_eq(&it, &end) == 1);
 
-  CHECK(solparser_load(parser), RES_BAD_OP);
+  CHK(solparser_load(parser) == RES_BAD_OP);
   fclose(stream);
 }
 
@@ -182,7 +182,7 @@ test_mirror(struct solparser* parser)
   FILE* stream;
 
   stream = tmpfile();
-  NCHECK(stream, NULL);
+  CHK(stream != NULL);
 
   fprintf(stream, "- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1} ] }\n");
   fprintf(stream, "- entity: \n");
@@ -197,44 +197,44 @@ test_mirror(struct solparser* parser)
   fprintf(stream, "            normal_map: { path: Normal map } \n");
   rewind(stream);
 
-  CHECK(solparser_setup(parser, NULL, stream), RES_OK);
-  CHECK(solparser_load(parser), RES_OK);
+  CHK(solparser_setup(parser, NULL, stream) == RES_OK);
+  CHK(solparser_load(parser) == RES_OK);
 
   solparser_entity_iterator_begin(parser, &it);
   solparser_entity_iterator_end(parser, &end);
-  CHECK(solparser_entity_iterator_eq(&it, &end), 0);
+  CHK(solparser_entity_iterator_eq(&it, &end) == 0);
 
   entity_id = solparser_entity_iterator_get(&it);
   entity = solparser_get_entity(parser, entity_id);
 
-  CHECK(strcmp("my_entity",  str_cget(&entity->name)), 0);
-  CHECK(solparser_entity_get_children_count(entity), 0);
-  CHECK(entity->primary, 0);
-  CHECK(entity->type, SOLPARSER_ENTITY_GEOMETRY);
+  CHK(strcmp("my_entity",  str_cget(&entity->name)) == 0);
+  CHK(solparser_entity_get_children_count(entity) == 0);
+  CHK(entity->primary == 0);
+  CHK(entity->type == SOLPARSER_ENTITY_GEOMETRY);
   geom = solparser_get_geometry(parser, entity->data.geometry);
-  CHECK(solparser_geometry_get_objects_count(geom), 1);
+  CHK(solparser_geometry_get_objects_count(geom) == 1);
   obj_id = solparser_geometry_get_object(geom, 0);
   obj = solparser_get_object(parser, obj_id);
   shape = solparser_get_shape(parser, obj->shape);
-  CHECK(shape->type, SOLPARSER_SHAPE_CUBOID);
+  CHK(shape->type == SOLPARSER_SHAPE_CUBOID);
   mtl2 = solparser_get_material_double_sided(parser, obj->mtl2);
-  CHECK(mtl2->front.i, mtl2->back.i);
+  CHK(mtl2->front.i == mtl2->back.i);
 
   mtl = solparser_get_material(parser, mtl2->front);
-  CHECK(mtl->type, SOLPARSER_MATERIAL_MIRROR);
+  CHK(mtl->type == SOLPARSER_MATERIAL_MIRROR);
   mirror = solparser_get_material_mirror(parser, mtl->data.mirror);
-  CHECK(mirror->reflectivity.type, SOLPARSER_MTL_DATA_REAL);
-  CHECK(mirror->reflectivity.value.real, 1);
-  CHECK(mirror->roughness.type, SOLPARSER_MTL_DATA_REAL);
-  CHECK(mirror->roughness.value.real, 0.1);
-  CHECK(SOLPARSER_ID_IS_VALID(mirror->normal_map), 1);
+  CHK(mirror->reflectivity.type == SOLPARSER_MTL_DATA_REAL);
+  CHK(mirror->reflectivity.value.real == 1);
+  CHK(mirror->roughness.type == SOLPARSER_MTL_DATA_REAL);
+  CHK(mirror->roughness.value.real == 0.1);
+  CHK(SOLPARSER_ID_IS_VALID(mirror->normal_map) == 1);
   img = solparser_get_image(parser, mirror->normal_map);
-  CHECK(strcmp(str_cget(&img->filename), "Normal map"), 0);
+  CHK(strcmp(str_cget(&img->filename), "Normal map") == 0);
 
   solparser_entity_iterator_next(&it);
-  CHECK(solparser_entity_iterator_eq(&it, &end), 1);
+  CHK(solparser_entity_iterator_eq(&it, &end) == 1);
 
-  CHECK(solparser_load(parser), RES_BAD_OP);
+  CHK(solparser_load(parser) == RES_BAD_OP);
   fclose(stream);
 }
 
@@ -255,7 +255,7 @@ test_thin_dielectric(struct solparser* parser)
   FILE* stream;
 
   stream = tmpfile();
-  NCHECK(stream, NULL);
+  CHK(stream != NULL);
   fprintf(stream, "- sun: { dni: 1, spectrum: [{wavelength: 1, data: 1} ] }\n");
   fprintf(stream, "- entity:\n");
   fprintf(stream, "    name: test\n");
@@ -274,42 +274,42 @@ test_thin_dielectric(struct solparser* parser)
   fprintf(stream, "            normal_map: { path: Bump }\n");
   rewind(stream);
 
-  CHECK(solparser_setup(parser, NULL, stream), RES_OK);
-  CHECK(solparser_load(parser), RES_OK);
+  CHK(solparser_setup(parser, NULL, stream) == RES_OK);
+  CHK(solparser_load(parser) == RES_OK);
 
   solparser_entity_iterator_begin(parser, &it);
   solparser_entity_iterator_end(parser, &end);
-  CHECK(solparser_entity_iterator_eq(&it, &end), 0);
+  CHK(solparser_entity_iterator_eq(&it, &end) == 0);
 
   entity_id = solparser_entity_iterator_get(&it);
   entity = solparser_get_entity(parser, entity_id);
 
-  CHECK(strcmp("test",  str_cget(&entity->name)), 0);
-  CHECK(solparser_entity_get_children_count(entity), 0);
-  CHECK(entity->primary, 0);
-  CHECK(entity->type, SOLPARSER_ENTITY_GEOMETRY);
+  CHK(strcmp("test",  str_cget(&entity->name)) == 0);
+  CHK(solparser_entity_get_children_count(entity) == 0);
+  CHK(entity->primary == 0);
+  CHK(entity->type == SOLPARSER_ENTITY_GEOMETRY);
   geom = solparser_get_geometry(parser, entity->data.geometry);
-  CHECK(solparser_geometry_get_objects_count(geom), 1);
+  CHK(solparser_geometry_get_objects_count(geom) == 1);
   obj_id = solparser_geometry_get_object(geom, 0);
   obj = solparser_get_object(parser, obj_id);
   shape = solparser_get_shape(parser, obj->shape);
-  CHECK(shape->type, SOLPARSER_SHAPE_SPHERE);
+  CHK(shape->type == SOLPARSER_SHAPE_SPHERE);
   mtl2 = solparser_get_material_double_sided(parser, obj->mtl2);
-  CHECK(mtl2->front.i, mtl2->back.i);
+  CHK(mtl2->front.i == mtl2->back.i);
 
   mtl = solparser_get_material(parser, mtl2->front);
-  CHECK(mtl->type, SOLPARSER_MATERIAL_THIN_DIELECTRIC);
+  CHK(mtl->type == SOLPARSER_MATERIAL_THIN_DIELECTRIC);
   thin = solparser_get_material_thin_dielectric(parser, mtl->data.thin_dielectric);
-  CHECK(thin->thickness, 0.1);
-  NCHECK(thin->medium_i.i, thin->medium_t.i);
-  CHECK(SOLPARSER_ID_IS_VALID(thin->normal_map), 1);
+  CHK(thin->thickness == 0.1);
+  CHK(thin->medium_i.i != thin->medium_t.i);
+  CHK(SOLPARSER_ID_IS_VALID(thin->normal_map) == 1);
   img = solparser_get_image(parser, thin->normal_map);
-  CHECK(strcmp(str_cget(&img->filename), "Bump"), 0);
+  CHK(strcmp(str_cget(&img->filename), "Bump") == 0);
 
   solparser_entity_iterator_next(&it);
-  CHECK(solparser_entity_iterator_eq(&it, &end), 1);
+  CHK(solparser_entity_iterator_eq(&it, &end) == 1);
 
-  CHECK(solparser_load(parser), RES_BAD_OP);
+  CHK(solparser_load(parser) == RES_BAD_OP);
   fclose(stream);
 }
 
@@ -320,8 +320,8 @@ main(int argc, char** argv)
   struct solparser* parser;
   (void)argc, (void)argv;
 
-  CHECK(mem_init_proxy_allocator(&allocator, &mem_default_allocator), RES_OK);
-  CHECK(solparser_create(&allocator, &parser), RES_OK);
+  CHK(mem_init_proxy_allocator(&allocator, &mem_default_allocator) == RES_OK);
+  CHK(solparser_create(&allocator, &parser) == RES_OK);
 
   test_dielectric(parser);
   test_matte(parser);
@@ -332,7 +332,7 @@ main(int argc, char** argv)
 
   check_memory_allocator(&allocator);
   mem_shutdown_proxy_allocator(&allocator);
-  CHECK(mem_allocated_size(), 0);
+  CHK(mem_allocated_size() == 0);
   return 0;
 }
 

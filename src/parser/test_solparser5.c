@@ -53,27 +53,27 @@ check_entity(struct solparser* parser, const struct solparser_entity* entity)
   struct solparser_entity_id entity_id;
   double tmp[3];
 
-  CHECK(entity->type, SOLPARSER_ENTITY_EMPTY);
+  CHK(entity->type == SOLPARSER_ENTITY_EMPTY);
 
-  CHECK(solparser_entity_get_children_count(entity), 1);
+  CHK(solparser_entity_get_children_count(entity) == 1);
   entity_id = solparser_entity_get_child(entity, 0);
   entity = solparser_get_entity(parser, entity_id);
-  CHECK(strcmp(str_cget(&entity->name), "lvl1"), 0);
-  CHECK(entity->type, SOLPARSER_ENTITY_GEOMETRY);
+  CHK(strcmp(str_cget(&entity->name), "lvl1") == 0);
+  CHK(entity->type == SOLPARSER_ENTITY_GEOMETRY);
 
-  CHECK(solparser_entity_get_children_count(entity), 1);
+  CHK(solparser_entity_get_children_count(entity) == 1);
   entity_id = solparser_entity_get_child(entity, 0);
   entity = solparser_get_entity(parser, entity_id);
-  CHECK(strcmp(str_cget(&entity->name), "lvl2"), 0);
-  CHECK(entity->type, SOLPARSER_ENTITY_X_PIVOT);
+  CHK(strcmp(str_cget(&entity->name), "lvl2") == 0);
+  CHK(entity->type == SOLPARSER_ENTITY_X_PIVOT);
 
   x_pivot = solparser_get_x_pivot(parser, entity->data.x_pivot);
-  CHECK(d3_eq(x_pivot->ref_point, d3(tmp, 1, 2, 3)), 1);
-  CHECK(x_pivot->target.type, SOLPARSER_TARGET_ANCHOR);
+  CHK(d3_eq(x_pivot->ref_point, d3(tmp, 1, 2, 3)) == 1);
+  CHK(x_pivot->target.type == SOLPARSER_TARGET_ANCHOR);
 
   anchor = solparser_get_anchor(parser, x_pivot->target.data.anchor);
-  CHECK(strcmp(str_cget(&anchor->name), "anchor0"), 0);
-  CHECK(d3_eq(anchor->position, d3(tmp, 1, 2, 3)), 1);
+  CHK(strcmp(str_cget(&anchor->name), "anchor0") == 0);
+  CHK(d3_eq(anchor->position, d3(tmp, 1, 2, 3)) == 1);
 }
 
 int
@@ -90,35 +90,35 @@ main(int argc, char** argv)
   FILE* stream;
   (void)argc, (void)argv;
 
-  CHECK(mem_init_proxy_allocator(&allocator, &mem_default_allocator), RES_OK);
+  CHK(mem_init_proxy_allocator(&allocator, &mem_default_allocator) == RES_OK);
   solparser_create(&allocator, &parser);
 
   stream = tmpfile();
-  NCHECK(stream, NULL);
+  CHK(stream != NULL);
   i = 0;
   while(input[i]) {
     const size_t len = strlen(input[i]);
-    CHECK(fwrite(input[i], 1, len, stream), len);
+    CHK(fwrite(input[i], 1, len, stream) == len);
     ++i;
   }
   rewind(stream);
 
-  CHECK(solparser_setup(parser, NULL, stream), RES_OK);
-  CHECK(solparser_load(parser), RES_OK);
+  CHK(solparser_setup(parser, NULL, stream) == RES_OK);
+  CHK(solparser_load(parser) == RES_OK);
 
   solparser_entity_iterator_begin(parser, &it);
   solparser_entity_iterator_end(parser, &it_end);
-  CHECK(solparser_entity_iterator_eq(&it, &it_end), 0);
+  CHK(solparser_entity_iterator_eq(&it, &it_end) == 0);
 
   while(!solparser_entity_iterator_eq(&it, &it_end)) {
     entity_id = solparser_entity_iterator_get(&it);
     entity = solparser_get_entity(parser, entity_id);
     if(!strcmp(str_cget(&entity->name), "entity0")) {
-      CHECK(entity0, 0);
+      CHK(entity0 == 0);
       entity0 = 1;
       check_entity(parser, entity);
     } else if(!strcmp(str_cget(&entity->name), "entity1")) {
-      CHECK(entity1, 0);
+      CHK(entity1 == 0);
       entity1 = 1;
       check_entity(parser, entity);
     } else {
@@ -126,15 +126,15 @@ main(int argc, char** argv)
     }
     solparser_entity_iterator_next(&it);
   }
-  CHECK(entity0, 1);
-  CHECK(entity1, 1);
+  CHK(entity0 == 1);
+  CHK(entity1 == 1);
 
   solparser_ref_put(parser);
   fclose(stream);
 
   check_memory_allocator(&allocator);
   mem_shutdown_proxy_allocator(&allocator);
-  CHECK(mem_allocated_size(), 0);
+  CHK(mem_allocated_size() == 0);
   return 0;
 }
 

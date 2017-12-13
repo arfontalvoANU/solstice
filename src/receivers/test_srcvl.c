@@ -44,26 +44,26 @@ main(int argc, char** argv)
     }
   }
 
-  CHECK(mem_init_proxy_allocator(&allocator, &mem_default_allocator), RES_OK);
+  CHK(mem_init_proxy_allocator(&allocator, &mem_default_allocator) == RES_OK);
   srcvl_create(&allocator, &srcvl);
 
-  CHECK(srcvl_setup_stream(srcvl, NULL, tmpfile()), RES_OK);
-  CHECK(srcvl_setup_stream(srcvl, "yop", tmpfile()), RES_OK);
-  CHECK(srcvl_load(srcvl), RES_BAD_OP); /* Empty stream */
+  CHK(srcvl_setup_stream(srcvl, NULL, tmpfile()) == RES_OK);
+  CHK(srcvl_setup_stream(srcvl, "yop", tmpfile()) == RES_OK);
+  CHK(srcvl_load(srcvl) == RES_BAD_OP); /* Empty stream */
 
   FOR_EACH(i, ifile, argc) {
     FILE* file = fopen(argv[i], "rb");
     int count = 0;
-    NCHECK(file, NULL);
-    CHECK(srcvl_setup_stream(srcvl, argv[i], file), RES_OK);
+    CHK(file != NULL);
+    CHK(srcvl_setup_stream(srcvl, argv[i], file) == RES_OK);
     for(;;) {
       const res_T res = srcvl_load(srcvl);
       if(count == 0 && load_res == RES_OK) {
-        CHECK(res, RES_OK);
+        CHK(res == RES_OK);
       } else if(res == RES_BAD_OP) {
         break;
       }
-      CHECK(res, load_res);
+      CHK(res == load_res);
       ++count;
     }
     fclose(file);
@@ -74,7 +74,7 @@ main(int argc, char** argv)
 
   check_memory_allocator(&allocator);
   mem_shutdown_proxy_allocator(&allocator);
-  CHECK(mem_allocated_size(), 0);
+  CHK(mem_allocated_size() == 0);
   return 0;
 }
 
