@@ -60,6 +60,13 @@ informations on CMake.
 
 ## Release notes
 
+### Version 0.7
+
+- Add the `gaussian` sun shape.
+- Add the `microfacet` attribute to the mirror material. It controls the normal
+  distribution of the microfacets when the mirror roughness is not null. The
+  supported distribution are `BECKMANN` and `PILLBOX`.
+
 ### Version 0.6.1
 
 - Fix the solstice-input man page. The `extinction` parameter of the medium and
