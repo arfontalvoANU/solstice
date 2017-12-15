@@ -193,7 +193,7 @@ test_mirror(struct solparser* parser)
   fprintf(stream, "        material: \n");
   fprintf(stream, "          mirror:\n");
   fprintf(stream, "            reflectivity: 1\n");
-  fprintf(stream, "            roughness: 0.1\n");
+  fprintf(stream, "            slope_error: 0.1\n");
   fprintf(stream, "            normal_map: { path: Normal map } \n");
   rewind(stream);
 
@@ -225,8 +225,8 @@ test_mirror(struct solparser* parser)
   mirror = solparser_get_material_mirror(parser, mtl->data.mirror);
   CHK(mirror->reflectivity.type == SOLPARSER_MTL_DATA_REAL);
   CHK(mirror->reflectivity.value.real == 1);
-  CHK(mirror->roughness.type == SOLPARSER_MTL_DATA_REAL);
-  CHK(mirror->roughness.value.real == 0.1);
+  CHK(mirror->slope_error.type == SOLPARSER_MTL_DATA_REAL);
+  CHK(mirror->slope_error.value.real == 0.1);
   CHK(SOLPARSER_ID_IS_VALID(mirror->normal_map) == 1);
   img = solparser_get_image(parser, mirror->normal_map);
   CHK(strcmp(str_cget(&img->filename), "Normal map") == 0);

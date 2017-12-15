@@ -88,7 +88,7 @@ main(int argc, char** argv)
   fprintf(stream, "        geometry: \n");
   fprintf(stream, "          - sphere: {radius: 2}\n");
   fprintf(stream, "            material:\n");
-  fprintf(stream, "              mirror: { reflectivity: 0.9, roughness: 0.1 }\n");
+  fprintf(stream, "              mirror: { reflectivity: 0.9, slope_error: 0.1 }\n");
   fprintf(stream, "      - name: lvl1b\n");
   fprintf(stream, "        primary: 0\n");
   fprintf(stream, "        geometry: *sphere\n");
@@ -191,8 +191,8 @@ main(int argc, char** argv)
   mirror = solparser_get_material_mirror(parser, mtl->data.mirror);
   CHK(mirror->reflectivity.type == SOLPARSER_MTL_DATA_REAL);
   CHK(mirror->reflectivity.value.real == 0.9);
-  CHK(mirror->roughness.type == SOLPARSER_MTL_DATA_REAL);
-  CHK(mirror->roughness.value.real == 0.1);
+  CHK(mirror->slope_error.type == SOLPARSER_MTL_DATA_REAL);
+  CHK(mirror->slope_error.value.real == 0.1);
 
   entity_id = solparser_entity_get_child(entity, 1);
   entity1b = solparser_get_entity(parser, entity_id);

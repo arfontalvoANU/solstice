@@ -145,7 +145,7 @@ test_mirror(struct solparser* parser)
   fprintf(stream, "      - { wavelength: 3.4, data: 0.5 }\n");
   fprintf(stream, "      - { wavelength: 1.2, data: 0.25 }\n");
   fprintf(stream, "      - { wavelength: 6.7, data: 0.125 }\n");
-  fprintf(stream, "      roughness:\n");
+  fprintf(stream, "      slope_error:\n");
   fprintf(stream, "      - { wavelength: 123, data: 0 }\n");
   fprintf(stream, "      - { wavelength: 456, data: 1 }\n");
   rewind(stream);
@@ -161,7 +161,7 @@ test_mirror(struct solparser* parser)
   CHK(mtl->type == SOLPARSER_MATERIAL_MIRROR);
   mirror = solparser_get_material_mirror(parser, mtl->data.mirror);
   CHK(mirror->reflectivity.type == SOLPARSER_MTL_DATA_SPECTRUM);
-  CHK(mirror->roughness.type == SOLPARSER_MTL_DATA_SPECTRUM);
+  CHK(mirror->slope_error.type == SOLPARSER_MTL_DATA_SPECTRUM);
   CHK(SOLPARSER_ID_IS_VALID(mirror->normal_map) == 0);
 
   spectrum = solparser_get_spectrum(parser, mirror->reflectivity.value.spectrum);
@@ -173,7 +173,7 @@ test_mirror(struct solparser* parser)
   CHK(darray_spectrum_data_cdata_get(&spectrum->data)[1].data == 0.5);
   CHK(darray_spectrum_data_cdata_get(&spectrum->data)[2].data == 0.125);
 
-  spectrum = solparser_get_spectrum(parser, mirror->roughness.value.spectrum);
+  spectrum = solparser_get_spectrum(parser, mirror->slope_error.value.spectrum);
   CHK(darray_spectrum_data_size_get(&spectrum->data) == 2);
   CHK(darray_spectrum_data_cdata_get(&spectrum->data)[0].wavelength == 123);
   CHK(darray_spectrum_data_cdata_get(&spectrum->data)[1].wavelength == 456);

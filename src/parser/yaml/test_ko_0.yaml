@@ -185,7 +185,7 @@
 # <mirror> ::=
 #   mirror:
 #     reflectivity: REAL # in [0, 1]
-#     roughness: REAL # in [0, 1]
+#     slope_error: REAL # in [0, 1]
 #   [ microfacet: <BECKMANN|PILLBOX> ]
 #
 
@@ -196,42 +196,42 @@
 - material: { mirror: { dummy: 0 } }
 ---
 # missing reflectivity parameter
-- material: { mirror: { roughness: 0 } }
+- material: { mirror: { slope_error: 0 } }
 ---
-# missing roughness parameter
+# missing slope_error parameter
 - material: { mirror: { reflectivity: 1 } }
 ---
-# roughness should be a number
-- material: { mirror: { roughness: "dummy" } }
+# slope_error should be a number
+- material: { mirror: { slope_error: "dummy" } }
 ---
 # reflectivity should be a number
 - material: { mirror: { reflectivity: "dummy" } }
 ---
 # -1 invalid
-- material: { mirror: { reflectivity: -1, roughness: 0 } }
+- material: { mirror: { reflectivity: -1, slope_error: 0 } }
 ---
 # 1.5 invalid
-- material: { mirror: { reflectivity: 1.5, roughness: 0 } }
+- material: { mirror: { reflectivity: 1.5, slope_error: 0 } }
 ---
 # -1 invalid
-- material: { mirror: { reflectivity: 1, roughness: -1 } }
+- material: { mirror: { reflectivity: 1, slope_error: -1 } }
 ---
 # 1.5 invalid
-- material: { mirror: { reflectivity: 1, roughness: 1.5 } }
+- material: { mirror: { reflectivity: 1, slope_error: 1.5 } }
 ---
 # 2x reflectivity
 - material: { mirror: { reflectivity: 1, reflectivity: 1 } }
 ---
-# 2x roughness
-- material: { mirror: { roughness: 1, roughness: 1 } }
+# 2x slope_error
+- material: { mirror: { slope_error: 1, slope_error: 1 } }
 ---
 # unknown microfacet
-- material: { mirror: { roughness: 1, reflectivity: 1, microfacet: BECKBOX }}
+- material: { mirror: { slope_error: 1, reflectivity: 1, microfacet: BECKBOX }}
 ---
 # 2x microfacet
 - material:
     mirror: 
-      roughness: 1
+      slope_error: 1
       reflectivity: 1
       microfacet: BECKMANN
       microfacet: PILLBOX

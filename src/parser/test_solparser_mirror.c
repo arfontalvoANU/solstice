@@ -21,7 +21,7 @@ check_object
   (struct solparser* parser,
    const struct solparser_object* obj,
    const double reflectivity,
-   const double roughness,
+   const double slope_error,
    const enum solparser_microfacet_distribution distrib)
 {
   const struct solparser_shape* shape;
@@ -44,8 +44,8 @@ check_object
   mirror = solparser_get_material_mirror(parser, mtl->data.mirror);
   CHK(mirror->reflectivity.type == SOLPARSER_MTL_DATA_REAL);
   CHK(mirror->reflectivity.value.real == reflectivity);
-  CHK(mirror->roughness.type == SOLPARSER_MTL_DATA_REAL);
-  CHK(mirror->roughness.value.real == roughness);
+  CHK(mirror->slope_error.type == SOLPARSER_MTL_DATA_REAL);
+  CHK(mirror->slope_error.value.real == slope_error);
   CHK(mirror->ufacet_distrib == distrib);
 }
 
@@ -67,16 +67,16 @@ main(int argc, char** argv)
   fprintf(stream, "- material: &specular\n");
   fprintf(stream, "    mirror:\n");
   fprintf(stream, "      reflectivity: 1\n");
-  fprintf(stream, "      roughness: 0\n");
+  fprintf(stream, "      slope_error: 0\n");
   fprintf(stream, "- material: &beckmann\n");
   fprintf(stream, "    mirror:\n");
   fprintf(stream, "      reflectivity: 0.5\n");
-  fprintf(stream, "      roughness: 0.5\n");
+  fprintf(stream, "      slope_error: 0.5\n");
   fprintf(stream, "      microfacet: BECKMANN\n");
   fprintf(stream, "- material: &pillbox\n");
   fprintf(stream, "    mirror:\n");
   fprintf(stream, "      reflectivity: 0.2\n");
-  fprintf(stream, "      roughness: 0.2\n");
+  fprintf(stream, "      slope_error: 0.2\n");
   fprintf(stream, "      microfacet: PILLBOX\n");
   fprintf(stream, "\n");
   fprintf(stream, "- entity:\n");

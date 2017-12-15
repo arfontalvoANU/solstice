@@ -186,7 +186,7 @@ _______
 
 <mirror>              ::= mirror:
                             reflectivity: <mtl-data> # in [0, 1]
-                            roughness: <mtl-data>
+                            slope_error: <mtl-data>
                         [   microfacet: <normal-distrib> ] # Default is BECKMANN
                         [   <normal-map> ]
 
@@ -426,24 +426,25 @@ Diffuse surface. Reflects the same intensity in all directions independently
 of the incoming direction.
 
 *mirror*::
-Specular or glossy reflection whether the *roughness* parameter is 0 or not,
+Specular or glossy reflection whether the *slope_error* parameter is 0 or not,
 respectively. Glossy reflections are controlled by a microfacet BRDF. The
 microfacet normals are distributed with respect to the Beckmann or the Pillbox
 distribution according to the *normal-distrib* attribute.
 +
-Let m the *roughness* parameter in ]0, 1]. The Beckmann distribution is
+Let S the *slope_error* parameter in ]0, 1]. The Beckmann distribution is
 defined as:
 +
 .......
 D(wh) = exp(-tan^2(a) / m^2) / (PI * m^2 * cos^4(a))
 .......
 +
-with a = arccos(wh.N), while the pillbox distribution is defined as:
+with a = arccos(wh.N), and m = sqrt(2)*S while the pillbox distribution is
+defined as:
 +
 .......
-        | 0; if |wh.N| >= m
+        | 0; if |wh.N| >= S
 D(wh) = |
-        | 1 / (PI * (1 - cos^2(m))); if |wh.N| < m
+        | 1 / (PI * (1 - cos^2(S))); if |wh.N| < S
 .......
 
 *thin-dielectric*::
@@ -873,7 +874,7 @@ is 1 and its center is positioned at {0,0,2}:
     - material:
         mirror:
           reflectivity: 1
-          roughness: 0
+          slope_error: 0
       plane:
         clip:
         - operation: AND
@@ -949,7 +950,7 @@ position is defined relatively to the receiver:
       transform: {rotation: [-90, 0, 0]}
       primary: 1
       geometry:
-      - material: {mirror: {reflectivity: 1, roughness: 0}}
+      - material: {mirror: {reflectivity: 1, slope_error: 0}}
         parabol:
           focal: 100
           clip:
@@ -977,7 +978,7 @@ purely specular while the back faces are diffuse:
 - sun: {dni: 1000}
 
 - material: &specular
-    front: {mirror: {reflectivity: 1, roughness: 0}}
+    front: {mirror: {reflectivity: 1, slope_error: 0}}
     back: {matte: {reflectivity: 1}}
 
 - template: &H # Template of an heliostat
@@ -1085,7 +1086,7 @@ glass. Furthermore, this example illustrates the use of a *spectrum* for
 - atmosphere: {extinction: *air_kabs}
 
 # Materials
-- material: &specular {mirror: {reflectivity: 1, roughness: 0}}
+- material: &specular {mirror: {reflectivity: 1, slope_error: 0}}
 - material: &black {matte: {reflectivity: 0}}
 - material: &glass
     front: {dielectric: {medium_i: *air_medium, medium_t: *glass_medium}}

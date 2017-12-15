@@ -3,7 +3,7 @@
     name: entity
     primary: 1
     geometry:
-      - material: { mirror: { reflectivity: 0, roughness: 0.5 } }
+      - material: { mirror: { reflectivity: 0, slope_error: 0.5 } }
         plane:
           slices: 4
           clip:
@@ -19,7 +19,7 @@
     name: entity
     primary: 1
     geometry:
-      - material: { mirror: { reflectivity: 0, roughness: 0.5 } }
+      - material: { mirror: { reflectivity: 0, slope_error: 0.5 } }
         plane:
           clip:
           - operation: AND
@@ -34,7 +34,7 @@
     name: entity
     primary: 1
     geometry:
-      - material: { mirror: { reflectivity: 0, roughness: 0.5 } }
+      - material: { mirror: { reflectivity: 0, slope_error: 0.5 } }
         parabol:
           slices: 40
           focal: 18
@@ -47,7 +47,7 @@
     name: entity
     primary: 1
     geometry:
-      - material: { mirror: { reflectivity: 0, roughness: 0.5 } }
+      - material: { mirror: { reflectivity: 0, slope_error: 0.5 } }
         parabol:
           focal: 18
           clip:
@@ -59,7 +59,7 @@
     name: entity
     primary: 1
     geometry:
-      - material: { mirror: { reflectivity: 0, roughness: 0.5 } }
+      - material: { mirror: { reflectivity: 0, slope_error: 0.5 } }
         parabolic-cylinder:
           slices: 40
           focal: 18
@@ -72,7 +72,7 @@
     name: entity
     primary: 1
     geometry:
-      - material: { mirror: { reflectivity: 0, roughness: 0.5 } }
+      - material: { mirror: { reflectivity: 0, slope_error: 0.5 } }
         parabolic-cylinder:
           focal: 18
           clip:
@@ -85,7 +85,7 @@
     name: entity
     primary: 1
     geometry:
-      - material: { mirror: { reflectivity: 0, roughness: 0.5 } }
+      - material: { mirror: { reflectivity: 0, slope_error: 0.5 } }
         hyperbol:
           slices: 40
           focals: { real: 1, image: 1 }
@@ -98,7 +98,7 @@
     name: entity
     primary: 1
     geometry:
-      - material: { mirror: { reflectivity: 0, roughness: 0.5 } }
+      - material: { mirror: { reflectivity: 0, slope_error: 0.5 } }
         hyperbol:
           focals: { real: 1, image: 1 }
           clip:
@@ -110,7 +110,7 @@
     name: entity
     primary: 1
     geometry:
-      - material: { mirror: { reflectivity: 0, roughness: 0.5 } }
+      - material: { mirror: { reflectivity: 0, slope_error: 0.5 } }
         hyperbol:
           focals: { real: 1, image: 1 }
           clip:
@@ -122,7 +122,7 @@
     name: entity
     primary: 1
     geometry:
-      - material: { mirror: { reflectivity: 0, roughness: 0.5 } }
+      - material: { mirror: { reflectivity: 0, slope_error: 0.5 } }
         hyperbol:
           focals: { real: 1, image: 1 }
           clip:

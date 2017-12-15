@@ -472,8 +472,21 @@ create_material_mirror
 
   res = mtl_to_ssol_data(solstice, &mirror->reflectivity, &param->reflectivity);
   if(res != RES_OK) goto error;
-  res = mtl_to_ssol_data(solstice, &mirror->roughness, &param->roughness);
-  if(res != RES_OK) goto error;
+
+  switch(mirror->ufacet_distrib) {
+    case SOLPARSER_MICROFACET_BECKMANN:
+      /* For the beckmann distribution, convert the slope error to the
+       * corresponding beckmann rougness by multiplying it by sqrt(2) */
+      res = scaled_mtl_to_ssol_data
+        (solstice, &mirror->slope_error, sqrt(2), &param->roughness);
+      break;
+    case SOLPARSER_MICROFACET_PILLBOX:
+      /* Direct correspondance between the solver roughness parameter and the
+       * provided slope error */
+      res = mtl_to_ssol_data(solstice, &mirror->slope_error, &param->roughness);
+      break;
+    default: FATAL("Unreachable code.\n"); break;
+  }
 
   if(!SOLPARSER_ID_IS_VALID(mirror->normal_map)) {
     shader.normal = mtl_get_normal;
@@ -589,9 +602,10 @@ error:
  * Local functions
  ******************************************************************************/
 res_T
-mtl_to_ssol_data
+scaled_mtl_to_ssol_data
   (struct solstice* solstice,
    const struct solparser_mtl_data* mtl_data,
+   const double scale_factor,
    struct ssol_data* data)
 {
   struct ssol_spectrum* spectrum = NULL;
@@ -600,16 +614,16 @@ mtl_to_ssol_data
 
   ssol_data_clear(data);
   switch(mtl_data->type) {
-  case SOLPARSER_MTL_DATA_REAL:
-    ssol_data_set_real(data, mtl_data->value.real);
-    break;
-  case SOLPARSER_MTL_DATA_SPECTRUM:
-    res = solstice_create_ssol_spectrum
-    (solstice, mtl_data->value.spectrum, &spectrum);
-    if(res != RES_OK) goto error;
-    ssol_data_set_spectrum(data, spectrum);
-    break;
-  default: FATAL("Unreachable code.\n"); break;
+    case SOLPARSER_MTL_DATA_REAL:
+      ssol_data_set_real(data, mtl_data->value.real*scale_factor);
+      break;
+    case SOLPARSER_MTL_DATA_SPECTRUM:
+      res = solstice_create_scaled_ssol_spectrum
+        (solstice, mtl_data->value.spectrum, scale_factor, &spectrum);
+      if(res != RES_OK) goto error;
+      ssol_data_set_spectrum(data, spectrum);
+      break;
+    default: FATAL("Unreachable code.\n"); break;
   }
 
 exit:
@@ -618,6 +632,15 @@ exit:
 error:
   ssol_data_clear(data);
   goto exit;
+}
+
+extern LOCAL_SYM res_T
+mtl_to_ssol_data
+  (struct solstice* solstice,
+   const struct solparser_mtl_data* mtl_data,
+   struct ssol_data* data)
+{
+  return scaled_mtl_to_ssol_data(solstice, mtl_data, 1.0, data);
 }
 
 res_T

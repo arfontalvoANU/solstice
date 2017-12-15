@@ -245,7 +245,7 @@ parse_material_mirror
    const yaml_node_t* mirror,
    struct solparser_material_mirror_id* out_imtl)
 {
-  enum { MICROFACET, NORMAL_MAP, REFLECTIVITY, ROUGHNESS };
+  enum { MICROFACET, NORMAL_MAP, REFLECTIVITY, SLOPE_ERROR };
   struct solparser_material_mirror* mtl = NULL;
   size_t imtl = SIZE_MAX;
   int mask = 0; /* Register the parsed attributes */
@@ -300,9 +300,9 @@ parse_material_mirror
     } else if(!strcmp((char*)key->data.scalar.value, "reflectivity")) {
       SETUP_MASK(REFLECTIVITY, "reflectivity");
       res = parse_mtl_data(parser, doc, val, 0, 1, &mtl->reflectivity);
-    } else if(!strcmp((char*)key->data.scalar.value, "roughness")) {
-      SETUP_MASK(ROUGHNESS, "roughness");
-      res = parse_mtl_data(parser, doc, val, 0, 1, &mtl->roughness);
+    } else if(!strcmp((char*)key->data.scalar.value, "slope_error")) {
+      SETUP_MASK(SLOPE_ERROR, "slope_error");
+      res = parse_mtl_data(parser, doc, val, 0, 1, &mtl->slope_error);
     } else {
       log_err(parser, key, "unknown mirror attribute `%s'.\n",
         key->data.scalar.value);
@@ -323,7 +323,7 @@ parse_material_mirror
       goto error;                                                              \
     } (void)0
   CHECK_PARAM(REFLECTIVITY, "reflectivity");
-  CHECK_PARAM(ROUGHNESS, "roughness");
+  CHECK_PARAM(SLOPE_ERROR, "slope_error");
   #undef CHECK_PARAM
 
 exit:

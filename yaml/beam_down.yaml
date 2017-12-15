@@ -9,7 +9,7 @@
 
 - sun: &sun { dni: 1 }
 
-- material: &mirror { mirror: { reflectivity: 1, roughness: 0 } }
+- material: &mirror { mirror: { reflectivity: 1, slope_error: 0 } }
 - material: &black { matte: { reflectivity: 0 } }
 - material: &virtual { virtual: }
 

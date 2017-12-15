@@ -5,9 +5,9 @@
 
 - material: &specular
     front:
-      mirror: { reflectivity: 1, roughness: 0 }
+      mirror: { reflectivity: 1, slope_error: 0 }
     back:
-      mirror: { reflectivity: 1, roughness: 0 }
+      mirror: { reflectivity: 1, slope_error: 0 }
 
 - geometry: &hemisphere
     - material: *specular

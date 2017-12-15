@@ -23,7 +23,7 @@ static const char* input[] = {
   "    dni: 1\n",
   "    spectrum: [{wavelength: 1, data: 1}]\n",
   "- material: &lambertian\n",
-  "    mirror: { reflectivity: 0.2, roughness: 0.1 }\n",
+  "    mirror: { reflectivity: 0.2, slope_error: 0.1 }\n",
   "- geometry: &cuboid\n",
   "    - cuboid: { size: [1, 2, 3] }\n",
   "      material: *lambertian\n",
@@ -161,8 +161,8 @@ main(int argc, char** argv)
   mirror = solparser_get_material_mirror(parser, mtl->data.mirror);
   CHK(mirror->reflectivity.type == SOLPARSER_MTL_DATA_REAL);
   CHK(mirror->reflectivity.value.real == 0.2);
-  CHK(mirror->roughness.type == SOLPARSER_MTL_DATA_REAL);
-  CHK(mirror->roughness.value.real == 0.1);
+  CHK(mirror->slope_error.type == SOLPARSER_MTL_DATA_REAL);
+  CHK(mirror->slope_error.value.real == 0.1);
   CHK(mirror->ufacet_distrib == SOLPARSER_MICROFACET_BECKMANN);
 
   shape = solparser_get_shape(parser, obj->shape);
