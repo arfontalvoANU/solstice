@@ -36,7 +36,7 @@ functionalities.
 ## How to build
 
 This program relies on the [CMake](http://www.cmake.org) and the
-[RCMake](https://gitlab.com/vaplv/rcmake/) package to build.
+[RCMake](https://gitlab.com/vaplv/rcmake/) packages to build.
 It also depends on the
 [LibYAML](http://pyyaml.org/wiki/LibYAML),
 [RSys](https://gitlab.com/vaplv/rsys/),
@@ -45,10 +45,10 @@ It also depends on the
 [Star-3DUT](https://gitlab.com/meso-star/star-3dut/),
 [Star-SP](https://gitlab.com/meso-star/star-sp/) and
 [Star-STL](https://gitlab.com/meso-star/star-stm/) libraries.
-The documentation is written with the
+The documentation is written in
 [AsciiDoc](http://www.methods.co.nz/asciidoc/) text format and relies on its
 tool suite to generate HTML and/or ROFF man pages. If the AsciiDoc tools cannot
-be found, the documentation will be not built.
+be found, the documentation will not be built.
 
 First ensure that CMake is installed on your system. Then install the RCMake
 package as well as the aforementioned prerequisites. Finally generate the
@@ -65,7 +65,7 @@ informations on CMake.
 - Add the `gaussian` sun shape.
 - Add the `microfacet` attribute to the mirror material. It controls the normal
   distribution of the microfacets when the mirror roughness is not null. The
-  supported distribution are `BECKMANN` and `PILLBOX`.
+  supported distributions are `BECKMANN` and `PILLBOX`.
 
 ### Version 0.6.1
 
@@ -75,7 +75,7 @@ informations on CMake.
 
 ### Version 0.6
 
-- Rename the `absorption` parameter of the medium and the athmosphere in
+- Rename the `absorption` parameter of the medium and the atmosphere in
   `extinction`.
 - Add several global and per-receiver estimations. The outputs now fully
   describe the incoming and absorbed fluxes: overall flux, flux without
