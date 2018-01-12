@@ -78,7 +78,7 @@ _______
 
 -------------------------------------
 
-<sun-direction>       ::= "#--- Sun direction: <azimuth> <elevation> (<real3>)"
+<sun-direction>       ::= "#--- Sun direction: <alpha> <beta> (<sun-vector>)"
 
 <counts>              ::= "<#globals> <#receivers> <#primaries>
                            <#samples> <#failed>"
@@ -161,8 +161,9 @@ _______
 
 <real3>               ::= REAL REAL REAL
 
-<azimuth>             ::= REAL # Degrees in [0, 360[
-<elevation>           ::= REAL # Degrees in [0, 90]
+<alpha>               ::= REAL # Degrees in [0, 360[
+<beta>                ::= REAL # Degrees in [0, 90]
+<sun-vector>          ::= <real3>
 
 <incoming-flux>       ::= <estimate>
 <in-if-no-mat-loss>   ::= <estimate>
@@ -193,8 +194,9 @@ SIMULATION
 ----------
 
 A *simulation-output* begins with two header lines. The first one reports the
-sun direction used in the simulation (azimuth and elevation angles, in
-degrees), and the second one lists the numbers of global, per receiver and per
+sun direction used in the simulation (two angles in degrees, plus the
+corresponding sun vector),
+and the second one lists the numbers of global, per receiver and per
 primary results as well as the overall number of Monte-Carlo experiments used
 by the simulation and the number of experiments that failed due to unforeseen
 errors as numerical imprecisions. As soon as the number of failed experiments

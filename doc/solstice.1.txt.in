@@ -66,13 +66,24 @@ is used to render an image of the submitted solar facility. Note that these
 three options are mutually exclusives, and once defined, they replace the
 default *solstice* behaviour.
 
+Please note that any coordinate-related question in Solstice must be
+considered with the right-handed convention in mind.
+
 OPTIONS
 -------
-*-D* <__azimuth__,__elevation__[:...]>::
-  List of sun directions. A direction is defined by its _azimuthal_ and
-  _elevation_ angles in degrees, with _azimuth_ in [0, 360[ and _elevation_ in
-  [0, 90]. Each sun direction triggers a new computation whose results are
+*-D* <__alpha__,__beta__[:...]>::
+  List of sun directions. A direction is defined by two angles in degrees. The
+  first one, here refered to as _alpha_, is an azimuthal angle in [0, 360[ and
+  the second one, here refered to as _beta_, is an elevation in [0, 90].
+  Each provided sun direction triggers a new computation whose results are
   concatenated to the _output_ file.
++
+Following the right-handed convention, Solstice azimuthal rotation is
+counter-clockwise, with 0° on the X axis. Solstice elevation starts from 0° for
+directions in the XY plane, up to 90° at zenith. Thus -D0,0 -D0,90 -D0,180 and
+-D0,270 will produce solar vectors {-1,0,0} {0,-1,0} {+1,0,0} and {0,+1,0}
+respectively, while -D__alpha__,90 will produce {0,0,-1} regardless of _alpha_
+value.
 
 *-f*::
   Force overwrite of the _output_ file.
