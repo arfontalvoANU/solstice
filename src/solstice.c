@@ -1,4 +1,4 @@
-/* Copyright (C) CNRS 2016-2017
+/* Copyright (C) CNRS 2016-2018
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -429,18 +429,28 @@ error:
 static res_T
 setup_receivers(struct solstice* solstice, struct srcvl* srcvl)
 {
-  struct solstice_receiver receiver;
-  struct str name;
   size_t i, n;
   res_T res = RES_OK;
   ASSERT(solstice && srcvl);
 
-  str_init(solstice->allocator, &name);
+  htable_receiver_clear(&solstice->receivers);
+  darray_receiver_clear(&solstice->rcvs_list);
 
   n = srcvl_count(srcvl);
+
+  res = darray_receiver_resize(&solstice->rcvs_list, n);
+  if(res != RES_OK) {
+    fprintf(stderr, "Could not reserve memory space for the receivers.\n");
+    goto error;
+  }
+
   FOR_EACH(i, 0, n) {
+    struct solstice_receiver* receiver;
     struct srcvl_receiver rcv;
     const struct solparser_entity* entity;
+    const char* name;
+
+    receiver = darray_receiver_data_get(&solstice->rcvs_list) + i;
 
     srcvl_get(srcvl, i, &rcv);
     entity = solparser_find_entity(solstice->parser, rcv.name);
@@ -458,17 +468,18 @@ setup_receivers(struct solstice* solstice, struct srcvl* srcvl)
       goto error;
     }
 
-    res = str_set(&name, rcv.name);
+    res = str_set(&receiver->name, rcv.name);
     if(res != RES_OK) {
       fprintf(stderr, "Could not copy the receiver name.\n");
       goto error;
     }
 
-    receiver.node = NULL;
-    receiver.side = rcv.side;
-    receiver.per_primitive = rcv.per_primitive;
+    receiver->node = NULL;
+    receiver->side = rcv.side;
+    receiver->per_primitive = rcv.per_primitive;
 
-    res = htable_receiver_set(&solstice->receivers, &name, &receiver);
+    name = str_cget(&receiver->name);
+    res = htable_receiver_set(&solstice->receivers, &name, &i);
     if(res != RES_OK) {
       fprintf(stderr,
         "Could not register the receiver `%s' against Solstice.\n",
@@ -478,10 +489,10 @@ setup_receivers(struct solstice* solstice, struct srcvl* srcvl)
   }
 
 exit:
-  str_release(&name);
   return res;
 error:
   htable_receiver_clear(&solstice->receivers);
+  darray_receiver_clear(&solstice->rcvs_list);
   goto exit;
 }
 
@@ -588,6 +599,7 @@ solstice_init
   htable_primary_init(allocator, &solstice->primaries);
   darray_nodes_init(allocator, &solstice->roots);
   darray_nodes_init(allocator, &solstice->pivots);
+  darray_receiver_init(allocator, &solstice->rcvs_list);
   darray_double_init(allocator, &solstice->sun_dirs);
   darray_double_init(allocator, &solstice->sun_angles);
 
@@ -710,6 +722,7 @@ solstice_release(struct solstice* solstice)
   htable_primary_release(&solstice->primaries);
   darray_nodes_release(&solstice->roots);
   darray_nodes_release(&solstice->pivots);
+  darray_receiver_release(&solstice->rcvs_list);
   darray_double_release(&solstice->sun_dirs);
   darray_double_release(&solstice->sun_angles);
   logger_release(&solstice->logger);

@@ -1,4 +1,4 @@
-/* Copyright (C) CNRS 2016-2017
+/* Copyright (C) CNRS 2016-2018
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -74,7 +74,7 @@ print_help(const char* program)
 "  --version        display version information and exit.\n");
   printf("\n");
   printf(
-"Solstice (C) 2016-2017 CNRS. This is a free software released under the GNU GPL\n"
+"Solstice (C) 2016-2018 CNRS. This is a free software released under the GNU GPL\n"
 "license, version 3 or later. You are free to change or redistribute it under\n"
 "certain conditions <http://gnu.org/licenses/gpl.html>.\n");
 }

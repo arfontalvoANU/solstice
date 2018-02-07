@@ -1,4 +1,4 @@
-/* Copyright (C) CNRS 2016-2017
+/* Copyright (C) CNRS 2016-2018
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -68,7 +68,7 @@ solparser_material_matte_init
 }
 
 struct solparser_material_mirror {
-  struct solparser_mtl_data roughness; /* In [0, 1] */
+  struct solparser_mtl_data slope_error; /* In [0, 1] */
   struct solparser_mtl_data reflectivity; /* In [0, 1] */
   enum solparser_microfacet_distribution ufacet_distrib;
   struct solparser_image_id normal_map;
@@ -83,8 +83,8 @@ solparser_material_mirror_init
 {
   ASSERT(mirror);
   (void)allocator;
-  mirror->roughness.type = SOLPARSER_MTL_DATA_REAL;
-  mirror->roughness.value.real = 0;
+  mirror->slope_error.type = SOLPARSER_MTL_DATA_REAL;
+  mirror->slope_error.value.real = 0;
   mirror->ufacet_distrib = SOLPARSER_MICROFACET_BECKMANN;
   mirror->normal_map.i = SIZE_MAX;
 }

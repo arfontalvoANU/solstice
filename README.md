@@ -36,7 +36,7 @@ functionalities.
 ## How to build
 
 This program relies on the [CMake](http://www.cmake.org) and the
-[RCMake](https://gitlab.com/vaplv/rcmake/) package to build.
+[RCMake](https://gitlab.com/vaplv/rcmake/) packages to build.
 It also depends on the
 [LibYAML](http://pyyaml.org/wiki/LibYAML),
 [RSys](https://gitlab.com/vaplv/rsys/),
@@ -45,10 +45,10 @@ It also depends on the
 [Star-3DUT](https://gitlab.com/meso-star/star-3dut/),
 [Star-SP](https://gitlab.com/meso-star/star-sp/) and
 [Star-STL](https://gitlab.com/meso-star/star-stm/) libraries.
-The documentation is written with the
+The documentation is written in
 [AsciiDoc](http://www.methods.co.nz/asciidoc/) text format and relies on its
 tool suite to generate HTML and/or ROFF man pages. If the AsciiDoc tools cannot
-be found, the documentation will be not built.
+be found, the documentation will not be built.
 
 First ensure that CMake is installed on your system. Then install the RCMake
 package as well as the aforementioned prerequisites. Finally generate the
@@ -60,12 +60,20 @@ informations on CMake.
 
 ## Release notes
 
+### Version 0.7.1
+
+- Replace the `roughness` parameter of the mirror material by the
+  `slope_error` parameter.
+- Improve the documentation of the sun direction.
+- Ensure that the per-receiver results are sorted according to the order of the
+  receivers as listed in the submitted receiver file.
+
 ### Version 0.7
 
 - Add the `gaussian` sun shape.
 - Add the `microfacet` attribute to the mirror material. It controls the normal
   distribution of the microfacets when the mirror roughness is not null. The
-  supported distribution are `BECKMANN` and `PILLBOX`.
+  supported distributions are `BECKMANN` and `PILLBOX`.
 
 ### Version 0.6.1
 
@@ -75,7 +83,7 @@ informations on CMake.
 
 ### Version 0.6
 
-- Rename the `absorption` parameter of the medium and the athmosphere in
+- Rename the `absorption` parameter of the medium and the atmosphere in
   `extinction`.
 - Add several global and per-receiver estimations. The outputs now fully
   describe the incoming and absorbed fluxes: overall flux, flux without
@@ -159,7 +167,7 @@ informations on CMake.
 
 Solstice is developed by [|Meso|Star>](http://www.meso-star.com) for the
 [National Center for Scientific Research](http://www.cnrs.fr/index.php) (CNRS).
-This is a free software copyright (C) CNRS 2016-2017 released under the GPL v3+
+This is a free software copyright (C) CNRS 2016-2018 released under the GPL v3+
 license: GNU GPL version 3 or later. You are welcome to redistribute it under
 certain conditions; refer to the COPYING file for details.
 

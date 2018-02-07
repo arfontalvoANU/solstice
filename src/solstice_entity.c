@@ -1,4 +1,4 @@
-/* Copyright (C) CNRS 2016-2017
+/* Copyright (C) CNRS 2016-2018
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -290,6 +290,8 @@ create_node
   struct solstice_node* node = NULL;
   struct solstice_node* child = NULL;
   struct solstice_receiver* rcv = NULL;
+  const char* str = NULL;
+  size_t* pircv = NULL;
   struct str child_name;
   struct str anchor_name;
   double rotation[3];
@@ -349,10 +351,14 @@ create_node
   }
 
   /* Setup the entity receiver flags */
-  rcv = htable_receiver_find(&solstice->receivers, name);
-  if(rcv) {
-    const int mask = srcvl_side_to_ssol_mask(rcv->side);
+  str = str_cget(name);
+  pircv = htable_receiver_find(&solstice->receivers, &str);
+  if(pircv) {
+    int mask;
+    rcv = darray_receiver_data_get(&solstice->rcvs_list) + *pircv;
     ASSERT(rcv->node == NULL); /* Receiver is not attached to a node */
+
+    mask = srcvl_side_to_ssol_mask(rcv->side);
 
     res = solstice_node_geometry_set_receiver(node, mask, rcv->per_primitive);
     if(res != RES_OK) {

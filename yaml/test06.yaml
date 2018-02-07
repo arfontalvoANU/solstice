@@ -7,7 +7,7 @@
       matte: { reflectivity: 1 }
       
 - material: &specular
-      mirror: { reflectivity: 1, roughness: 0 }
+      mirror: { reflectivity: 1, slope_error: 0 }
       
               
 - template: &self_oriented_parabol

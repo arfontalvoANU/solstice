@@ -1,4 +1,4 @@
-// Copyright (C) CNRS 2016-2017
+// Copyright (C) CNRS 2016-2018
 //
 // This is free documentation: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -78,7 +78,7 @@ _______
 
 -------------------------------------
 
-<sun-direction>       ::= "#--- Sun direction: <azimuth> <elevation> (<real3>)"
+<sun-direction>       ::= "#--- Sun direction: <alpha> <beta> (<sun-vector>)"
 
 <counts>              ::= "<#globals> <#receivers> <#primaries>
                            <#samples> <#failed>"
@@ -161,8 +161,9 @@ _______
 
 <real3>               ::= REAL REAL REAL
 
-<azimuth>             ::= REAL # Degrees in [0, 360[
-<elevation>           ::= REAL # Degrees in [0, 90]
+<alpha>               ::= REAL # Degrees in [0, 360[
+<beta>                ::= REAL # Degrees in [0, 90]
+<sun-vector>          ::= <real3>
 
 <incoming-flux>       ::= <estimate>
 <in-if-no-mat-loss>   ::= <estimate>
@@ -193,8 +194,9 @@ SIMULATION
 ----------
 
 A *simulation-output* begins with two header lines. The first one reports the
-sun direction used in the simulation (azimuth and elevation angles, in
-degrees), and the second one lists the numbers of global, per receiver and per
+sun direction used in the simulation (two angles in degrees, plus the
+corresponding sun vector),
+and the second one lists the numbers of global, per receiver and per
 primary results as well as the overall number of Monte-Carlo experiments used
 by the simulation and the number of experiments that failed due to unforeseen
 errors as numerical imprecisions. As soon as the number of failed experiments
@@ -232,14 +234,16 @@ This results can be used to check conservation of energy:
 
 potential-flux * cos-factor and (absorbed-flux + shadow-loss +
 missing-loss + materials-loss + atmospheric-loss)
-should be equal whithin their respective uncertainty ranges.
+should be equal within their respective uncertainty ranges.
 
 Per receiver results
 ~~~~~~~~~~~~~~~~~~~~
 
 Following global results, the output includes various per-receiver lines, one
-line per receiver, the exact number of lines being part of the headers. Each
-line contains the following data:
+line per receiver, the exact number of lines being part of the headers. The
+per-receiver results are sorted according to the order of the receivers as
+defined in the submitted *solstice-receiver*(5) file. Each line contains the
+following data:
 
 - *receiver-name*: name of the receiver, i.e. *entity-identifier* of the
   entity in which the receiving geometry is defined (see the

@@ -1,4 +1,4 @@
-/* Copyright (C) CNRS 2016-2017
+/* Copyright (C) CNRS 2016-2018
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,16 +15,21 @@
 
 #include "solstice_c.h"
 
+struct context {
+  double scale_factor;
+  const struct solparser_spectrum_data* spectrum_data;
+};
+
 /*******************************************************************************
  * Helper function
  ******************************************************************************/
 static void
-get_wavelength(const size_t i, double* wlen, double* data, void* ctx)
+get_wavelength(const size_t i, double* wlen, double* data, void* context)
 {
-  const struct solparser_spectrum_data* specdata = ctx;
-  ASSERT(wlen && data && ctx);
-  *wlen = specdata[i].wavelength;
-  *data = specdata[i].data;
+  const struct context* ctx = context;
+  ASSERT(wlen && data && context);
+  *wlen = ctx->spectrum_data[i].wavelength;
+  *data = ctx->spectrum_data[i].data * ctx->scale_factor;
 }
 
 /*******************************************************************************
@@ -36,8 +41,19 @@ solstice_create_ssol_spectrum
    const struct solparser_spectrum_id spectrum_id,
    struct ssol_spectrum** out_spectrum)
 {
+  return solstice_create_scaled_ssol_spectrum
+    (solstice, spectrum_id, 1, out_spectrum);
+}
+
+res_T
+solstice_create_scaled_ssol_spectrum
+  (struct solstice* solstice,
+   const struct solparser_spectrum_id spectrum_id,
+   const double scale_factor,
+   struct ssol_spectrum** out_spectrum)
+{
+  struct context ctx;
   struct ssol_spectrum* spectrum = NULL;
-  const struct solparser_spectrum_data* data;
   const struct solparser_spectrum* spec;
   size_t nwlens;
   res_T res = RES_OK;
@@ -51,8 +67,9 @@ solstice_create_ssol_spectrum
 
   spec = solparser_get_spectrum(solstice->parser, spectrum_id);
   nwlens = darray_spectrum_data_size_get(&spec->data);
-  data = darray_spectrum_data_cdata_get(&spec->data);
-  res = ssol_spectrum_setup(spectrum, get_wavelength, nwlens, (void*)data);
+  ctx.spectrum_data = darray_spectrum_data_cdata_get(&spec->data);
+  ctx.scale_factor = scale_factor;
+  res = ssol_spectrum_setup(spectrum, get_wavelength, nwlens, &ctx);
   if(res != RES_OK) {
     fprintf(stderr, "Could not setup the Solstice Solver spectrum.\n");
     goto error;
