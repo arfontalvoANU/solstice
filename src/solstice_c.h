@@ -83,7 +83,7 @@ extern LOCAL_SYM res_T
 solstice_create_scaled_ssol_spectrum
   (struct solstice* solstice,
    const struct solparser_spectrum_id spectrum_id,
-   double scale_factor, /* Scale factor applied to the spectrum data */
+   const double scale_factor, /* Scale factor applied to the spectrum data */
    struct ssol_spectrum** spectrum);
 
 extern LOCAL_SYM res_T
