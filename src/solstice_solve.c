@@ -31,10 +31,10 @@ static void
 write_mc_global(struct solstice* solstice, struct ssol_estimator* estimator)
 {
   struct ssol_mc_global mc_global;
-  struct htable_receiver_iterator r_it, r_end;
   struct htable_primary_iterator p_it, p_end;
   const struct solparser_sun* solparser_sun = NULL;
   size_t nexperiments, nfailed, nprimary;
+  size_t ircv;
   double area, potential, irradiance_factor;
   ASSERT(solstice && estimator);
 
@@ -51,7 +51,7 @@ write_mc_global(struct solstice* solstice, struct ssol_estimator* estimator)
   /* Counts */
   fprintf(solstice->output, "%d %lu %lu %lu %lu\n",
     7, /* #global results count */
-    (unsigned long)htable_receiver_size_get(&solstice->receivers),
+    (unsigned long)darray_receiver_size_get(&solstice->rcvs_list),
     (unsigned long)nprimary,
     (unsigned long)nexperiments,
     (unsigned long)nfailed);
@@ -69,11 +69,9 @@ write_mc_global(struct solstice* solstice, struct ssol_estimator* estimator)
   #undef PRINT_MC_GLOBAL
 
   /* Receivers' data */
-  htable_receiver_begin(&solstice->receivers, &r_it);
-  htable_receiver_end(&solstice->receivers, &r_end);
-  while(!htable_receiver_iterator_eq(&r_it, &r_end)) {
-    const struct str* name = htable_receiver_iterator_key_get(&r_it);
-    struct solstice_receiver* rcv = htable_receiver_iterator_data_get(&r_it);
+  FOR_EACH(ircv, 0, darray_receiver_size_get(&solstice->rcvs_list)) {
+    struct solstice_receiver* rcv = darray_receiver_data_get
+      (&solstice->rcvs_list) + ircv;
     struct ssol_instance* inst = rcv->node->instance;
     struct ssol_mc_receiver front = MC_RCV_NONE__;
     struct ssol_mc_receiver back = MC_RCV_NONE__;
@@ -81,7 +79,6 @@ write_mc_global(struct solstice* solstice, struct ssol_estimator* estimator)
     double b_eff_E = -1, b_eff_SE = -1; /* Back efficiency */
     uint32_t id;
 
-    htable_receiver_iterator_next(&r_it);
     switch(rcv->side) {
       case SRCVL_FRONT:
         SSOL(estimator_get_mc_receiver(estimator, inst, SSOL_FRONT, &front));
@@ -111,7 +108,7 @@ write_mc_global(struct solstice* solstice, struct ssol_estimator* estimator)
       "%g %g   %g %g   %g %g   %g %g   %g %g   "
       "%g %g   %g %g   %g %g   %g %g   %g %g   %g %g   "
       "%g %g   %g %g   %g %g   %g %g   %g %g\n",
-      str_cget(name), (unsigned)id, area,
+      str_cget(&rcv->name), (unsigned)id, area,
       front.incoming_flux.E, front.incoming_flux.SE,
       front.incoming_if_no_field_loss.E, front.incoming_if_no_field_loss.SE,
       front.incoming_if_no_atm_loss.E, front.incoming_if_no_atm_loss.SE,
@@ -159,10 +156,9 @@ write_mc_global(struct solstice* solstice, struct ssol_estimator* estimator)
   }
 
   /* ReceiverXprimarys' data */
-  htable_receiver_begin(&solstice->receivers, &r_it);
-  htable_receiver_end(&solstice->receivers, &r_end);
-  while (!htable_receiver_iterator_eq(&r_it, &r_end)) {
-    struct solstice_receiver* rcv = htable_receiver_iterator_data_get(&r_it);
+  FOR_EACH(ircv, 0, darray_receiver_size_get(&solstice->rcvs_list)) {
+    struct solstice_receiver* rcv = darray_receiver_data_get
+      (&solstice->rcvs_list) + ircv;
     struct ssol_instance* rcv_inst = rcv->node->instance;
     uint32_t rcv_id, prim_id;
 
@@ -177,21 +173,21 @@ write_mc_global(struct solstice* solstice, struct ssol_estimator* estimator)
 
       SSOL(instance_get_id(prim_inst, &prim_id));
       switch (rcv->side) {
-      case SRCVL_FRONT:
-        SSOL(estimator_get_mc_sampled_x_receiver
-          (estimator, prim_inst, rcv_inst, SSOL_FRONT, &front));
-        break;
-      case SRCVL_BACK:
-        SSOL(estimator_get_mc_sampled_x_receiver
-          (estimator, prim_inst, rcv_inst, SSOL_BACK, &back));
-        break;
-      case SRCVL_FRONT_AND_BACK:
-        SSOL(estimator_get_mc_sampled_x_receiver
-          (estimator, prim_inst, rcv_inst, SSOL_FRONT, &front));
-        SSOL(estimator_get_mc_sampled_x_receiver
-          (estimator, prim_inst, rcv_inst, SSOL_BACK, &back));
-        break;
-      default: FATAL("Unreachable code.\n"); break;
+        case SRCVL_FRONT:
+          SSOL(estimator_get_mc_sampled_x_receiver
+            (estimator, prim_inst, rcv_inst, SSOL_FRONT, &front));
+          break;
+        case SRCVL_BACK:
+          SSOL(estimator_get_mc_sampled_x_receiver
+            (estimator, prim_inst, rcv_inst, SSOL_BACK, &back));
+          break;
+        case SRCVL_FRONT_AND_BACK:
+          SSOL(estimator_get_mc_sampled_x_receiver
+            (estimator, prim_inst, rcv_inst, SSOL_FRONT, &front));
+          SSOL(estimator_get_mc_sampled_x_receiver
+            (estimator, prim_inst, rcv_inst, SSOL_BACK, &back));
+          break;
+        default: FATAL("Unreachable code.\n"); break;
       }
       fprintf(solstice->output,
         "%u %u   "
@@ -199,7 +195,7 @@ write_mc_global(struct solstice* solstice, struct ssol_estimator* estimator)
         "%g %g   %g %g   %g %g   %g %g   "
         "%g %g   %g %g   %g %g   %g %g   %g %g   %g %g   "
         "%g %g   %g %g   %g %g   %g %g\n",
-        (unsigned) rcv_id, (unsigned) prim_id,
+        (unsigned)rcv_id, (unsigned) prim_id,
         front.incoming_flux.E, front.incoming_flux.SE,
         front.incoming_if_no_field_loss.E, front.incoming_if_no_field_loss.SE,
         front.incoming_if_no_atm_loss.E, front.incoming_if_no_atm_loss.SE,
@@ -222,7 +218,6 @@ write_mc_global(struct solstice* solstice, struct ssol_estimator* estimator)
         back.absorbed_lost_in_atmosphere.E, back.absorbed_lost_in_atmosphere.SE);
       htable_primary_iterator_next(&p_it);
     }
-    htable_receiver_iterator_next(&r_it);
   }
 }
 
@@ -319,22 +314,18 @@ static void
 write_per_receiver_mc_primitive
   (struct solstice* solstice, struct ssol_estimator* estimator)
 {
-  struct htable_receiver_iterator it, end;
+  size_t ircv;
   ASSERT(solstice && estimator);
 
-  htable_receiver_begin(&solstice->receivers, &it);
-  htable_receiver_end(&solstice->receivers, &end);
-  while(!htable_receiver_iterator_eq(&it, &end)) {
+  FOR_EACH(ircv, 0, darray_receiver_size_get(&solstice->rcvs_list)) {
     struct ssol_instantiated_shaded_shape inst_sshape;
-    const struct str* name = htable_receiver_iterator_key_get(&it);
-    struct solstice_receiver* rcv = htable_receiver_iterator_data_get(&it);
+    struct solstice_receiver* rcv = darray_receiver_data_get
+      (&solstice->rcvs_list) + ircv;
     struct ssol_instance* inst = rcv->node->instance;
     size_t ishape, nshapes;
     size_t nverts, ntris;
     size_t offset;
     int mask, prim;
-
-    htable_receiver_iterator_next(&it);
 
     SSOL(instance_is_receiver(inst, &mask, &prim));
     CHK(mask != 0);
@@ -344,7 +335,7 @@ write_per_receiver_mc_primitive
 
     /* Write the header */
     fprintf(solstice->output, "# vtk DataFile Version 2.0\n");
-    fprintf(solstice->output, "%s\n", str_cget(name));
+    fprintf(solstice->output, "%s\n", str_cget(&rcv->name));
     fprintf(solstice->output, "ASCII\n");
     fprintf(solstice->output, "DATASET POLYDATA\n");
 
