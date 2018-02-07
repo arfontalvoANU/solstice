@@ -234,14 +234,16 @@ This results can be used to check conservation of energy:
 
 potential-flux * cos-factor and (absorbed-flux + shadow-loss +
 missing-loss + materials-loss + atmospheric-loss)
-should be equal whithin their respective uncertainty ranges.
+should be equal within their respective uncertainty ranges.
 
 Per receiver results
 ~~~~~~~~~~~~~~~~~~~~
 
 Following global results, the output includes various per-receiver lines, one
-line per receiver, the exact number of lines being part of the headers. Each
-line contains the following data:
+line per receiver, the exact number of lines being part of the headers. The
+per-receiver results are sorted according to the order of the receivers as
+defined in the submitted *solstice-receiver*(5) file. Each line contains the
+following data:
 
 - *receiver-name*: name of the receiver, i.e. *entity-identifier* of the
   entity in which the receiving geometry is defined (see the
