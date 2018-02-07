@@ -159,7 +159,7 @@ informations on CMake.
 
 Solstice is developed by [|Meso|Star>](http://www.meso-star.com) for the
 [National Center for Scientific Research](http://www.cnrs.fr/index.php) (CNRS).
-This is a free software copyright (C) CNRS 2016-2017 released under the GPL v3+
+This is a free software copyright (C) CNRS 2016-2018 released under the GPL v3+
 license: GNU GPL version 3 or later. You are welcome to redistribute it under
 certain conditions; refer to the COPYING file for details.
 
