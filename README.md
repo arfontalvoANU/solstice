@@ -60,6 +60,14 @@ informations on CMake.
 
 ## Release notes
 
+### Version 0.7.1
+
+- Replace the `roughness` parameter of the mirror material by the
+  `slope_error` parameter.
+- Improve the documentation of the sun direction.
+- Ensure that the per-receiver results are sorted according to the order of the
+  receivers as listed in the submitted receiver file.
+
 ### Version 0.7
 
 - Add the `gaussian` sun shape.
