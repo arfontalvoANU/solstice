@@ -657,10 +657,10 @@ The available triangular meshes are:
   sphere.
 
 *stl*::
-  Path toward an external mesh file defined with respect to the **ST**ereo
-  **L**ithography file format. The front side of the loaded triangles is
-  defined with respect to their vertex ordering into the STL file: a triangle
-  is front facing when their vertices are clock wise ordered.
+  Path toward an external mesh file defined with respect to the ASCII
+  **ST**ereo **L**ithography file format. The front side of the loaded
+  triangles is defined with respect to their vertex ordering into the STL
+  file: a triangle is front facing when their vertices are clock wise ordered.
 
 ENTITY
 ------
