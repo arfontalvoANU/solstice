@@ -25,4 +25,7 @@
 - name: test
   per_primitive: 
 --- 
-- per_primitive: 1
+- name: test
+  per_primitive: NOPE
+--- 
+- per_primitive: NONE

@@ -83,6 +83,20 @@ srcvl_side_to_ssol_mask(const enum srcvl_side side)
   return mask;
 }
 
+static INLINE int
+srcvl_per_prim_to_bool(const enum srcvl_pp_output output)
+{
+  int mask = 0;
+  switch (output) {
+    case SRCVL_PP_NONE: mask = 0; break;
+    case SRCVL_PP_INCOMING: mask = 1; break;
+    case SRCVL_PP_ABSORBED: mask = 1; break;
+    case SRCVL_PP_INCOMING_AND_ABSORBED: mask = 1; break;
+    default: FATAL("Unreachable code.\n"); break;
+  }
+  return mask;
+}
+
 static struct solstice_node*
 create_empty_node
   (struct solstice* solstice, const struct solparser_entity* entity)
@@ -338,11 +352,11 @@ create_node
         str_cget(&entity->name));
       goto error;
     }
-    if (entity->primary) {
+    if(entity->primary) {
       struct solstice_primary p;
       p.node = node;
       res = htable_primary_set(&solstice->primaries, name, &p);
-      if (res != RES_OK) {
+      if(res != RES_OK) {
         fprintf(stderr, "Could not define the entity `%s' as primary.\n",
           str_cget(&entity->name));
         goto error;
@@ -354,13 +368,14 @@ create_node
   str = str_cget(name);
   pircv = htable_receiver_find(&solstice->receivers, &str);
   if(pircv) {
-    int mask;
+    int side_mask, output;
     rcv = darray_receiver_data_get(&solstice->rcvs_list) + *pircv;
     ASSERT(rcv->node == NULL); /* Receiver is not attached to a node */
 
-    mask = srcvl_side_to_ssol_mask(rcv->side);
+    side_mask = srcvl_side_to_ssol_mask(rcv->side);
+    output = srcvl_per_prim_to_bool(rcv->per_primitive_output);
 
-    res = solstice_node_geometry_set_receiver(node, mask, rcv->per_primitive);
+    res = solstice_node_geometry_set_receiver(node, side_mask, output);
     if(res != RES_OK) {
       fprintf(stderr, "Could not define the entity `%s' as a receiver.\n",
         str_cget(&entity->name));

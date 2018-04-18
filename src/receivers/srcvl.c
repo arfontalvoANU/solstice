@@ -28,7 +28,7 @@
 struct receiver {
   struct str name;
   enum srcvl_side side;
-  int per_primitive;
+  enum srcvl_pp_output per_primitive_output;
 };
 
 static INLINE void
@@ -37,7 +37,7 @@ receiver_init(struct mem_allocator* allocator, struct receiver* receiver)
   ASSERT(receiver);
   str_init(allocator, &receiver->name);
   receiver->side = SRCVL_FRONT_AND_BACK;
-  receiver->per_primitive = 0;
+  receiver->per_primitive_output = SRCVL_PP_NONE;
 }
 
 static INLINE void
@@ -52,7 +52,7 @@ receiver_copy(struct receiver* dst, const struct receiver* src)
 {
   ASSERT(dst && src);
   dst->side = src->side;
-  dst->per_primitive = src->per_primitive;
+  dst->per_primitive_output = src->per_primitive_output;
   return str_copy(&dst->name, &src->name);
 }
 
@@ -61,7 +61,7 @@ receiver_copy_and_release(struct receiver* dst, struct receiver* src)
 {
   ASSERT(dst && src);
   dst->side = src->side;
-  dst->per_primitive = src->per_primitive;
+  dst->per_primitive_output = src->per_primitive_output;
   return str_copy_and_release(&dst->name, &src->name);
 }
 
@@ -168,26 +168,34 @@ error:
 }
 
 static res_T
-parse_integer(struct srcvl* srcvl, yaml_node_t* integer, int* dst)
+parse_pp_output
+  (struct srcvl* srcvl,
+   yaml_node_t* side,
+   enum srcvl_side* out_side)
 {
   res_T res = RES_OK;
-  ASSERT(integer && dst);
+  ASSERT(side && out_side);
 
-  if(integer->type != YAML_SCALAR_NODE
-  || !strlen((char*)integer->data.scalar.value)) {
-    log_err(srcvl, integer, "expect an integer.\n");
+  if(side->type != YAML_SCALAR_NODE) {
+    log_err(srcvl, side, "expect a character string.\n");
     res = RES_BAD_ARG;
     goto error;
   }
 
-  res = cstr_to_int((char*)integer->data.scalar.value, dst);
-  if(res != RES_OK) {
-    log_err(srcvl, integer, "invalid integer `%s'.\n",
-      integer->data.scalar.value);
+  if(!strcmp((char*) side->data.scalar.value, "NONE")) {
+    *out_side = SRCVL_PP_NONE;
+  } else if(!strcmp((char*) side->data.scalar.value, "INCOMING")) {
+    *out_side = SRCVL_PP_INCOMING;
+  } else if(!strcmp((char*) side->data.scalar.value, "ABSORBED")) {
+    *out_side = SRCVL_PP_ABSORBED;
+  } else if(!strcmp((char*) side->data.scalar.value, "INCOMING_AND_ABSORBED")) {
+    *out_side = SRCVL_PP_INCOMING_AND_ABSORBED;
+  } else {
+    log_err(srcvl, side, "unknown per primitive output type value `%s'.\n",
+      side->data.scalar.value);
     res = RES_BAD_ARG;
     goto error;
   }
-
 exit:
   return res;
 error:
@@ -251,7 +259,7 @@ parse_receiver
       res = parse_side(srcvl, val, &solreceiver->side);
     } else if(!strcmp((char*)key->data.scalar.value, "per_primitive")) {
       SETUP_MASK(PER_PRIMITIVE, "per_primitive");
-      res = parse_integer(srcvl, val, &solreceiver->per_primitive);
+      res = parse_pp_output(srcvl, val, &solreceiver->per_primitive_output);
     } else {
       log_err(srcvl, key, "unknown receiver parameter `%s'.\n",
         key->data.scalar.value);
@@ -461,6 +469,6 @@ srcvl_get
   r = darray_receiver_cdata_get(&srcvl->receivers) + i;
   receiver->name = str_cget(&r->name);
   receiver->side = r->side;
-  receiver->per_primitive = r->per_primitive;
+  receiver->per_primitive_output = r->per_primitive_output;
 }
 

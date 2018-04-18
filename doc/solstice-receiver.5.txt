@@ -47,10 +47,12 @@ that is tracked is defined by the *side* attribute of the receiver. Note that
 the front and the back side of a geometry can be both considered if the *side*
 attribute is set to *FRONT_AND_BACK*. Refer to the *solstice-input*(5)
 specification for informations on which side of the geometry is front facing or
-back facing. Finally, if the optional *per_primitive* flag is set to *1*,
+back facing. Finally, if the optional *per_primitive* flag is set,
 *solstice*(1) will estimate the irradiance for each triangle of the receiver
 and use these data to generate a receiver map as described in
-*solstice-output*(5).
+*solstice-output*(5). The *per-primitive* flag can be set to *INCOMING*,
+*ABSORBED* or *INCOMING_AND_ABSORBED* to produce the incoming flux map, the
+absorbed flux map, or both.
 
 GRAMMAR
 -------
@@ -62,11 +64,16 @@ _______
 
 <receiver>            ::= name: <entity-identifier>
                           side: <side-identifier>
-                        [ per_primitive: INTEGER ] # in [0, 1]
+                        [ per_primitive: <per-primitive-mode> ]
 
 <side-identifier>     ::= FRONT
                         | BACK
                         | FRONT_AND_BACK
+
+<per-primitive-mode>  ::= NONE
+                        | INCOMING
+                        | ABSORBED
+                        | INCOMING_AND_ABSORBED
 
 <entity-identifier>   # Defined in *solstice-input*(5)
 _______
@@ -75,12 +82,13 @@ EXAMPLES
 --------
 
 Define that the front and back side of the entity *small_square* are
-receivers. For each side, enable the computation of per triangle irradiance.
+receivers. For each side, enable the computation of per triangle absorbed
+irradiance.
 
 .......
 - name: small_square
   side: FRONT_AND_BACK
-  per_primitive: 1
+  per_primitive: ABSORBED
 .......
 
 Declare that the front side of 3 reflectors are receivers. Use the YAML
@@ -93,11 +101,11 @@ compact notation to reduce the number of lines:
 ......
 
 Declare that the back side of *receiver* is effectively a receiver and enable
-the estimation of its associated irradiance map. Make a receiver from the front
-side of the reflector named *LFR0.pivot.reflector*:
+the estimation of its associated incoming irradiance map. Make a receiver from
+the front side of the reflector named *LFR0.pivot.reflector*:
 
 .......
-- {name: receiver, side: BACK, per_primitive: 1}
+- {name: receiver, side: BACK, per_primitive: INCOMING}
 - {name: LFR0.pivot.reflector, side: FRONT}
 .......
 

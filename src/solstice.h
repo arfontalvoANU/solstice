@@ -37,7 +37,7 @@ struct solstice_receiver {
   struct str name;
   struct solstice_node* node;
   enum srcvl_side side;
-  int per_primitive;
+  enum srcvl_pp_output per_primitive_output;
 };
 
 static INLINE void
@@ -48,7 +48,7 @@ solstice_receiver_init
   str_init(allocator, &rcv->name);
   rcv->node = NULL;
   rcv->side = SRCVL_FRONT_AND_BACK;
-  rcv->per_primitive = 0;
+  rcv->per_primitive_output = SRCVL_PP_NONE;
 }
 
 static INLINE void
@@ -66,7 +66,7 @@ solstice_receiver_copy
   ASSERT(dst && src);
   dst->node = src->node;
   dst->side = src->side;
-  dst->per_primitive = src->per_primitive;
+  dst->per_primitive_output = src->per_primitive_output;
   return str_copy(&dst->name, &src->name);
 }
 
@@ -79,7 +79,7 @@ solstice_receiver_copy_and_release
   ASSERT(dst && src);
   dst->node = src->node;
   dst->side = src->side;
-  dst->per_primitive = src->per_primitive;
+  dst->per_primitive_output = src->per_primitive_output;
   res = str_copy_and_release(&dst->name, &src->name);
   if(res != RES_OK) return res;
   solstice_receiver_release(src);

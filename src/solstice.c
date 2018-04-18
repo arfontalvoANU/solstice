@@ -357,7 +357,7 @@ setup_sun_dirs(struct solstice* solstice, const struct solstice_args* args)
     goto error;
   }
   res = darray_double_resize(&solstice->sun_angles, args->nsun_dirs*2/*#dims*/);
-  if (res != RES_OK) {
+  if(res != RES_OK) {
     fprintf(stderr,
       "Could not reserve the list of %lu sun angles.\n",
       (unsigned long)args->nsun_dirs);
@@ -476,7 +476,7 @@ setup_receivers(struct solstice* solstice, struct srcvl* srcvl)
 
     receiver->node = NULL;
     receiver->side = rcv.side;
-    receiver->per_primitive = rcv.per_primitive;
+    receiver->per_primitive_output = rcv.per_primitive_output;
 
     name = str_cget(&receiver->name);
     res = htable_receiver_set(&solstice->receivers, &name, &i);
