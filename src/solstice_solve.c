@@ -323,7 +323,7 @@ dump_per_primitive_mc_estimations
     default: FATAL("Unreachable code.\n"); break;
   }
 
-  fprintf(solstice->output, "SCALARS %s__%s float 2\n", name, flux);
+  fprintf(solstice->output, "SCALARS %s_%s float 2\n", name, flux);
   fprintf(solstice->output, "LOOKUP_TABLE default\n");
 
   SSOL(instance_get_shaded_shapes_count(inst, &nshapes));
@@ -339,6 +339,7 @@ dump_per_primitive_mc_estimations
       case SRCVL_PP_ABSORBED:
         dump_mc_shape_abs(solstice, inst_sshape.shape, &mc_shape);
         break;
+      default: FATAL("Unreachable code.\n"); break;
     }
   }
 }

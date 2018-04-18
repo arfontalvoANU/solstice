@@ -171,7 +171,7 @@ static res_T
 parse_pp_output
   (struct srcvl* srcvl,
    yaml_node_t* side,
-   enum srcvl_side* out_side)
+   enum srcvl_pp_output* out_side)
 {
   res_T res = RES_OK;
   ASSERT(side && out_side);
