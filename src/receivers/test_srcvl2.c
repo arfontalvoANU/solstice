@@ -1,4 +1,4 @@
-/* Copyright (C) CNRS 2016-2018
+/* Copyright (C) 2016-2018 CNRS
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,48 +39,60 @@ main(int argc, char** argv)
   fprintf(stream, "- { name: entity3, side: BACK }\n");
   fprintf(stream, "- name: entity4\n");
   fprintf(stream, "  side: FRONT_AND_BACK\n");
-  fprintf(stream, "- { name: entity5, side: BACK, per_primitive: 1 }\n");
-  fprintf(stream, "- { name: entity6, per_primitive: 0, side: FRONT }\n");
+  fprintf(stream, "- { name: entity5, side: BACK, per_primitive: INCOMING }\n");
+  fprintf(stream, "- { name: entity6, side: BACK, per_primitive: ABSORBED }\n");
+  fprintf(stream, "- { name: entity7, side: BACK, per_primitive: INCOMING_AND_ABSORBED }\n");
+  fprintf(stream, "- { name: entity8, per_primitive: NONE, side: FRONT }\n");
   rewind(stream);
 
   CHK(srcvl_setup_stream(srcvl, NULL, stream) == RES_OK);
   CHK(srcvl_load(srcvl) == RES_OK);
-  CHK(srcvl_count(srcvl) == 7);
+  CHK(srcvl_count(srcvl) == 9);
 
   srcvl_get(srcvl, 0, &receiver);
   CHK(strcmp(receiver.name, "entity0") == 0);
   CHK(receiver.side == SRCVL_FRONT_AND_BACK);
-  CHK(receiver.per_primitive == 0);
+  CHK(receiver.per_primitive_output == SRCVL_PP_NONE);
 
   srcvl_get(srcvl, 1, &receiver);
   CHK(strcmp(receiver.name, "entity1") == 0);
   CHK(receiver.side == SRCVL_FRONT_AND_BACK);
-  CHK(receiver.per_primitive == 0);
+  CHK(receiver.per_primitive_output == SRCVL_PP_NONE);
 
   srcvl_get(srcvl, 2, &receiver);
   CHK(strcmp(receiver.name, "entity2") == 0);
   CHK(receiver.side == SRCVL_FRONT);
-  CHK(receiver.per_primitive == 0);
+  CHK(receiver.per_primitive_output == SRCVL_PP_NONE);
 
   srcvl_get(srcvl, 3, &receiver);
   CHK(strcmp(receiver.name, "entity3") == 0);
   CHK(receiver.side == SRCVL_BACK);
-  CHK(receiver.per_primitive == 0);
+  CHK(receiver.per_primitive_output == SRCVL_PP_NONE);
 
   srcvl_get(srcvl, 4, &receiver);
   CHK(strcmp(receiver.name, "entity4") == 0);
   CHK(receiver.side == SRCVL_FRONT_AND_BACK);
-  CHK(receiver.per_primitive == 0);
+  CHK(receiver.per_primitive_output == SRCVL_PP_NONE);
 
   srcvl_get(srcvl, 5, &receiver);
   CHK(strcmp(receiver.name, "entity5") == 0);
   CHK(receiver.side == SRCVL_BACK);
-  CHK(receiver.per_primitive == 1);
+  CHK(receiver.per_primitive_output == SRCVL_PP_INCOMING);
 
   srcvl_get(srcvl, 6, &receiver);
   CHK(strcmp(receiver.name, "entity6") == 0);
+  CHK(receiver.side == SRCVL_BACK);
+  CHK(receiver.per_primitive_output == SRCVL_PP_ABSORBED);
+
+  srcvl_get(srcvl, 7, &receiver);
+  CHK(strcmp(receiver.name, "entity7") == 0);
+  CHK(receiver.side == SRCVL_BACK);
+  CHK(receiver.per_primitive_output == SRCVL_PP_INCOMING_AND_ABSORBED);
+
+  srcvl_get(srcvl, 8, &receiver);
+  CHK(strcmp(receiver.name, "entity8") == 0);
   CHK(receiver.side == SRCVL_FRONT);
-  CHK(receiver.per_primitive == 0);
+  CHK(receiver.per_primitive_output == SRCVL_PP_NONE);
 
   CHK(srcvl_load(srcvl) == RES_BAD_OP);
 

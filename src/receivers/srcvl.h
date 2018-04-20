@@ -1,4 +1,4 @@
-/* Copyright (C) CNRS 2016-2018
+/* Copyright (C) 2016-2018 CNRS
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,15 +19,22 @@
 #include <rsys/rsys.h>
 
 enum srcvl_side {
-  SRCVL_FRONT,
-  SRCVL_BACK,
-  SRCVL_FRONT_AND_BACK
+  SRCVL_FRONT = BIT(0),
+  SRCVL_BACK = BIT(1),
+  SRCVL_FRONT_AND_BACK = SRCVL_FRONT + SRCVL_BACK
+};
+
+enum srcvl_pp_output {
+  SRCVL_PP_NONE = 0,
+  SRCVL_PP_INCOMING = BIT(0),
+  SRCVL_PP_ABSORBED = BIT(1),
+  SRCVL_PP_INCOMING_AND_ABSORBED = SRCVL_PP_INCOMING + SRCVL_PP_ABSORBED
 };
 
 struct srcvl_receiver {
   const char* name;
   enum srcvl_side side;
-  int per_primitive; /* Define if per primitive receiver is enabled */
+  enum srcvl_pp_output per_primitive_output;
 };
 
 struct mem_allocator;

@@ -1,4 +1,4 @@
-/* Copyright (C) CNRS 2016-2018
+/* Copyright (C) 2016-2018 CNRS
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -136,7 +136,7 @@ write_mc_global(struct solstice* solstice, struct ssol_estimator* estimator)
   /* Primary-instances' data */
   htable_primary_begin(&solstice->primaries, &p_it);
   htable_primary_end(&solstice->primaries, &p_end);
-  while (!htable_primary_iterator_eq(&p_it, &p_end)) {
+  while(!htable_primary_iterator_eq(&p_it, &p_end)) {
     const struct str* name = htable_primary_iterator_key_get(&p_it);
     struct solstice_primary* prim = htable_primary_iterator_data_get(&p_it);
     struct ssol_mc_sampled sampled;
@@ -165,7 +165,7 @@ write_mc_global(struct solstice* solstice, struct ssol_estimator* estimator)
     SSOL(instance_get_id(rcv_inst, &rcv_id));
     htable_primary_begin(&solstice->primaries, &p_it);
     htable_primary_end(&solstice->primaries, &p_end);
-    while (!htable_primary_iterator_eq(&p_it, &p_end)) {
+    while(!htable_primary_iterator_eq(&p_it, &p_end)) {
       struct solstice_primary* prim = htable_primary_iterator_data_get(&p_it);
       struct ssol_instance* prim_inst = prim->node->instance;
       struct ssol_mc_receiver front = MC_RCV_NONE__;
@@ -259,7 +259,7 @@ dump_shape_triangle_indices
 }
 
 static void
-dump_mc_shape
+dump_mc_shape_in
   (struct solstice* solstice,
    struct ssol_shape* shape,
    struct ssol_mc_shape* mc_shape)
@@ -278,15 +278,36 @@ dump_mc_shape
 }
 
 static void
+dump_mc_shape_abs
+  (struct solstice* solstice,
+   struct ssol_shape* shape,
+   struct ssol_mc_shape* mc_shape)
+{
+  unsigned itri, ntris;
+  ASSERT(solstice && shape && mc_shape);
+
+  SSOL(shape_get_triangles_count(shape, &ntris));
+  FOR_EACH(itri, 0, ntris) {
+    struct ssol_mc_primitive mc_prim;
+    SSOL(mc_shape_get_mc_primitive(mc_shape, itri, &mc_prim));
+    fprintf(solstice->output, "%g %g\n",
+      mc_prim.absorbed_flux.E,
+      mc_prim.absorbed_flux.SE);
+  }
+}
+
+static void
 dump_per_primitive_mc_estimations
   (struct solstice* solstice,
    struct ssol_estimator* estimator,
    struct ssol_instance* inst,
-   const enum ssol_side_flag side)
+   const enum ssol_side_flag side,
+   const enum srcvl_pp_output output)
 {
   size_t ishape, nshapes;
   struct ssol_mc_receiver mc_rcv;
   const char* name;
+  const char* flux;
   ASSERT(solstice && estimator && inst);
 
   SSOL(estimator_get_mc_receiver(estimator, inst, side, &mc_rcv));
@@ -296,8 +317,13 @@ dump_per_primitive_mc_estimations
     case SSOL_BACK: name = "Back_faces"; break;
     default: FATAL("Unreachable code.\n"); break;
   }
+  switch (output) {
+    case SRCVL_PP_INCOMING: flux = "Incoming_flux"; break;
+    case SRCVL_PP_ABSORBED: flux = "Absorbed_flux"; break;
+    default: FATAL("Unreachable code.\n"); break;
+  }
 
-  fprintf(solstice->output, "SCALARS %s float 2\n", name);
+  fprintf(solstice->output, "SCALARS %s_%s float 2\n", name, flux);
   fprintf(solstice->output, "LOOKUP_TABLE default\n");
 
   SSOL(instance_get_shaded_shapes_count(inst, &nshapes));
@@ -306,7 +332,15 @@ dump_per_primitive_mc_estimations
     struct ssol_mc_shape mc_shape;
     SSOL(instance_get_shaded_shape(inst, ishape, &inst_sshape));
     SSOL(mc_receiver_get_mc_shape(&mc_rcv, inst_sshape.shape, &mc_shape));
-    dump_mc_shape(solstice, inst_sshape.shape, &mc_shape);
+    switch (output) {
+      case SRCVL_PP_INCOMING:
+        dump_mc_shape_in(solstice, inst_sshape.shape, &mc_shape);
+        break;
+      case SRCVL_PP_ABSORBED:
+        dump_mc_shape_abs(solstice, inst_sshape.shape, &mc_shape);
+        break;
+      default: FATAL("Unreachable code.\n"); break;
+    }
   }
 }
 
@@ -327,6 +361,7 @@ write_per_receiver_mc_primitive
     size_t offset;
     int mask, prim;
 
+    ASSERT(rcv->side);
     SSOL(instance_is_receiver(inst, &mask, &prim));
     CHK(mask != 0);
     if(!prim) continue;
@@ -371,18 +406,25 @@ write_per_receiver_mc_primitive
 
     /* Write front faces MC estimations */
     fprintf(solstice->output, "CELL_DATA %lu\n", (unsigned long)ntris);
-    switch(rcv->side) {
-      case SRCVL_FRONT:
-        dump_per_primitive_mc_estimations(solstice, estimator, inst, SSOL_FRONT);
-        break;
-      case SRCVL_BACK:
-        dump_per_primitive_mc_estimations(solstice, estimator, inst, SSOL_BACK);
-        break;
-      case SRCVL_FRONT_AND_BACK:
-        dump_per_primitive_mc_estimations(solstice, estimator, inst, SSOL_FRONT);
-        dump_per_primitive_mc_estimations(solstice, estimator, inst, SSOL_BACK);
-        break;
-      default: FATAL("Unreachable code.\n"); break;
+    if(rcv->side & SRCVL_FRONT) {
+      if(rcv->per_primitive_output & SRCVL_PP_INCOMING) {
+        dump_per_primitive_mc_estimations(solstice, estimator, inst,
+          SSOL_FRONT, SRCVL_PP_INCOMING);
+      }
+      if(rcv->per_primitive_output & SRCVL_PP_ABSORBED) {
+        dump_per_primitive_mc_estimations(solstice, estimator, inst,
+          SSOL_FRONT, SRCVL_PP_ABSORBED);
+      }
+    }
+    if(rcv->side & SRCVL_BACK) {
+      if(rcv->per_primitive_output & SRCVL_PP_INCOMING) {
+        dump_per_primitive_mc_estimations(solstice, estimator, inst,
+          SSOL_BACK, SRCVL_PP_INCOMING);
+      }
+      if(rcv->per_primitive_output & SRCVL_PP_ABSORBED) {
+        dump_per_primitive_mc_estimations(solstice, estimator, inst,
+          SSOL_BACK, SRCVL_PP_ABSORBED);
+      }
     }
   }
 }

@@ -1,4 +1,4 @@
-# Copyright (C) CNRS 2016-2018
+# Copyright (C) 2016-2018 CNRS
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -96,8 +96,8 @@ configure_file(${SOLSTICE_SOURCE_DIR}/../doc/solstice.1.txt.in
   ${CMAKE_CURRENT_BINARY_DIR}/doc/solstice.1.txt @ONLY)
 
 set(VERSION_MAJOR 0)
-set(VERSION_MINOR 7)
-set(VERSION_PATCH 1)
+set(VERSION_MINOR 8)
+set(VERSION_PATCH 0)
 set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
 configure_file(${SOLSTICE_SOURCE_DIR}/solstice_version.h.in

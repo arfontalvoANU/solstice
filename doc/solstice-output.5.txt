@@ -1,4 +1,4 @@
-// Copyright (C) CNRS 2016-2018
+// Copyright (C) 2016-2018 CNRS
 //
 // This is free documentation: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -176,7 +176,6 @@ _______
 <abs-mat-loss>        ::= <estimate>
 <abs-atm-loss>        ::= <estimate>
 <cos-factor>          ::= <estimate>
-<incoming-flux>       ::= <estimate>
 <missing-loss>        ::= <estimate>
 <materials-loss>      ::= <estimate>
 <atmospheric-loss>    ::= <estimate>
@@ -336,26 +335,28 @@ Receiver map
 ~~~~~~~~~~~~
 
 A receiver defined in the submitted *solstice-receiver*(5) file, can have a
-per-primitive incoming-flux estimate if its *per_primitive* flag is active. In
-this case, *solstice*(1) generates a *receiver-map* that is actually an ASCII
-VTK file [2] that stores the triangular mesh of the receiver and, for each
-triangle, the estimate of its associated incoming-flux. The "definition" of the
-receiver map is thus controlled by the discretisation of the receiver's shape,
-as described in the *solstice-input*(5) file. Note that to obtain a good
-estimate of the per-triangle incoming-flux, one have to ensure that the number
-of per-triangle experiments is sufficient regarding the targeted accuracy.
-Since only a small fraction of the overall sampled radiative paths reach a
-given triangle, the total number of experiments required through the *-n*
-option of *solstice*(1) should be increased significantly, as 1 or 2 order of
-magnitude.
+per-primitive estimate of its incoming flux density and/or absorbed flux
+density if its *per_primitive* flag is active. In this case, *solstice*(1)
+generates a *receiver-map* that is actually an ASCII VTK file [2] that stores
+the triangular mesh of the receiver and, for each triangle, the estimate of
+its associated incoming flux density and/or absorbed flux density. The
+"definition" of the receiver map is thus controlled by the discretisation of
+the receiver's shape, as described in the *solstice-input*(5) file. Note that
+to obtain a good estimate of the per-triangle flux densities, one have to
+ensure that the number of per-triangle experiments is sufficient regarding the
+targeted accuracy. Since only a small fraction of the overall sampled
+radiative paths reach a given triangle, the total number of experiments
+required through the *-n* option of *solstice*(1) should be increased
+significantly, as 1 or 2 order of magnitude.
 
-If only the front or the back side of the receiver is active, then only one set
-of per triangle incoming-flux estimate is written. If the *side* attribute of
-the receiver is set to *FRONT_AND_BACK*, the incoming-flux estimates for the
-front facing triangles are written before the estimates of the back facing
-ones. The following grammar gives a brief description of the formatting of a
-*VTK-RECEIVER-MAP*. Please refer to the VTK format specification [2] for more
-informations on the VTK file format.
+The number of written per-triangle flux density estimates depends on the
+receiver's parameters: both front and back sides of the receiver can be active
+and each side can produce an estimate both for the incoming flux density and
+for the absorbed flux density. As a consequence, the output can include up to
+4 different estimates that are written in the order: incoming front, absorbed
+front, incoming back, absorbed back. The following grammar gives a brief
+description of the formatting of a *VTK-RECEIVER-MAP*. Please refer to the VTK
+format specification [2] for more informations on the VTK file format.
 
 [verse]
 _______
@@ -383,12 +384,22 @@ VTK-RECEIVER-MAP      ::= # vtk DataFile Version 2.0
 <map-front-data>      ::= <map-side-data>
 <map-back-data>       ::= <map-side-data>
 
-<map-side-data>       ::= SCALARS <side-name> float 2
-                          LOOKUP_TABLE default
-                          <incoming-flux>
-                        [ <incoming-flux> ... ]
+<map-side-data>       ::= <incoming-flux>
+                        | <absorbed-flux>
+                        | <incoming-flux> <absorbed-flux>
 
-<map-side-name>       ::= Front_faces | Back_faces
+<incoming-flux>       ::= <flux-density-data>
+<absorbed-flux>       ::= <flux-density-data>
+
+<flux-density-data>   ::= SCALARS <side-and-flux-names> float 2
+                          LOOKUP_TABLE default
+                          <estimate>
+                        [ <estimate> ... ]
+
+<side-and-flux-names> ::= Front_faces_Incoming_flux
+                        | Front_faces_Absorbed_flux
+                        | Back_faces_Incoming_flux
+                        | Back_faces_Absorbed_flux
 
 <#triangles>          ::= INTEGER
 <#vertices>           ::= INTEGER
@@ -452,11 +463,11 @@ with respect to its type: the path is yellow if its first segment, i.e.
 the ray starting from the sun towards a primary geometry, is occluded by a non
 virtual object. If not occluded, the path can be blue or turquoise whether it
 reaches a receiver or not, respectively. Finally, the path can also be red if
-it was canceled due to a topologically incoherent impact (i.e. an impact on
-a surface not at the boundary of the medium in which the rays was propagating).
-The following grammar describes the formatting of a
-*VTK-RADIATIVE-PATHS* file. Refer to the VTK format specification [2] for more
-informations on the VTK file format.
+it was canceled due to a topologically incoherent impact (i.e. an impact on a
+surface not at the boundary of the medium in which the rays was propagating).
+The following grammar describes the formatting of a *VTK-RADIATIVE-PATHS*
+file. Refer to the VTK format specification [2] for more informations on the
+VTK file format.
 
 [verse]
 _______
