@@ -384,7 +384,14 @@ VTK-RECEIVER-MAP      ::= # vtk DataFile Version 2.0
 <map-front-data>      ::= <map-side-data>
 <map-back-data>       ::= <map-side-data>
 
-<map-side-data>       ::= SCALARS <side-and-flux-names> float 2
+<map-side-data>       ::= <incoming-flux>
+                        | <absorbed-flux>
+                        | <incoming-flux> <absorbed-flux>
+
+<incoming-flux>       ::= <flux-density-data>
+<absorbed-flux>       ::= <flux-density-data>
+
+<flux-density-data>   ::= SCALARS <side-and-flux-names> float 2
                           LOOKUP_TABLE default
                           <estimate>
                         [ <estimate> ... ]
