@@ -335,27 +335,28 @@ Receiver map
 ~~~~~~~~~~~~
 
 A receiver defined in the submitted *solstice-receiver*(5) file, can have a
-per-primitive estimate of its incoming flux and/or absorbed flux if its
-*per_primitive* flag is active. In this case, *solstice*(1) generates a
-*receiver-map* that is actually an ASCII VTK file [2] that stores the
-triangular mesh of the receiver and, for each triangle, the estimate of its
-associated incoming flux and/or absorbed flux. The "definition" of the
-receiver map is thus controlled by the discretisation of the receiver's shape,
-as described in the *solstice-input*(5) file. Note that to obtain a good
-estimate of the per-triangle fluxes, one have to ensure that the number of
-per-triangle experiments is sufficient regarding the targeted accuracy. Since
-only a small fraction of the overall sampled radiative paths reach a given
-triangle, the total number of experiments required through the *-n* option of
-*solstice*(1) should be increased significantly, as 1 or 2 order of magnitude.
+per-primitive estimate of its incoming flux density and/or absorbed flux
+density if its *per_primitive* flag is active. In this case, *solstice*(1)
+generates a *receiver-map* that is actually an ASCII VTK file [2] that stores
+the triangular mesh of the receiver and, for each triangle, the estimate of
+its associated incoming flux density and/or absorbed flux density. The
+"definition" of the receiver map is thus controlled by the discretisation of
+the receiver's shape, as described in the *solstice-input*(5) file. Note that
+to obtain a good estimate of the per-triangle flux densities, one have to
+ensure that the number of per-triangle experiments is sufficient regarding the
+targeted accuracy. Since only a small fraction of the overall sampled
+radiative paths reach a given triangle, the total number of experiments
+required through the *-n* option of *solstice*(1) should be increased
+significantly, as 1 or 2 order of magnitude.
 
-The number of written per-triangle flux estimates depends on the receiver's
-parameters: both front and back sides of the receiver can be active and each
-side can produce an estimate both for the incoming flux and for the absorbed
-flux. As a consequence, the output can include up to 4 different estimates
-that are written in the order: incoming front, absorbed front, incoming back,
-absorbed back. The following grammar gives a brief description of the
-formatting of a *VTK-RECEIVER-MAP*. Please refer to the VTK format
-specification [2] for more informations on the VTK file format.
+The number of written per-triangle flux density estimates depends on the
+receiver's parameters: both front and back sides of the receiver can be active
+and each side can produce an estimate both for the incoming flux density and
+for the absorbed flux density. As a consequence, the output can include up to
+4 different estimates that are written in the order: incoming front, absorbed
+front, incoming back, absorbed back. The following grammar gives a brief
+description of the formatting of a *VTK-RECEIVER-MAP*. Please refer to the VTK
+format specification [2] for more informations on the VTK file format.
 
 [verse]
 _______

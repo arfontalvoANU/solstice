@@ -51,8 +51,8 @@ back facing. Finally, if the optional *per_primitive* flag is set,
 *solstice*(1) will estimate the irradiance for each triangle of the receiver
 and use these data to generate a receiver map as described in
 *solstice-output*(5). The *per-primitive* flag can be set to *INCOMING*,
-*ABSORBED* or *INCOMING_AND_ABSORBED* to produce the incoming flux map, the
-absorbed flux map, or both.
+*ABSORBED* or *INCOMING_AND_ABSORBED* to produce the incoming flux density
+map, the absorbed flux density map, or both.
 
 GRAMMAR
 -------
@@ -64,7 +64,7 @@ _______
 
 <receiver>            ::= name: <entity-identifier>
                           side: <side-identifier>
-                        [ per_primitive: <per-primitive-mode> ]
+                        [ per_primitive: <per-primitive-mode> ] # Default: NONE
 
 <side-identifier>     ::= FRONT
                         | BACK
