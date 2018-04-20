@@ -60,6 +60,22 @@ informations on CMake.
 
 ## Release notes
 
+### Version 0.8
+
+Add the support of per-triangle absorbed flux density. The `per_primitive`
+attribute of the receiver file format controls which flux densities to output
+for each triangle of a receiver. Its value can be:
+
+- `NONE`: no per-triangle flux density is computed, i.e. no receiver map is
+  output for the receiver. It was the comportment of the previous version of
+  Solstice when the `per_primitive` flag was undefined or was set to 0.
+- `INCOMING`: output the estimate of the per-triangle incoming flux density.
+  It was the comportment of the previous version of Solstice when the
+  `per_primitive` flag was set to 1.
+- `ABSORBED`: output the estimate of the per-triangle absorbed flux density.
+- `INCOMING_AND_ABSORBED`: output both the estimates of incoming and absorbed
+  flux density for each triangle of the receiver.
+
 ### Version 0.7.1
 
 - Replace the `roughness` parameter of the mirror material by the
