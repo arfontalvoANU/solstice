@@ -782,8 +782,8 @@ each with its own set of parameters and behaviour.
   It has a *target* and can have a *ref_point* and a *spacing* that defines
   the translation along the +Y axis after the first rotation. If not
   defined, *spacing* is 0. The *zx_pivot* pointing algorithm considers an
-  incoming ray of light from the center of the sun and rotates the pivot's
-  children of the pivot so that a specular reflection at *ref_point* using
+  incoming ray of light from the center of the sun and rotates its
+  children so that a specular reflection at *ref_point* using
   +Y as local normal will hit the target point of the pivot, or will have
   the specified direction (depending of the kind of target).
 
