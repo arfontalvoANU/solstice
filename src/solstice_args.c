@@ -324,7 +324,7 @@ parse_rendering_option(const char* str, struct solstice_args* args)
       goto error;
     }
   } else {
-    fprintf(stderr, "Invalid rendering option `%s'.\n", val);
+    fprintf(stderr, "Invalid rendering option `%s'.\n", key);
     res = RES_BAD_ARG;
     goto error;
   }
