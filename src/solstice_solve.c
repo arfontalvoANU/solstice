@@ -323,7 +323,7 @@ dump_per_primitive_mc_estimations
     default: FATAL("Unreachable code.\n"); break;
   }
 
-  fprintf(solstice->output, "SCALARS %s_%s float 2\n", name, flux);
+  fprintf(solstice->output, "SCALARS %s_%s double 2\n", name, flux);
   fprintf(solstice->output, "LOOKUP_TABLE default\n");
 
   SSOL(instance_get_shaded_shapes_count(inst, &nshapes));
