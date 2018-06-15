@@ -60,6 +60,13 @@ informations on CMake.
 
 ## Release notes
 
+### Version 0.8.1
+
+- Fix the VTK of the receiver map: the receiver map was written as `double`
+  while the type notified in the VTK file was `float`. This might produce
+  errors on loading of the resulting VTK file. The VTK data type is now set to
+  `double` to make it consistent with the type of the written values.
+
 ### Version 0.8
 
 Add the support of per-triangle absorbed flux density. The `per_primitive`
