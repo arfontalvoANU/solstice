@@ -80,8 +80,8 @@ OPTIONS
 +
 Following the right-handed convention, Solstice azimuthal rotation is
 counter-clockwise, with 0° on the X axis. Solstice elevation starts from 0° for
-directions in the XY plane, up to 90° at zenith. Thus -D0,0 -D0,90 -D0,180 and
--D0,270 will produce solar vectors {-1,0,0} {0,-1,0} {+1,0,0} and {0,+1,0}
+directions in the XY plane, up to 90° at zenith. Thus -D0,0 -D90,0 -D180,0 and
+-D270,0 will produce solar vectors {-1,0,0} {0,-1,0} {+1,0,0} and {0,+1,0}
 respectively, while -D__alpha__,90 will produce {0,0,-1} regardless of _alpha_
 value.
 
@@ -252,4 +252,3 @@ SEE ALSO
 *solstice-input*(5),
 *solstice-output*(5),
 *solstice-receiver*(5)
-

@@ -55,7 +55,7 @@ struct solstice_args {
     double pos[3];
     double tgt[3];
     double up[3];
-    double fov_x; /* In radians */
+    double fov_x; /* In degrees */
     int auto_look_at;
   } camera;
 
