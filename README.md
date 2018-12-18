@@ -60,6 +60,12 @@ informations on CMake.
 
 ## Release notes
 
+### Version 0.8.2
+
+- Fix man pages: the -D option of the solstice CLI was wrongly documented. The
+  zenith and elevation angles were sometimes inverted.
+- Bump version of the StarSP dependency to 0.8.
+
 ### Version 0.8.1
 
 - Fix the VTK of the receiver map: the receiver map was written as `double`

@@ -47,7 +47,7 @@ find_package(RSys 0.6 REQUIRED)
 find_package(SolAnim 0.2 REQUIRED)
 find_package(SolSolver 0.7 REQUIRED)
 find_package(Star3DUT 0.2 REQUIRED)
-find_package(StarSP 0.4 REQUIRED)
+find_package(StarSP 0.8 REQUIRED)
 find_package(StarSTL 0.3.1 REQUIRED)
 
 if(MSVC)
@@ -97,7 +97,7 @@ configure_file(${SOLSTICE_SOURCE_DIR}/../doc/solstice.1.txt.in
 
 set(VERSION_MAJOR 0)
 set(VERSION_MINOR 8)
-set(VERSION_PATCH 1)
+set(VERSION_PATCH 2)
 set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
 configure_file(${SOLSTICE_SOURCE_DIR}/solstice_version.h.in
