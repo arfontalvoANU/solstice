@@ -86,8 +86,26 @@ respectively, while -D__alpha__,90 will produce {0,0,-1} regardless of _alpha_
 value.
 
 *-f*::
-  Force overwrite of the _output_ file.
+  Force overwrite of the output files, i.e. the _output_ file and the file
+  where the state of the random number generator is saved (see the *-G*
+  option).
 
+*-G* <__sub-option__:...>::
+  Save and restore the state of the random number generator. This option can be
+  used to ensure the statistical independence between successive simulations
+  on the same system. For instance, one can run a new simulation and
+  initialising its random number generator with the final state of the
+  generator as defined by the previous run. Available sub options are:
+
+  **istate=**_input_rng_state_;;
+    Define the file from which the initial state of the random number generator
+    is read. If not defined, the random number generator is initialised with
+    its default seed.
+
+  **ostate=**_output_rng_state_;;
+    Define the file where the final state of the random number generator is
+    written. If not defined, this state is simply discarded.
+  
 *-g* <__sub-option__:...>::
   Generate the shape of the geometry defined in the submitted _file_ and store
   it in _output_. Available sub-options are:
@@ -239,9 +257,9 @@ remaining data to the *feh*(1) image viewer.
 
 COPYRIGHT
 ---------
-*solstice* is copyright &copy; 2016-2018 CNRS. License GPLv3+: GNU GPL version
-3 or later <http://gnu.org/licenses/gpl.html>. This is a free software. You are
-free to change and redistribute it. There is NO WARRANTY, to the extent
+Copyright &copy; 2016-2018 CNRS, 2018-2019 |Meso|Star>. License GPLv3+: GNU GPL
+version 3 or later <http://gnu.org/licenses/gpl.html>. This is free software.
+You are free to change and redistribute it. There is NO WARRANTY, to the extent
 permitted by law.
 
 SEE ALSO

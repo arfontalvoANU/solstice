@@ -46,9 +46,10 @@ print_help(const char* program)
   printf(
 "  -D <dirs>        list of sun directions.\n");
   printf(
-"  -f               overwrite the OUTPUT file if it already exists.\n");
+"  -f               overwrite the output files if they already exist, i.e. the\n"
+"                   OUTPUT file and the output RNG state.\n");
   printf(
-"  -G <rng>         configure the random number generator.\n");
+"  -G <rng>         save and restore the state of the random number generator.\n");
   printf(
 "  -g <dump>        switch in dump geometry mode and configure it.\n");
   printf(

@@ -637,14 +637,6 @@ solstice_init
   res = setup_sun_dirs(solstice, args);
   if(res != RES_OK) goto error;
 
-  if(!args->output_filename) {
-    solstice->output = stdout;
-  } else {
-    res = open_output_stream(args->output_filename, args->force_overwriting,
-      &solstice->output);
-    if(res != RES_OK) goto error;
-  }
-
   if(args->rng_state_input_filename) {
     solstice->rng_state_input = fopen(args->rng_state_input_filename, "r");
     if(!solstice->rng_state_input) {
@@ -657,6 +649,14 @@ solstice_init
   if(args->rng_state_output_filename) {
     res = open_output_stream(args->rng_state_output_filename,
       args->force_overwriting, &solstice->rng_state_output);
+    if(res != RES_OK) goto error;
+  }
+
+  if(!args->output_filename) {
+    solstice->output = stdout;
+  } else {
+    res = open_output_stream(args->output_filename, args->force_overwriting,
+      &solstice->output);
     if(res != RES_OK) goto error;
   }
 
