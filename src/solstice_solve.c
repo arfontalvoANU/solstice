@@ -548,6 +548,15 @@ solstice_solve(struct solstice* solstice)
     goto error;
   }
 
+  if(solstice->rng_state_input) {
+    rewind(solstice->rng_state_input);
+    res = ssp_rng_read(rng, solstice->rng_state_input);
+    if(res != RES_OK) {
+      fprintf(stderr, "Could not read the input RNG state.\n");
+      goto error;
+    }
+  }
+
   max_failure = solstice->dump_paths ?
     solstice->nexperiments
     : (size_t)((double)solstice->nexperiments * MAX_PERCENT_FAILURES);
@@ -564,6 +573,16 @@ solstice_solve(struct solstice* solstice)
   } else {
     write_mc_global(solstice, estimator);
     write_per_receiver_mc_primitive(solstice, estimator);
+  }
+
+  if(solstice->rng_state_output) {
+    const struct ssp_rng* rng_state = NULL;
+    SSOL(estimator_get_rng_state(estimator, &rng_state));
+    res = ssp_rng_write(rng_state, solstice->rng_state_output);
+    if(res != RES_OK) {
+      fprintf(stderr, "Could not write the RNG state.\n");
+      goto error;
+    }
   }
 
 exit:

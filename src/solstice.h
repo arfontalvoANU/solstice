@@ -193,6 +193,10 @@ struct solstice {
   FILE* output; /* Output stream */
   int dump_paths;
 
+  /* Stream used to load/store RNG state */
+  FILE* rng_state_input;
+  FILE* rng_state_output;
+
   struct logger logger;
   struct mem_allocator* allocator;
 };
