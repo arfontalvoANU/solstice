@@ -1,4 +1,4 @@
-/* Copyright (C) 2016-2018 CNRS
+/* Copyright (C) 2016-2018 CNRS, 2018-2019 |Meso|Star>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -670,6 +670,61 @@ test_dump_paths(void)
   cmd_delete(cmd);
 }
 
+static void
+test_rng(void)
+{
+  struct solstice_args args = SOLSTICE_ARGS_NULL;
+  char** cmd = NULL;
+
+  cmd = cmd_create(0, "test", "-D", "0,90", NULL);
+  CHK(solstice_args_init(&args, cmd_size(cmd), cmd) == RES_OK);
+  CHK(args.rng_state_input_filename == NULL);
+  CHK(args.rng_state_output_filename == NULL);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "0,90", "-G", "ostate=/tmp/rng_output.txt", NULL);
+  CHK(solstice_args_init(&args, cmd_size(cmd), cmd) == RES_OK);
+  CHK(args.rng_state_input_filename == NULL);
+  CHK(!strcmp(args.rng_state_output_filename, "/tmp/rng_output.txt"));
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "0,90", "-G", "istate=/tmp/rng_input.txt", NULL);
+  CHK(solstice_args_init(&args, cmd_size(cmd), cmd) == RES_OK);
+  CHK(!strcmp(args.rng_state_input_filename, "/tmp/rng_input.txt"));
+  CHK(args.rng_state_output_filename == NULL);
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "0,90", "-G", "istate=in.txt:ostate=out.txt", NULL);
+  CHK(solstice_args_init(&args, cmd_size(cmd), cmd) == RES_OK);
+  CHK(!strcmp(args.rng_state_input_filename, "in.txt"));
+  CHK(!strcmp(args.rng_state_output_filename, "out.txt"));
+  solstice_args_release(&args);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "0,90", "-G", "istate=", NULL);
+  CHK(solstice_args_init(&args, cmd_size(cmd), cmd) == RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "0,90", "-G", "ostate=", NULL);
+  CHK(solstice_args_init(&args, cmd_size(cmd), cmd) == RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "0,90", "-G", "istate=in.txt:ostate=", NULL);
+  CHK(solstice_args_init(&args, cmd_size(cmd), cmd) == RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "0,90", "-G", "istate=:ostate=out", NULL);
+  CHK(solstice_args_init(&args, cmd_size(cmd), cmd) == RES_BAD_ARG);
+  cmd_delete(cmd);
+
+  cmd = cmd_create(0, "test", "-D", "0,90", "-G", NULL);
+  CHK(solstice_args_init(&args, cmd_size(cmd), cmd) == RES_BAD_ARG);
+  cmd_delete(cmd);
+}
+
 int
 main(int argc, char** argv)
 {
@@ -685,6 +740,7 @@ main(int argc, char** argv)
   test_input();
   test_dump();
   test_dump_paths();
+  test_rng();
   CHK(mem_allocated_size() == 0);
   return 0;
 }

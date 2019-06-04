@@ -1,4 +1,4 @@
-/* Copyright (C) CNRS 2016-2017
+/* Copyright (C) CNRS 2016-2018
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -75,6 +75,10 @@ struct solstice_args {
   double sun_ray_length; /* Length of the sun rays. */
   double infinite_ray_length; /* Length of the rays going to infinity. */
 
+  /* RNG options */
+  char* rng_state_input_filename;
+  char* rng_state_output_filename;
+
   int force_overwriting;
   int dump_paths; /* Dump radiative paths */
   int rendering;
@@ -117,6 +121,9 @@ static const struct solstice_args SOLSTICE_ARGS_NULL = SOLSTICE_ARGS_NULL__;
                                                                                \
   -1, /* Sun ray length */                                                     \
   -1, /* Infinite ray length */                                                \
+                                                                               \
+  NULL, /* RNG state input filename */                                         \
+  NULL, /* RNG state output filename */                                        \
                                                                                \
   0, /* Force overwriting */                                                   \
   0, /* Dump radiative paths */                                                \
