@@ -60,6 +60,12 @@ informations on CMake.
 
 ## Release notes
 
+### Version 0.9
+
+- Add the `-G` option that saves and restores the state of the random number
+  generator. This option can be used to ensure the statistical independence
+  between successive runs.
+
 ### Version 0.8.2
 
 - Fix man pages: the -D option of the solstice CLI was wrongly documented. The
@@ -192,7 +198,7 @@ for each triangle of a receiver. Its value can be:
 - Add the verbose option `-v`.
 - Update the output format of the simulation.
 
-## Licenses
+## License
 
 Solstice is developed by [|Meso|Star>](http://www.meso-star.com) for the
 [National Center for Scientific Research](http://www.cnrs.fr/index.php) (CNRS).
