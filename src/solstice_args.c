@@ -1,4 +1,4 @@
-/* Copyright (C) 2016-2018 CNRS
+/* Copyright (C) 2016-2018 CNRS, 2018-2019 |Meso|Star>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,7 +46,10 @@ print_help(const char* program)
   printf(
 "  -D <dirs>        list of sun directions.\n");
   printf(
-"  -f               overwrite the OUTPUT file if it already exists.\n");
+"  -f               overwrite the output files if they already exist, i.e. the\n"
+"                   OUTPUT file and the output RNG state.\n");
+  printf(
+"  -G <rng>         save and restore the state of the random number generator.\n");
   printf(
 "  -g <dump>        switch in dump geometry mode and configure it.\n");
   printf(
@@ -74,9 +77,9 @@ print_help(const char* program)
 "  --version        display version information and exit.\n");
   printf("\n");
   printf(
-"Solstice (C) 2016-2018 CNRS. This is a free software released under the GNU GPL\n"
-"license, version 3 or later. You are free to change or redistribute it under\n"
-"certain conditions <http://gnu.org/licenses/gpl.html>.\n");
+"Solstice (C) 2016-2018 CNRS, 2018-2019 |Meso|Star>. This is a free software\n"
+"released under the GNU GPL license, version 3 or later. You are free to change\n"
+"or redistribute it under certain conditions <http://gnu.org/licenses/gpl.html>.\n");
 }
 
 static res_T
@@ -264,7 +267,7 @@ parse_rendering_option(const char* str, struct solstice_args* args)
   char* val;
   char* ctx;
   size_t len;
-  res_T res;
+  res_T res = RES_OK;
   ASSERT(str && args);
 
   if(strlen(str) >= sizeof(buf) - 1/*NULL char*/) {
@@ -482,6 +485,56 @@ error:
   goto exit;
 }
 
+static res_T
+parse_rng_option(const char* str, struct solstice_args* args)
+{
+  char buf[128];
+  char* key;
+  char* val;
+  char* ctx;
+  size_t len;
+  res_T res = RES_OK;
+  ASSERT(str && args);
+
+  if(strlen(str) >= sizeof(buf)-1/*NULL char*/) {
+    fprintf(stderr,
+      "Could not duplicate the RNG option string `%s'\n", str);
+    res = RES_MEM_ERR;
+    goto error;
+  }
+  strncpy(buf, str, sizeof(buf));
+
+  key = strtok_r(buf, "=", &ctx);
+  val = strtok_r(NULL, "", &ctx);
+
+  if(!val) {
+    fprintf(stderr, "Missing a value to the RNG option `%s'.\n", key);
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+  if(!strcmp(key, "istate")) { /* Input state */
+    len = strlen(val);
+    args->rng_state_input_filename = mem_calloc(len+1, sizeof(char));
+    if(!args->rng_state_input_filename) { res = RES_MEM_ERR; goto error; }
+    strcpy(args->rng_state_input_filename, val);
+  } else if(!strcmp(key, "ostate")) { /* Output state */
+    len = strlen(val);
+    args->rng_state_output_filename = mem_calloc(len+1, sizeof(char));
+    if(!args->rng_state_output_filename) { res = RES_MEM_ERR; goto error; }
+    strcpy(args->rng_state_output_filename, val);
+  } else {
+    fprintf(stderr, "Invalid RNG option `%s'.\n", key);
+    res = RES_BAD_ARG;
+    goto error;
+  }
+
+exit:
+  return res;
+error:
+  goto exit;
+}
+
 /*******************************************************************************
  * Local function
  ******************************************************************************/
@@ -507,7 +560,7 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
   }
 
   optind = 0;
-  while((opt = getopt(argc, argv, "D:fg:hn:o:p:qR:r:t:v")) != -1) {
+  while((opt = getopt(argc, argv, "D:fG:g:hn:o:p:qR:r:t:v")) != -1) {
     switch(opt) {
       case 'D': /* Sun directions */
         res = parse_sun_dir_list(optarg, args);
@@ -521,6 +574,9 @@ solstice_args_init(struct solstice_args* args, const int argc, char** argv)
       case 'n': /* Define the number of experiments */
         res = cstr_to_ulong(optarg, &args->nexperiments);
         if(res == RES_OK && !args->nexperiments) res = RES_BAD_ARG;
+        break;
+      case 'G': /* Setup the random number generator */
+        res = parse_multiple_options(optarg, args, parse_rng_option);
         break;
       case 'g': /* Switch in dump geometry mode and configure it */
         res = parse_multiple_options(optarg, args, parse_dump_option);
@@ -600,6 +656,8 @@ solstice_args_release(struct solstice_args* args)
 {
   ASSERT(args);
   sa_release(args->sun_dirs);
+  if(args->rng_state_input_filename) mem_rm(args->rng_state_input_filename);
+  if(args->rng_state_output_filename) mem_rm(args->rng_state_output_filename);
   *args = SOLSTICE_ARGS_NULL;
 }
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2016-2018 CNRS
+/* Copyright (C) 2016-2018 CNRS, 2018-2019 |Meso|Star>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -192,6 +192,10 @@ struct solstice {
   size_t nexperiments; /* # MC experiments */
   FILE* output; /* Output stream */
   int dump_paths;
+
+  /* Stream used to load/store RNG state */
+  FILE* rng_state_input;
+  FILE* rng_state_output;
 
   struct logger logger;
   struct mem_allocator* allocator;

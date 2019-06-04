@@ -1,4 +1,4 @@
-# Copyright (C) 2016-2018 CNRS
+# Copyright (C) 2016-2018 CNRS, 2018-2019 |Meso|Star>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ find_package(LibYAML REQUIRED)
 find_package(RCMake 0.2.3 REQUIRED)
 find_package(RSys 0.6 REQUIRED)
 find_package(SolAnim 0.2 REQUIRED)
-find_package(SolSolver 0.7 REQUIRED)
+find_package(SolSolver 0.8 REQUIRED)
 find_package(Star3DUT 0.2 REQUIRED)
 find_package(StarSP 0.8 REQUIRED)
 find_package(StarSTL 0.3.1 REQUIRED)
@@ -96,8 +96,8 @@ configure_file(${SOLSTICE_SOURCE_DIR}/../doc/solstice.1.txt.in
   ${CMAKE_CURRENT_BINARY_DIR}/doc/solstice.1.txt @ONLY)
 
 set(VERSION_MAJOR 0)
-set(VERSION_MINOR 8)
-set(VERSION_PATCH 2)
+set(VERSION_MINOR 9)
+set(VERSION_PATCH 0)
 set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
 configure_file(${SOLSTICE_SOURCE_DIR}/solstice_version.h.in

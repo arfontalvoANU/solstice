@@ -1,4 +1,4 @@
-/* Copyright (C) 2016-2018 CNRS
+/* Copyright (C) 2016-2018 CNRS, 2018-2019 |Meso|Star>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -637,6 +637,21 @@ solstice_init
   res = setup_sun_dirs(solstice, args);
   if(res != RES_OK) goto error;
 
+  if(args->rng_state_input_filename) {
+    solstice->rng_state_input = fopen(args->rng_state_input_filename, "r");
+    if(!solstice->rng_state_input) {
+      fprintf(stderr, "Could not open the input RNG state file.\n");
+      res = RES_IO_ERR;
+      goto error;
+    }
+  }
+
+  if(args->rng_state_output_filename) {
+    res = open_output_stream(args->rng_state_output_filename,
+      args->force_overwriting, &solstice->rng_state_output);
+    if(res != RES_OK) goto error;
+  }
+
   if(!args->output_filename) {
     solstice->output = stdout;
   } else {
@@ -715,6 +730,8 @@ solstice_release(struct solstice* solstice)
   if(solstice->framebuffer) SSOL(image_ref_put(solstice->framebuffer));
   if(solstice->output && solstice->output != stdout) fclose(solstice->output);
   if(solstice->mtl_virtual) SSOL(material_ref_put(solstice->mtl_virtual));
+  if(solstice->rng_state_input) fclose(solstice->rng_state_input);
+  if(solstice->rng_state_output) fclose(solstice->rng_state_output);
   htable_material_release(&solstice->materials);
   htable_object_release(&solstice->objects);
   htable_anchor_release(&solstice->anchors);
