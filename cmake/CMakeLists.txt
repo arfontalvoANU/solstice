@@ -96,8 +96,8 @@ configure_file(${SOLSTICE_SOURCE_DIR}/../doc/solstice.1.txt.in
   ${CMAKE_CURRENT_BINARY_DIR}/doc/solstice.1.txt @ONLY)
 
 set(VERSION_MAJOR 0)
-set(VERSION_MINOR 8)
-set(VERSION_PATCH 2)
+set(VERSION_MINOR 9)
+set(VERSION_PATCH 0)
 set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
 configure_file(${SOLSTICE_SOURCE_DIR}/solstice_version.h.in
