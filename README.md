@@ -196,7 +196,8 @@ for each triangle of a receiver. Its value can be:
 
 Solstice is developed by [|Meso|Star>](http://www.meso-star.com) for the
 [National Center for Scientific Research](http://www.cnrs.fr/index.php) (CNRS).
-This is a free software copyright (C) 2016-2018 CNRS released under the GPL v3+
-license: GNU GPL version 3 or later. You are welcome to redistribute it under
-certain conditions; refer to the COPYING file for details.
+Copyright (C) 2016-2018 CNRS, 2018-2019
+[|Meso|Star>](http://www.meso-star.com). It is free software released under the
+GPL v3+ license: GNU GPL version 3 or later. You are welcome to redistribute it
+under certain conditions; refer to the COPYING file for details.
 
