@@ -20,7 +20,7 @@ enable_testing()
 option(NO_TEST "Do not build tests" OFF)
 
 if(CMAKE_HOST_UNIX)
-  set(SOLSTICE_DOC "TROFF & HTML" CACHE STRING
+  set(SOLSTICE_DOC "TROFF" CACHE STRING
     "Type of documentation to generate and install.")
 else()
   set(SOLSTICE_DOC "HTML" CACHE STRING
