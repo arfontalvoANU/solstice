@@ -47,7 +47,7 @@ find_package(RSys 0.10 REQUIRED)
 find_package(SolAnim 0.2.3 REQUIRED)
 find_package(SolSolver 0.8 REQUIRED)
 find_package(Star3DUT 0.3.1 REQUIRED)
-find_package(StarSP 0.8.1 REQUIRED)
+find_package(StarSP 0.12 REQUIRED)
 find_package(StarSTL 0.3.3 REQUIRED)
 
 if(MSVC)

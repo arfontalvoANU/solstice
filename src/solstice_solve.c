@@ -542,7 +542,7 @@ solstice_solve(struct solstice* solstice)
   res_T res = RES_OK;
   ASSERT(solstice);
 
-  res = ssp_rng_create(solstice->allocator, &ssp_rng_threefry, &rng);
+  res = ssp_rng_create(solstice->allocator, SSP_RNG_THREEFRY, &rng);
   if(res != RES_OK) {
     fprintf(stderr, "Could not create the Random Number Generator .\n");
     goto error;
