@@ -767,6 +767,4 @@ const double solstice_sun_spectrum_smarts[] = {
 };
 
 const size_t solstice_sun_spectrum_smarts_size =
-  sizeof(solstice_sun_spectrum_smarts) / sizeof(double[2]);
-
-
+  sizeof(solstice_sun_spectrum_smarts) / (2*sizeof(double));
