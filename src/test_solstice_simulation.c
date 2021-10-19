@@ -423,7 +423,7 @@ check_1_reference
     read_primary(test_file, test_prim_name, &test_area, test_E, test_SE);
     check_estimate(ref_area, 0, test_area, 0);
     CHK(strcmp(ref_prim_name, test_prim_name) == 0);
-    FOR_EACH(r, FIRST_RECEIVER_RESULT, PRIMARY_RESULTS_COUNT__) {
+    FOR_EACH(r, FIRST_PRIMARY_RESULT, PRIMARY_RESULTS_COUNT__) {
       check_estimate(reference_E[r], reference_SE[r], test_E[r], test_SE[r]);
     }
   }
