@@ -1,4 +1,5 @@
-# Copyright (C) 2016-2018 CNRS, 2018-2019 |Meso|Star>
+# Copyright (C) 2018, 2019, 2021 |Meso|Star> (contact@meso-star.com)
+# Copyright (C) 2016-2018 CNRS
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.1)
 
 string(REGEX MATCH ".*HTML.*" _html ${SOLSTICE_DOC})
 string(REGEX MATCH ".*ROFF.*" _roff ${SOLSTICE_DOC})
@@ -144,7 +145,7 @@ if(_html)
   endforeach()
   add_custom_target(man-html ALL DEPENDS ${MAN_FILES})
 
-  install(FILES ${MAN1_FILES} DESTINATION share/man/man1)
-  install(FILES ${MAN5_FILES} DESTINATION share/man/man5)
+  install(FILES ${MAN1_FILES} DESTINATION share/doc/solstice/html)
+  install(FILES ${MAN5_FILES} DESTINATION share/doc/solstice/html)
 endif()
 

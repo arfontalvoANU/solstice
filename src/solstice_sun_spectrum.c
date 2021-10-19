@@ -1,4 +1,5 @@
-/* Copyright (C) 2016-2018 CNRS, 2018-2019 |Meso|Star>
+/* Copyright (C) 2018, 2019, 2021 |Meso|Star> (contact@meso-star.com)
+ * Copyright (C) 2016-2018 CNRS
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -767,6 +768,4 @@ const double solstice_sun_spectrum_smarts[] = {
 };
 
 const size_t solstice_sun_spectrum_smarts_size =
-  sizeof(solstice_sun_spectrum_smarts) / sizeof(double[2]);
-
-
+  sizeof(solstice_sun_spectrum_smarts) / (2*sizeof(double));

@@ -1,4 +1,5 @@
-# Copyright (C) 2016-2018 CNRS, 2018-2019 |Meso|Star>
+# Copyright (C) 2018, 2019, 2021 |Meso|Star> (contact@meso-star.com)
+# Copyright (C) 2016-2018 CNRS
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,14 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.1)
 project(solstice C)
 enable_testing()
 
 option(NO_TEST "Do not build tests" OFF)
 
 if(CMAKE_HOST_UNIX)
-  set(SOLSTICE_DOC "TROFF & HTML" CACHE STRING
+  set(SOLSTICE_DOC "TROFF" CACHE STRING
     "Type of documentation to generate and install.")
 else()
   set(SOLSTICE_DOC "HTML" CACHE STRING
@@ -42,13 +43,13 @@ get_filename_component(_current_source_dir ${CMAKE_CURRENT_LIST_FILE} PATH)
 set(LibYAML_DIR ${_current_source_dir}/)
 
 find_package(LibYAML REQUIRED)
-find_package(RCMake 0.2.3 REQUIRED)
-find_package(RSys 0.6 REQUIRED)
-find_package(SolAnim 0.2 REQUIRED)
-find_package(SolSolver 0.8 REQUIRED)
-find_package(Star3DUT 0.2 REQUIRED)
-find_package(StarSP 0.8 REQUIRED)
-find_package(StarSTL 0.3.1 REQUIRED)
+find_package(RCMake 0.4 REQUIRED)
+find_package(RSys 0.10 REQUIRED)
+find_package(SolAnim 0.2.3 REQUIRED)
+find_package(SolSolver 0.9 REQUIRED)
+find_package(Star3DUT 0.3.1 REQUIRED)
+find_package(StarSP 0.12 REQUIRED)
+find_package(StarSTL 0.3.3 REQUIRED)
 
 if(MSVC)
   find_package(MuslGetopt REQUIRED)
@@ -97,7 +98,7 @@ configure_file(${SOLSTICE_SOURCE_DIR}/../doc/solstice.1.txt.in
 
 set(VERSION_MAJOR 0)
 set(VERSION_MINOR 9)
-set(VERSION_PATCH 0)
+set(VERSION_PATCH 1)
 set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
 configure_file(${SOLSTICE_SOURCE_DIR}/solstice_version.h.in

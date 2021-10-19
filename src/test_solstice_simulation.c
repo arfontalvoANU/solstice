@@ -1,4 +1,5 @@
-/* Copyright (C) 2016-2018 CNRS, 2018-2019 |Meso|Star>
+/* Copyright (C) 2018, 2019, 2021 |Meso|Star> (contact@meso-star.com)
+ * Copyright (C) 2016-2018 CNRS
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -163,7 +164,7 @@ mkstemp(char *tmpl)
   }
   value += random_time_bits ^ (unsigned long long)GetCurrentThreadId();
 
-  for (count = 0; count < attempts; value += 7777, ++count) {
+  for(count = 0; count < attempts; value += 7777, ++count) {
     unsigned long long v = value;
 
     /* Fill in the random bits.  */
@@ -389,13 +390,13 @@ check_1_reference
 
   /* both files' pointer are just past the new bloc header */
 
-  for (n = 0; n < counts->global; n++) {
+  for(n = 0; n < counts->global; n++) {
     double reference_E, reference_SE, test_E, test_SE;
     read_global(ref_file, &reference_E, &reference_SE);
     read_global(test_file, &test_E, &test_SE);
     check_estimate(reference_E, reference_SE, test_E, test_SE);
   }
-  for (n = 0; n < counts->receiver; n++) {
+  for(n = 0; n < counts->receiver; n++) {
     char ref_rcv_name[MAX_LINE_LEN], test_rcv_name[MAX_LINE_LEN];
     double reference_E[RECEIVER_RESULTS_COUNT__];
     double reference_SE[RECEIVER_RESULTS_COUNT__];
@@ -410,7 +411,7 @@ check_1_reference
       check_estimate(reference_E[r], reference_SE[r], test_E[r], test_SE[r]);
     }
   }
-  for (n = 0; n < counts->primary; n++) {
+  for(n = 0; n < counts->primary; n++) {
     char ref_prim_name[MAX_LINE_LEN], test_prim_name[MAX_LINE_LEN];
     double reference_E[PRIMARY_RESULTS_COUNT__];
     double reference_SE[PRIMARY_RESULTS_COUNT__];
@@ -423,11 +424,11 @@ check_1_reference
     read_primary(test_file, test_prim_name, &test_area, test_E, test_SE);
     check_estimate(ref_area, 0, test_area, 0);
     CHK(strcmp(ref_prim_name, test_prim_name) == 0);
-    FOR_EACH(r, FIRST_RECEIVER_RESULT, PRIMARY_RESULTS_COUNT__) {
+    FOR_EACH(r, FIRST_PRIMARY_RESULT, PRIMARY_RESULTS_COUNT__) {
       check_estimate(reference_E[r], reference_SE[r], test_E[r], test_SE[r]);
     }
   }
-  for (n = 0; n < counts->receiver * counts->primary; n++) {
+  for(n = 0; n < counts->receiver * counts->primary; n++) {
     double reference_E[RECEIVER_RESULTS_COUNT__];
     double reference_SE[RECEIVER_RESULTS_COUNT__];
     double test_E[RECEIVER_RESULTS_COUNT__];

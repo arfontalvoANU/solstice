@@ -1,4 +1,5 @@
-/* Copyright (C) 2016-2018 CNRS, 2018-2019 |Meso|Star>
+/* Copyright (C) 2018, 2019, 2021 |Meso|Star> (contact@meso-star.com)
+ * Copyright (C) 2016-2018 CNRS
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -77,9 +78,11 @@ print_help(const char* program)
 "  --version        display version information and exit.\n");
   printf("\n");
   printf(
-"Solstice (C) 2016-2018 CNRS, 2018-2019 |Meso|Star>. This is a free software\n"
-"released under the GNU GPL license, version 3 or later. You are free to change\n"
-"or redistribute it under certain conditions <http://gnu.org/licenses/gpl.html>.\n");
+"Copyright (C) 2018, 2019, 2021 |Meso|Star> (contact@meso-star.com).\n"
+"Copyright (C) 2016-2018 CNRS.\n"
+"Solstice is a free software released under the GNU GPL license, version 3 or\n"
+"later. You are free to change or redistribute it under certain conditions\n"
+"<http://gnu.org/licenses/gpl.html>.\n");
 }
 
 static res_T

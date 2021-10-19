@@ -1,4 +1,5 @@
-/* Copyright (C) 2016-2018 CNRS, 2018-2019 |Meso|Star>
+/* Copyright (C) 2018, 2019, 2021 |Meso|Star> (contact@meso-star.com)
+ * Copyright (C) 2016-2018 CNRS
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -542,7 +543,7 @@ solstice_solve(struct solstice* solstice)
   res_T res = RES_OK;
   ASSERT(solstice);
 
-  res = ssp_rng_create(solstice->allocator, &ssp_rng_threefry, &rng);
+  res = ssp_rng_create(solstice->allocator, SSP_RNG_THREEFRY, &rng);
   if(res != RES_OK) {
     fprintf(stderr, "Could not create the Random Number Generator .\n");
     goto error;
