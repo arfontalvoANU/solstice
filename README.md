@@ -60,11 +60,18 @@ informations on CMake.
 
 ## Release notes
 
+### Version 0.9.1
+
+- Sets the CMake minimum version to 3.1: since CMake 3.20, version 2.8 has
+  become obsolete.
+- Sets the required version of Star-SampPling to 0.12. This version fixes
+  compilation errors with gcc 11 but introduces API breaks.
+
 ### Version 0.9
 
-- Add the `-G` option that saves and restores the state of the random number
-  generator. This option can be used to ensure the statistical independence
-  between successive runs.
+Add the `-G` option that saves and restores the state of the random number
+generator. This option can be used to ensure the statistical independence
+between successive runs.
 
 ### Version 0.8.2
 
@@ -74,10 +81,10 @@ informations on CMake.
 
 ### Version 0.8.1
 
-- Fix the VTK of the receiver map: the receiver map was written as `double`
-  while the type notified in the VTK file was `float`. This might produce
-  errors on loading of the resulting VTK file. The VTK data type is now set to
-  `double` to make it consistent with the type of the written values.
+Fix the VTK of the receiver map: the receiver map was written as `double` while
+the type notified in the VTK file was `float`. This might produce errors on
+loading of the resulting VTK file. The VTK data type is now set to `double` to
+make it consistent with the type of the written values.
 
 ### Version 0.8
 
@@ -137,8 +144,8 @@ for each triangle of a receiver. Its value can be:
 
 ### Version 0.5
 
-- Improve the performances of the solver up to 50% in situations where the
-  radiative random walks bounce on many surfaces.
+Improve the performances of the solver up to 50% in situations where the
+radiative random walks bounce on many surfaces.
 
 ### Version 0.4.1
 
