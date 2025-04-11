@@ -180,7 +180,8 @@ static res_T
 setup_tracking
   (struct solstice* solstice,
    struct sanim_tracking* tracking,
-   const struct solparser_target* target)
+   const struct solparser_target* target,
+   int target_aligned)
 {
   struct solstice_node* anchor_node = NULL;
   struct str anchor_name;
@@ -201,7 +202,9 @@ setup_tracking
       d3_set(tracking->data.out_dir.u, target->data.direction);
       break;
     case SOLPARSER_TARGET_POSITION:
-      tracking->policy = TRACKING_POINT;
+      tracking->policy = target_aligned
+      ? TRACKING_TARGET_ALIGNED
+      : TRACKING_POINT;
       d3_set(tracking->data.point.target, target->data.position);
       tracking->data.point.target_is_local = 0;
       break;
@@ -238,7 +241,7 @@ create_x_pivot_node
   d3_set(anim_pivot.data.pivot1.ref_normal, d3(n, 0, 0, 1));
   d3_set(anim_pivot.data.pivot1.ref_point, parser_x_pivot->ref_point);
 
-  res = setup_tracking(solstice, &anim_tracking, &parser_x_pivot->target);
+  res = setup_tracking(solstice, &anim_tracking, &parser_x_pivot->target, 0);
   if(res != RES_OK) goto error;
 
   res = solstice_node_pivot_create
@@ -276,7 +279,7 @@ create_zx_pivot_node
   anim_pivot.data.pivot2.spacing = parser_zx_pivot->spacing;
   d3_set(anim_pivot.data.pivot2.ref_point, parser_zx_pivot->ref_point);
 
-  res = setup_tracking(solstice, &anim_tracking, &parser_zx_pivot->target);
+  res = setup_tracking(solstice, &anim_tracking, &parser_zx_pivot->target, parser_zx_pivot->target_aligned);
   if(res != RES_OK) goto error;
 
   res = solstice_node_pivot_create

@@ -70,6 +70,7 @@ enum solparser_target_type {
   SOLPARSER_TARGET_DIRECTION,
   SOLPARSER_TARGET_POSITION,
   SOLPARSER_TARGET_SUN,
+  SOLPARSER_TARGET_POSITION_ALIGNED,
 
   SOLPARSER_TARGET_TYPES_COUNT__
 };
@@ -79,6 +80,7 @@ struct solparser_target {
   union {
     double position[3]; /* World space position */
     double direction[3]; /* World space direction */
+    double position_aligned[3]; /* World space position */
     struct solparser_anchor_id anchor;
   } data;
 };
@@ -117,9 +119,10 @@ struct solparser_zx_pivot {
   double spacing;
   double ref_point[3];
   struct solparser_target target;
+  int target_aligned;
 };
 
-#define SOLPARSER_ZX_PIVOT_NULL__ { 0, {0,0,0}, SOLPARSER_TARGET_NULL__ }
+#define SOLPARSER_ZX_PIVOT_NULL__ { 0, {0,0,0}, SOLPARSER_TARGET_NULL__, 0 }
 static const struct solparser_zx_pivot SOLPARSER_ZX_PIVOT_NULL =
   SOLPARSER_ZX_PIVOT_NULL__;
 

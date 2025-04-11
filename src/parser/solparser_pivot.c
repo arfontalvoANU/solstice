@@ -19,6 +19,12 @@
 /*******************************************************************************
  * Helper functions
  ******************************************************************************/
+extern LOCAL_SYM res_T
+parse_bool(struct solparser* parser,
+                 yaml_document_t* doc,
+                 const yaml_node_t* val,
+                 int* out);
+
 static res_T
 parse_anchor_alias
   (struct solparser* parser,
@@ -254,6 +260,31 @@ error:
 }
 
 res_T
+parse_bool(struct solparser* parser,
+           yaml_document_t* doc,
+           const yaml_node_t* val,
+           int* out)
+{
+  const char* str = NULL;
+
+  (void)parser;
+  (void)doc;
+
+  if(val->type != YAML_SCALAR_NODE) return RES_BAD_ARG;
+  str = (const char*)val->data.scalar.value;
+
+  if(!strcmp(str, "true") || !strcmp(str, "1")) {
+    *out = 1;
+  } else if(!strcmp(str, "false") || !strcmp(str, "0")) {
+    *out = 0;
+  } else {
+    return RES_BAD_ARG;
+  }
+
+  return RES_OK;
+}
+
+res_T
 parse_zx_pivot
   (struct solparser* parser,
    yaml_document_t* doc,
@@ -286,6 +317,7 @@ parse_zx_pivot
 
   n = zx_pivot->data.mapping.pairs.top - zx_pivot->data.mapping.pairs.start;
   solxzpivot->spacing = 0; /* default value */
+  solxzpivot->target_aligned = 0; /* default value */
   d3_splat(solxzpivot->ref_point, 0); /* default value */
   FOR_EACH(i, 0, n) {
     yaml_node_t* key;
@@ -321,6 +353,15 @@ parse_zx_pivot
         (size_t) (solxzpivot - darray_zx_pivot_cdata_get(&parser->zx_pivots));
       SETUP_MASK(TARGET, "target");
       res = parse_target(parser, doc, val, &solxzpivot->target, pivot_id);
+    } else if (!strcmp((char*)key->data.scalar.value, "target_aligned")) {
+      int flag;
+      res = parse_bool(parser, doc, val, &flag);
+      if (res != RES_OK) {
+        log_err(parser, key, "invalid value for `target_aligned`\n");
+        goto error;
+      }
+      solxzpivot->target_aligned = flag;
+      /*fprintf(stderr,"target_aligned: %d\n", flag);*/
     } else {
       log_err(parser, key, "unknown zx_pivot parameter `%s'.\n",
         key->data.scalar.value);
