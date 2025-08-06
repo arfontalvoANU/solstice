@@ -424,6 +424,35 @@ create_parabol
 
   quadric.type = SSOL_QUADRIC_PARABOL;
   quadric.data.parabol.focal = paraboloid->focal;
+
+  d33_set(quadric.transform, transform);
+  d3_set(quadric.transform+9, transform+9);
+  if(paraboloid->nslices > 0) { /* nslices is set */
+    quadric.slices_count_hint = (size_t)paraboloid->nslices;
+  }
+  return create_ssol_shape_punched_surface
+    (solstice, &paraboloid->polyclips, &quadric, out_ssol_shape);
+}
+
+static res_T
+create_parabol2f
+  (struct solstice* solstice,
+   const double transform[12],
+   const struct solparser_shape_paraboloid_id id,
+   struct ssol_shape** out_ssol_shape)
+{
+  const struct solparser_shape_paraboloid* paraboloid;
+  struct ssol_quadric quadric = SSOL_QUADRIC_DEFAULT;
+  ASSERT(solstice);
+
+  paraboloid = solparser_get_shape_parabol(solstice->parser, id);
+
+  quadric.type = SSOL_QUADRIC_PARABOL2F;
+  quadric.data.parabol2f.focal_x = paraboloid->focal_x;
+  quadric.data.parabol2f.focal_y = (paraboloid->focal_y != 0.0)
+    ? paraboloid->focal_y
+    : paraboloid->focal_x;
+
   d33_set(quadric.transform, transform);
   d3_set(quadric.transform+9, transform+9);
   if(paraboloid->nslices > 0) { /* nslices is set */
@@ -582,6 +611,9 @@ create_shaded_shape
       break;
     case SOLPARSER_SHAPE_PARABOL:
       res = create_parabol(solstice, transform, shape->data.parabol, ssol_shape);
+      break;
+    case SOLPARSER_SHAPE_PARABOL2F:
+      res = create_parabol2f(solstice, transform, shape->data.parabol2f, ssol_shape);
       break;
     case SOLPARSER_SHAPE_PARABOLIC_CYLINDER:
       res = create_parabolic_cylinder
