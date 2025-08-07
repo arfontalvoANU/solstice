@@ -37,6 +37,7 @@ enum solparser_shape_type {
   SOLPARSER_SHAPE_CYLINDER,
   SOLPARSER_SHAPE_OBJ, /* Imported Alias Wavefront obj */
   SOLPARSER_SHAPE_PARABOL,
+  SOLPARSER_SHAPE_PARABOL2F,
   SOLPARSER_SHAPE_PARABOLIC_CYLINDER,
   SOLPARSER_SHAPE_HYPERBOL,
   SOLPARSER_SHAPE_HEMISPHERE,
@@ -174,6 +175,8 @@ solparser_shape_imported_geometry_copy_and_release
  ******************************************************************************/
 struct solparser_shape_paraboloid {
   double focal;
+  double focal_x;
+  double focal_y;
   long nslices; /* < 0 if not defined */
   struct darray_polyclip polyclips;
 };
@@ -184,6 +187,9 @@ solparser_shape_paraboloid_init
    struct solparser_shape_paraboloid* paraboloid)
 {
   ASSERT(paraboloid);
+  paraboloid->focal = 0.0;
+  paraboloid->focal_x = 0.0;
+  paraboloid->focal_y = 0.0;
   paraboloid->nslices = -1;
   darray_polyclip_init(allocator, &paraboloid->polyclips);
 }
@@ -202,6 +208,8 @@ solparser_shape_paraboloid_copy
 {
   ASSERT(dst && src);
   dst->focal = src->focal;
+  dst->focal_x = src->focal_x;
+  dst->focal_y = src->focal_y;
   dst->nslices = src->nslices;
   return darray_polyclip_copy(&dst->polyclips, &src->polyclips);
 }
@@ -213,6 +221,8 @@ solparser_shape_paraboloid_copy_and_release
 {
   ASSERT(dst && src);
   dst->focal = src->focal;
+  dst->focal_x = src->focal_x;
+  dst->focal_y = src->focal_y;
   dst->nslices = src->nslices;
   return darray_polyclip_copy_and_release(&dst->polyclips, &src->polyclips);
 }
@@ -404,6 +414,7 @@ struct solparser_shape {
     struct solparser_shape_cylinder_id cylinder;
     struct solparser_shape_imported_geometry_id obj;
     struct solparser_shape_paraboloid_id parabol;
+    struct solparser_shape_paraboloid_id parabol2f; /* Paraboloid with two foci */
     struct solparser_shape_paraboloid_id parabolic_cylinder;
     struct solparser_shape_hyperboloid_id hyperbol;
     struct solparser_shape_hemisphere_id hemisphere;

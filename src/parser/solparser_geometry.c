@@ -587,7 +587,7 @@ parse_paraboloid
    const enum solparser_shape_type type,
    struct solparser_shape_paraboloid_id* out_ishape)
 {
-  enum { CLIP, FOCAL, SLICES };
+  enum { CLIP, FOCAL, FOCAL_X, FOCAL_Y, SLICES };
   struct solparser_shape_paraboloid* shape = NULL;
   struct darray_paraboloid* paraboloids;
   const char* name;
@@ -605,6 +605,10 @@ parse_paraboloid
     case SOLPARSER_SHAPE_PARABOLIC_CYLINDER:
       name = "parabolic cylinder";
       paraboloids = &parser->parabolic_cylinders;
+      break;
+    case SOLPARSER_SHAPE_PARABOL2F:
+      name = "parabol2f";
+      paraboloids = &parser->parabols;
       break;
     default: FATAL("Unreachable code.\n"); break;
   }
@@ -651,6 +655,12 @@ parse_paraboloid
     } else if(!strcmp((char*)key->data.scalar.value, "focal")) {
       SETUP_MASK(FOCAL, "focal");
       res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &shape->focal);
+    } else if(!strcmp((char*)key->data.scalar.value, "focal_x")) {
+      SETUP_MASK(FOCAL_X, "focal_x");
+      res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &shape->focal_x);
+    } else if(!strcmp((char*)key->data.scalar.value, "focal_y")) {
+      SETUP_MASK(FOCAL_Y, "focal_y");
+      res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &shape->focal_y);
     } else if(!strcmp((char*)key->data.scalar.value, "slices")) {
       SETUP_MASK(SLICES, "slices");
       res = parse_integer(parser, val, 4, 4096, &shape->nslices);
@@ -674,7 +684,12 @@ parse_paraboloid
       goto error;                                                              \
     } (void)0
   CHECK_PARAM(CLIP, "clip");
-  CHECK_PARAM(FOCAL, "focal");
+  if(type == SOLPARSER_SHAPE_PARABOL2F) {
+    CHECK_PARAM(FOCAL_X, "focal_x");
+    CHECK_PARAM(FOCAL_Y, "focal_y");
+  } else {
+    CHECK_PARAM(FOCAL, "focal");
+  }
   #undef CHECK_PARAM
 
 exit:
@@ -1154,6 +1169,11 @@ parse_object
       shape->type = SOLPARSER_SHAPE_PARABOL;
       res = parse_paraboloid
         (parser, doc, val, shape->type, &shape->data.parabol);
+    } else if(!strcmp((char*)key->data.scalar.value, "parabol2f")) {
+      SETUP_MASK(SHAPE, "shape");
+      shape->type = SOLPARSER_SHAPE_PARABOL2F;
+      res = parse_paraboloid
+        (parser, doc, val, shape->type, &shape->data.parabol2f);
     } else if(!strcmp((char*)key->data.scalar.value, "parabolic-cylinder")) {
       SETUP_MASK(SHAPE, "shape");
       shape->type = SOLPARSER_SHAPE_PARABOLIC_CYLINDER;
