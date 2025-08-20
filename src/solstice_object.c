@@ -435,7 +435,7 @@ create_parabol
 }
 
 static res_T
-create_parabol2f
+create_quadricxy
   (struct solstice* solstice,
    const double transform[12],
    const struct solparser_shape_paraboloid_id id,
@@ -447,11 +447,13 @@ create_parabol2f
 
   paraboloid = solparser_get_shape_parabol(solstice->parser, id);
 
-  quadric.type = SSOL_QUADRIC_PARABOL2F;
-  quadric.data.parabol2f.focal_x = paraboloid->focal_x;
-  quadric.data.parabol2f.focal_y = (paraboloid->focal_y != 0.0)
-    ? paraboloid->focal_y
-    : paraboloid->focal_x;
+  quadric.type = SSOL_QUADRIC_QUADRICXY;
+  quadric.data.quadricxy.ax2 = paraboloid->ax2;
+  quadric.data.quadricxy.ay2 = paraboloid->ay2;
+  quadric.data.quadricxy.axy = paraboloid->axy;
+  quadric.data.quadricxy.ax  = paraboloid->ax;
+  quadric.data.quadricxy.ay  = paraboloid->ay;
+  quadric.data.quadricxy.ac  = paraboloid->ac;
 
   d33_set(quadric.transform, transform);
   d3_set(quadric.transform+9, transform+9);
@@ -612,8 +614,8 @@ create_shaded_shape
     case SOLPARSER_SHAPE_PARABOL:
       res = create_parabol(solstice, transform, shape->data.parabol, ssol_shape);
       break;
-    case SOLPARSER_SHAPE_PARABOL2F:
-      res = create_parabol2f(solstice, transform, shape->data.parabol2f, ssol_shape);
+    case SOLPARSER_SHAPE_QUADRICXY:
+      res = create_quadricxy(solstice, transform, shape->data.quadricxy, ssol_shape);
       break;
     case SOLPARSER_SHAPE_PARABOLIC_CYLINDER:
       res = create_parabolic_cylinder

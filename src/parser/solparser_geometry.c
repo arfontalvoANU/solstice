@@ -587,7 +587,7 @@ parse_paraboloid
    const enum solparser_shape_type type,
    struct solparser_shape_paraboloid_id* out_ishape)
 {
-  enum { CLIP, FOCAL, FOCAL_X, FOCAL_Y, SLICES };
+  enum { CLIP, FOCAL, AX2, AY2, AXY, AX, AY, AC, SLICES };
   struct solparser_shape_paraboloid* shape = NULL;
   struct darray_paraboloid* paraboloids;
   const char* name;
@@ -606,8 +606,8 @@ parse_paraboloid
       name = "parabolic cylinder";
       paraboloids = &parser->parabolic_cylinders;
       break;
-    case SOLPARSER_SHAPE_PARABOL2F:
-      name = "parabol2f";
+    case SOLPARSER_SHAPE_QUADRICXY:
+      name = "quadricxy";
       paraboloids = &parser->parabols;
       break;
     default: FATAL("Unreachable code.\n"); break;
@@ -655,12 +655,24 @@ parse_paraboloid
     } else if(!strcmp((char*)key->data.scalar.value, "focal")) {
       SETUP_MASK(FOCAL, "focal");
       res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &shape->focal);
-    } else if(!strcmp((char*)key->data.scalar.value, "focal_x")) {
-      SETUP_MASK(FOCAL_X, "focal_x");
-      res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &shape->focal_x);
-    } else if(!strcmp((char*)key->data.scalar.value, "focal_y")) {
-      SETUP_MASK(FOCAL_Y, "focal_y");
-      res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &shape->focal_y);
+    } else if(!strcmp((char*)key->data.scalar.value, "ax2")) {
+      SETUP_MASK(AX2, "ax2");
+      res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &shape->ax2);
+    } else if(!strcmp((char*)key->data.scalar.value, "ay2")) {
+      SETUP_MASK(AY2, "ay2");
+      res = parse_real(parser, val, nextafter(0, 1), DBL_MAX, &shape->ay2);
+    } else if(!strcmp((char*)key->data.scalar.value, "axy")) {
+      SETUP_MASK(AXY, "axy");
+      res = parse_real(parser, val, -DBL_MAX, DBL_MAX, &shape->axy);
+    } else if(!strcmp((char*)key->data.scalar.value, "ax")) {
+      SETUP_MASK(AX, "ax");
+      res = parse_real(parser, val, -DBL_MAX, DBL_MAX, &shape->ax);
+    } else if(!strcmp((char*)key->data.scalar.value, "ay")) {
+      SETUP_MASK(AY, "ay");
+      res = parse_real(parser, val, -DBL_MAX, DBL_MAX, &shape->ay);
+    } else if(!strcmp((char*)key->data.scalar.value, "ac")) {
+      SETUP_MASK(AC, "ac");
+      res = parse_real(parser, val, -DBL_MAX, DBL_MAX, &shape->ac);
     } else if(!strcmp((char*)key->data.scalar.value, "slices")) {
       SETUP_MASK(SLICES, "slices");
       res = parse_integer(parser, val, 4, 4096, &shape->nslices);
@@ -684,9 +696,13 @@ parse_paraboloid
       goto error;                                                              \
     } (void)0
   CHECK_PARAM(CLIP, "clip");
-  if(type == SOLPARSER_SHAPE_PARABOL2F) {
-    CHECK_PARAM(FOCAL_X, "focal_x");
-    CHECK_PARAM(FOCAL_Y, "focal_y");
+  if(type == SOLPARSER_SHAPE_QUADRICXY) {
+    CHECK_PARAM(AX2, "ax2");
+    CHECK_PARAM(AY2, "ay2");
+    CHECK_PARAM(AXY, "axy");
+    CHECK_PARAM(AX, "ax");
+    CHECK_PARAM(AY, "ay");
+    CHECK_PARAM(AC, "ac");
   } else {
     CHECK_PARAM(FOCAL, "focal");
   }
@@ -1169,11 +1185,11 @@ parse_object
       shape->type = SOLPARSER_SHAPE_PARABOL;
       res = parse_paraboloid
         (parser, doc, val, shape->type, &shape->data.parabol);
-    } else if(!strcmp((char*)key->data.scalar.value, "parabol2f")) {
+    } else if(!strcmp((char*)key->data.scalar.value, "quadricxy")) {
       SETUP_MASK(SHAPE, "shape");
-      shape->type = SOLPARSER_SHAPE_PARABOL2F;
+      shape->type = SOLPARSER_SHAPE_QUADRICXY;
       res = parse_paraboloid
-        (parser, doc, val, shape->type, &shape->data.parabol2f);
+        (parser, doc, val, shape->type, &shape->data.quadricxy);
     } else if(!strcmp((char*)key->data.scalar.value, "parabolic-cylinder")) {
       SETUP_MASK(SHAPE, "shape");
       shape->type = SOLPARSER_SHAPE_PARABOLIC_CYLINDER;
